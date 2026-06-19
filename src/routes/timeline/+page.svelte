@@ -4,7 +4,7 @@
   import Card from '$lib/components/ui/card.svelte';
   import Button from '$lib/components/ui/button.svelte';
   import { supabase } from '$lib/supabase';
-  import { authStore } from '$lib/auth';
+  import { authStore, activeProfileStore } from '$lib/auth';
   import { 
     Image as ImageIcon, MapPin, Calendar, Heart, MessageCircle, CloudUpload, Sparkles, X, Trash2, Pencil 
   } from 'lucide-svelte';
@@ -44,6 +44,23 @@
   // Edit comment state (admin)
   let editingCommentId: string | null = null;
   let editingCommentText = '';
+
+  let adminName = 'ADMIN MAZEEDA';
+  let adminFotoUrl = 'https://drive.google.com/file/d/1f332yzKnUHuix7YeAvCgMZm4y2v30CwF/view?usp=drive_link';
+
+  async function fetchAdminPhoto() {
+    try {
+      const { data, error } = await supabase
+        .from('admin_profile')
+        .select('nama_lengkap, foto_url')
+        .eq('id', 1)
+        .maybeSingle();
+      if (!error && data) {
+        if (data.nama_lengkap) adminName = data.nama_lengkap;
+        if (data.foto_url) adminFotoUrl = data.foto_url;
+      }
+    } catch (_) {}
+  }
 
   async function loadMemories() {
     try {
@@ -89,6 +106,7 @@
     }
 
     loadMemories();
+    fetchAdminPhoto();
   });
 
   // Handle Liking / Unliking
@@ -316,8 +334,12 @@
   // Admin photo is always read live from authStore so it stays in sync.
   function resolveCommentAvatar(comment: any): string {
     const name = (comment.user_name || '').toUpperCase();
-    if (name === 'ADMIN MAZEEDA' || name === 'ADMIN') {
-      return convertDriveUrl($authStore.user?.foto_url || '');
+    const currentAdminName = (adminName || 'ADMIN MAZEEDA').toUpperCase();
+    if (name === currentAdminName || name === 'ADMIN MAZEEDA' || name === 'ADMIN') {
+      if ($authStore.user?.role === 'admin') {
+        return convertDriveUrl($authStore.user.foto_url || adminFotoUrl);
+      }
+      return convertDriveUrl(adminFotoUrl);
     }
     return convertDriveUrl(comment.user_foto || '');
   }
@@ -326,6 +348,11 @@
   function getInitials(name: string): string {
     if (!name) return '?';
     return name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+  }
+
+  function handleOpenProfile(role: 'admin' | 'member', name: string) {
+    if (!name || name === 'Anonim' || name === 'Tamu' || name.startsWith('Tamu_')) return;
+    activeProfileStore.set({ type: role, nameOrNis: name });
   }
 </script>
 
@@ -522,31 +549,39 @@
               </div>
             {:else if activeComments.length > 0}
               {#each activeComments as comment}
-                {@const isAdminComment = comment.user_name && comment.user_name.toUpperCase() === 'ADMIN MAZEEDA'}
+                {@const isAdminComment = comment.user_name && (comment.user_name.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.user_name.toUpperCase() === 'ADMIN MAZEEDA' || comment.user_name.toUpperCase() === 'ADMIN')}
                 {@const avatarUrl = resolveCommentAvatar(comment)}
                 {@const isEditing = editingCommentId === comment.id}
                 <div class="flex items-start space-x-3 bg-white p-3 rounded-xl border border-slate-200/40 shadow-soft-sm relative
                   {isAdmin ? 'group/tc' : ''}
                   {isAdminComment ? 'border-indigo-100/50 bg-gradient-to-r from-indigo-50/30 to-white' : ''}">
                   <!-- User Avatar -->
-                  <div class="h-8 w-8 rounded-full flex items-center justify-center text-xs shrink-0 overflow-hidden uppercase
+                  <button
+                    type="button"
+                    on:click={() => handleOpenProfile(isAdminComment ? 'admin' : 'member', comment.user_name)}
+                    class="h-8 w-8 rounded-full flex items-center justify-center text-xs shrink-0 overflow-hidden uppercase cursor-pointer hover:scale-105 transition-transform
                     {isAdminComment 
                       ? 'bg-gradient-to-br from-primary to-indigo-600 text-white shadow-soft-sm' 
-                      : 'bg-primary/10 text-primary border border-primary/20 font-black'}">
+                      : 'bg-primary/10 text-primary border border-primary/20 font-black'}"
+                  >
                     {#if avatarUrl}
                       <img src={avatarUrl} alt={comment.user_name} class="h-full w-full object-cover"
                         on:error={(e) => { e.currentTarget.style.display = 'none'; }} />
                     {:else}
                       {getInitials(comment.user_name)}
                     {/if}
-                  </div>
+                  </button>
                   <div class="leading-tight flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-2">
                       <div class="flex items-center gap-1.5 min-w-0">
-                        <span class="text-xs font-extrabold truncate
-                          {isAdminComment ? 'text-indigo-700' : 'text-slate-700'}">
-                          {isAdminComment ? 'ADMIN MAZEEDA' : comment.user_name}
-                        </span>
+                        <button
+                          type="button"
+                          on:click={() => handleOpenProfile(isAdminComment ? 'admin' : 'member', comment.user_name)}
+                          class="text-xs font-extrabold truncate hover:underline text-left cursor-pointer bg-transparent p-0 border-none outline-none
+                            {isAdminComment ? 'text-indigo-700' : 'text-slate-700'}"
+                        >
+                          {isAdminComment ? (adminName || 'ADMIN MAZEEDA') : comment.user_name}
+                        </button>
                         {#if isAdminComment}
                           <span class="px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-full text-[8px] font-black border border-indigo-200 shrink-0">ADMIN</span>
                         {/if}
@@ -626,7 +661,7 @@
             <div class="flex items-center space-x-2">
               <!-- Current user avatar in input form -->
               {#if $authStore.user}
-                {@const myAvatar = convertDriveUrl($authStore.user.foto_url || '')}
+                {@const myAvatar = $authStore.user.role === 'admin' ? convertDriveUrl($authStore.user.foto_url || adminFotoUrl) : convertDriveUrl($authStore.user.foto_url || '')}
                 <div class="h-8 w-8 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-[10px] font-black
                   {$authStore.user.role === 'admin' ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-primary/10 text-primary border border-primary/20'}">
                   {#if myAvatar}

@@ -5,7 +5,7 @@
   import Button from "$lib/components/ui/button.svelte";
   import Input from "$lib/components/ui/input.svelte";
   import { supabase } from "$lib/supabase";
-  import { authStore } from "$lib/auth";
+  import { authStore, activeProfileStore } from "$lib/auth";
   import { fade, slide } from "svelte/transition";
   import {
     Megaphone,
@@ -183,6 +183,14 @@
   // Comment Form state
   let newCommentText: { [key: number]: string } = {};
 
+  // Expanded announcements state
+  let expandedAnnouncements: Record<number | string, boolean> = {};
+
+  function toggleExpandAnnouncement(id: number | string) {
+    expandedAnnouncements[id] = !expandedAnnouncements[id];
+    expandedAnnouncements = { ...expandedAnnouncements };
+  }
+
   // Realtime Subscriptions
   let realtimeStatus = "connecting"; // 'connecting' | 'connected' | 'error'
   let notesChannel: any;
@@ -191,6 +199,8 @@
   // Stores a mapping of commenter names to their profile photo URLs.
   // Admin photo is kept in sync via authStore reactive subscription.
   let authorAvatarMap: Record<string, string> = {};
+  let adminName = 'ADMIN MAZEEDA';
+  let adminFotoUrl = 'https://drive.google.com/file/d/1f332yzKnUHuix7YeAvCgMZm4y2v30CwF/view?usp=drive_link';
 
   // Helper: convert Google Drive share link → direct thumbnail URL
   function convertDriveUrl(url: string): string {
@@ -207,31 +217,66 @@
     return cleaned;
   }
 
-  // Fetch foto_url for all known alumni (once on mount, best-effort)
+  // Fetch foto_url for all known alumni and admin (once on mount, best-effort)
   async function fetchAuthorAvatars() {
+    try {
+      const { data: adminData, error: adminErr } = await supabase
+        .from('admin_profile')
+        .select('nama_lengkap, foto_url')
+        .eq('id', 1)
+        .maybeSingle();
+      if (adminErr) {
+        console.error("fetchAuthorAvatars admin_profile error:", adminErr);
+      }
+      if (!adminErr && adminData) {
+        if (adminData.nama_lengkap) adminName = adminData.nama_lengkap;
+        if (adminData.foto_url) adminFotoUrl = adminData.foto_url;
+      }
+    } catch (e) {
+      console.error("fetchAuthorAvatars admin_profile exception:", e);
+    }
+
+    // Map admin avatars
+    authorAvatarMap[adminName] = adminFotoUrl;
+    authorAvatarMap['ADMIN MAZEEDA'] = adminFotoUrl;
+    authorAvatarMap['Admin MAZEEDA'] = adminFotoUrl;
+    authorAvatarMap['ADMIN'] = adminFotoUrl;
+
     try {
       const { data, error } = await supabase
         .from('allowed_alumni')
         .select('nama_lengkap, foto_url');
+      if (error) {
+        console.error("fetchAuthorAvatars allowed_alumni error:", error);
+      }
       if (!error && data) {
         data.forEach((row: any) => {
           if (row.nama_lengkap && row.foto_url) {
             authorAvatarMap[row.nama_lengkap] = row.foto_url;
           }
         });
-        authorAvatarMap = { ...authorAvatarMap }; // trigger reactivity
       }
-    } catch (_) {}
+    } catch (e) {
+      console.error("fetchAuthorAvatars allowed_alumni exception:", e);
+    }
+    authorAvatarMap = { ...authorAvatarMap }; // trigger reactivity
+  }
+
+  function handleOpenProfile(role: 'admin' | 'member', name: string) {
+    if (!name || name === 'Anonim' || name === 'Tamu') return;
+    activeProfileStore.set({ type: role, nameOrNis: name });
   }
 
   // Reactive: keep admin photo in sync whenever authStore changes
-  $: if ($authStore.user?.role === 'admin' && $authStore.user?.foto_url !== undefined) {
-    const adminName = $authStore.user.name || 'ADMIN MAZEEDA';
-    authorAvatarMap[adminName] = $authStore.user.foto_url;
-    // Also cover the old-format name
-    authorAvatarMap['Admin MAZEEDA'] = $authStore.user.foto_url;
-    authorAvatarMap['ADMIN MAZEEDA'] = $authStore.user.foto_url;
-    authorAvatarMap = { ...authorAvatarMap };
+  $: if ($authStore.user?.role === 'admin') {
+    if ($authStore.user.name) adminName = $authStore.user.name;
+    if ($authStore.user.foto_url !== undefined) {
+      authorAvatarMap[adminName] = $authStore.user.foto_url || adminFotoUrl;
+      authorAvatarMap['Admin MAZEEDA'] = $authStore.user.foto_url || adminFotoUrl;
+      authorAvatarMap['ADMIN MAZEEDA'] = $authStore.user.foto_url || adminFotoUrl;
+      authorAvatarMap['ADMIN'] = $authStore.user.foto_url || adminFotoUrl;
+      authorAvatarMap = { ...authorAvatarMap };
+    }
   }
 
   // Helper: get initials from a display name
@@ -1203,16 +1248,20 @@
                     <Calendar class="h-3.5 w-3.5" />
                     <span>{post.date}</span>
                   </span>
-                  <span class="flex items-center space-x-1">
-                    <User class="h-3.5 w-3.5" />
+                  <button
+                    type="button"
+                    on:click={() => handleOpenProfile(post.author && post.author.toUpperCase() === 'ADMIN MAZEEDA' ? 'admin' : 'member', post.author)}
+                    class="flex items-center space-x-1 hover:underline cursor-pointer text-left bg-transparent p-0 border-none outline-none font-inherit text-slate-400"
+                  >
+                    <User class="h-3.5 w-3.5 text-slate-400" />
                     <span>{post.author && post.author.toUpperCase() === 'ADMIN MAZEEDA' ? 'ADMIN MAZEEDA' : post.author}</span>
-                  </span>
+                  </button>
                 </div>
               </div>
 
               <!-- Body -->
               <div class="py-4 space-y-3">
-                {#each post.content.split('\n') as paragraph}
+                {#each (post.content.length > 280 && !expandedAnnouncements[post.id] ? post.content.slice(0, 280) + '...' : post.content).split('\n') as paragraph}
                   {#if paragraph.trim()}
                     <p 
                       class="text-sm leading-relaxed font-normal text-justify
@@ -1228,6 +1277,22 @@
                     <div class="h-2.5"></div>
                   {/if}
                 {/each}
+
+                {#if post.content.length > 280}
+                  <button
+                    type="button"
+                    on:click={() => toggleExpandAnnouncement(post.id)}
+                    class="text-xs font-extrabold text-primary hover:text-primary-hover flex items-center gap-1.5 focus:outline-none mt-2 transition-colors duration-150"
+                  >
+                    {#if expandedAnnouncements[post.id]}
+                      <span>Tampilkan Lebih Sedikit</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                    {:else}
+                      <span>Baca Selengkapnya</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    {/if}
+                  </button>
+                {/if}
               </div>
 
               <!-- Footer Buttons -->
@@ -1352,9 +1417,14 @@
                   <div
                     class="flex items-center justify-between pt-2.5 border-t border-black/5 text-[9px] font-black uppercase tracking-wider opacity-85"
                   >
-                    <span class="truncate max-w-[95px]" title={note.sender_name}
-                      >{note.sender_name}</span
+                    <button
+                      type="button"
+                      on:click={() => handleOpenProfile(note.sender_name && note.sender_name.toUpperCase() === 'ADMIN MAZEEDA' ? 'admin' : 'member', note.sender_name)}
+                      class="truncate max-w-[95px] hover:underline cursor-pointer text-left bg-transparent p-0 border-none outline-none font-black text-slate-500 text-[9px] uppercase tracking-wider"
+                      title={note.sender_name}
                     >
+                      {note.sender_name}
+                    </button>
 
                     <div class="flex items-center space-x-2 shrink-0">
                       <!-- Note Like -->
@@ -1567,7 +1637,16 @@
             class="text-[9px] font-black uppercase text-black/40 tracking-wider pt-2 border-t border-black/5 flex justify-between"
             dir="ltr"
           >
-            <span>Oleh: {selectedNoteForComments.sender_name}</span>
+            <span class="flex items-center gap-1">
+              Oleh: 
+              <button
+                type="button"
+                on:click={() => handleOpenProfile(selectedNoteForComments.sender_name && selectedNoteForComments.sender_name.toUpperCase() === 'ADMIN MAZEEDA' ? 'admin' : 'member', selectedNoteForComments.sender_name)}
+                class="hover:underline cursor-pointer text-left bg-transparent p-0 border-none outline-none font-black text-black/40 text-[9px] uppercase tracking-wider"
+              >
+                {selectedNoteForComments.sender_name}
+              </button>
+            </span>
             <span
               >{selectedNoteForComments.created_at
                 ? new Date(
@@ -1593,30 +1672,38 @@
             <div class="space-y-2.5">
               {#each noteCommentsList as comment}
                 {@const avatarUrl = convertDriveUrl(authorAvatarMap[comment.author] || '')}
-                {@const isAdminComment = comment.author && comment.author.toUpperCase() === 'ADMIN MAZEEDA'}
+                {@const isAdminComment = comment.author && (comment.author.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.author.toUpperCase() === 'ADMIN MAZEEDA' || comment.author.toUpperCase() === 'ADMIN')}
                 {@const isEditing = editingNoteCommentId === comment.id}
                 <div class="bg-white border rounded-2xl p-3.5 shadow-soft-sm transition-all
                   {isAdminComment ? 'border-indigo-100' : 'border-slate-100'}
                   {isAdmin ? 'group/nc' : ''}">
                   <div class="flex items-start gap-3">
                     <!-- Avatar -->
-                    <div class="shrink-0 h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-black shadow-soft-xs
-                      {isAdminComment ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}">
+                    <button
+                      type="button"
+                      on:click={() => handleOpenProfile(isAdminComment ? 'admin' : 'member', comment.author)}
+                      class="shrink-0 h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-black shadow-soft-xs cursor-pointer hover:scale-105 transition-transform
+                      {isAdminComment ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}"
+                    >
                       {#if avatarUrl}
                         <img src={avatarUrl} alt={comment.author} class="h-full w-full object-cover"
                           on:error={(e) => { e.currentTarget.style.display = 'none'; }} />
                       {:else}
                         {getInitials(comment.author)}
                       {/if}
-                    </div>
+                    </button>
                     <!-- Content -->
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between gap-2 mb-1">
                         <div class="flex items-center gap-1 min-w-0">
-                          <span class="text-[10px] font-black truncate
-                            {isAdminComment ? 'text-indigo-600' : 'text-primary'}">
-                            {isAdminComment ? 'ADMIN MAZEEDA' : comment.author}
-                          </span>
+                          <button
+                            type="button"
+                            on:click={() => handleOpenProfile(isAdminComment ? 'admin' : 'member', comment.author)}
+                            class="text-[10px] font-black truncate hover:underline text-left cursor-pointer bg-transparent p-0 border-none outline-none
+                            {isAdminComment ? 'text-indigo-600' : 'text-primary'}"
+                          >
+                            {isAdminComment ? (adminName || 'ADMIN MAZEEDA') : comment.author}
+                          </button>
                           {#if isAdminComment}<span class="ml-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[8px] font-black border border-indigo-100">ADMIN</span>{/if}
                         </div>
                         <div class="flex items-center gap-1 shrink-0">
@@ -1681,7 +1768,7 @@
         >
           <!-- Current user avatar -->
           {#if $authStore.user}
-            {@const myAvatarUrl = convertDriveUrl($authStore.user.foto_url || '')}
+            {@const myAvatarUrl = $authStore.user.role === 'admin' ? convertDriveUrl($authStore.user.foto_url || 'https://drive.google.com/file/d/1f332yzKnUHuix7YeAvCgMZm4y2v30CwF/view?usp=drive_link') : convertDriveUrl($authStore.user.foto_url || '')}
             <div class="shrink-0 h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-black
               {$authStore.user.role === 'admin' ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}">
               {#if myAvatarUrl}
@@ -1771,7 +1858,16 @@
             {/each}
           </div>
           <div class="text-[9px] font-black uppercase text-slate-400 tracking-wider pt-3 border-t border-slate-100 flex justify-between" dir="ltr">
-            <span>Oleh: {selectedAnnouncementForComments.author && selectedAnnouncementForComments.author.toUpperCase() === 'ADMIN MAZEEDA' ? 'ADMIN MAZEEDA' : selectedAnnouncementForComments.author}</span>
+            <span class="flex items-center gap-1">
+              Oleh: 
+              <button
+                type="button"
+                on:click={() => handleOpenProfile(selectedAnnouncementForComments.author && selectedAnnouncementForComments.author.toUpperCase() === 'ADMIN MAZEEDA' ? 'admin' : 'member', selectedAnnouncementForComments.author)}
+                class="hover:underline cursor-pointer text-left bg-transparent p-0 border-none outline-none font-black text-slate-400 text-[9px] uppercase tracking-wider"
+              >
+                {selectedAnnouncementForComments.author && selectedAnnouncementForComments.author.toUpperCase() === 'ADMIN MAZEEDA' ? 'ADMIN MAZEEDA' : selectedAnnouncementForComments.author}
+              </button>
+            </span>
             <span>{selectedAnnouncementForComments.date}</span>
           </div>
         </div>
@@ -1786,30 +1882,38 @@
             <div class="space-y-2.5">
               {#each selectedAnnouncementForComments.comments as comment}
                 {@const avatarUrl = convertDriveUrl(authorAvatarMap[comment.author] || '')}
-                {@const isAdminComment = comment.author && comment.author.toUpperCase() === 'ADMIN MAZEEDA'}
+                {@const isAdminComment = comment.author && (comment.author.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.author.toUpperCase() === 'ADMIN MAZEEDA' || comment.author.toUpperCase() === 'ADMIN')}
                 {@const isEditing = editingAnnouncementCommentId === comment.id}
                 <div class="bg-white border rounded-2xl p-3.5 shadow-soft-sm transition-all
                   {isAdminComment ? 'border-indigo-100' : 'border-slate-100'}
                   {isAdmin ? 'group/ac' : ''}">
                   <div class="flex items-start gap-3">
                     <!-- Avatar -->
-                    <div class="shrink-0 h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-black shadow-soft-xs
-                      {isAdminComment ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}">
+                    <button
+                      type="button"
+                      on:click={() => handleOpenProfile(isAdminComment ? 'admin' : 'member', comment.author)}
+                      class="shrink-0 h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-black shadow-soft-xs cursor-pointer hover:scale-105 transition-transform
+                      {isAdminComment ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}"
+                    >
                       {#if avatarUrl}
                         <img src={avatarUrl} alt={comment.author} class="h-full w-full object-cover"
                           on:error={(e) => { e.currentTarget.style.display = 'none'; }} />
                       {:else}
                         {getInitials(comment.author)}
                       {/if}
-                    </div>
+                    </button>
                     <!-- Content -->
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between gap-2 mb-1">
                         <div class="flex items-center gap-1 min-w-0">
-                          <span class="text-[10px] font-black truncate
-                            {isAdminComment ? 'text-indigo-600' : 'text-primary'}">
-                            {isAdminComment ? 'ADMIN MAZEEDA' : comment.author}
-                          </span>
+                          <button
+                            type="button"
+                            on:click={() => handleOpenProfile(isAdminComment ? 'admin' : 'member', comment.author)}
+                            class="text-[10px] font-black truncate hover:underline text-left cursor-pointer bg-transparent p-0 border-none outline-none
+                            {isAdminComment ? 'text-indigo-600' : 'text-primary'}"
+                          >
+                            {isAdminComment ? (adminName || 'ADMIN MAZEEDA') : comment.author}
+                          </button>
                           {#if isAdminComment}<span class="ml-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[8px] font-black border border-indigo-100">ADMIN</span>{/if}
                         </div>
                         <div class="flex items-center gap-1 shrink-0">
@@ -1872,7 +1976,7 @@
         >
           <!-- Current user avatar -->
           {#if $authStore.user}
-            {@const myAvatarUrl = convertDriveUrl($authStore.user.foto_url || '')}
+            {@const myAvatarUrl = $authStore.user.role === 'admin' ? convertDriveUrl($authStore.user.foto_url || 'https://drive.google.com/file/d/1f332yzKnUHuix7YeAvCgMZm4y2v30CwF/view?usp=drive_link') : convertDriveUrl($authStore.user.foto_url || '')}
             <div class="shrink-0 h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-black
               {$authStore.user.role === 'admin' ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}">
               {#if myAvatarUrl}

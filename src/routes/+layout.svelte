@@ -52,7 +52,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
-  import { authStore, initAuth, logout } from '$lib/auth';
+  import { authStore, initAuth, logout, activeProfileStore } from '$lib/auth';
 
   $: userRole = $authStore.user?.role || '';
 
@@ -154,7 +154,7 @@
     nama_lengkap: 'ADMIN MAZEEDA',
     nama_panggilan: 'Admin',
     email: 'admin@mazeeda.com',
-    foto_url: '',
+    foto_url: 'https://drive.google.com/file/d/1f332yzKnUHuix7YeAvCgMZm4y2v30CwF/view?usp=drive_link',
     no_whatsapp: '',
     media_social: '',
     tiktok_akun: '',
@@ -184,7 +184,13 @@
     if (!browser) return DEFAULT_ADMIN_PROFILE;
     try {
       const saved = localStorage.getItem('mazeeda_admin_profile');
-      if (saved) return { ...DEFAULT_ADMIN_PROFILE, ...JSON.parse(saved) };
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.foto_url) {
+          parsed.foto_url = DEFAULT_ADMIN_PROFILE.foto_url;
+        }
+        return { ...DEFAULT_ADMIN_PROFILE, ...parsed };
+      }
     } catch (_) {}
     return { ...DEFAULT_ADMIN_PROFILE };
   }
@@ -198,6 +204,9 @@
         .eq('id', 1)
         .maybeSingle();
       if (!error && data) {
+        if (!data.foto_url) {
+          data.foto_url = DEFAULT_ADMIN_PROFILE.foto_url;
+        }
         // Simpan ke cache localStorage juga
         if (browser) localStorage.setItem('mazeeda_admin_profile', JSON.stringify(data));
         return { ...DEFAULT_ADMIN_PROFILE, ...data };
@@ -367,6 +376,17 @@
   onMount(() => {
     initAuth();
     if (browser) {
+      // Validate if logged-in member still exists in the database
+      const u = $authStore.user;
+      if (u && u.role === 'member' && u.nis) {
+        supabase.from('allowed_alumni').select('id').eq('nis', u.nis).maybeSingle().then(({ data, error }) => {
+          if (!data || error) {
+            console.warn('User no longer exists in database. Forcing logout.');
+            logout();
+          }
+        });
+      }
+
       window.addEventListener('touchstart', onTouchStart, { passive: true });
       window.addEventListener('touchmove', onTouchMove, { passive: true });
       window.addEventListener('touchend', onTouchEnd);
@@ -398,6 +418,24 @@
         const saved = localStorage.getItem('mazeeda_read_notifs');
         if (saved) readNotifIds = JSON.parse(saved);
       } catch (_) {}
+
+      // Fetch and cache the admin profile from Supabase so it's available globally on mount
+      fetchAdminProfileFromDB().then((profile) => {
+        if (profile) {
+          myProfileData = profile;
+          // If the logged in user is admin, sync to authStore so they have the loaded profile picture
+          if ($authStore.user?.role === 'admin') {
+            authStore.update(state => state.user ? {
+              ...state,
+              user: {
+                ...state.user,
+                name: profile.nama_lengkap || state.user.name,
+                foto_url: profile.foto_url || state.user.foto_url
+              }
+            } : state);
+          }
+        }
+      });
     }
     fetchNotifications();
 
@@ -560,6 +598,71 @@
     } catch (err) {
       console.error('Failed to fetch full profile:', err);
       myProfileData = $authStore.user;
+    } finally {
+      isLoadingProfile = false;
+    }
+  }
+
+  // Reactive: Check if the viewed profile belongs to the currently logged in user
+  $: isOwnProfile = $authStore.user && myProfileData && (
+    ($authStore.user.role === 'admin' && myProfileData.role === 'admin') || 
+    (myProfileData.nis === $authStore.user.nis)
+  );
+
+  // Reactive listener to open other alumni/admin profiles when clicked
+  $: if (browser && $activeProfileStore) {
+    const trigger = $activeProfileStore;
+    activeProfileStore.set(null); // Reset store
+    openPublicProfile(trigger.type, trigger.nameOrNis);
+  }
+
+  async function openPublicProfile(type: 'admin' | 'member', nameOrNis: string) {
+    showMyProfile = true;
+    isEditingAdminProfile = false;
+    isLoadingProfile = true;
+
+    if (type === 'admin') {
+      myProfileData = await fetchAdminProfileFromDB();
+      isLoadingProfile = false;
+      return;
+    }
+
+    try {
+      let query = supabase.from('allowed_alumni').select('*');
+      if (/^\d+$/.test(nameOrNis)) {
+        query = query.eq('nis', nameOrNis);
+      } else {
+        query = query.ilike('nama_lengkap', nameOrNis);
+      }
+      let { data, error } = await query.maybeSingle();
+      if (error || !data) {
+        // Fallback: search case-insensitive name if NIS search failed or vice-versa
+        const { data: fallbackData } = await supabase
+          .from('allowed_alumni')
+          .select('*')
+          .ilike('nama_lengkap', nameOrNis)
+          .maybeSingle();
+        data = fallbackData;
+      }
+
+      if (data) {
+        myProfileData = data;
+      } else {
+        myProfileData = {
+          nama_lengkap: nameOrNis,
+          nama_panggilan: nameOrNis.split(' ')[0],
+          status: 'Alumni',
+          category: 'Siswa'
+        };
+      }
+    } catch (err) {
+      console.error('Failed to fetch public profile:', err);
+      myProfileData = {
+        nama_lengkap: nameOrNis,
+        nama_panggilan: nameOrNis.split(' ')[0],
+        status: 'Alumni',
+        category: 'Siswa'
+      };
     } finally {
       isLoadingProfile = false;
     }
@@ -903,7 +1006,7 @@
                 </button>
                 
                 <div class="flex items-center gap-2">
-                  {#if userRole === 'admin' && !isEditingAdminProfile}
+                  {#if userRole === 'admin' && isOwnProfile && !isEditingAdminProfile}
                     <button
                       on:click={startEditAdminProfile}
                       class="flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
@@ -912,7 +1015,7 @@
                       Edit Profil Admin
                     </button>
                   {/if}
-                  <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">PROFIL SAYA</span>
+                  <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{isOwnProfile ? 'PROFIL SAYA' : 'PROFIL ANGGOTA'}</span>
                 </div>
               </div>
 
@@ -1338,16 +1441,18 @@
                 </div>
 
                 <!-- LOGOUT BUTTON AT THE VERY BOTTOM -->
-                <div class="pt-6 border-t border-slate-100 flex justify-end">
-                  <button 
-                    on:click={handleLogout}
-                    class="flex items-center justify-center space-x-2 text-sm text-white bg-rose-600 hover:bg-rose-700 transition-colors px-6 py-3 rounded-xl shadow-soft-sm font-bold w-full sm:w-auto cursor-pointer"
-                    style="min-height: 48px;"
-                  >
-                    <LogOut class="h-5 w-5" />
-                    <span>Keluar dari Akun (Log Out)</span>
-                  </button>
-                </div>
+                {#if isOwnProfile}
+                  <div class="pt-6 border-t border-slate-100 flex justify-end">
+                    <button 
+                      on:click={handleLogout}
+                      class="flex items-center justify-center space-x-2 text-sm text-white bg-rose-600 hover:bg-rose-700 transition-colors px-6 py-3 rounded-xl shadow-soft-sm font-bold w-full sm:w-auto cursor-pointer"
+                      style="min-height: 48px;"
+                    >
+                      <LogOut class="h-5 w-5" />
+                      <span>Keluar dari Akun (Log Out)</span>
+                    </button>
+                  </div>
+                {/if}
 
                 <!-- Logout Confirmation Modal -->
                 {#if showLogoutModal}

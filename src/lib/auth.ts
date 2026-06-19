@@ -17,21 +17,23 @@ export interface AuthState {
 }
 
 export const authStore = writable<AuthState>({ loading: true, user: null });
+export const activeProfileStore = writable<{ type: 'admin' | 'member'; nameOrNis: string } | null>(null);
 
 // Helper: load saved admin profile (name + foto) from localStorage
 function loadSavedAdminProfile(): { name: string; foto_url: string } {
-  if (!browser) return { name: 'ADMIN MAZEEDA', foto_url: '' };
+  const defaultFoto = 'https://drive.google.com/file/d/1f332yzKnUHuix7YeAvCgMZm4y2v30CwF/view?usp=drive_link';
+  if (!browser) return { name: 'ADMIN MAZEEDA', foto_url: defaultFoto };
   try {
     const savedProfile = localStorage.getItem('mazeeda_admin_profile');
     if (savedProfile) {
       const p = JSON.parse(savedProfile);
       return {
         name: p.nama_lengkap === 'Admin MAZEEDA' ? 'ADMIN MAZEEDA' : (p.nama_lengkap || 'ADMIN MAZEEDA'),
-        foto_url: p.foto_url || ''
+        foto_url: p.foto_url || defaultFoto
       };
     }
   } catch (_) {}
-  return { name: 'ADMIN MAZEEDA', foto_url: '' };
+  return { name: 'ADMIN MAZEEDA', foto_url: defaultFoto };
 }
 
 export function initAuth() {
