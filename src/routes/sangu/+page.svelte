@@ -70,6 +70,19 @@
     }
   }
 
+  // Walk text nodes of the element and safely remove the first '+' symbol
+  function stripLeadingPlusSymbol(element: HTMLElement) {
+    const walk = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
+    let node;
+    while (node = walk.nextNode()) {
+      if (node.nodeValue && node.nodeValue.trim().startsWith('+')) {
+        const idx = node.nodeValue.indexOf('+');
+        node.nodeValue = node.nodeValue.substring(0, idx) + node.nodeValue.substring(idx + 1);
+        break;
+      }
+    }
+  }
+
   function replaceNadzomHash(element: HTMLElement) {
     const separatorHtml = '<span class="sangu-nadzom-separator">✦</span>';
     if (element.innerHTML.includes('#')) {
@@ -122,10 +135,18 @@
       
       const isTranslation = cleanText.startsWith('@') || htmlBlock.classList.contains('sangu-translation');
       const isNadzom = cleanText.includes('#') || htmlBlock.classList.contains('sangu-nadzom') || htmlBlock.querySelector('.sangu-nadzom-separator') !== null;
+      const isHeading = cleanText.startsWith('+') || htmlBlock.classList.contains('sangu-heading');
       
       // Clean up previous classes if any
-      htmlBlock.classList.remove('sangu-arabic', 'sangu-latin', 'sangu-translation', 'sangu-nadzom');
+      htmlBlock.classList.remove('sangu-arabic', 'sangu-latin', 'sangu-translation', 'sangu-nadzom', 'sangu-heading');
       
+      if (isHeading) {
+        htmlBlock.classList.add('sangu-heading');
+        if (cleanText.startsWith('+')) {
+          stripLeadingPlusSymbol(htmlBlock);
+        }
+      }
+
       if (isTranslation) {
         htmlBlock.classList.add('sangu-translation');
         if (cleanText.startsWith('@')) {
@@ -644,68 +665,70 @@
       <div class="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
         
         <!-- Top Toolbar Sticky controls -->
-        <Card class="p-4 border-slate-200/50 shadow-soft-sm bg-white/95 backdrop-blur-md sticky top-16 z-20 flex flex-col md:flex-row items-center justify-between gap-4">
-          <!-- Back button -->
-          <button
-            on:click={closeDetail}
-            class="inline-flex items-center space-x-2 text-slate-500 hover:text-teal-600 transition-colors text-xs font-black py-2.5 pr-4 border-r border-slate-200"
-            style="min-height: 40px;"
-          >
-            <ArrowLeft class="h-4.5 w-4.5" />
-            <span>Kembali</span>
-          </button>
+        <Card noPadding class="p-3 sm:p-4 border-slate-200/50 shadow-soft-sm bg-white/95 backdrop-blur-md sticky top-0 z-20 flex flex-col gap-3">
+          <!-- Top Row: Back button + Title & Category -->
+          <div class="flex items-center justify-between border-b border-slate-100/70 pb-2">
+            <button
+              on:click={closeDetail}
+              class="inline-flex items-center space-x-1.5 text-slate-500 hover:text-teal-600 transition-colors text-xs font-black"
+              style="min-height: 32px;"
+            >
+              <ArrowLeft class="h-4.5 w-4.5" />
+              <span>Kembali</span>
+            </button>
 
-          <!-- Middle: Title -->
-          <div class="text-center md:text-left leading-tight flex-1">
-            <h2 class="text-sm font-black text-slate-800">{selectedItem.title.toUpperCase()}</h2>
-            <span class="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">
-              Kategori: {getCategoryLabel(selectedItem.category)}
-            </span>
+            <div class="text-right leading-tight">
+              <h2 class="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-tight truncate max-w-[180px] sm:max-w-xs md:max-w-md">{selectedItem.title}</h2>
+              <span class="text-[8px] sm:text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">
+                Kategori: {getCategoryLabel(selectedItem.category)}
+              </span>
+            </div>
           </div>
 
-          <!-- Right: Controls settings (Size, Copy whole, Admin Edit) -->
-          <div class="flex flex-wrap items-center gap-3">
-            
-            <!-- Arabic font size slider -->
-            <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-100 px-2.5 py-1.5 rounded-lg shrink-0">
-              <Settings class="h-3.5 w-3.5 text-slate-400" />
-              <span class="text-[10px] font-bold text-slate-500">Huruf:</span>
-              <input 
-                type="range" 
-                min="20" 
-                max="44" 
-                class="accent-teal-600 w-20 cursor-pointer h-1 bg-slate-200 rounded-lg"
-                bind:value={arabicFontSize}
-              />
-              <span class="text-[10px] font-black text-slate-600 w-6 text-right">{arabicFontSize}px</span>
-            </div>
+          <!-- Bottom Row: Controls settings (Size, Copy whole, Admin Edit) -->
+          <div class="flex flex-wrap items-center gap-2 md:gap-3 justify-between md:justify-start">
+            <div class="flex flex-wrap items-center gap-2">
+              <!-- Arabic font size slider -->
+              <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg shrink-0">
+                <Settings class="h-3.5 w-3.5 text-slate-400" />
+                <span class="text-[9px] font-bold text-slate-500">Huruf:</span>
+                <input 
+                  type="range" 
+                  min="20" 
+                  max="44" 
+                  class="accent-teal-600 w-16 sm:w-20 cursor-pointer h-1 bg-slate-200 rounded-lg"
+                  bind:value={arabicFontSize}
+                />
+                <span class="text-[9px] font-black text-slate-600 w-6 text-right">{arabicFontSize}px</span>
+              </div>
 
-            <!-- Visibility toggles for Terjemah and Latin -->
-            <div class="flex items-center space-x-3 text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-2.5 py-1.5 rounded-lg shrink-0">
-              <label class="flex items-center space-x-1.5 cursor-pointer hover:text-slate-700 select-none">
-                <input type="checkbox" bind:checked={showLatin} class="rounded text-teal-600 focus:ring-teal-500 border-slate-300 h-3.5 w-3.5" />
-                <span>Latin</span>
-              </label>
+              <!-- Visibility toggles for Terjemah and Latin -->
+              <div class="flex items-center space-x-2.5 text-[9px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg shrink-0">
+                <label class="flex items-center space-x-1 cursor-pointer hover:text-slate-700 select-none">
+                  <input type="checkbox" bind:checked={showLatin} class="rounded text-teal-600 focus:ring-teal-500 border-slate-300 h-3 w-3" />
+                  <span>Latin</span>
+                </label>
 
-              <label class="flex items-center space-x-1.5 cursor-pointer hover:text-slate-700 select-none">
-                <input type="checkbox" bind:checked={showTranslation} class="rounded text-teal-600 focus:ring-teal-500 border-slate-300 h-3.5 w-3.5" />
-                <span>Terjemah</span>
-              </label>
+                <label class="flex items-center space-x-1 cursor-pointer hover:text-slate-700 select-none">
+                  <input type="checkbox" bind:checked={showTranslation} class="rounded text-teal-600 focus:ring-teal-500 border-slate-300 h-3 w-3" />
+                  <span>Terjemah</span>
+                </label>
+              </div>
             </div>
 
             <!-- Action buttons -->
-            <div class="flex items-center space-x-2 border-l border-slate-200 pl-3">
+            <div class="flex items-center space-x-1.5 border-l-0 md:border-l md:border-slate-200 md:pl-3">
               <button
                 type="button"
                 on:click={() => copyWholeItem(selectedItem)}
-                class="flex items-center space-x-1 bg-teal-50 border border-teal-100 hover:bg-teal-100 text-teal-700 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-premium"
-                style="min-height: 28px;"
+                class="flex items-center space-x-1 bg-teal-50 border border-teal-100 hover:bg-teal-100 text-teal-700 px-2.5 py-1.5 rounded-lg text-[9px] font-bold transition-premium"
+                style="min-height: 26px;"
               >
                 {#if copiedItemSuccess}
-                  <Check class="h-3.5 w-3.5 text-emerald-600" />
+                  <Check class="h-3 w-3 text-emerald-600" />
                   <span class="text-emerald-700">Tersalin!</span>
                 {:else}
-                  <Copy class="h-3.5 w-3.5" />
+                  <Copy class="h-3 w-3" />
                   <span>Salin Semua</span>
                 {/if}
               </button>
@@ -714,10 +737,10 @@
                 <button
                   type="button"
                   on:click={() => startEdit(selectedItem)}
-                  class="flex items-center space-x-1 bg-blue-50 border border-blue-100 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-premium"
-                  style="min-height: 28px;"
+                  class="flex items-center space-x-1 bg-blue-50 border border-blue-100 hover:bg-blue-100 text-blue-700 px-2.5 py-1.5 rounded-lg text-[9px] font-bold transition-premium"
+                  style="min-height: 26px;"
                 >
-                  <Edit class="h-3.5 w-3.5" />
+                  <Edit class="h-3 w-3" />
                   <span>Edit Teks</span>
                 </button>
               {/if}
@@ -751,19 +774,44 @@
   {#if activeTab === 'tambah' && isAdmin}
     <!-- TAB TAMBAH/EDIT: Create/Update Sangu Form -->
     <div class="max-w-4xl mx-auto space-y-4 animate-in fade-in duration-300">
-      <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
-        {#if editingId}
-          <Edit class="h-5.5 w-5.5 text-teal-600" />
-          <span>Edit Catatan Sangu</span>
-        {:else}
-          <Plus class="h-5.5 w-5.5 text-teal-600" />
-          <span>Buat Catatan Sangu Baru</span>
-        {/if}
-      </h2>
+      
+      <form on:submit|preventDefault={handleSaveSangu} class="space-y-4">
+        <!-- Sticky Action Bar for Form -->
+        <Card noPadding class="p-3 sm:p-4 border-slate-200/50 shadow-soft-sm bg-white/95 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between gap-4">
+          <!-- Title and Icon -->
+          <h2 class="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-2">
+            {#if editingId}
+              <Edit class="h-4.5 w-4.5 text-teal-600 shrink-0" />
+              <span class="truncate max-w-[150px] sm:max-w-xs">Edit Catatan Sangu</span>
+            {:else}
+              <Plus class="h-4.5 w-4.5 text-teal-600 shrink-0" />
+              <span class="truncate max-w-[150px] sm:max-w-xs">Buat Sangu Baru</span>
+            {/if}
+          </h2>
 
-      <Card class="p-6 space-y-4">
-        <form on:submit|preventDefault={handleSaveSangu} class="space-y-5">
-          
+          <!-- Action buttons on the right -->
+          <div class="flex items-center space-x-2 shrink-0">
+            <button 
+              type="button" 
+              on:click={cancelEdit} 
+              class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-premium cursor-pointer"
+              style="min-height: 36px;"
+            >
+              Batal
+            </button>
+            
+            <button 
+              type="submit"
+              class="inline-flex items-center space-x-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-soft-sm transition-premium cursor-pointer"
+              style="min-height: 36px;"
+            >
+              <Check class="h-3.5 w-3.5" />
+              <span>Simpan Sangu</span>
+            </button>
+          </div>
+        </Card>
+
+        <Card class="p-6 space-y-4">
           <!-- Title -->
           <div class="space-y-1.5">
             <label for="title" class="text-xs font-bold text-slate-500">Judul Sangu / Wirid <span class="text-red-500">*</span></label>
@@ -818,26 +866,8 @@
               placeholder="Masukkan wirid, sholawat, bacaan Arab, beserta transliterasi Latin dan terjemahannya di sini..."
             />
           </div>
-
-          <!-- Form Action Buttons -->
-          <div class="flex flex-col sm:flex-row gap-3 mt-6">
-            <Button type="submit" class="flex-1 flex items-center justify-center space-x-2 bg-teal-600 hover:bg-teal-700 text-white font-bold h-12">
-              <Plus class="h-4.5 w-4.5" />
-              <span>{editingId ? 'Simpan Perubahan' : 'Simpan Sangu Ke Database'}</span>
-            </Button>
-            
-            <Button 
-              type="button" 
-              variant="outline" 
-              on:click={cancelEdit} 
-              class="flex-1 sm:flex-none flex items-center justify-center border-slate-200 text-slate-600 hover:bg-slate-50 h-12"
-            >
-              <span>Batal / Kembali</span>
-            </Button>
-          </div>
-
-        </form>
-      </Card>
+        </Card>
+      </form>
     </div>
   {/if}
 
@@ -851,8 +881,30 @@
     margin-bottom: 0.85rem;
     line-height: 1.8;
   }
+
+  .sangu-reader-content :global(.sangu-heading) {
+    text-align: center !important;
+    text-align-last: center !important;
+    font-weight: 800 !important;
+    color: #1e293b !important;
+    display: block !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+  }
   
-  .sangu-reader-content :global(.sangu-arabic) {
+  .sangu-reader-content :global(.sangu-latin.sangu-heading) {
+    font-size: 0.7em !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  .sangu-reader-content :global(.sangu-arabic.sangu-heading) {
+    font-size: 1.1em !important;
+    text-align: center !important;
+    text-align-last: center !important;
+  }
+  
+  .sangu-reader-content :global(.sangu-arabic):not(.sangu-heading) {
     font-family: 'KFGQPC Uthmanic Script HAFS', 'Amiri Quran', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
     direction: rtl !important;
     text-align: justify !important;
@@ -863,8 +915,8 @@
     margin-bottom: 1.25rem !important;
   }
   
-  .sangu-reader-content :global(.sangu-latin):not(h1):not(h2),
-  .sangu-reader-content :global(.sangu-translation):not(h1):not(h2) {
+  .sangu-reader-content :global(.sangu-latin):not(h1):not(h2):not(.sangu-heading),
+  .sangu-reader-content :global(.sangu-translation):not(h1):not(h2):not(.sangu-heading) {
     font-family: 'Outfit', 'Inter', sans-serif !important;
     font-size: 0.58em !important;
     font-weight: 500 !important;
@@ -877,11 +929,11 @@
     margin-bottom: 0.75rem !important;
   }
 
-  .sangu-reader-content :global(.sangu-latin):not(h1):not(h2) {
+  .sangu-reader-content :global(.sangu-latin):not(h1):not(h2):not(.sangu-heading) {
     color: #334155 !important;
   }
 
-  .sangu-reader-content :global(.sangu-translation):not(h1):not(h2) {
+  .sangu-reader-content :global(.sangu-translation):not(h1):not(h2):not(.sangu-heading) {
     color: #2563eb !important;
   }
 
