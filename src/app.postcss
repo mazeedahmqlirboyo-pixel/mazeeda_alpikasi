@@ -1,0 +1,62 @@
+@font-face {
+  font-family: 'KFGQPC Uthmanic Script HAFS';
+  src: url('https://cdn.jsdelivr.net/gh/iafan/quran-fonts@master/fonts/kfgqpc-uthmanic-script-hafs/KFGQPC_Uthmanic_Script_HAFS.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/gh/iafan/quran-fonts@master/fonts/kfgqpc-uthmanic-script-hafs/KFGQPC_Uthmanic_Script_HAFS.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply h-full overflow-x-hidden bg-white text-slate-800 antialiased selection:bg-blue-100 selection:text-blue-800;
+    font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  
+  /* Customized premium scrollbar for modern light theme */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #F8F9FA;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #E2E8F0;
+    border-radius: 9999px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #CBD5E1;
+  }
+}
+
+/* Typography styles for Arabic and religious modules */
+.font-arabic {
+  font-family: 'KFGQPC Uthmanic Script HAFS', 'Amiri Quran', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif;
+  direction: rtl;
+  line-height: 2.2;
+}
+
+/* Micro-interaction utility transitions */
+.transition-premium {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Focus ring styles */
+input:focus, button:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+
+/* Hide mobile bottom navigation bar and floating menu pill when layout/pages demand it */
+html.hide-mobile-nav #mobile-bottom-nav,
+html.hide-mobile-nav #mobile-menu-pill {
+  display: none !important;
+}

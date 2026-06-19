@@ -1,0 +1,1580 @@
+<script lang="ts">
+  import { onMount, onDestroy } from "svelte";
+  import { browser } from "$app/environment";
+  import Card from "$lib/components/ui/card.svelte";
+  import Button from "$lib/components/ui/button.svelte";
+  import Input from "$lib/components/ui/input.svelte";
+  import { supabase } from "$lib/supabase";
+  import { authStore } from "$lib/auth";
+  import { fade, slide } from "svelte/transition";
+  import {
+    Megaphone,
+    Calendar,
+    User,
+    Search,
+    Filter,
+    MessageSquare,
+    ThumbsUp,
+    Send,
+    Plus,
+    Pin,
+    Hash,
+    Heart,
+    Trash2,
+    CheckCircle,
+  } from "lucide-svelte";
+
+  // Navigation / Tabs
+  let activeTab = "pengumuman"; // 'pengumuman' | 'aspirasi'
+
+  // Announcements State (Official Mading)
+  let searchQuery = "";
+  let activeFilter = "all";
+  let showFilter = false; // dropdown filter terbuka/tutup
+  let dynamicCategories: string[] = []; // kategori dari DB, dinamis
+
+  // Local storage cache for liked announcements & notes
+  let likedPostsList: any[] = [];
+  let likedNotesList: any[] = [];
+
+  let announcements: any[] = [
+    {
+      id: 1,
+      title: "Peluncuran Website MAZEEDA V1",
+      category: "Informasi",
+      content:
+        "Alhamdulillah, hari ini kita resmi meluncurkan platform MAZEEDA. Platform ini diharapkan mempermudah koordinasi seluruh agenda keagamaan, sosial, dan transparansi keuangan Sangu. Berikan tanggapan Anda di kolom saran admin!",
+      date: "12 Juni 2026",
+      author: "Siti Fatimah",
+      likes: 18,
+      hasLiked: false,
+      comments: [
+        {
+          id: 101,
+          author: "Ahmad Fauzi",
+          text: "MasyaAllah, barakallah! Semoga berkah dan bermanfaat bagi seluruh alumni.",
+          date: "12 Juni 2026",
+        },
+        {
+          id: 102,
+          author: "Muhammad Ali",
+          text: "Keren banget UI-nya, sangat bersih, modern, dan responsive.",
+          date: "12 Juni 2026",
+        },
+      ],
+      showComments: false,
+    },
+    {
+      id: 2,
+      title: "Khataman Al-Qur'an Bersama & Doa Akhir Tahun",
+      category: "Kajian",
+      content:
+        "Mengundang seluruh alumni dan mustahiq untuk menghadiri program Semaan dan Khataman Juz 30 yang akan ditutup dengan buka puasa sunnah senin-kamis bersama. Tempat di Musholla Baiturrahman mulai Ba'da Ashar.",
+      date: "08 Juni 2026",
+      author: "Ahmad Fauzi",
+      likes: 21,
+      hasLiked: false,
+      comments: [
+        {
+          id: 201,
+          author: "Siti Sarah",
+          text: "InsyaAllah hadir bersama keluarga kak. Mohon doanya agar lancar perjalanan.",
+          date: "08 Juni 2026",
+        },
+      ],
+      showComments: false,
+    },
+    {
+      id: 3,
+      title: "Penyaluran Zakat & Donasi Mustahiq Tahap III",
+      category: "Sosial",
+      content:
+        "Laporan penyaluran donasi Sangu ke 5 kepala keluarga di Tasikmalaya telah selesai dilaksanakan. Kuitansi dan dokumentasi foto lengkap dapat dilihat di folder administrasi publik.",
+      date: "02 Juni 2026",
+      author: "Muhammad Ali",
+      likes: 14,
+      hasLiked: false,
+      comments: [],
+      showComments: false,
+    },
+  ];
+
+  // Sticky Notes State (Aspirasi / Community Board)
+  let stickyNotes: any[] = [];
+  let isLoadingNotes = false;
+  let newNoteText = "";
+  let selectedColor = "yellow"; // 'yellow' | 'pink' | 'cyan' | 'emerald'
+  let isPostingNote = false;
+  let alertMessage = "";
+
+  // Sticky Note Comments Modal State
+  let selectedNoteForComments: any = null;
+  let noteCommentsList: any[] = [];
+  let newNoteCommentText = "";
+  let showNoteCreatorModal = false;
+  $: selectedNoteColor = selectedNoteForComments
+    ? getNoteColor(selectedNoteForComments.color_theme)
+    : null;
+
+  // Announcement Comments Modal State
+  let selectedAnnouncementForComments: any = null;
+  let newAnnouncementCommentText = "";
+
+  $: if (browser) {
+    if (
+      selectedNoteForComments ||
+      selectedAnnouncementForComments ||
+      showNoteCreatorModal
+    ) {
+      document.documentElement.classList.add("hide-mobile-nav");
+    } else {
+      document.documentElement.classList.remove("hide-mobile-nav");
+    }
+  }
+
+  const colors = [
+    {
+      id: "yellow",
+      label: "Amber",
+      bg: "bg-amber-50 border-amber-200/80 text-amber-900",
+      hover: "hover:bg-amber-100/40",
+      dot: "bg-amber-400",
+      tape: "bg-amber-200/60",
+    },
+    {
+      id: "pink",
+      label: "Pink",
+      bg: "bg-pink-50 border-pink-200/80 text-pink-900",
+      hover: "hover:bg-pink-100/40",
+      dot: "bg-pink-400",
+      tape: "bg-pink-200/60",
+    },
+    {
+      id: "cyan",
+      label: "Cyan",
+      bg: "bg-sky-50 border-sky-200/80 text-sky-900",
+      hover: "hover:bg-sky-100/40",
+      dot: "bg-sky-400",
+      tape: "bg-sky-200/60",
+    },
+    {
+      id: "emerald",
+      label: "Emerald",
+      bg: "bg-emerald-50 border-emerald-200/80 text-emerald-900",
+      hover: "hover:bg-emerald-100/40",
+      dot: "bg-emerald-400",
+      tape: "bg-emerald-200/60",
+    },
+  ];
+
+  // Comment Form state
+  let newCommentText: { [key: number]: string } = {};
+
+  // Realtime Subscriptions
+  let realtimeStatus = "connecting"; // 'connecting' | 'connected' | 'error'
+  let notesChannel: any;
+
+  onMount(async () => {
+    // Load local storage liked lists
+    const storedLikes = localStorage.getItem("mazeeda_liked_announcements");
+    if (storedLikes) {
+      try {
+        likedPostsList = JSON.parse(storedLikes);
+      } catch (e) {}
+    }
+
+    const storedNoteLikes = localStorage.getItem("mazeeda_liked_notes");
+    if (storedNoteLikes) {
+      try {
+        likedNotesList = JSON.parse(storedNoteLikes);
+      } catch (e) {}
+    }
+
+    // 1. Fetch announcements and comments
+    await fetchAnnouncements();
+    await fetchStickyNotes();
+
+    // 2. Setup Realtime subscription channel (Unified and using unique name to prevent cache collisions)
+    try {
+      const uniqueSuffix = Date.now();
+      notesChannel = supabase
+        .channel(`mading_realtime_board_${uniqueSuffix}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "mading_notes" },
+          (payload) => {
+            if (!stickyNotes.some((note) => note.id === payload.new.id)) {
+              const freshNote = {
+                ...payload.new,
+                comments_count: 0,
+              };
+              stickyNotes = [freshNote, ...stickyNotes];
+            }
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "mading_notes" },
+          (payload) => {
+            stickyNotes = stickyNotes.map((n) => {
+              if (n.id === payload.new.id) {
+                return { ...n, likes: payload.new.likes };
+              }
+              return n;
+            });
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "mading_announcements" },
+          (payload) => {
+            announcements = announcements.map((post) => {
+              if (post.id === payload.new.id) {
+                return { ...post, likes: payload.new.likes };
+              }
+              return post;
+            });
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "mading_announcements" },
+          () => {
+            fetchAnnouncements();
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "DELETE", schema: "public", table: "mading_announcements" },
+          (payload) => {
+            announcements = announcements.filter(
+              (post) => post.id !== payload.old.id,
+            );
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "mading_comments" },
+          (payload) => {
+            announcements = announcements.map((post) => {
+              if (post.id === payload.new.announcement_id) {
+                if (!post.comments.some((c: any) => c.id === payload.new.id)) {
+                  const mappedComment = {
+                    id: payload.new.id,
+                    author: payload.new.author,
+                    text: payload.new.text,
+                    date: "Baru saja",
+                  };
+                  return {
+                    ...post,
+                    comments: [...post.comments, mappedComment],
+                  };
+                }
+              }
+              return post;
+            });
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "mading_note_comments" },
+          (payload) => {
+            // Update comments inside currently open modal
+            if (
+              selectedNoteForComments &&
+              selectedNoteForComments.id === payload.new.note_id
+            ) {
+              if (!noteCommentsList.some((c) => c.id === payload.new.id)) {
+                noteCommentsList = [...noteCommentsList, payload.new];
+              }
+            }
+            // Update comments_count in grid list
+            stickyNotes = stickyNotes.map((n) => {
+              if (n.id === payload.new.note_id) {
+                return { ...n, comments_count: (n.comments_count || 0) + 1 };
+              }
+              return n;
+            });
+          },
+        )
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            realtimeStatus = "connected";
+          } else if (
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT" ||
+            status === "CLOSED"
+          ) {
+            realtimeStatus = "error";
+          }
+        });
+    } catch (err) {
+      realtimeStatus = "error";
+    }
+  });
+
+  onDestroy(() => {
+    if (notesChannel) supabase.removeChannel(notesChannel);
+    if (browser) {
+      document.documentElement.classList.remove("hide-mobile-nav");
+    }
+  });
+
+  // Fetch announcements & comments from database
+  async function fetchAnnouncements() {
+    try {
+      const { data: dbAnnouncements, error: annError } = await supabase
+        .from("mading_announcements")
+        .select("*")
+        .order("is_priority", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (annError) throw annError;
+
+      const { data: dbComments, error: commError } = await supabase
+        .from("mading_comments")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (dbAnnouncements) {
+        announcements = dbAnnouncements.map((item: any) => {
+          const matchingComments = dbComments
+            ? dbComments
+                .filter((c: any) => c.announcement_id === item.id)
+                .map((c: any) => ({
+                  id: c.id,
+                  author: c.author,
+                  text: c.text,
+                  date: new Date(c.created_at).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                  }),
+                }))
+            : [];
+
+          return {
+            id: item.id,
+            title: item.title,
+            category: item.category,
+            content: item.content,
+            date: new Date(item.created_at).toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            }),
+            author: item.author,
+            likes: item.likes || 0,
+            hasLiked: likedPostsList.includes(item.id),
+            comments: matchingComments,
+            showComments: false,
+            is_priority: item.is_priority,
+          };
+        });
+      }
+    } catch (err) {
+      console.warn(
+        "mading_announcements tables not found. Using local mock fallbacks.",
+        err,
+      );
+    }
+  }
+
+  // Fetch sticky notes from database
+  async function fetchStickyNotes() {
+    try {
+      isLoadingNotes = true;
+      const { data: notes, error } = await supabase
+        .from("mading_notes")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch comment counts
+      const { data: comments, error: commError } = await supabase
+        .from("mading_note_comments")
+        .select("id, note_id");
+
+      if (notes) {
+        stickyNotes = notes.map((note: any) => {
+          const count = comments
+            ? comments.filter((c: any) => c.note_id === note.id).length
+            : 0;
+          return {
+            ...note,
+            comments_count: count,
+          };
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching sticky notes:", err);
+    } finally {
+      isLoadingNotes = false;
+    }
+  }
+
+  // Kategori dinamis: ambil secara reaktif dari kategori yang benar-benar ada di announcements
+  $: dynamicCategories = [
+    ...new Set(announcements.map((a) => a.category).filter(Boolean)),
+  ].sort() as string[];
+
+  // Filter count badge
+  $: activeFilterCount = activeFilter !== "all" ? 1 : 0;
+
+  // Filtering Logic (Official Board)
+  $: filteredAnnouncements = announcements
+    .filter((post) => {
+      const matchesSearch =
+        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.content.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFilter =
+        activeFilter === "all" || post.category === activeFilter;
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      if (a.is_priority && !b.is_priority) return -1;
+      if (!a.is_priority && b.is_priority) return 1;
+      return 0;
+    });
+
+  // Handle Likes for Announcements
+  async function handleLike(post: any) {
+    const hasLiked = !post.hasLiked;
+    const newLikesCount = hasLiked
+      ? post.likes + 1
+      : Math.max(0, post.likes - 1);
+
+    announcements = announcements.map((p) => {
+      if (p.id === post.id) {
+        return { ...p, likes: newLikesCount, hasLiked };
+      }
+      return p;
+    });
+
+    if (hasLiked) {
+      likedPostsList = [...likedPostsList, post.id];
+    } else {
+      likedPostsList = likedPostsList.filter((id) => id !== post.id);
+    }
+    localStorage.setItem(
+      "mazeeda_liked_announcements",
+      JSON.stringify(likedPostsList),
+    );
+
+    try {
+      const { error } = await supabase
+        .from("mading_announcements")
+        .update({ likes: newLikesCount })
+        .eq("id", post.id);
+      if (error) throw error;
+    } catch (err) {
+      console.warn("Failed to update likes count in database:", err);
+    }
+  }
+
+  // Toggle Comment Box (Official)
+  function toggleComments(id: number) {
+    announcements = announcements.map((post) => {
+      if (post.id === id) {
+        return { ...post, showComments: !post.showComments };
+      }
+      return post;
+    });
+  }
+
+  // Add Comment (Official)
+  async function handleAddComment(postId: any) {
+    const text = newCommentText[postId]?.trim();
+    if (!text) return;
+
+    const userName = $authStore.user?.name || "Anonim";
+    const tempComment = {
+      id: Date.now(),
+      author: userName,
+      text: text,
+      date: "Baru saja",
+    };
+
+    announcements = announcements.map((post) => {
+      if (post.id === postId) {
+        return {
+          ...post,
+          comments: [...post.comments, tempComment],
+        };
+      }
+      return post;
+    });
+
+    newCommentText[postId] = "";
+
+    try {
+      const { data, error } = await supabase
+        .from("mading_comments")
+        .insert([
+          {
+            announcement_id: postId,
+            author: userName,
+            text: text,
+          },
+        ])
+        .select();
+
+      if (error) throw error;
+
+      triggerAlert("Tanggapan Anda berhasil disimpan!");
+
+      if (data && data.length > 0) {
+        announcements = announcements.map((post) => {
+          if (post.id === postId) {
+            const cleanComments = post.comments.filter(
+              (c: any) => c.id !== tempComment.id,
+            );
+            const savedComment = {
+              id: data[0].id,
+              author: data[0].author,
+              text: data[0].text,
+              date: "Hari ini",
+            };
+            return { ...post, comments: [...cleanComments, savedComment] };
+          }
+          return post;
+        });
+      }
+    } catch (err) {
+      console.warn("Failed to save comment in database:", err);
+      triggerAlert("Tanggapan terpasang (Sesi Lokal)!");
+    }
+  }
+
+  // Add Comment to Announcement (Instagram Style bottom drawer)
+  async function handleAddAnnouncementComment() {
+    if (!newAnnouncementCommentText.trim() || !selectedAnnouncementForComments) return;
+    const postId = selectedAnnouncementForComments.id;
+    const text = newAnnouncementCommentText.trim();
+    const userName = $authStore.user?.name || "Anonim";
+
+    const tempComment = {
+      id: Date.now(),
+      author: userName,
+      text: text,
+      date: "Baru saja",
+    };
+
+    // Append locally immediately
+    announcements = announcements.map((post) => {
+      if (post.id === postId) {
+        const updatedPost = {
+          ...post,
+          comments: [...post.comments, tempComment],
+        };
+        selectedAnnouncementForComments = updatedPost;
+        return updatedPost;
+      }
+      return post;
+    });
+
+    newAnnouncementCommentText = "";
+
+    try {
+      const { data, error } = await supabase
+        .from("mading_comments")
+        .insert([
+          {
+            announcement_id: postId,
+            author: userName,
+            text: text,
+          },
+        ])
+        .select();
+
+      if (error) throw error;
+
+      triggerAlert("Tanggapan Anda berhasil disimpan!");
+
+      if (data && data.length > 0) {
+        const savedComment = {
+          id: data[0].id,
+          author: data[0].author,
+          text: data[0].text,
+          date: "Hari ini",
+        };
+        announcements = announcements.map((post) => {
+          if (post.id === postId) {
+            const cleanComments = post.comments.filter(
+              (c: any) => c.id !== tempComment.id,
+            );
+            const updatedPost = { ...post, comments: [...cleanComments, savedComment] };
+            selectedAnnouncementForComments = updatedPost;
+            return updatedPost;
+          }
+          return post;
+        });
+      }
+    } catch (err) {
+      console.warn("Failed to save comment in database:", err);
+      triggerAlert("Tanggapan terpasang (Sesi Lokal)!");
+    }
+  }
+
+  // Liking a Sticky Note
+  async function handleLikeNote(note: any) {
+    const hasLiked = !likedNotesList.includes(note.id);
+    const newCount = hasLiked
+      ? (note.likes || 0) + 1
+      : Math.max(0, (note.likes || 0) - 1);
+
+    // Toggle state locally
+    stickyNotes = stickyNotes.map((n) =>
+      n.id === note.id ? { ...n, likes: newCount } : n,
+    );
+
+    // Update Local Storage
+    if (hasLiked) {
+      likedNotesList = [...likedNotesList, note.id];
+    } else {
+      likedNotesList = likedNotesList.filter((id) => id !== note.id);
+    }
+    localStorage.setItem("mazeeda_liked_notes", JSON.stringify(likedNotesList));
+
+    // Update Supabase
+    try {
+      const { error } = await supabase
+        .from("mading_notes")
+        .update({ likes: newCount })
+        .eq("id", note.id);
+      if (error) throw error;
+    } catch (e) {
+      console.warn("Failed to update sticky note likes in database:", e);
+    }
+  }
+
+  // Open Sticky Note Comment Drawer/Modal
+  async function openNoteComments(note: any) {
+    selectedNoteForComments = note;
+    noteCommentsList = [];
+    newNoteCommentText = "";
+
+    try {
+      const { data, error } = await supabase
+        .from("mading_note_comments")
+        .select("*")
+        .eq("note_id", note.id)
+        .order("created_at", { ascending: true });
+
+      if (!error && data) {
+        noteCommentsList = data;
+      }
+    } catch (e) {
+      console.error("Failed to load note comments:", e);
+    }
+  }
+
+  // Add Comment to Sticky Note
+  async function handleAddNoteComment() {
+    if (!newNoteCommentText.trim() || !selectedNoteForComments) return;
+
+    const sender = $authStore.user?.name || "Anonim";
+    const text = newNoteCommentText.trim();
+
+    const tempComment = {
+      id: Date.now(),
+      note_id: selectedNoteForComments.id,
+      author: sender,
+      text: text,
+      created_at: new Date().toISOString(),
+    };
+
+    // Append locally immediately
+    noteCommentsList = [...noteCommentsList, tempComment];
+
+    // Increment comments_count in grid list
+    stickyNotes = stickyNotes.map((n) => {
+      if (n.id === selectedNoteForComments.id) {
+        return { ...n, comments_count: (n.comments_count || 0) + 1 };
+      }
+      return n;
+    });
+
+    newNoteCommentText = "";
+
+    try {
+      const { data, error } = await supabase
+        .from("mading_note_comments")
+        .insert([
+          {
+            note_id: selectedNoteForComments.id,
+            author: sender,
+            text: text,
+          },
+        ])
+        .select();
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        noteCommentsList = noteCommentsList.map((c) =>
+          c.id === tempComment.id ? data[0] : c,
+        );
+      }
+      triggerAlert("Tanggapan berhasil disimpan!");
+    } catch (e) {
+      console.warn("Failed to insert note comment in DB:", e);
+      triggerAlert("Tanggapan terpasang (Sesi Lokal)!");
+    }
+  }
+
+  // Post Sticky Note to Supabase
+  async function postStickyNote() {
+    if (!newNoteText.trim()) return;
+
+    const sender = $authStore.user?.name || "Anonim";
+
+    let dbColor = "";
+    if (selectedColor === "cyan")
+      dbColor =
+        "bg-cyan-500/10 text-cyan-200 border-cyan-500/30 shadow-cyan-500/5";
+    else if (selectedColor === "pink")
+      dbColor =
+        "bg-pink-500/10 text-pink-200 border-pink-500/30 shadow-pink-500/5";
+    else if (selectedColor === "emerald")
+      dbColor =
+        "bg-emerald-500/10 text-emerald-200 border-emerald-500/30 shadow-emerald-500/5";
+    else
+      dbColor =
+        "bg-yellow-500/10 text-yellow-200 border-yellow-500/30 shadow-yellow-500/5";
+
+    const tempId = String(Math.random());
+    const newNote = {
+      id: tempId,
+      sender_name: sender,
+      message: newNoteText,
+      color_theme: dbColor,
+      likes: 0,
+      comments_count: 0,
+      created_at: new Date().toISOString(),
+    };
+
+    isPostingNote = true;
+    try {
+      const { data, error } = await supabase
+        .from("mading_notes")
+        .insert([
+          {
+            sender_name: sender,
+            message: newNoteText,
+            color_theme: dbColor,
+          },
+        ])
+        .select();
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        stickyNotes = [{ ...data[0], comments_count: 0 }, ...stickyNotes];
+      } else {
+        stickyNotes = [newNote, ...stickyNotes];
+      }
+      newNoteText = "";
+      showNoteCreatorModal = false;
+      triggerAlert("Sticky note berhasil ditempel ke dinding!");
+    } catch (err) {
+      console.warn(
+        "RLS permission insert restricted. Showing locally for demo:",
+        err,
+      );
+      stickyNotes = [newNote, ...stickyNotes];
+      newNoteText = "";
+      showNoteCreatorModal = false;
+      triggerAlert("Sticky note terpasang (Sesi Lokal)!");
+    } finally {
+      isPostingNote = false;
+    }
+  }
+
+  // Helper: map DB colors to light theme pastels
+  function getNoteColor(dbColor: string) {
+    if (!dbColor) return colors[0];
+    const lower = dbColor.toLowerCase();
+    if (lower.includes("cyan") || lower.includes("sky")) return colors[2];
+    if (lower.includes("pink")) return colors[1];
+    if (lower.includes("emerald") || lower.includes("green")) return colors[3];
+    return colors[0]; // yellow
+  }
+
+  // Helper: random rotation styling for organic feel
+  function getRotation(index: number) {
+    const list = [
+      "rotate-1",
+      "-rotate-1",
+      "rotate-2",
+      "-rotate-2",
+      "rotate-[0.5deg]",
+      "-rotate-[1.5deg]",
+    ];
+    return list[index % list.length];
+  }
+
+  // Trigger temporary notification
+  function triggerAlert(msg: string) {
+    alertMessage = msg;
+    setTimeout(() => {
+      alertMessage = "";
+    }, 3000);
+  }
+
+  // Format category badge styles
+  function getCategoryStyles(category: string) {
+    switch (category) {
+      case "Informasi":
+        return "bg-emerald-50 text-emerald-700 border-emerald-100";
+      case "Kajian":
+        return "bg-indigo-50 text-indigo-700 border-indigo-100";
+      case "Sosial":
+        return "bg-rose-50 text-rose-700 border-rose-100";
+      case "Pemberitahuan":
+        return "bg-amber-50 text-amber-700 border-amber-100";
+      default:
+        return "bg-blue-50 text-primary border-blue-100";
+    }
+  }
+
+  // Arabic text detection helper
+  function isArabic(text: string) {
+    if (!text) return false;
+    const arabicRegExp =
+      /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+    return arabicRegExp.test(text);
+  }
+</script>
+
+<div class="space-y-6">
+  <!-- Alert / Toast Banner (Floating Toast) -->
+  {#if alertMessage}
+    <div
+      transition:fade={{ duration: 150 }}
+      class="fixed top-20 right-4 z-50 flex items-center p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-semibold shadow-xl space-x-2.5 animate-in slide-in-from-top-4 duration-300"
+    >
+      <CheckCircle class="h-4 w-4 text-emerald-600" />
+      <span>{alertMessage}</span>
+    </div>
+  {/if}
+
+  <!-- Dual-Board Tab Navigator -->
+  <div
+    class="flex border-b border-slate-100 p-0.5 bg-slate-100/50 rounded-xl max-w-max mx-auto"
+  >
+    <button
+      on:click={() => (activeTab = "pengumuman")}
+      class="px-5 py-2.5 text-xs font-bold rounded-lg transition-all duration-200 flex items-center space-x-2
+        {activeTab === 'pengumuman'
+        ? 'bg-white text-primary shadow-soft-sm'
+        : 'text-slate-500 hover:text-slate-700'}"
+      style="min-height: 40px;"
+    >
+      <Megaphone class="h-4 w-4" />
+      <span> Papan Pengumuman</span>
+    </button>
+    <button
+      on:click={() => (activeTab = "aspirasi")}
+      class="px-5 py-2.5 text-xs font-bold rounded-lg transition-all duration-200 flex items-center space-x-2
+        {activeTab === 'aspirasi'
+        ? 'bg-white text-primary shadow-soft-sm'
+        : 'text-slate-500 hover:text-slate-700'}"
+      style="min-height: 40px;"
+    >
+      <Pin class="h-4 w-4" />
+      <span> Dinding Aspirasi</span>
+    </button>
+  </div>
+
+  {#if activeTab === "pengumuman"}
+    <!-- ==================== BOARD 1: OFFICIAL ANNOUNCEMENTS ==================== -->
+    <div class="space-y-6" in:fade={{ duration: 200 }}>
+      <!-- Search Bar & Filter (gaya Squad) -->
+      <div class="space-y-0">
+        <div class="flex items-center space-x-2 relative">
+          <!-- Search input -->
+          <div class="relative flex-1">
+            <Search class="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
+            <Input
+              type="text"
+              placeholder="Cari pengumuman..."
+              class="pl-12 w-full bg-slate-50/50 hover:bg-slate-50 focus:bg-white transition-colors duration-200 border-slate-200/80 rounded-xl"
+              bind:value={searchQuery}
+            />
+          </div>
+
+          <!-- Filter trigger button -->
+          <div class="relative">
+            <button
+              type="button"
+              class="relative p-3 rounded-xl border transition-all duration-200 {showFilter
+                ? 'bg-primary text-white border-primary shadow-soft-sm'
+                : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-600'}"
+              on:click={() => (showFilter = !showFilter)}
+            >
+              <Filter class="h-5 w-5" />
+              {#if activeFilterCount > 0}
+                <span
+                  class="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center"
+                  >{activeFilterCount}</span
+                >
+              {/if}
+            </button>
+
+            <!-- Floating Dropdown -->
+            {#if showFilter}
+              <!-- Backdrop -->
+              <button
+                type="button"
+                class="fixed inset-0 z-10 cursor-default bg-transparent"
+                on:click={() => (showFilter = false)}
+                aria-label="Tutup filter"
+              ></button>
+
+              <div
+                class="absolute right-0 top-[calc(100%+8px)] z-20 w-60 bg-white border border-slate-200/80 rounded-2xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-1 duration-150 origin-top-right"
+              >
+                <!-- Kategori -->
+                <div class="px-3 pt-3 pb-2">
+                  <p
+                    class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5"
+                  >
+                    Kategori
+                  </p>
+                  <div class="flex flex-wrap gap-1">
+                    <!-- Semua -->
+                    <button
+                      type="button"
+                      on:click={() => (activeFilter = "all")}
+                      class="px-2.5 py-1 text-[10px] font-bold rounded-full transition-all duration-150
+                        {activeFilter === 'all'
+                        ? 'bg-primary text-white'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}"
+                      >Semua</button
+                    >
+
+                    {#if dynamicCategories.length > 0}
+                      {#each dynamicCategories as cat}
+                        <button
+                          type="button"
+                          on:click={() => (activeFilter = cat)}
+                          class="px-2.5 py-1 text-[10px] font-bold rounded-full transition-all duration-150
+                            {activeFilter === cat
+                            ? 'bg-primary text-white'
+                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}"
+                          >{cat}</button
+                        >
+                      {/each}
+                    {:else}
+                      <span class="text-[10px] text-slate-400 italic"
+                        >Belum ada kategori</span
+                      >
+                    {/if}
+                  </div>
+                </div>
+
+                <!-- Reset -->
+                {#if activeFilterCount > 0}
+                  <div class="border-t border-slate-100 px-3 py-2">
+                    <button
+                      type="button"
+                      on:click={() => {
+                        activeFilter = "all";
+                      }}
+                      class="text-[10px] font-bold text-rose-400 hover:text-rose-600 transition-colors"
+                      >✕ Reset filter</button
+                    >
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          </div>
+        </div>
+      </div>
+
+      <!-- Announcements List -->
+      {#if filteredAnnouncements.length > 0}
+        <div class="space-y-6">
+          {#each filteredAnnouncements as post (post.id)}
+            <Card
+              class="hover:border-primary/25 transition-premium border-slate-200/80 overflow-hidden 
+              {post.is_priority
+                ? 'border-primary/45 bg-gradient-to-tr from-blue-50/15 via-white to-indigo-50/10 shadow-soft border-l-4 border-l-primary'
+                : ''}"
+            >
+              <!-- Header -->
+              <div
+                slot="header"
+                class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4"
+              >
+                <div class="flex flex-wrap items-center gap-2">
+                  {#if post.is_priority}
+                    <span
+                      class="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-full bg-primary text-white shadow-soft-sm flex items-center gap-1 animate-pulse"
+                    >
+                      <span>📌 Prioritas</span>
+                    </span>
+                  {/if}
+                  <span
+                    class="px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full border {getCategoryStyles(
+                      post.category,
+                    )}"
+                  >
+                    {post.category}
+                  </span>
+                  <h2
+                    class="font-extrabold text-slate-800 text-base sm:text-lg leading-snug"
+                  >
+                    {post.title}
+                  </h2>
+                </div>
+
+                <div
+                  class="flex items-center text-[10px] font-bold text-slate-400 space-x-3 mt-1 sm:mt-0 uppercase tracking-wider"
+                >
+                  <span class="flex items-center space-x-1">
+                    <Calendar class="h-3.5 w-3.5" />
+                    <span>{post.date}</span>
+                  </span>
+                  <span class="flex items-center space-x-1">
+                    <User class="h-3.5 w-3.5" />
+                    <span>{post.author}</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Body -->
+              <div class="py-4">
+                <p
+                  class="text-sm text-slate-600 leading-relaxed font-normal whitespace-pre-line"
+                >
+                  {post.content}
+                </p>
+              </div>
+
+              <!-- Footer Buttons -->
+              <div slot="footer" class="w-full border-t border-slate-50 pt-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <!-- Like Button -->
+                    <button
+                      on:click={() => handleLike(post)}
+                      class="inline-flex items-center space-x-1.5 text-xs font-bold py-2 px-3.5 rounded-xl border transition-all duration-200
+                        {post.hasLiked
+                        ? 'bg-rose-50 text-rose-600 border-rose-100 shadow-soft-sm'
+                        : 'bg-white text-slate-500 border-slate-200/60 hover:bg-slate-50 hover:border-slate-300'}"
+                      style="min-height: 40px;"
+                    >
+                      <Heart
+                        class="h-4.5 w-4.5 {post.hasLiked
+                          ? 'fill-current text-rose-500'
+                          : ''}"
+                      />
+                      <span>{post.likes}</span>
+                    </button>
+
+                    <!-- Comment Button (Instagram Style Bottom Drawer) -->
+                    <button
+                      on:click={() => { selectedAnnouncementForComments = post; newAnnouncementCommentText = ''; }}
+                      class="inline-flex items-center space-x-1.5 text-xs font-bold py-2 px-3.5 rounded-xl border border-slate-200/60 bg-white text-slate-500 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+                      style="min-height: 40px;"
+                      title="Lihat Tanggapan"
+                    >
+                      <MessageSquare class="h-4.5 w-4.5" />
+                      <span>{post.comments.length}</span>
+                    </button>
+                  </div>
+
+                  <span
+                    class="text-[9px] font-black uppercase text-slate-300 tracking-widest hidden sm:inline"
+                    >MAZEEDA OFFICIAL</span
+                  >
+                </div>
+              </div>
+            </Card>
+          {/each}
+        </div>
+      {:else}
+        <div
+          class="py-16 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50"
+        >
+          <div class="max-w-xs mx-auto space-y-2">
+            <p class="text-sm font-bold text-slate-600">
+              Tidak ada pengumuman ditemukan
+            </p>
+            <p class="text-xs text-slate-400">
+              Silakan gunakan kata kunci filter atau pencarian lainnya.
+            </p>
+          </div>
+        </div>
+      {/if}
+    </div>
+  {:else}
+    <!-- ==================== BOARD 2: DINDING ASPIRASI (STICKY NOTES) ==================== -->
+    <div class="space-y-6" in:fade={{ duration: 200 }}>
+      <!-- Full-Width Virtual Corkboard display -->
+      <div
+        class="bg-amber-50/15 border border-slate-200/60 rounded-3xl p-6 min-h-[500px] relative overflow-hidden shadow-inner"
+      >
+        <!-- Background pattern grid lines for organic corkboard feel -->
+        <div
+          class="absolute inset-0 bg-[linear-gradient(to_right,#00000003_1px,transparent_1px),linear-gradient(to_bottom,#00000003_1px,transparent_1px)] bg-[size:24px_24px]"
+        ></div>
+
+        <div class="relative z-10">
+          {#if isLoadingNotes}
+            <div class="py-24 text-center space-y-3">
+              <div
+                class="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto"
+              ></div>
+              <p class="text-xs font-semibold text-slate-400">
+                Mengambil catatan alumni...
+              </p>
+            </div>
+          {:else if stickyNotes.length > 0}
+            <!-- Grid of Sticky Notes -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+              {#each stickyNotes as note, index (note.id)}
+                {@const colorObj = getNoteColor(note.color_theme)}
+                <div
+                  transition:fade
+                  class="p-5 border rounded-2xl flex flex-col justify-between shadow-soft-sm relative transition-all duration-300 hover:scale-102 hover:shadow-soft-md min-h-[150px]
+                    {colorObj.bg} {getRotation(index)} {colorObj.hover}"
+                >
+                  <!-- Decorative Top Tape/Pin effect to mimic sticky note -->
+                  <div
+                    class="absolute -top-2 left-1/2 -translate-x-1/2 h-4.5 w-14 rounded shadow-sm opacity-80 {colorObj.tape}"
+                  ></div>
+
+                  <!-- Note Content -->
+                  <!-- svelte-ignore a11y-click-events-have-key-events -->
+                  <!-- svelte-ignore a11y-no-static-element-interactions -->
+                  <p
+                    on:click={() => openNoteComments(note)}
+                    dir={isArabic(note.message) ? "rtl" : "ltr"}
+                    class="text-xs font-bold leading-relaxed tracking-tight py-1 break-words cursor-pointer hover:opacity-95 text-justify {isArabic(
+                      note.message,
+                    )
+                      ? 'text-right font-arabic'
+                      : 'text-left'}"
+                    style="text-justify: inter-word;"
+                  >
+                    "{note.message.length > 180
+                      ? note.message.substring(0, 180) + "..."
+                      : note.message}"
+                    {#if note.message.length > 180}
+                      <span
+                        class="text-[10px] text-primary hover:underline block mt-1 font-extrabold"
+                        dir="ltr">Baca Selengkapnya &rarr;</span
+                      >
+                    {/if}
+                  </p>
+
+                  <!-- Sender Details & Actions -->
+                  <div
+                    class="flex items-center justify-between pt-2.5 border-t border-black/5 text-[9px] font-black uppercase tracking-wider opacity-85"
+                  >
+                    <span class="truncate max-w-[95px]" title={note.sender_name}
+                      >{note.sender_name}</span
+                    >
+
+                    <div class="flex items-center space-x-2 shrink-0">
+                      <!-- Note Like -->
+                      <button
+                        on:click|stopPropagation={() => handleLikeNote(note)}
+                        class="flex items-center space-x-0.5 hover:text-rose-600 transition-colors p-0.5"
+                        title="Sukai Catatan"
+                      >
+                        <Heart
+                          class="h-3 w-3 {likedNotesList.includes(note.id)
+                            ? 'fill-current text-rose-500'
+                            : ''}"
+                        />
+                        <span>{note.likes || 0}</span>
+                      </button>
+
+                      <!-- Note Comment -->
+                      <button
+                        on:click|stopPropagation={() => openNoteComments(note)}
+                        class="flex items-center space-x-0.5 hover:text-primary transition-colors p-0.5"
+                        title="Lihat Komentar"
+                      >
+                        <MessageSquare class="h-3 w-3" />
+                        <span>{note.comments_count || 0}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <div
+              class="py-24 text-center max-w-xs mx-auto space-y-2 relative z-10"
+            >
+              <p class="text-sm font-bold text-slate-500">
+                Dinding Aspirasi Kosong
+              </p>
+              <p class="text-xs text-slate-400">
+                Jadilah yang pertama untuk menempelkan sticky note sapaan atau
+                kenangan Anda!
+              </p>
+            </div>
+          {/if}
+        </div>
+      </div>
+
+      <!-- Floating Action Button (FAB) to write a sticky note -->
+      <button
+        on:click={() => (showNoteCreatorModal = true)}
+        class="fixed bottom-24 right-6 md:bottom-8 md:right-8 z-40 h-14 w-14 rounded-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/95 hover:to-indigo-600/95 text-white flex items-center justify-center shadow-lg hover:shadow-primary/30 hover:scale-110 active:scale-95 transition-all duration-300 group cursor-pointer"
+        title="Tulis Sticky Note"
+      >
+        <Plus
+          class="h-6 w-6 transition-transform duration-300 group-hover:rotate-90"
+        />
+      </button>
+
+      {#if showNoteCreatorModal}
+        <!-- MODAL FOR STICKY NOTE CREATION -->
+        <div
+          transition:fade
+          class="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4 bg-slate-900/60 backdrop-blur-sm"
+        >
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div
+            on:click|stopPropagation
+            transition:slide
+            class="bg-white rounded-t-3xl rounded-b-none sm:rounded-3xl w-full max-w-md overflow-hidden border border-slate-100 shadow-2xl flex flex-col max-h-[92vh]"
+          >
+            <!-- Modal Header -->
+            <div
+              class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50"
+            >
+              <h3
+                class="font-black text-slate-800 text-sm tracking-tight flex items-center gap-1.5"
+              >
+                <Pin class="h-4.5 w-4.5 text-primary" />
+                <span>Tulis Sticky Note</span>
+              </h3>
+              <button
+                on:click={() => (showNoteCreatorModal = false)}
+                class="h-8 w-8 rounded-full border border-slate-200/60 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors text-sm font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <!-- Modal Body (Form) -->
+            <div class="p-6">
+              <form on:submit|preventDefault={postStickyNote} class="space-y-4">
+                <!-- Message Textarea -->
+                <div class="space-y-1.5">
+                  <div class="flex justify-between items-center">
+                    <label
+                      for="noteText"
+                      class="text-xs font-bold text-slate-500">Isi Pesan</label
+                    >
+                    <span class="text-[10px] text-slate-400 font-bold"
+                      >{newNoteText.length}/1000</span
+                    >
+                  </div>
+                  <textarea
+                    id="noteText"
+                    rows="5"
+                    class="flex w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-800 placeholder:text-slate-400 focus:border-primary focus:outline-none transition-colors"
+                    placeholder="Ketik pesan Anda di sini... (maksimal 1000 karakter)"
+                    maxlength="1000"
+                    bind:value={newNoteText}
+                    required
+                  ></textarea>
+                </div>
+
+                <!-- Color Picker pills -->
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold text-slate-500"
+                    >Pilih Warna Kertas</label
+                  >
+                  <div class="flex gap-2">
+                    {#each colors as color}
+                      <button
+                        type="button"
+                        on:click={() => (selectedColor = color.id)}
+                        class="flex-1 h-9 rounded-xl border-2 flex items-center justify-center gap-1.5 text-[10px] font-bold transition-all duration-200
+                          {selectedColor === color.id
+                          ? 'border-primary bg-white shadow-soft-sm font-black scale-102'
+                          : 'border-slate-200/60 bg-slate-50 text-slate-500 hover:bg-slate-100'}"
+                      >
+                        <span class="h-2 w-2 rounded-full {color.dot}"></span>
+                        <span>{color.label}</span>
+                      </button>
+                    {/each}
+                  </div>
+                </div>
+
+                <!-- Submit Button -->
+                <Button
+                  type="submit"
+                  disabled={isPostingNote || !newNoteText.trim()}
+                  class="w-full flex items-center justify-center space-x-2 mt-2"
+                >
+                  {#if isPostingNote}
+                    <span>Menempelkan...</span>
+                  {:else}
+                    <Plus class="h-4.5 w-4.5" />
+                    <span>Tempel Catatan</span>
+                  {/if}
+                </Button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {/if}
+    </div>
+  {/if}
+</div>
+
+{#if selectedNoteForComments}
+  <!-- MODAL FOR STICKY NOTE COMMENTS -->
+  <div
+    transition:fade
+    class="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4 bg-slate-900/60 backdrop-blur-sm"
+  >
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div
+      on:click|stopPropagation
+      transition:slide
+      class="bg-white rounded-t-3xl rounded-b-none sm:rounded-3xl w-full max-w-lg overflow-hidden border border-slate-100 shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh]"
+    >
+      <!-- Modal Header -->
+      <div
+        class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50"
+      >
+        <h3
+          class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"
+        >
+          <Pin class="h-4 w-4 text-primary" />
+          <span>Detail & Diskusi Aspirasi</span>
+        </h3>
+        <button
+          on:click={() => (selectedNoteForComments = null)}
+          class="h-8 w-8 rounded-full border border-slate-200/60 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors text-sm font-bold cursor-pointer"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Scrollable Content -->
+      <div class="px-2 py-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/20">
+        <!-- Sticky Note Magnified -->
+        <div
+          class="px-4 py-6 border rounded-2xl shadow-soft relative {selectedNoteColor?.bg} min-h-[120px] flex flex-col justify-between"
+        >
+          <div
+            class="absolute -top-2 left-1/2 -translate-x-1/2 h-4.5 w-16 rounded shadow-sm opacity-80 {selectedNoteColor?.tape}"
+          ></div>
+          <p
+            dir={isArabic(selectedNoteForComments.message) ? "rtl" : "ltr"}
+            class="text-sm font-bold leading-relaxed tracking-tight py-2 break-words text-justify {isArabic(
+              selectedNoteForComments.message,
+            )
+              ? 'text-right font-arabic'
+              : 'text-left'}"
+            style="text-justify: inter-word;"
+          >
+            "{selectedNoteForComments.message}"
+          </p>
+          <div
+            class="text-[9px] font-black uppercase text-black/40 tracking-wider pt-2 border-t border-black/5 flex justify-between"
+            dir="ltr"
+          >
+            <span>Oleh: {selectedNoteForComments.sender_name}</span>
+            <span
+              >{selectedNoteForComments.created_at
+                ? new Date(
+                    selectedNoteForComments.created_at,
+                  ).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                  })
+                : "Baru"}</span
+            >
+          </div>
+        </div>
+
+        <!-- Comments Feed -->
+        <div class="space-y-4">
+          <h4
+            class="text-xs font-black text-slate-400 uppercase tracking-widest"
+          >
+            Komentar
+          </h4>
+
+          {#if noteCommentsList.length > 0}
+            <div class="space-y-2.5">
+              {#each noteCommentsList as comment}
+                <div
+                  class="bg-white border border-slate-100 rounded-2xl p-4 space-y-1 shadow-soft-sm"
+                >
+                  <div
+                    class="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase"
+                  >
+                    <span class="text-primary">{comment.author}</span>
+                    <span
+                      >{new Date(comment.created_at).toLocaleDateString(
+                        "id-ID",
+                        {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}</span
+                    >
+                  </div>
+                  <p class="text-xs font-medium text-slate-600 leading-relaxed">
+                    {comment.text}
+                  </p>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <div
+              class="text-center py-6 text-slate-400 italic text-xs border border-dashed border-slate-200 rounded-2xl bg-white"
+            >
+              Belum ada komentar. Jadilah yang pertama memberikan masukan!
+            </div>
+          {/if}
+        </div>
+      </div>
+
+      <!-- Modal Footer: Comment Form -->
+      <div class="p-5 border-t border-slate-100 bg-white">
+        <form
+          on:submit|preventDefault={handleAddNoteComment}
+          class="flex gap-2 items-center"
+        >
+          <Input
+            type="text"
+            placeholder="Tulis komentar Anda..."
+            class="flex-1 text-xs bg-slate-50/50 hover:bg-slate-50 focus:bg-white rounded-xl"
+            bind:value={newNoteCommentText}
+            required
+          />
+          <button
+            type="submit"
+            class="h-10 w-10 shrink-0 bg-primary hover:bg-primary/95 text-white flex items-center justify-center rounded-xl shadow-soft-sm transition-transform active:scale-95 cursor-pointer"
+          >
+            <Send class="h-4.5 w-4.5" />
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+{/if}
+
+{#if selectedAnnouncementForComments}
+  <div
+    transition:fade
+    class="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4 bg-slate-900/60 backdrop-blur-sm"
+  >
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div
+      on:click|stopPropagation
+      transition:slide
+      class="bg-white rounded-t-3xl rounded-b-none sm:rounded-3xl w-full max-w-lg overflow-hidden border border-slate-100 shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh]"
+    >
+      <!-- Modal Header -->
+      <div
+        class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50"
+      >
+        <h3
+          class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"
+        >
+          <Megaphone class="h-4 w-4 text-primary" />
+          <span>Detail & Diskusi Pengumuman</span>
+        </h3>
+        <button
+          on:click={() => (selectedAnnouncementForComments = null)}
+          class="h-8 w-8 rounded-full border border-slate-200/60 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors text-sm font-bold cursor-pointer"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Scrollable Content -->
+      <div class="px-2 py-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/20">
+        <!-- Announcement Card Magnified -->
+        <div class="px-5 py-6 bg-white border border-slate-200/80 rounded-2xl shadow-soft space-y-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full border {getCategoryStyles(selectedAnnouncementForComments.category)}">
+              {selectedAnnouncementForComments.category}
+            </span>
+            <h2 class="font-extrabold text-slate-800 text-base sm:text-lg leading-snug">
+              {selectedAnnouncementForComments.title}
+            </h2>
+          </div>
+          <p class="text-sm text-slate-600 leading-relaxed font-normal whitespace-pre-line">
+            {selectedAnnouncementForComments.content}
+          </p>
+          <div class="text-[9px] font-black uppercase text-slate-400 tracking-wider pt-3 border-t border-slate-100 flex justify-between" dir="ltr">
+            <span>Oleh: {selectedAnnouncementForComments.author}</span>
+            <span>{selectedAnnouncementForComments.date}</span>
+          </div>
+        </div>
+
+        <!-- Comments List -->
+        <div class="space-y-4">
+          <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest">
+            Tanggapan & Diskusi ({selectedAnnouncementForComments.comments.length})
+          </h4>
+
+          {#if selectedAnnouncementForComments.comments.length > 0}
+            <div class="space-y-2.5">
+              {#each selectedAnnouncementForComments.comments as comment}
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 space-y-1 shadow-soft-sm">
+                  <div class="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase">
+                    <span class="text-primary">{comment.author}</span>
+                    <span>{comment.date}</span>
+                  </div>
+                  <p class="text-xs font-medium text-slate-600 leading-relaxed">
+                    {comment.text}
+                  </p>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <div class="text-center py-6 text-slate-400 italic text-xs border border-dashed border-slate-200 rounded-2xl bg-white">
+              Belum ada tanggapan. Jadilah yang pertama menanggapi!
+            </div>
+          {/if}
+        </div>
+      </div>
+
+      <!-- Modal Footer: Add Comment Form -->
+      <div class="p-4 border-t border-slate-100 bg-white">
+        <form
+          on:submit|preventDefault={handleAddAnnouncementComment}
+          class="flex gap-2 items-center"
+        >
+          <Input
+            type="text"
+            placeholder="Tulis tanggapan Anda..."
+            class="flex-1 text-xs bg-slate-50/50 hover:bg-slate-50 focus:bg-white rounded-xl"
+            bind:value={newAnnouncementCommentText}
+            required
+          />
+          <button
+            type="submit"
+            class="h-10 w-10 shrink-0 bg-primary hover:bg-primary/95 text-white flex items-center justify-center rounded-xl shadow-soft-sm transition-transform active:scale-95 cursor-pointer"
+          >
+            <Send class="h-4.5 w-4.5" />
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+{/if}

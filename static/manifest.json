@@ -1,0 +1,19 @@
+{
+  "name": "MAZEEDA Squad",
+  "short_name": "MAZEEDA",
+  "description": "Aplikasi Manajemen & Informasi Komunitas MAZEEDA",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

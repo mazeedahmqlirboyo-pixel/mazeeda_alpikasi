@@ -1,0 +1,954 @@
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
+  import { fade, slide } from 'svelte/transition';
+  import Card from '$lib/components/ui/card.svelte';
+  import Button from '$lib/components/ui/button.svelte';
+  import Input from '$lib/components/ui/input.svelte';
+  import RichTextEditor from '$lib/components/RichTextEditor.svelte';
+  import { supabase } from '$lib/supabase';
+  import { authStore } from '$lib/auth';
+  import { 
+    Sparkles, Search, Copy, Check, ChevronLeft, Plus, Trash2, 
+    ArrowLeft, AlertCircle, Settings, BookOpen, Layers, Book, Edit, Loader2,
+    Filter
+  } from 'lucide-svelte';
+
+  interface BacaanItem {
+    id: string;
+    title: string;
+    category: string;
+    content: string;
+    created_at: string;
+  }
+
+  // State
+  let listItems: BacaanItem[] = [];
+  let selectedCategory = 'all';
+  let searchQuery = '';
+  let activeTab: 'baca' | 'tambah' = 'baca';
+  let isLoading = true;
+  let showFilter = false;
+
+  // Selected Sangu for detailed view
+  let selectedItem: BacaanItem | null = null;
+
+  // Form states for creating/editing Sangu
+  let newTitle = '';
+  let newCategory = 'sholawat';
+  let newCustomCategory = '';
+  let newContent = '';
+  let editingId: string | null = null;
+
+  // Auth/Role states
+  $: userRole = $authStore.user?.role || '';
+  $: isAdmin = userRole === 'admin';
+
+  // Preferences (Reader Controls)
+  let arabicFontSize = 26; // in px
+  let showTranslation = true;
+  let showLatin = true;
+
+  // Feedback notifications
+  let copiedItemSuccess = false;
+  let notificationMessage: string | null = null;
+  let isErrorNotification = false;
+
+  let readerContainer: HTMLDivElement;
+
+  // Walk text nodes of the element and safely remove the first '@' symbol
+  function stripLeadingAtSymbol(element: HTMLElement) {
+    const walk = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
+    let node;
+    while (node = walk.nextNode()) {
+      if (node.nodeValue && node.nodeValue.trim().startsWith('@')) {
+        const idx = node.nodeValue.indexOf('@');
+        node.nodeValue = node.nodeValue.substring(0, idx) + node.nodeValue.substring(idx + 1);
+        break;
+      }
+    }
+  }
+
+  function replaceNadzomHash(element: HTMLElement) {
+    const separatorHtml = '<span class="sangu-nadzom-separator">✦</span>';
+    if (element.innerHTML.includes('#')) {
+      element.innerHTML = element.innerHTML.replace('#', separatorHtml);
+    }
+  }
+
+  function applyRichStyles() {
+    if (!readerContainer) return;
+    
+    // Normalize: Wrap raw text/inline nodes at the root of readerContainer in <div> elements
+    const childNodes = Array.from(readerContainer.childNodes);
+    let currentWrapper: HTMLDivElement | null = null;
+    
+    childNodes.forEach(node => {
+      const isBlock = node.nodeType === Node.ELEMENT_NODE && 
+        ['DIV', 'P', 'LI', 'BLOCKQUOTE', 'H1', 'H2', 'H3', 'UL', 'OL'].includes((node as HTMLElement).tagName);
+        
+      if (isBlock) {
+        currentWrapper = null;
+      } else {
+        if (node.nodeType === Node.TEXT_NODE && !node.nodeValue?.trim()) {
+          if (currentWrapper) {
+            currentWrapper.appendChild(node);
+          }
+          return;
+        }
+        
+        if (!currentWrapper) {
+          currentWrapper = document.createElement('div');
+          readerContainer.insertBefore(currentWrapper, node);
+        }
+        currentWrapper.appendChild(node);
+      }
+    });
+    
+    // Find all blocks (p, div, li, blockquote, h1, h2)
+    const blocks = readerContainer.querySelectorAll('p, div, li, blockquote, h1, h2');
+    
+    blocks.forEach(block => {
+      const htmlBlock = block as HTMLElement;
+      
+      // Skip wrapping block containers that hold other paragraph tags to style text elements directly
+      const hasBlockChildren = htmlBlock.querySelector('p, div, li, blockquote, h1, h2') !== null;
+      if (hasBlockChildren) return;
+      
+      const text = htmlBlock.textContent || '';
+      const cleanText = text.trim();
+      if (!cleanText) return;
+      
+      const isTranslation = cleanText.startsWith('@') || htmlBlock.classList.contains('sangu-translation');
+      const isNadzom = cleanText.includes('#') || htmlBlock.classList.contains('sangu-nadzom') || htmlBlock.querySelector('.sangu-nadzom-separator') !== null;
+      
+      // Clean up previous classes if any
+      htmlBlock.classList.remove('sangu-arabic', 'sangu-latin', 'sangu-translation', 'sangu-nadzom');
+      
+      if (isTranslation) {
+        htmlBlock.classList.add('sangu-translation');
+        if (cleanText.startsWith('@')) {
+          stripLeadingAtSymbol(htmlBlock);
+        }
+      } else {
+        // Strip leading non-alphabetic/non-arabic characters to check the starting letter type
+        const letterText = cleanText.replace(/^[^a-zA-Z\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/, '');
+        const startsWithArabic = /^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(letterText);
+        
+        if (startsWithArabic) {
+          htmlBlock.classList.add('sangu-arabic');
+        } else {
+          // Exclude headings from getting .sangu-latin to prevent font-size override
+          if (!['H1', 'H2', 'H3'].includes(htmlBlock.tagName)) {
+            htmlBlock.classList.add('sangu-latin');
+          }
+        }
+      }
+
+      // Handle Kalam Nadzom styling
+      if (isNadzom) {
+        htmlBlock.classList.add('sangu-nadzom');
+        replaceNadzomHash(htmlBlock);
+      }
+    });
+  }
+
+  // Reactively execute style processing
+  $: if (selectedItem || readerContainer) {
+    setTimeout(applyRichStyles, 50);
+  }
+
+  async function loadBacaan() {
+    try {
+      isLoading = true;
+      const { data, error } = await supabase
+        .from('bacaan')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      listItems = data || [];
+    } catch (err: any) {
+      console.error('Failed to load Sangu items:', err);
+      triggerNotification('Gagal memuat data dari database.', true);
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  onMount(() => {
+    loadBacaan();
+
+    // Load preferences
+    if (typeof window !== 'undefined') {
+      const storedSize = localStorage.getItem('sangu_fontSize');
+      if (storedSize) arabicFontSize = parseInt(storedSize, 10);
+
+      const storedShowTranslation = localStorage.getItem('sangu_showTranslation');
+      if (storedShowTranslation !== null) showTranslation = storedShowTranslation === 'true';
+
+      const storedShowLatin = localStorage.getItem('sangu_showLatin');
+      if (storedShowLatin !== null) showLatin = storedShowLatin === 'true';
+    }
+  });
+
+  $: if (typeof window !== 'undefined') {
+    localStorage.setItem('sangu_fontSize', arabicFontSize.toString());
+    localStorage.setItem('sangu_showTranslation', showTranslation.toString());
+    localStorage.setItem('sangu_showLatin', showLatin.toString());
+  }
+
+  // Selected Sangu detail tracking from URL search parameters
+  function openDetail(item: BacaanItem) {
+    const url = new URL($page.url);
+    url.searchParams.set('detail', item.id);
+    goto(url.toString(), { noScroll: true });
+  }
+
+  function closeDetail() {
+    const url = new URL($page.url);
+    url.searchParams.delete('detail');
+    goto(url.toString(), { noScroll: true });
+  }
+
+  $: {
+    const detailId = $page.url.searchParams.get('detail');
+    if (detailId && listItems.length > 0) {
+      const found = listItems.find(item => item.id === detailId);
+      selectedItem = found || null;
+    } else {
+      selectedItem = null;
+    }
+  }
+
+  $: {
+    const tabParam = $page.url.searchParams.get('tab');
+    if (tabParam === 'tambah' && isAdmin) {
+      activeTab = 'tambah';
+    } else if (editingId) {
+      activeTab = 'tambah';
+    } else {
+      activeTab = 'baca';
+    }
+  }
+
+  // Dynamic categories list from loaded items
+  $: dynamicCategories = [
+    ...new Set(listItems.map(item => item.category).filter(Boolean))
+  ].sort() as string[];
+
+  $: activeFilterCount = selectedCategory !== 'all' ? 1 : 0;
+
+  // Filter items based on search and selected category
+  $: filteredItems = listItems.filter(item => {
+    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          item.content.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  // Category labels helper
+  function getCategoryLabel(category: string) {
+    if (!category) return 'Lainnya';
+    switch (category.toLowerCase()) {
+      case 'sholawat': return 'Sholawat';
+      case 'jausyan': return 'Jausyan';
+      case 'nadzom': return 'Nadzom';
+      case 'doa': return 'Doa & Hizib';
+      case 'others': return 'Lainnya';
+      default: return category.charAt(0).toUpperCase() + category.slice(1);
+    }
+  }
+
+  // Set category color classes
+  function getCategoryBadgeClass(category: string) {
+    if (!category) return 'bg-slate-50 text-slate-700 border-slate-100';
+    switch (category.toLowerCase()) {
+      case 'sholawat': return 'bg-teal-50 text-teal-700 border-teal-100';
+      case 'jausyan': return 'bg-amber-50 text-amber-700 border-amber-100';
+      case 'nadzom': return 'bg-blue-50 text-blue-700 border-blue-100';
+      case 'doa': return 'bg-purple-50 text-purple-700 border-purple-100';
+      default: return 'bg-slate-50 text-slate-700 border-slate-100';
+    }
+  }
+
+  // Strip HTML tags helper for preview snippet
+  function stripHtml(html: string) {
+    if (!html) return '';
+    return html
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Notifications handler
+  function triggerNotification(message: string, isError = false) {
+    notificationMessage = message;
+    isErrorNotification = isError;
+    setTimeout(() => {
+      notificationMessage = null;
+    }, 3000);
+  }
+
+  // Copy whole Sangu content (stripping HTML tags for clean pasting)
+  async function copyWholeItem(item: BacaanItem) {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = item.content;
+    const plainText = `${item.title.toUpperCase()}\n\n${tempDiv.textContent || tempDiv.innerText || ''}`;
+
+    try {
+      await navigator.clipboard.writeText(plainText.trim());
+      copiedItemSuccess = true;
+      setTimeout(() => { copiedItemSuccess = false; }, 2500);
+    } catch (err) {
+      console.error(err);
+      triggerNotification('Gagal menyalin konten.', true);
+    }
+  }
+
+  // Edit action
+  function startEdit(item: BacaanItem) {
+    editingId = item.id;
+    newTitle = item.title;
+    newCategory = item.category || 'others';
+    newCustomCategory = '';
+    newContent = item.content;
+    activeTab = 'tambah';
+    closeDetail();
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    newTitle = '';
+    newCategory = 'sholawat';
+    newCustomCategory = '';
+    newContent = '';
+    activeTab = 'baca';
+    
+    // Also remove ?tab=tambah from URL if present
+    const url = new URL($page.url);
+    if (url.searchParams.has('tab')) {
+      url.searchParams.delete('tab');
+      goto(url.toString(), { noScroll: true, replaceState: true });
+    }
+  }
+
+  // Create/Update Sangu Item
+  async function handleSaveSangu() {
+    if (!isAdmin) {
+      triggerNotification('Akses ditolak. Anda bukan administrator.', true);
+      return;
+    }
+    if (!newTitle.trim()) {
+      triggerNotification('Judul Sangu tidak boleh kosong.', true);
+      return;
+    }
+    if (!newContent.trim() || newContent === '<br>' || newContent === '<div><br></div>') {
+      triggerNotification('Konten Sangu tidak boleh kosong.', true);
+      return;
+    }
+
+    const categoryToSave = newCategory === 'new' ? newCustomCategory.trim().toLowerCase() : newCategory;
+    if (newCategory === 'new' && !categoryToSave) {
+      triggerNotification('Nama kategori baru wajib diisi!', true);
+      return;
+    }
+
+    try {
+      if (editingId) {
+        // Edit Mode
+        const { error } = await supabase
+          .from('bacaan')
+          .update({
+            title: newTitle.trim(),
+            category: categoryToSave,
+            content: newContent
+          })
+          .eq('id', editingId);
+
+        if (error) throw error;
+        triggerNotification('Sangu berhasil diperbarui!');
+      } else {
+        // Insert Mode
+        const { error } = await supabase
+          .from('bacaan')
+          .insert([{
+            title: newTitle.trim(),
+            category: categoryToSave,
+            content: newContent
+          }]);
+
+        if (error) throw error;
+        triggerNotification('Sangu baru berhasil disimpan!');
+      }
+
+      await loadBacaan();
+      
+      // Reset Form and redirect
+      editingId = null;
+      newTitle = '';
+      newCategory = 'sholawat';
+      newCustomCategory = '';
+      newContent = '';
+      activeTab = 'baca';
+
+    } catch (err: any) {
+      console.error(err);
+      triggerNotification('Gagal menyimpan Sangu: ' + err.message, true);
+    }
+  }
+
+  // Delete Sangu item
+  async function handleDeleteSangu(id: string, e: Event) {
+    e.stopPropagation();
+    if (!isAdmin) {
+      triggerNotification('Akses ditolak. Anda bukan administrator.', true);
+      return;
+    }
+    if (!confirm('Apakah Anda yakin ingin menghapus catatan Sangu ini?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('bacaan')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      triggerNotification('Catatan Sangu berhasil dihapus.');
+      await loadBacaan();
+      
+      if (selectedItem && selectedItem.id === id) {
+        closeDetail();
+      }
+    } catch (err: any) {
+      console.error(err);
+      triggerNotification('Gagal menghapus Sangu: ' + err.message, true);
+    }
+  }
+</script>
+
+<!-- Notification Toast -->
+{#if notificationMessage}
+  <div 
+    transition:fade={{ duration: 150 }} 
+    class="fixed top-20 right-4 z-50 flex items-center p-4 rounded-xl border text-xs font-semibold shadow-xl space-x-2.5 animate-in slide-in-from-top-4 duration-300
+      {isErrorNotification ? 'bg-red-50 border-red-200 text-red-800' : 'bg-teal-50 border-teal-200 text-teal-800'}"
+  >
+    <AlertCircle class="h-4.5 w-4.5" />
+    <span>{notificationMessage}</span>
+  </div>
+{/if}
+
+<div class="space-y-6 pb-20 lg:pb-8 relative min-h-[calc(100vh-10rem)]">
+
+  {#if activeTab === 'baca'}
+    {#if !selectedItem}
+      <!-- Search, Filter & Grid List -->
+      <div class="space-y-4">
+        
+        <!-- Search & Filter Row -->
+        <div class="flex items-center space-x-2 relative">
+          <!-- Search bar -->
+          <div class="relative flex-1">
+            <Search class="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Cari sholawat, nadzom, atau berkas doa..." 
+              class="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 focus:bg-white transition-colors duration-200 pl-11 pr-3 text-xs text-slate-800 focus:outline-none focus:border-teal-500"
+              bind:value={searchQuery}
+            />
+          </div>
+
+          <!-- Filter trigger button -->
+          <div class="relative">
+            <button
+              type="button"
+              class="relative p-3 rounded-xl border transition-all duration-200 {showFilter
+                ? 'bg-teal-600 text-white border-teal-600 shadow-soft-sm'
+                : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-600'}"
+              on:click={() => (showFilter = !showFilter)}
+              style="min-height: 44px; min-width: 44px; display: flex; align-items: center; justify-content: center;"
+            >
+              <Filter class="h-5 w-5" />
+              {#if activeFilterCount > 0}
+                <span
+                  class="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center"
+                  >{activeFilterCount}</span
+                >
+              {/if}
+            </button>
+
+            <!-- Floating Dropdown -->
+            {#if showFilter}
+              <!-- Backdrop -->
+              <button
+                type="button"
+                class="fixed inset-0 z-10 cursor-default bg-transparent"
+                on:click={() => (showFilter = false)}
+                aria-label="Tutup filter"
+              ></button>
+
+              <div
+                class="absolute right-0 top-[calc(100%+8px)] z-20 w-60 bg-white border border-slate-200/80 rounded-2xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-1 duration-150 origin-top-right"
+              >
+                <!-- Kategori -->
+                <div class="px-3 pt-3 pb-2">
+                  <p
+                    class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5"
+                  >
+                    Kategori
+                  </p>
+                  <div class="flex flex-wrap gap-1">
+                    <!-- Semua -->
+                    <button
+                      type="button"
+                      on:click={() => { selectedCategory = 'all'; showFilter = false; }}
+                      class="px-2.5 py-1 text-[10px] font-bold rounded-full transition-all duration-150
+                        {selectedCategory === 'all'
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}"
+                      >Semua</button
+                    >
+
+                    {#if dynamicCategories.length > 0}
+                      {#each dynamicCategories as cat}
+                        <button
+                          type="button"
+                          on:click={() => { selectedCategory = cat; showFilter = false; }}
+                          class="px-2.5 py-1 text-[10px] font-bold rounded-full transition-all duration-150
+                            {selectedCategory === cat
+                            ? 'bg-teal-600 text-white'
+                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}"
+                          >{getCategoryLabel(cat)}</button
+                        >
+                      {/each}
+                    {:else}
+                      <span class="text-[10px] text-slate-400 italic"
+                        >Belum ada kategori</span
+                      >
+                    {/if}
+                  </div>
+                </div>
+
+                <!-- Reset -->
+                {#if activeFilterCount > 0}
+                  <div class="border-t border-slate-100 px-3 py-2">
+                    <button
+                      type="button"
+                      on:click={() => {
+                        selectedCategory = 'all';
+                        showFilter = false;
+                      }}
+                      class="text-[10px] font-bold text-rose-500 hover:text-rose-700 transition-colors"
+                      >✕ Reset filter</button
+                    >
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          </div>
+        </div>
+
+        <!-- Cards Grid / Loading States -->
+        {#if isLoading}
+          <!-- Skeleton loading states -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {#each Array(4) as _}
+              <div class="p-5 bg-white border border-slate-100 rounded-2xl animate-pulse space-y-4">
+                <div class="h-4 bg-slate-100 rounded w-1/4"></div>
+                <div class="space-y-2">
+                  <div class="h-5 bg-slate-100 rounded w-3/4"></div>
+                  <div class="h-4 bg-slate-100 rounded w-5/6"></div>
+                </div>
+                <div class="h-8 bg-slate-100 rounded w-full"></div>
+              </div>
+            {/each}
+          </div>
+        {:else if filteredItems.length > 0}
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {#each filteredItems as item (item.id)}
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <!-- svelte-ignore a11y-no-static-element-interactions -->
+              <div 
+                on:click={() => openDetail(item)}
+                class="group p-5 bg-white border border-slate-200/60 hover:border-teal-200 hover:shadow-soft-md rounded-2xl transition-premium cursor-pointer relative"
+              >
+                <div class="space-y-2.5">
+                  <!-- Category Badge & Header -->
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider {getCategoryBadgeClass(item.category)}">
+                      {getCategoryLabel(item.category)}
+                    </span>
+
+                    {#if isAdmin}
+                      <div class="flex items-center space-x-1">
+                        <button
+                          on:click={(e) => { e.stopPropagation(); startEdit(item); }}
+                          class="p-1 rounded-lg text-slate-300 hover:text-teal-600 hover:bg-teal-50 transition-premium"
+                          title="Edit Sangu"
+                          style="min-height: 28px;"
+                        >
+                          <Edit class="h-4 w-4" />
+                        </button>
+                        <button
+                          on:click={(e) => handleDeleteSangu(item.id, e)}
+                          class="p-1 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-premium"
+                          title="Hapus Sangu"
+                          style="min-height: 28px;"
+                        >
+                          <Trash2 class="h-4 w-4" />
+                        </button>
+                      </div>
+                    {/if}
+                  </div>
+
+                  <!-- Title -->
+                  <div>
+                    <h3 class="font-extrabold text-base text-slate-800 group-hover:text-teal-700 transition-colors leading-tight">
+                      {item.title.toUpperCase()}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {:else}
+          <!-- Empty state -->
+          <div class="py-24 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/20 max-w-lg mx-auto">
+            <BookOpen class="h-10 w-10 text-slate-300 mx-auto animate-pulse" />
+            <h3 class="text-sm font-extrabold text-slate-600 mt-3">Tidak Ada Teks Sangu</h3>
+            <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1 leading-relaxed">
+              Tidak ditemukan berkas bacaan yang cocok untuk pencarian atau kategori ini.
+            </p>
+            {#if isAdmin}
+              <button
+                type="button"
+                on:click={() => activeTab = 'tambah'}
+                class="mt-4 inline-flex items-center space-x-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-soft-sm transition-premium"
+                style="min-height: 38px;"
+              >
+                <Plus class="h-4 w-4" />
+                <span>Buat Teks Sangu</span>
+              </button>
+            {/if}
+          </div>
+        {/if}
+
+      </div>
+    {:else}
+      <!-- DETAILED READER VIEW (Aesthetic overlay canvas) -->
+      <div class="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        
+        <!-- Top Toolbar Sticky controls -->
+        <Card class="p-4 border-slate-200/50 shadow-soft-sm bg-white/95 backdrop-blur-md sticky top-16 z-20 flex flex-col md:flex-row items-center justify-between gap-4">
+          <!-- Back button -->
+          <button
+            on:click={closeDetail}
+            class="inline-flex items-center space-x-2 text-slate-500 hover:text-teal-600 transition-colors text-xs font-black py-2.5 pr-4 border-r border-slate-200"
+            style="min-height: 40px;"
+          >
+            <ArrowLeft class="h-4.5 w-4.5" />
+            <span>Kembali</span>
+          </button>
+
+          <!-- Middle: Title -->
+          <div class="text-center md:text-left leading-tight flex-1">
+            <h2 class="text-sm font-black text-slate-800">{selectedItem.title.toUpperCase()}</h2>
+            <span class="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">
+              Kategori: {getCategoryLabel(selectedItem.category)}
+            </span>
+          </div>
+
+          <!-- Right: Controls settings (Size, Copy whole, Admin Edit) -->
+          <div class="flex flex-wrap items-center gap-3">
+            
+            <!-- Arabic font size slider -->
+            <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-100 px-2.5 py-1.5 rounded-lg shrink-0">
+              <Settings class="h-3.5 w-3.5 text-slate-400" />
+              <span class="text-[10px] font-bold text-slate-500">Huruf:</span>
+              <input 
+                type="range" 
+                min="20" 
+                max="44" 
+                class="accent-teal-600 w-20 cursor-pointer h-1 bg-slate-200 rounded-lg"
+                bind:value={arabicFontSize}
+              />
+              <span class="text-[10px] font-black text-slate-600 w-6 text-right">{arabicFontSize}px</span>
+            </div>
+
+            <!-- Visibility toggles for Terjemah and Latin -->
+            <div class="flex items-center space-x-3 text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-2.5 py-1.5 rounded-lg shrink-0">
+              <label class="flex items-center space-x-1.5 cursor-pointer hover:text-slate-700 select-none">
+                <input type="checkbox" bind:checked={showLatin} class="rounded text-teal-600 focus:ring-teal-500 border-slate-300 h-3.5 w-3.5" />
+                <span>Latin</span>
+              </label>
+
+              <label class="flex items-center space-x-1.5 cursor-pointer hover:text-slate-700 select-none">
+                <input type="checkbox" bind:checked={showTranslation} class="rounded text-teal-600 focus:ring-teal-500 border-slate-300 h-3.5 w-3.5" />
+                <span>Terjemah</span>
+              </label>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex items-center space-x-2 border-l border-slate-200 pl-3">
+              <button
+                type="button"
+                on:click={() => copyWholeItem(selectedItem)}
+                class="flex items-center space-x-1 bg-teal-50 border border-teal-100 hover:bg-teal-100 text-teal-700 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-premium"
+                style="min-height: 28px;"
+              >
+                {#if copiedItemSuccess}
+                  <Check class="h-3.5 w-3.5 text-emerald-600" />
+                  <span class="text-emerald-700">Tersalin!</span>
+                {:else}
+                  <Copy class="h-3.5 w-3.5" />
+                  <span>Salin Semua</span>
+                {/if}
+              </button>
+
+              {#if isAdmin}
+                <button
+                  type="button"
+                  on:click={() => startEdit(selectedItem)}
+                  class="flex items-center space-x-1 bg-blue-50 border border-blue-100 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-premium"
+                  style="min-height: 28px;"
+                >
+                  <Edit class="h-3.5 w-3.5" />
+                  <span>Edit Teks</span>
+                </button>
+              {/if}
+            </div>
+          </div>
+        </Card>
+
+        <!-- Unified Paper-like Reader Canvas -->
+        <Card noPadding class="border-slate-200/60 shadow-soft-sm bg-[#FCFBF7] text-slate-800 relative select-text">
+          <!-- Spiritual backdrop pattern -->
+          <div class="absolute inset-0 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.02] pointer-events-none"></div>
+          
+          <!-- Traditional double border frame -->
+          <div class="border-4 border-double border-teal-800/10 p-3.5 sm:p-8 md:p-10 m-2 sm:m-4 md:m-6 rounded-2xl relative">
+            <div 
+              bind:this={readerContainer} 
+              class="sangu-reader-content select-text font-sans leading-relaxed" 
+              class:hide-latin={!showLatin}
+              class:hide-translation={!showTranslation}
+              style="font-size: {arabicFontSize}px;"
+            >
+              {@html selectedItem.content}
+            </div>
+          </div>
+        </Card>
+
+      </div>
+    {/if}
+  {/if}
+
+  {#if activeTab === 'tambah' && isAdmin}
+    <!-- TAB TAMBAH/EDIT: Create/Update Sangu Form -->
+    <div class="max-w-4xl mx-auto space-y-4 animate-in fade-in duration-300">
+      <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
+        {#if editingId}
+          <Edit class="h-5.5 w-5.5 text-teal-600" />
+          <span>Edit Catatan Sangu</span>
+        {:else}
+          <Plus class="h-5.5 w-5.5 text-teal-600" />
+          <span>Buat Catatan Sangu Baru</span>
+        {/if}
+      </h2>
+
+      <Card class="p-6 space-y-4">
+        <form on:submit|preventDefault={handleSaveSangu} class="space-y-5">
+          
+          <!-- Title -->
+          <div class="space-y-1.5">
+            <label for="title" class="text-xs font-bold text-slate-500">Judul Sangu / Wirid <span class="text-red-500">*</span></label>
+            <Input 
+              id="title" 
+              type="text" 
+              placeholder="e.g. Sholawat Ibrahimiyah, Doa Tolak Bala" 
+              bind:value={newTitle}
+              required 
+            />
+          </div>
+
+          <!-- Category dropdown -->
+          <div class="space-y-1.5">
+            <label for="category" class="text-xs font-bold text-slate-500">Kategori <span class="text-red-500">*</span></label>
+            <select
+              id="category"
+              class="flex h-12 w-full rounded-xl border border-border bg-white px-3 text-xs font-semibold text-slate-700 focus:border-teal-500 focus:outline-none"
+              bind:value={newCategory}
+            >
+              {#each Array.from(new Set(['sholawat', 'jausyan', 'nadzom', 'doa', 'others', ...dynamicCategories])) as cat}
+                <option value={cat}>{getCategoryLabel(cat)}</option>
+              {/each}
+              <option value="new">+ Tambah Kategori Baru...</option>
+            </select>
+          </div>
+
+          {#if newCategory === 'new'}
+            <div class="space-y-1.5" transition:slide>
+              <label for="newCustomCategory" class="text-xs font-bold text-slate-500">Nama Kategori Baru <span class="text-red-500">*</span></label>
+              <Input
+                id="newCustomCategory"
+                type="text"
+                placeholder="e.g. Istighosah, Hizib"
+                bind:value={newCustomCategory}
+                required
+              />
+            </div>
+          {/if}
+
+          <!-- Rich Text Content Editor -->
+          <div class="space-y-2 border-t border-slate-100 pt-4">
+            <div class="flex flex-col space-y-1 mb-2">
+              <label for="rich-editor" class="text-xs font-bold text-slate-500">Isi Konten Sangu <span class="text-red-500">*</span></label>
+              <p class="text-[10px] text-slate-400">
+                Gunakan editor di bawah untuk menulis konten Sangu. Blok teks Arab dan klik <strong>Format Arab</strong> dan <strong>RTL</strong> untuk meratakan dan menampilkan font Arab Mushaf secara optimal.
+              </p>
+            </div>
+            
+            <RichTextEditor 
+              bind:value={newContent} 
+              placeholder="Masukkan wirid, sholawat, bacaan Arab, beserta transliterasi Latin dan terjemahannya di sini..."
+            />
+          </div>
+
+          <!-- Form Action Buttons -->
+          <div class="flex flex-col sm:flex-row gap-3 mt-6">
+            <Button type="submit" class="flex-1 flex items-center justify-center space-x-2 bg-teal-600 hover:bg-teal-700 text-white font-bold h-12">
+              <Plus class="h-4.5 w-4.5" />
+              <span>{editingId ? 'Simpan Perubahan' : 'Simpan Sangu Ke Database'}</span>
+            </Button>
+            
+            <Button 
+              type="button" 
+              variant="outline" 
+              on:click={cancelEdit} 
+              class="flex-1 sm:flex-none flex items-center justify-center border-slate-200 text-slate-600 hover:bg-slate-50 h-12"
+            >
+              <span>Batal / Kembali</span>
+            </Button>
+          </div>
+
+        </form>
+      </Card>
+    </div>
+  {/if}
+
+</div>
+
+<style>
+  /* Premium styles for content rendered inside the Sangu Reader Double Border Frame */
+  .sangu-reader-content :global(p),
+  .sangu-reader-content :global(div),
+  .sangu-reader-content :global(li) {
+    margin-bottom: 0.85rem;
+    line-height: 1.8;
+  }
+  
+  .sangu-reader-content :global(.sangu-arabic) {
+    font-family: 'KFGQPC Uthmanic Script HAFS', 'Amiri Quran', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+    direction: rtl !important;
+    text-align: justify !important;
+    text-align-last: right !important;
+    line-height: 2.3 !important;
+    display: block !important;
+    margin-top: 1rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+  
+  .sangu-reader-content :global(.sangu-latin):not(h1):not(h2),
+  .sangu-reader-content :global(.sangu-translation):not(h1):not(h2) {
+    font-family: 'Outfit', 'Inter', sans-serif !important;
+    font-size: 0.58em !important;
+    font-weight: 500 !important;
+    line-height: 1.65 !important;
+    direction: ltr !important;
+    text-align: justify !important;
+    text-align-last: left !important;
+    display: block !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .sangu-reader-content :global(.sangu-latin):not(h1):not(h2) {
+    color: #334155 !important;
+  }
+
+  .sangu-reader-content :global(.sangu-translation):not(h1):not(h2) {
+    color: #2563eb !important;
+  }
+
+  .sangu-reader-content :global(.sangu-nadzom),
+  .sangu-reader-content :global(.sangu-translation.sangu-nadzom),
+  .sangu-reader-content :global(.sangu-latin.sangu-nadzom) {
+    text-align: center !important;
+    text-align-last: center !important;
+  }
+  
+  .sangu-reader-content :global(.sangu-nadzom-separator) {
+    color: #d97706 !important; /* Premium Amber gold color */
+    font-weight: bold !important;
+    font-size: 0.85em !important;
+    margin: 0 0.85rem !important;
+    user-select: none !important;
+    display: inline-block !important;
+    transform: translateY(-1px);
+  }
+
+  .sangu-reader-content.hide-latin :global(.sangu-latin) {
+    display: none !important;
+  }
+
+  .sangu-reader-content.hide-translation :global(.sangu-translation) {
+    display: none !important;
+  }
+  
+  .sangu-reader-content :global(ul) {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .sangu-reader-content :global(ol) {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .sangu-reader-content :global(h1) {
+    font-size: 1.5em;
+    font-weight: 800;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #1E293B;
+  }
+  .sangu-reader-content :global(h2) {
+    font-size: 1.25em;
+    font-weight: 700;
+    margin-top: 1.25rem;
+    margin-bottom: 0.75rem;
+    color: #1E293B;
+  }
+  .sangu-reader-content :global(blockquote) {
+    border-left: 4px solid #0d9488;
+    background-color: rgba(13, 148, 136, 0.05);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #0f766e;
+  }
+  /* Handle global links */
+  .sangu-reader-content :global(a) {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+</style>
