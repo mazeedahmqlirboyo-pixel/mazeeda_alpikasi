@@ -648,7 +648,7 @@
   let madingSearchQuery = '';
   let stickySearchQuery = '';
 
-  let madingTitle = '', madingCategory = 'Informasi', madingAuthor = 'Admin MAZEEDA', madingContent = '';
+  let madingTitle = '', madingCategory = 'Informasi', madingAuthor = 'ADMIN MAZEEDA', madingContent = '';
   let madingNewCategory = '';
   let madingIsPriority = false;
 
@@ -703,7 +703,7 @@
     madingTitle = item.title || '';
     madingCategory = item.category || 'Informasi';
     madingNewCategory = '';
-    madingAuthor = item.author || 'Admin MAZEEDA';
+    madingAuthor = item.author || 'ADMIN MAZEEDA';
     madingContent = item.content || '';
     madingIsPriority = item.is_priority || false;
   }
@@ -715,7 +715,7 @@
     madingIsPriority = false;
     madingCategory = 'Informasi';
     madingNewCategory = '';
-    madingAuthor = 'Admin MAZEEDA';
+    madingAuthor = 'ADMIN MAZEEDA';
   }
 
   // Add announcement to Supabase
@@ -732,7 +732,7 @@
     const madingPayload = {
       title: madingTitle,
       category: finalCategory,
-      author: madingAuthor || 'Admin MAZEEDA',
+      author: madingAuthor || 'ADMIN MAZEEDA',
       content: madingContent,
       is_priority: madingIsPriority
     };
@@ -1884,18 +1884,50 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200" transition:fade={{ duration: 150 }}>
       <!-- LEFT SIDE: INPUT FORM -->
       <div class="lg:col-span-5 space-y-4">
-        <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
-          {#if editingSanguId}
-            <Edit class="h-5 w-5 text-indigo-600" />
-            <span>Edit Catatan Sangu</span>
-          {:else}
-            <Plus class="h-5 w-5 text-teal-600" />
-            <span>Buat Catatan Sangu Baru</span>
-          {/if}
-        </h2>
+        <form on:submit|preventDefault={handleSaveSangu} class="space-y-4">
+          <!-- Sticky Action Bar for Form -->
+          <Card noPadding class="p-3 sm:p-4 border-slate-200/50 shadow-soft-sm bg-white/95 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between gap-4">
+            <!-- Title -->
+            <h2 class="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-2">
+              {#if editingSanguId}
+                <Edit class="h-4.5 w-4.5 text-indigo-600 shrink-0" />
+                <span>Edit Catatan Sangu</span>
+              {:else}
+                <Plus class="h-4.5 w-4.5 text-teal-600 shrink-0" />
+                <span>Sangu Baru</span>
+              {/if}
+            </h2>
 
-        <Card class="p-5 space-y-4">
-          <form on:submit|preventDefault={handleSaveSangu} class="space-y-4">
+            <!-- Actions -->
+            <div class="flex items-center space-x-2 shrink-0">
+              {#if editingSanguId}
+                <button 
+                  type="button" 
+                  on:click={cancelEditSangu} 
+                  class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-premium cursor-pointer"
+                  style="min-height: 36px;"
+                >
+                  Batal
+                </button>
+              {/if}
+              
+              <button 
+                type="submit"
+                disabled={isSubmitting}
+                class="inline-flex items-center space-x-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-soft-sm transition-premium cursor-pointer disabled:opacity-50"
+                style="min-height: 36px;"
+              >
+                {#if isSubmitting}
+                  <span class="animate-pulse">...</span>
+                {:else}
+                  <Save class="h-3.5 w-3.5" />
+                  <span>Simpan Sangu</span>
+                {/if}
+              </button>
+            </div>
+          </Card>
+
+          <Card class="p-5 space-y-4">
             <div class="space-y-1">
               <label class="text-xs font-bold text-slate-500" for="sangu_title">Judul Sangu / Wirid *</label>
               <Input id="sangu_title" placeholder="e.g. Sholawat Ibrahimiyah, Doa Tolak Bala" bind:value={sanguTitle} required />
@@ -1924,28 +1956,8 @@
               <label class="text-xs font-bold text-slate-500">Isi Konten Bacaan *</label>
               <RichTextEditor bind:value={sanguContent} placeholder="Tulis isi bacaan arab, latin, dan terjemahan di sini..." />
             </div>
-
-            <!-- Form actions -->
-            <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
-              {#if editingSanguId}
-                <Button type="button" variant="secondary" on:click={cancelEditSangu} size="sm" class="font-bold">
-                  <span>Batal</span>
-                </Button>
-              {/if}
-              <Button type="submit" disabled={isSubmitting} class="flex items-center space-x-2 bg-teal-600 hover:bg-teal-700 text-white font-bold h-11">
-                {#if isSubmitting}
-                  <span class="animate-pulse">Menyimpan...</span>
-                {:else if editingSanguId}
-                  <Save class="h-4.5 w-4.5" />
-                  <span>Simpan Perubahan</span>
-                {:else}
-                  <Plus class="h-4.5 w-4.5" />
-                  <span>Simpan ke Database</span>
-                {/if}
-              </Button>
-            </div>
-          </form>
-        </Card>
+          </Card>
+        </form>
       </div>
 
       <!-- RIGHT SIDE: DATABASE LIST -->

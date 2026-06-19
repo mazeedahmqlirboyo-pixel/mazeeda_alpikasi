@@ -6,7 +6,7 @@
   import { supabase } from '$lib/supabase';
   import { authStore } from '$lib/auth';
   import { 
-    Image as ImageIcon, MapPin, Calendar, Heart, MessageCircle, CloudUpload, Sparkles, X, Trash2 
+    Image as ImageIcon, MapPin, Calendar, Heart, MessageCircle, CloudUpload, Sparkles, X, Trash2, Pencil 
   } from 'lucide-svelte';
 
   interface MemoryItem {
@@ -40,6 +40,10 @@
   let newCommentText = '';
   let guestName = '';
   let isSubmittingComment = false;
+
+  // Edit comment state (admin)
+  let editingCommentId: string | null = null;
+  let editingCommentText = '';
 
   async function loadMemories() {
     try {
@@ -272,6 +276,57 @@
       console.error('Error deleting comment:', err);
     }
   }
+
+  // ─── Edit Comment (Admin) ────────────────────────────────────────────────
+  async function saveEditComment() {
+    if (!editingCommentText.trim() || !editingCommentId) return;
+    const newText = editingCommentText.trim();
+    try {
+      const { error } = await supabase
+        .from('memory_comments')
+        .update({ comment_text: newText })
+        .eq('id', editingCommentId);
+      if (error) throw error;
+
+      activeComments = activeComments.map(c =>
+        c.id === editingCommentId ? { ...c, comment_text: newText } : c
+      );
+      editingCommentId = null;
+      editingCommentText = '';
+    } catch (err) {
+      console.error('Error editing comment:', err);
+    }
+  }
+  // Helper: convert Google Drive share URL → direct embeddable link
+  function convertDriveUrl(url: string): string {
+    if (!url) return '';
+    const cleaned = url.trim();
+    if (cleaned.includes('lh3.googleusercontent.com/u/0/d/')) {
+      return cleaned.replace('lh3.googleusercontent.com/u/0/d/', 'lh3.googleusercontent.com/d/');
+    }
+    const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+                  cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+    }
+    return cleaned;
+  }
+
+  // Helper: resolve correct avatar URL for a comment.
+  // Admin photo is always read live from authStore so it stays in sync.
+  function resolveCommentAvatar(comment: any): string {
+    const name = (comment.user_name || '').toUpperCase();
+    if (name === 'ADMIN MAZEEDA' || name === 'ADMIN') {
+      return convertDriveUrl($authStore.user?.foto_url || '');
+    }
+    return convertDriveUrl(comment.user_foto || '');
+  }
+
+  // Helper: get initials from display name
+  function getInitials(name: string): string {
+    if (!name) return '?';
+    return name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+  }
 </script>
 
 <div class="space-y-6 pb-12">
@@ -467,35 +522,79 @@
               </div>
             {:else if activeComments.length > 0}
               {#each activeComments as comment}
-                <div class="flex items-start space-x-3 bg-white p-3 rounded-xl border border-slate-200/40 shadow-soft-sm relative group/comment">
-                  <!-- User Avatar fallback -->
-                  <div class="h-8 w-8 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center text-xs shrink-0 overflow-hidden uppercase border border-primary/20">
-                    {#if comment.user_foto}
-                      <img src={comment.user_foto} alt={comment.user_name} class="h-full w-full object-cover" />
+                {@const isAdminComment = comment.user_name && comment.user_name.toUpperCase() === 'ADMIN MAZEEDA'}
+                {@const avatarUrl = resolveCommentAvatar(comment)}
+                {@const isEditing = editingCommentId === comment.id}
+                <div class="flex items-start space-x-3 bg-white p-3 rounded-xl border border-slate-200/40 shadow-soft-sm relative
+                  {isAdmin ? 'group/tc' : ''}
+                  {isAdminComment ? 'border-indigo-100/50 bg-gradient-to-r from-indigo-50/30 to-white' : ''}">
+                  <!-- User Avatar -->
+                  <div class="h-8 w-8 rounded-full flex items-center justify-center text-xs shrink-0 overflow-hidden uppercase
+                    {isAdminComment 
+                      ? 'bg-gradient-to-br from-primary to-indigo-600 text-white shadow-soft-sm' 
+                      : 'bg-primary/10 text-primary border border-primary/20 font-black'}">
+                    {#if avatarUrl}
+                      <img src={avatarUrl} alt={comment.user_name} class="h-full w-full object-cover"
+                        on:error={(e) => { e.currentTarget.style.display = 'none'; }} />
                     {:else}
-                      {comment.user_name.charAt(0)}
+                      {getInitials(comment.user_name)}
                     {/if}
                   </div>
-                  <div class="leading-tight flex-1">
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs font-extrabold text-slate-700">{comment.user_name}</span>
-                      <span class="text-[9px] text-slate-400 font-bold">
-                        {new Date(comment.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}
-                      </span>
+                  <div class="leading-tight flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-1.5 min-w-0">
+                        <span class="text-xs font-extrabold truncate
+                          {isAdminComment ? 'text-indigo-700' : 'text-slate-700'}">
+                          {isAdminComment ? 'ADMIN MAZEEDA' : comment.user_name}
+                        </span>
+                        {#if isAdminComment}
+                          <span class="px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-full text-[8px] font-black border border-indigo-200 shrink-0">ADMIN</span>
+                        {/if}
+                      </div>
+                      <div class="flex items-center gap-1 shrink-0">
+                        <span class="text-[9px] text-slate-400 font-bold">
+                          {new Date(comment.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}
+                        </span>
+                        <!-- Admin Action Buttons -->
+                        {#if isAdmin}
+                          <button
+                            on:click={() => { editingCommentId = comment.id; editingCommentText = comment.comment_text; }}
+                            class="p-1 rounded-md text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-all opacity-0 group-hover/tc:opacity-100"
+                            title="Edit komentar">
+                            <Pencil class="h-3 w-3" />
+                          </button>
+                          <button 
+                            on:click={() => deleteComment(comment.id, selectedMemory.id)}
+                            class="p-1 rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover/tc:opacity-100"
+                            title="Hapus Komentar">
+                            <Trash2 class="h-3.5 w-3.5" />
+                          </button>
+                        {/if}
+                      </div>
                     </div>
-                    <p class="text-xs text-slate-500 font-normal mt-1 leading-relaxed break-words">{comment.comment_text}</p>
+                    <!-- Text or Edit Input -->
+                    {#if isEditing}
+                      <div class="flex gap-2 items-center mt-1.5">
+                        <input
+                          type="text"
+                          class="flex-1 h-8 text-xs border border-indigo-200 rounded-xl px-2.5 bg-indigo-50/40 text-slate-700 outline-none focus:border-indigo-400"
+                          bind:value={editingCommentText}
+                          on:keydown={(e) => { if (e.key === 'Enter') saveEditComment(); if (e.key === 'Escape') { editingCommentId = null; } }}
+                          autofocus
+                        />
+                        <button on:click={saveEditComment}
+                          class="h-8 px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black rounded-xl transition-colors">
+                          Simpan
+                        </button>
+                        <button on:click={() => { editingCommentId = null; }}
+                          class="h-8 w-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl transition-colors">
+                          <X class="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    {:else}
+                      <p class="text-xs text-slate-500 font-normal mt-1 leading-relaxed break-words">{comment.comment_text}</p>
+                    {/if}
                   </div>
-                  
-                  <!-- Delete comment button for Admin -->
-                  {#if isAdmin}
-                    <button 
-                      on:click={() => deleteComment(comment.id, selectedMemory.id)}
-                      class="absolute top-2 right-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover/comment:opacity-100 transition-opacity p-1 rounded-md"
-                      title="Hapus Komentar"
-                    >
-                      <Trash2 class="h-3.5 w-3.5" />
-                    </button>
-                  {/if}
                 </div>
               {/each}
             {:else}
@@ -525,6 +624,18 @@
               </div>
             {/if}
             <div class="flex items-center space-x-2">
+              <!-- Current user avatar in input form -->
+              {#if $authStore.user}
+                {@const myAvatar = convertDriveUrl($authStore.user.foto_url || '')}
+                <div class="h-8 w-8 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-[10px] font-black
+                  {$authStore.user.role === 'admin' ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-primary/10 text-primary border border-primary/20'}">
+                  {#if myAvatar}
+                    <img src={myAvatar} alt="Saya" class="h-full w-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                  {:else}
+                    {getInitials($authStore.user.name)}
+                  {/if}
+                </div>
+              {/if}
               <input 
                 type="text" 
                 placeholder="Tulis komentar berharga Anda..." 

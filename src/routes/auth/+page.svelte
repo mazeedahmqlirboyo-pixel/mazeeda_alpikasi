@@ -225,7 +225,7 @@
 
       <div class="w-full text-center py-4">
         <p class="text-xs text-slate-400 font-semibold leading-relaxed">
-          Kendala login? Hubungi Admin MAZEEDA di grup WhatsApp.
+          Kendala login? Hubungi ADMIN MAZEEDA di grup WhatsApp.
         </p>
       </div>
     </Card>

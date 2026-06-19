@@ -20,18 +20,18 @@ export const authStore = writable<AuthState>({ loading: true, user: null });
 
 // Helper: load saved admin profile (name + foto) from localStorage
 function loadSavedAdminProfile(): { name: string; foto_url: string } {
-  if (!browser) return { name: 'Admin MAZEEDA', foto_url: '' };
+  if (!browser) return { name: 'ADMIN MAZEEDA', foto_url: '' };
   try {
     const savedProfile = localStorage.getItem('mazeeda_admin_profile');
     if (savedProfile) {
       const p = JSON.parse(savedProfile);
       return {
-        name: p.nama_lengkap || 'Admin MAZEEDA',
+        name: p.nama_lengkap === 'Admin MAZEEDA' ? 'ADMIN MAZEEDA' : (p.nama_lengkap || 'ADMIN MAZEEDA'),
         foto_url: p.foto_url || ''
       };
     }
   } catch (_) {}
-  return { name: 'Admin MAZEEDA', foto_url: '' };
+  return { name: 'ADMIN MAZEEDA', foto_url: '' };
 }
 
 export function initAuth() {

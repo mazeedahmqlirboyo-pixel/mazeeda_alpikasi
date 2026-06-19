@@ -151,7 +151,7 @@
   let adminEditForm: any = {};
 
   const DEFAULT_ADMIN_PROFILE = {
-    nama_lengkap: 'Admin MAZEEDA',
+    nama_lengkap: 'ADMIN MAZEEDA',
     nama_panggilan: 'Admin',
     email: 'admin@mazeeda.com',
     foto_url: '',
@@ -874,7 +874,7 @@
             <div class="flex-1 min-w-0">
               <p class="text-sm font-bold text-slate-700 truncate">{$authStore.user.name}</p>
               <p class="text-xs text-slate-400 truncate">
-                {$authStore.user.role === 'admin' ? 'Admin MAZEEDA' : `NIS: ${$authStore.user.nis || '-'}`}
+                {$authStore.user.role === 'admin' ? 'ADMIN MAZEEDA' : `NIS: ${$authStore.user.nis || '-'}`}
               </p>
             </div>
           </button>

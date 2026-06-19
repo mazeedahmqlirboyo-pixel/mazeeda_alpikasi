@@ -22,10 +22,15 @@
     Heart,
     Trash2,
     CheckCircle,
+    Pencil,
+    X as XIcon,
   } from "lucide-svelte";
 
   // Navigation / Tabs
   let activeTab = "pengumuman"; // 'pengumuman' | 'aspirasi'
+
+  // Admin check (reactive)
+  $: isAdmin = $authStore.user?.role === 'admin';
 
   // Announcements State (Official Mading)
   let searchQuery = "";
@@ -120,6 +125,14 @@
   let selectedAnnouncementForComments: any = null;
   let newAnnouncementCommentText = "";
 
+  // Edit state — announcement comments
+  let editingAnnouncementCommentId: number | null = null;
+  let editingAnnouncementCommentText = "";
+
+  // Edit state — note comments
+  let editingNoteCommentId: string | null = null;
+  let editingNoteCommentText = "";
+
   $: if (browser) {
     if (
       selectedNoteForComments ||
@@ -174,6 +187,59 @@
   let realtimeStatus = "connecting"; // 'connecting' | 'connected' | 'error'
   let notesChannel: any;
 
+  // ─── Avatar Map: author name → foto_url ───────────────────────────────────
+  // Stores a mapping of commenter names to their profile photo URLs.
+  // Admin photo is kept in sync via authStore reactive subscription.
+  let authorAvatarMap: Record<string, string> = {};
+
+  // Helper: convert Google Drive share link → direct thumbnail URL
+  function convertDriveUrl(url: string): string {
+    if (!url) return '';
+    const cleaned = url.trim();
+    if (cleaned.includes('lh3.googleusercontent.com/u/0/d/')) {
+      return cleaned.replace('lh3.googleusercontent.com/u/0/d/', 'lh3.googleusercontent.com/d/');
+    }
+    const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+                  cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+    }
+    return cleaned;
+  }
+
+  // Fetch foto_url for all known alumni (once on mount, best-effort)
+  async function fetchAuthorAvatars() {
+    try {
+      const { data, error } = await supabase
+        .from('allowed_alumni')
+        .select('nama_lengkap, foto_url');
+      if (!error && data) {
+        data.forEach((row: any) => {
+          if (row.nama_lengkap && row.foto_url) {
+            authorAvatarMap[row.nama_lengkap] = row.foto_url;
+          }
+        });
+        authorAvatarMap = { ...authorAvatarMap }; // trigger reactivity
+      }
+    } catch (_) {}
+  }
+
+  // Reactive: keep admin photo in sync whenever authStore changes
+  $: if ($authStore.user?.role === 'admin' && $authStore.user?.foto_url !== undefined) {
+    const adminName = $authStore.user.name || 'ADMIN MAZEEDA';
+    authorAvatarMap[adminName] = $authStore.user.foto_url;
+    // Also cover the old-format name
+    authorAvatarMap['Admin MAZEEDA'] = $authStore.user.foto_url;
+    authorAvatarMap['ADMIN MAZEEDA'] = $authStore.user.foto_url;
+    authorAvatarMap = { ...authorAvatarMap };
+  }
+
+  // Helper: get initials from a display name
+  function getInitials(name: string): string {
+    if (!name) return '?';
+    return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  }
+
   onMount(async () => {
     // Load local storage liked lists
     const storedLikes = localStorage.getItem("mazeeda_liked_announcements");
@@ -190,9 +256,10 @@
       } catch (e) {}
     }
 
-    // 1. Fetch announcements and comments
+    // 1. Fetch announcements, comments, and author avatars
     await fetchAnnouncements();
     await fetchStickyNotes();
+    await fetchAuthorAvatars();
 
     // 2. Setup Realtime subscription channel (Unified and using unique name to prevent cache collisions)
     try {
@@ -669,6 +736,105 @@
     }
   }
 
+  // ─── Delete Announcement Comment (Admin) ──────────────────────────────────
+  async function deleteAnnouncementComment(commentId: number | string) {
+    if (!confirm('Hapus komentar ini?')) return;
+    try {
+      const { error } = await supabase
+        .from('mading_comments')
+        .delete()
+        .eq('id', commentId);
+      if (error) throw error;
+
+      // Remove from local state
+      announcements = announcements.map(post => {
+        if (post.id === selectedAnnouncementForComments?.id) {
+          const updated = { ...post, comments: post.comments.filter((c: any) => c.id !== commentId) };
+          selectedAnnouncementForComments = updated;
+          return updated;
+        }
+        return post;
+      });
+      triggerAlert('Komentar berhasil dihapus.');
+    } catch (e) {
+      console.error('Delete announcement comment failed:', e);
+    }
+  }
+
+  // ─── Edit Announcement Comment (Admin) ────────────────────────────────────
+  async function saveEditAnnouncementComment() {
+    if (!editingAnnouncementCommentText.trim() || editingAnnouncementCommentId === null) return;
+    const newText = editingAnnouncementCommentText.trim();
+    try {
+      const { error } = await supabase
+        .from('mading_comments')
+        .update({ text: newText })
+        .eq('id', editingAnnouncementCommentId);
+      if (error) throw error;
+
+      announcements = announcements.map(post => {
+        if (post.id === selectedAnnouncementForComments?.id) {
+          const updated = { ...post, comments: post.comments.map((c: any) =>
+            c.id === editingAnnouncementCommentId ? { ...c, text: newText } : c
+          )};
+          selectedAnnouncementForComments = updated;
+          return updated;
+        }
+        return post;
+      });
+      editingAnnouncementCommentId = null;
+      editingAnnouncementCommentText = '';
+      triggerAlert('Komentar berhasil diperbarui.');
+    } catch (e) {
+      console.error('Edit announcement comment failed:', e);
+    }
+  }
+
+  // ─── Delete Note Comment (Admin) ──────────────────────────────────────────
+  async function deleteNoteComment(commentId: string | number) {
+    if (!confirm('Hapus komentar ini?')) return;
+    try {
+      const { error } = await supabase
+        .from('mading_note_comments')
+        .delete()
+        .eq('id', commentId);
+      if (error) throw error;
+
+      noteCommentsList = noteCommentsList.filter(c => c.id !== commentId);
+      // Decrement count on sticky note
+      stickyNotes = stickyNotes.map(n =>
+        n.id === selectedNoteForComments?.id
+          ? { ...n, comments_count: Math.max(0, (n.comments_count || 1) - 1) }
+          : n
+      );
+      triggerAlert('Komentar berhasil dihapus.');
+    } catch (e) {
+      console.error('Delete note comment failed:', e);
+    }
+  }
+
+  // ─── Edit Note Comment (Admin) ────────────────────────────────────────────
+  async function saveEditNoteComment() {
+    if (!editingNoteCommentText.trim() || editingNoteCommentId === null) return;
+    const newText = editingNoteCommentText.trim();
+    try {
+      const { error } = await supabase
+        .from('mading_note_comments')
+        .update({ text: newText })
+        .eq('id', editingNoteCommentId);
+      if (error) throw error;
+
+      noteCommentsList = noteCommentsList.map(c =>
+        c.id === editingNoteCommentId ? { ...c, text: newText } : c
+      );
+      editingNoteCommentId = null;
+      editingNoteCommentText = '';
+      triggerAlert('Komentar berhasil diperbarui.');
+    } catch (e) {
+      console.error('Edit note comment failed:', e);
+    }
+  }
+
   // Add Comment to Sticky Note
   async function handleAddNoteComment() {
     if (!newNoteCommentText.trim() || !selectedNoteForComments) return;
@@ -1039,18 +1205,29 @@
                   </span>
                   <span class="flex items-center space-x-1">
                     <User class="h-3.5 w-3.5" />
-                    <span>{post.author}</span>
+                    <span>{post.author && post.author.toUpperCase() === 'ADMIN MAZEEDA' ? 'ADMIN MAZEEDA' : post.author}</span>
                   </span>
                 </div>
               </div>
 
               <!-- Body -->
-              <div class="py-4">
-                <p
-                  class="text-sm text-slate-600 leading-relaxed font-normal whitespace-pre-line"
-                >
-                  {post.content}
-                </p>
+              <div class="py-4 space-y-3">
+                {#each post.content.split('\n') as paragraph}
+                  {#if paragraph.trim()}
+                    <p 
+                      class="text-sm leading-relaxed font-normal text-justify
+                        {isArabic(paragraph) 
+                          ? 'font-arabic text-right text-slate-800 text-lg md:text-xl' 
+                          : 'text-slate-600 text-left'}"
+                      dir={isArabic(paragraph) ? 'rtl' : 'ltr'}
+                      style="text-align: justify; text-align-last: {isArabic(paragraph) ? 'right' : 'left'};"
+                    >
+                      {paragraph}
+                    </p>
+                  {:else}
+                    <div class="h-2.5"></div>
+                  {/if}
+                {/each}
               </div>
 
               <!-- Footer Buttons -->
@@ -1382,7 +1559,7 @@
             )
               ? 'text-right font-arabic'
               : 'text-left'}"
-            style="text-justify: inter-word;"
+            style="text-align: justify; text-align-last: {isArabic(selectedNoteForComments.message) ? 'right' : 'left'}; text-justify: inter-word;"
           >
             "{selectedNoteForComments.message}"
           </p>
@@ -1415,28 +1592,74 @@
           {#if noteCommentsList.length > 0}
             <div class="space-y-2.5">
               {#each noteCommentsList as comment}
-                <div
-                  class="bg-white border border-slate-100 rounded-2xl p-4 space-y-1 shadow-soft-sm"
-                >
-                  <div
-                    class="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase"
-                  >
-                    <span class="text-primary">{comment.author}</span>
-                    <span
-                      >{new Date(comment.created_at).toLocaleDateString(
-                        "id-ID",
-                        {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      )}</span
-                    >
+                {@const avatarUrl = convertDriveUrl(authorAvatarMap[comment.author] || '')}
+                {@const isAdminComment = comment.author && comment.author.toUpperCase() === 'ADMIN MAZEEDA'}
+                {@const isEditing = editingNoteCommentId === comment.id}
+                <div class="bg-white border rounded-2xl p-3.5 shadow-soft-sm transition-all
+                  {isAdminComment ? 'border-indigo-100' : 'border-slate-100'}
+                  {isAdmin ? 'group/nc' : ''}">
+                  <div class="flex items-start gap-3">
+                    <!-- Avatar -->
+                    <div class="shrink-0 h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-black shadow-soft-xs
+                      {isAdminComment ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}">
+                      {#if avatarUrl}
+                        <img src={avatarUrl} alt={comment.author} class="h-full w-full object-cover"
+                          on:error={(e) => { e.currentTarget.style.display = 'none'; }} />
+                      {:else}
+                        {getInitials(comment.author)}
+                      {/if}
+                    </div>
+                    <!-- Content -->
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-1 min-w-0">
+                          <span class="text-[10px] font-black truncate
+                            {isAdminComment ? 'text-indigo-600' : 'text-primary'}">
+                            {isAdminComment ? 'ADMIN MAZEEDA' : comment.author}
+                          </span>
+                          {#if isAdminComment}<span class="ml-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[8px] font-black border border-indigo-100">ADMIN</span>{/if}
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                          <span class="text-[9px] text-slate-400 font-bold">{new Date(comment.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                          <!-- Admin Actions -->
+                          {#if isAdmin}
+                            <button on:click={() => { editingNoteCommentId = comment.id; editingNoteCommentText = comment.text; }}
+                              class="p-1 rounded-md text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-all opacity-0 group-hover/nc:opacity-100"
+                              title="Edit komentar">
+                              <Pencil class="h-3 w-3" />
+                            </button>
+                            <button on:click={() => deleteNoteComment(comment.id)}
+                              class="p-1 rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover/nc:opacity-100"
+                              title="Hapus komentar">
+                              <Trash2 class="h-3 w-3" />
+                            </button>
+                          {/if}
+                        </div>
+                      </div>
+                      <!-- Text or Edit Input -->
+                      {#if isEditing}
+                        <div class="flex gap-2 items-center mt-1">
+                          <input
+                            type="text"
+                            class="flex-1 h-8 text-xs border border-indigo-200 rounded-xl px-2.5 bg-indigo-50/40 text-slate-700 outline-none focus:border-indigo-400"
+                            bind:value={editingNoteCommentText}
+                            on:keydown={(e) => { if (e.key === 'Enter') saveEditNoteComment(); if (e.key === 'Escape') { editingNoteCommentId = null; } }}
+                            autofocus
+                          />
+                          <button on:click={saveEditNoteComment}
+                            class="h-8 px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black rounded-xl transition-colors">
+                            Simpan
+                          </button>
+                          <button on:click={() => { editingNoteCommentId = null; }}
+                            class="h-8 w-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl transition-colors">
+                            <XIcon class="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      {:else}
+                        <p class="text-xs font-medium text-slate-600 leading-relaxed">{comment.text}</p>
+                      {/if}
+                    </div>
                   </div>
-                  <p class="text-xs font-medium text-slate-600 leading-relaxed">
-                    {comment.text}
-                  </p>
                 </div>
               {/each}
             </div>
@@ -1450,12 +1673,24 @@
         </div>
       </div>
 
-      <!-- Modal Footer: Comment Form -->
-      <div class="p-5 border-t border-slate-100 bg-white">
+      <!-- Modal Footer: Comment Form (Sticky Note) -->
+      <div class="p-4 border-t border-slate-100 bg-white">
         <form
           on:submit|preventDefault={handleAddNoteComment}
           class="flex gap-2 items-center"
         >
+          <!-- Current user avatar -->
+          {#if $authStore.user}
+            {@const myAvatarUrl = convertDriveUrl($authStore.user.foto_url || '')}
+            <div class="shrink-0 h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-black
+              {$authStore.user.role === 'admin' ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}">
+              {#if myAvatarUrl}
+                <img src={myAvatarUrl} alt="Saya" class="h-full w-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+              {:else}
+                {getInitials($authStore.user.name)}
+              {/if}
+            </div>
+          {/if}
           <Input
             type="text"
             placeholder="Tulis komentar Anda..."
@@ -1517,11 +1752,26 @@
               {selectedAnnouncementForComments.title}
             </h2>
           </div>
-          <p class="text-sm text-slate-600 leading-relaxed font-normal whitespace-pre-line">
-            {selectedAnnouncementForComments.content}
-          </p>
+          <div class="space-y-3">
+            {#each selectedAnnouncementForComments.content.split('\n') as paragraph}
+              {#if paragraph.trim()}
+                <p 
+                  class="text-sm leading-relaxed font-normal text-justify
+                    {isArabic(paragraph) 
+                      ? 'font-arabic text-right text-slate-800 text-lg md:text-xl' 
+                      : 'text-slate-600 text-left'}"
+                  dir={isArabic(paragraph) ? 'rtl' : 'ltr'}
+                  style="text-align: justify; text-align-last: {isArabic(paragraph) ? 'right' : 'left'};"
+                >
+                  {paragraph}
+                </p>
+              {:else}
+                <div class="h-2.5"></div>
+              {/if}
+            {/each}
+          </div>
           <div class="text-[9px] font-black uppercase text-slate-400 tracking-wider pt-3 border-t border-slate-100 flex justify-between" dir="ltr">
-            <span>Oleh: {selectedAnnouncementForComments.author}</span>
+            <span>Oleh: {selectedAnnouncementForComments.author && selectedAnnouncementForComments.author.toUpperCase() === 'ADMIN MAZEEDA' ? 'ADMIN MAZEEDA' : selectedAnnouncementForComments.author}</span>
             <span>{selectedAnnouncementForComments.date}</span>
           </div>
         </div>
@@ -1535,14 +1785,74 @@
           {#if selectedAnnouncementForComments.comments.length > 0}
             <div class="space-y-2.5">
               {#each selectedAnnouncementForComments.comments as comment}
-                <div class="bg-white border border-slate-100 rounded-2xl p-4 space-y-1 shadow-soft-sm">
-                  <div class="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase">
-                    <span class="text-primary">{comment.author}</span>
-                    <span>{comment.date}</span>
+                {@const avatarUrl = convertDriveUrl(authorAvatarMap[comment.author] || '')}
+                {@const isAdminComment = comment.author && comment.author.toUpperCase() === 'ADMIN MAZEEDA'}
+                {@const isEditing = editingAnnouncementCommentId === comment.id}
+                <div class="bg-white border rounded-2xl p-3.5 shadow-soft-sm transition-all
+                  {isAdminComment ? 'border-indigo-100' : 'border-slate-100'}
+                  {isAdmin ? 'group/ac' : ''}">
+                  <div class="flex items-start gap-3">
+                    <!-- Avatar -->
+                    <div class="shrink-0 h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-black shadow-soft-xs
+                      {isAdminComment ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}">
+                      {#if avatarUrl}
+                        <img src={avatarUrl} alt={comment.author} class="h-full w-full object-cover"
+                          on:error={(e) => { e.currentTarget.style.display = 'none'; }} />
+                      {:else}
+                        {getInitials(comment.author)}
+                      {/if}
+                    </div>
+                    <!-- Content -->
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-1 min-w-0">
+                          <span class="text-[10px] font-black truncate
+                            {isAdminComment ? 'text-indigo-600' : 'text-primary'}">
+                            {isAdminComment ? 'ADMIN MAZEEDA' : comment.author}
+                          </span>
+                          {#if isAdminComment}<span class="ml-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[8px] font-black border border-indigo-100">ADMIN</span>{/if}
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                          <span class="text-[9px] text-slate-400 font-bold">{comment.date}</span>
+                          <!-- Admin Actions -->
+                          {#if isAdmin}
+                            <button on:click={() => { editingAnnouncementCommentId = comment.id; editingAnnouncementCommentText = comment.text; }}
+                              class="p-1 rounded-md text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-all opacity-0 group-hover/ac:opacity-100"
+                              title="Edit komentar">
+                              <Pencil class="h-3 w-3" />
+                            </button>
+                            <button on:click={() => deleteAnnouncementComment(comment.id)}
+                              class="p-1 rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover/ac:opacity-100"
+                              title="Hapus komentar">
+                              <Trash2 class="h-3 w-3" />
+                            </button>
+                          {/if}
+                        </div>
+                      </div>
+                      <!-- Text or Edit Input -->
+                      {#if isEditing}
+                        <div class="flex gap-2 items-center mt-1">
+                          <input
+                            type="text"
+                            class="flex-1 h-8 text-xs border border-indigo-200 rounded-xl px-2.5 bg-indigo-50/40 text-slate-700 outline-none focus:border-indigo-400"
+                            bind:value={editingAnnouncementCommentText}
+                            on:keydown={(e) => { if (e.key === 'Enter') saveEditAnnouncementComment(); if (e.key === 'Escape') { editingAnnouncementCommentId = null; } }}
+                            autofocus
+                          />
+                          <button on:click={saveEditAnnouncementComment}
+                            class="h-8 px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black rounded-xl transition-colors">
+                            Simpan
+                          </button>
+                          <button on:click={() => { editingAnnouncementCommentId = null; }}
+                            class="h-8 w-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl transition-colors">
+                            <XIcon class="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      {:else}
+                        <p class="text-xs font-medium text-slate-600 leading-relaxed">{comment.text}</p>
+                      {/if}
+                    </div>
                   </div>
-                  <p class="text-xs font-medium text-slate-600 leading-relaxed">
-                    {comment.text}
-                  </p>
                 </div>
               {/each}
             </div>
@@ -1554,12 +1864,24 @@
         </div>
       </div>
 
-      <!-- Modal Footer: Add Comment Form -->
+      <!-- Modal Footer: Add Comment Form (Announcement) -->
       <div class="p-4 border-t border-slate-100 bg-white">
         <form
           on:submit|preventDefault={handleAddAnnouncementComment}
           class="flex gap-2 items-center"
         >
+          <!-- Current user avatar -->
+          {#if $authStore.user}
+            {@const myAvatarUrl = convertDriveUrl($authStore.user.foto_url || '')}
+            <div class="shrink-0 h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-black
+              {$authStore.user.role === 'admin' ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}">
+              {#if myAvatarUrl}
+                <img src={myAvatarUrl} alt="Saya" class="h-full w-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+              {:else}
+                {getInitials($authStore.user.name)}
+              {/if}
+            </div>
+          {/if}
           <Input
             type="text"
             placeholder="Tulis tanggapan Anda..."

@@ -1075,7 +1075,7 @@
           </div>
           
           <div slot="footer" class="w-full flex items-center justify-between pt-2">
-            <span class="text-xs font-semibold text-slate-400">Diposting oleh: <strong class="text-slate-600">{recentAnnouncement.author}</strong></span>
+            <span class="text-xs font-semibold text-slate-400">Diposting oleh: <strong class="text-slate-600">{recentAnnouncement.author && recentAnnouncement.author.toUpperCase() === 'ADMIN MAZEEDA' ? 'ADMIN MAZEEDA' : recentAnnouncement.author}</strong></span>
             <a href="/mading">
               <Button variant="ghost" size="sm" class="text-primary flex items-center space-x-1.5">
                 <span>Selengkapnya</span>
