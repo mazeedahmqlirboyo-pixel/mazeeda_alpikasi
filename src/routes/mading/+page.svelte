@@ -212,7 +212,7 @@
     const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
                   cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
     }
     return cleaned;
   }
@@ -987,7 +987,7 @@
       }
       newNoteText = "";
       showNoteCreatorModal = false;
-      triggerAlert("Sticky note berhasil ditempel ke dinding!");
+      triggerAlert("Aspirasi berhasil ditempel ke dinding!");
     } catch (err) {
       console.warn(
         "RLS permission insert restricted. Showing locally for demo:",
@@ -996,7 +996,7 @@
       stickyNotes = [newNote, ...stickyNotes];
       newNoteText = "";
       showNoteCreatorModal = false;
-      triggerAlert("Sticky note terpasang (Sesi Lokal)!");
+      triggerAlert("Aspirasi terpasang (Sesi Lokal)!");
     } finally {
       isPostingNote = false;
     }
@@ -1463,25 +1463,25 @@
                 Dinding Aspirasi Kosong
               </p>
               <p class="text-xs text-slate-400">
-                Jadilah yang pertama untuk menempelkan sticky note sapaan atau
+                Jadilah yang pertama untuk menempelkan aspirasi sapaan atau
                 kenangan Anda!
               </p>
             </div>
           {/if}
         </div>
       </div>
-
+ 
       <!-- Floating Action Button (FAB) to write a sticky note -->
       <button
         on:click={() => (showNoteCreatorModal = true)}
         class="fixed bottom-24 right-6 md:bottom-8 md:right-8 z-40 h-14 w-14 rounded-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/95 hover:to-indigo-600/95 text-white flex items-center justify-center shadow-lg hover:shadow-primary/30 hover:scale-110 active:scale-95 transition-all duration-300 group cursor-pointer"
-        title="Tulis Sticky Note"
+        title="Tulis Aspirasi"
       >
         <Plus
           class="h-6 w-6 transition-transform duration-300 group-hover:rotate-90"
         />
       </button>
-
+ 
       {#if showNoteCreatorModal}
         <!-- MODAL FOR STICKY NOTE CREATION -->
         <div
@@ -1503,7 +1503,7 @@
                 class="font-black text-slate-800 text-sm tracking-tight flex items-center gap-1.5"
               >
                 <Pin class="h-4.5 w-4.5 text-primary" />
-                <span>Tulis Sticky Note</span>
+                <span>Tulis Aspirasi</span>
               </h3>
               <button
                 on:click={() => (showNoteCreatorModal = false)}
@@ -1570,7 +1570,7 @@
                     <span>Menempelkan...</span>
                   {:else}
                     <Plus class="h-4.5 w-4.5" />
-                    <span>Tempel Catatan</span>
+                    <span>Tempel Aspirasi</span>
                   {/if}
                 </Button>
               </form>

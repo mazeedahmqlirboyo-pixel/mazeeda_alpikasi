@@ -677,9 +677,9 @@
               <span>Kembali</span>
             </button>
 
-            <div class="text-right leading-tight">
-              <h2 class="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-tight truncate max-w-[180px] sm:max-w-xs md:max-w-md">{selectedItem.title}</h2>
-              <span class="text-[8px] sm:text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">
+            <div class="text-right leading-tight ml-4 min-w-0 flex-1">
+              <h2 class="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-tight break-words whitespace-normal">{selectedItem.title}</h2>
+              <span class="text-[8px] sm:text-[9px] font-extrabold text-slate-400 uppercase tracking-widest block mt-0.5">
                 Kategori: {getCategoryLabel(selectedItem.category)}
               </span>
             </div>
@@ -717,23 +717,8 @@
             </div>
 
             <!-- Action buttons -->
-            <div class="flex items-center space-x-1.5 border-l-0 md:border-l md:border-slate-200 md:pl-3">
-              <button
-                type="button"
-                on:click={() => copyWholeItem(selectedItem)}
-                class="flex items-center space-x-1 bg-teal-50 border border-teal-100 hover:bg-teal-100 text-teal-700 px-2.5 py-1.5 rounded-lg text-[9px] font-bold transition-premium"
-                style="min-height: 26px;"
-              >
-                {#if copiedItemSuccess}
-                  <Check class="h-3 w-3 text-emerald-600" />
-                  <span class="text-emerald-700">Tersalin!</span>
-                {:else}
-                  <Copy class="h-3 w-3" />
-                  <span>Salin Semua</span>
-                {/if}
-              </button>
-
-              {#if isAdmin}
+            {#if isAdmin}
+              <div class="flex items-center space-x-1.5 border-l-0 md:border-l md:border-slate-200 md:pl-3">
                 <button
                   type="button"
                   on:click={() => startEdit(selectedItem)}
@@ -743,8 +728,8 @@
                   <Edit class="h-3 w-3" />
                   <span>Edit Teks</span>
                 </button>
-              {/if}
-            </div>
+              </div>
+            {/if}
           </div>
         </Card>
 

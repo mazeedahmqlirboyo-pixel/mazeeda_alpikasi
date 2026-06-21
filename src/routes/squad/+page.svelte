@@ -7,7 +7,8 @@
   import Button from '$lib/components/ui/button.svelte';
   import { 
     Search, Mail, Phone, MapPin, Plus, ArrowLeft, Filter,
-    BookOpen, Heart, Music, Award, User, Globe, Route, Home, ChevronRight
+    BookOpen, Heart, Music, Award, User, Globe, Route, Home, ChevronRight,
+    ExternalLink
   } from 'lucide-svelte';
 
   // State
@@ -164,7 +165,7 @@
     const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || 
                   cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
     }
     return cleaned;
   }
@@ -395,7 +396,10 @@
               <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">WhatsApp</span>
                 {#if selectedMember.no_whatsapp}
-                  <a href={getWhatsAppLink(selectedMember.no_whatsapp)} target="_blank" rel="noopener noreferrer" class="text-slate-800 hover:text-primary hover:underline font-bold">{formatWhatsApp(selectedMember.no_whatsapp)}</a>
+                  <a href={getWhatsAppLink(selectedMember.no_whatsapp)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                    <span>{formatWhatsApp(selectedMember.no_whatsapp)}</span>
+                    <ExternalLink class="h-3 w-3" />
+                  </a>
                 {:else}
                   <strong class="text-slate-400 font-bold">-</strong>
                 {/if}
@@ -403,7 +407,10 @@
               <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Email</span>
                 {#if selectedMember.email}
-                  <a href="https://mail.google.com/mail/?view=cm&fs=1&to={selectedMember.email}" target="_blank" rel="noopener noreferrer" class="text-slate-800 hover:text-primary hover:underline font-bold truncate max-w-[180px]" title={selectedMember.email}>{selectedMember.email}</a>
+                  <a href="https://mail.google.com/mail/?view=cm&fs=1&to={selectedMember.email}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold truncate max-w-[180px] inline-flex items-center gap-1" title={selectedMember.email}>
+                    <span class="truncate">{selectedMember.email}</span>
+                    <ExternalLink class="h-3 w-3 shrink-0" />
+                  </a>
                 {:else}
                   <strong class="text-slate-400 font-bold">-</strong>
                 {/if}
@@ -411,7 +418,10 @@
               <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Instagram</span>
                 {#if selectedMember.media_social}
-                  <a href={getInstagramLink(selectedMember.media_social)} target="_blank" rel="noopener noreferrer" class="text-slate-800 hover:text-primary hover:underline font-bold">{selectedMember.media_social.toLowerCase()}</a>
+                  <a href={getInstagramLink(selectedMember.media_social)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                    <span>{selectedMember.media_social.toLowerCase()}</span>
+                    <ExternalLink class="h-3 w-3" />
+                  </a>
                 {:else}
                   <strong class="text-slate-400 font-bold">-</strong>
                 {/if}
@@ -419,7 +429,10 @@
               <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Tiktok</span>
                 {#if selectedMember.tiktok_akun}
-                  <a href={getTiktokLink(selectedMember.tiktok_akun)} target="_blank" rel="noopener noreferrer" class="text-slate-800 hover:text-primary hover:underline font-bold">{selectedMember.tiktok_akun}</a>
+                  <a href={getTiktokLink(selectedMember.tiktok_akun)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                    <span>{selectedMember.tiktok_akun}</span>
+                    <ExternalLink class="h-3 w-3" />
+                  </a>
                 {:else}
                   <strong class="text-slate-400 font-bold">-</strong>
                 {/if}
@@ -427,7 +440,10 @@
               <div class="flex justify-between items-center py-1.5">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">X / Twitter</span>
                 {#if selectedMember.xtwitter_akun}
-                  <a href={getXTwitterLink(selectedMember.xtwitter_akun)} target="_blank" rel="noopener noreferrer" class="text-slate-800 hover:text-primary hover:underline font-bold">{selectedMember.xtwitter_akun}</a>
+                  <a href={getXTwitterLink(selectedMember.xtwitter_akun)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                    <span>{selectedMember.xtwitter_akun}</span>
+                    <ExternalLink class="h-3 w-3" />
+                  </a>
                 {:else}
                   <strong class="text-slate-400 font-bold">-</strong>
                 {/if}

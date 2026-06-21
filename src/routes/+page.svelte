@@ -20,7 +20,12 @@
     Smartphone,
     Download,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Facebook,
+    Twitter,
+    Instagram,
+    Youtube,
+    Rss
   } from 'lucide-svelte';
 
   // --- Reactive PWA State ---
@@ -537,7 +542,7 @@
     const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || 
                   cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
     }
     return cleaned;
   }
@@ -1011,6 +1016,55 @@
 
   </section>
 
+  <!-- ==================== FITUR ISLAMI WIDGET ==================== -->
+  <section class="space-y-4">
+    <h2 class="text-lg font-bold text-slate-800 tracking-tight">Fitur Islami</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <!-- Card 1: Qibla Compass -->
+      <a href="/kiblat" class="block transition-all hover:-translate-y-1 hover:shadow-soft-md duration-200">
+        <Card class="bg-gradient-to-br from-indigo-900 to-slate-900 border-indigo-950 text-white relative overflow-hidden h-36 flex items-center p-6">
+          <div class="absolute -right-4 -bottom-6 opacity-10 text-white pointer-events-none">
+            <Compass class="h-32 w-32" />
+          </div>
+          <div class="space-y-2 z-10 flex-1">
+            <span class="inline-flex items-center space-x-1.5 bg-indigo-500/30 border border-indigo-400/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-300">
+              🧭 Kompas Arah
+            </span>
+            <h3 class="text-xl font-extrabold tracking-tight">Arah Kiblat</h3>
+            <p class="text-xs text-indigo-200 leading-relaxed font-normal max-w-sm">
+              Cari arah kiblat sholat secara real-time dengan sensor HP atau lokasi GPS Anda.
+            </p>
+          </div>
+          <div class="bg-white/10 hover:bg-white/20 text-white rounded-full p-2.5 transition-colors shrink-0 shadow-soft-sm">
+            <ArrowRight class="h-5 w-5" />
+          </div>
+        </Card>
+      </a>
+
+      <!-- Card 2: Zakat & Faraidh Calculator -->
+      <a href="/zakat-faraidh" class="block transition-all hover:-translate-y-1 hover:shadow-soft-md duration-200">
+        <Card class="bg-gradient-to-br from-emerald-900 to-slate-900 border-emerald-950 text-white relative overflow-hidden h-36 flex items-center p-6">
+          <div class="absolute -right-4 -bottom-6 opacity-10 text-white pointer-events-none">
+            <Wallet class="h-32 w-32" />
+          </div>
+          <div class="space-y-2 z-10 flex-1">
+            <span class="inline-flex items-center space-x-1.5 bg-emerald-500/30 border border-emerald-400/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+              🧮 Hitung Syariah
+            </span>
+            <h3 class="text-xl font-extrabold tracking-tight">Zakat & Faraidh</h3>
+            <p class="text-xs text-emerald-200 leading-relaxed font-normal max-w-sm">
+              Alat hitung Zakat Penghasilan, Zakat Maal, dan pembagian waris dasar secara instan.
+            </p>
+          </div>
+          <div class="bg-white/10 hover:bg-white/20 text-white rounded-full p-2.5 transition-colors shrink-0 shadow-soft-sm">
+            <ArrowRight class="h-5 w-5" />
+          </div>
+        </Card>
+      </a>
+    </div>
+  </section>
+
+
   <!-- ==================== QUICK STATS GRID ==================== -->
   <section class="space-y-4">
     <h2 class="text-lg font-bold text-slate-800 tracking-tight">Ikhtisar MAZEEDA</h2>
@@ -1159,4 +1213,99 @@
     </section>
 
   </div>
+
+  <!-- ==================== PREMIUM FOOTER SECTION ==================== -->
+  <footer class="mt-12 -mx-4 -mb-12 sm:-mx-8 md:-mx-8 border-t border-slate-200/50 bg-slate-50/50">
+    <!-- Top Part: Google Play Store Button -->
+    <div class="py-8 px-4 flex flex-col items-center justify-center border-b border-slate-200/40">
+      <a 
+        href="https://play.google.com/store/apps/details?id=mazeedahmqlirboyo-pixel" 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        class="transition-all hover:scale-105 active:scale-95 duration-200"
+      >
+        <img 
+          src="/google-play-badge.png" 
+          alt="Dapatkan di Google Play" 
+          class="h-12 w-auto object-contain" 
+        />
+      </a>
+    </div>
+
+    <!-- Bottom Part: Copyright & Social Accounts -->
+    <div class="bg-slate-100/70 py-8 px-4 text-center space-y-5">
+      <p class="text-xs font-bold text-slate-500 tracking-wide">
+        © 2026 MAZEEDA | MA HMQ LIRBOYO
+      </p>
+
+      <!-- Social Media Buttons -->
+      <div class="flex items-center justify-center gap-3">
+        <!-- WhatsApp -->
+        <a 
+          href="https://wa.me/6289507436989" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200"
+          title="WhatsApp MAZEEDA"
+        >
+          <img src="/whatsapp.png" alt="WhatsApp" class="h-full w-full object-contain scale-[0.88] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
+        </a>
+
+        <!-- Instagram -->
+        <a 
+          href="https://instagram.com/mazeedahmqlirboyo" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200"
+          title="Instagram MAZEEDA"
+        >
+          <img src="/instagram.png" alt="Instagram" class="h-full w-full object-contain scale-[0.98] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
+        </a>
+
+        <!-- Twitter -->
+        <a 
+          href="https://x.com/mazeedahmqlirboyo" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200"
+          title="Twitter MAZEEDA"
+        >
+          <img src="/twitter.png" alt="Twitter" class="h-full w-full object-contain scale-[0.87] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
+        </a>
+
+        <!-- TikTok -->
+        <a 
+          href="https://tiktok.com/@mazeedahmqlirboyo" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200"
+          title="TikTok MAZEEDA"
+        >
+          <img src="/tiktok.png" alt="TikTok" class="h-full w-full object-contain scale-[0.87] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
+        </a>
+
+        <!-- YouTube -->
+        <a 
+          href="https://youtube.com/mazeedahmqlirboyo" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200"
+          title="YouTube MAZEEDA"
+        >
+          <img src="/youtube.png" alt="YouTube" class="h-full w-full object-contain scale-[0.90] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
+        </a>
+
+        <!-- Web / RSS -->
+        <a 
+          href="https://mazeedahmqlirboyo.com" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200"
+          title="Website MAZEEDA"
+        >
+          <img src="/rss.png" alt="Website / RSS" class="h-full w-full object-contain scale-[0.88] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
+        </a>
+      </div>
+    </div>
+  </footer>
 </div>

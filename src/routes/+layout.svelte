@@ -22,7 +22,8 @@
     Heart,
     Bell,
     Edit,
-    Save
+    Save,
+    ExternalLink
   } from 'lucide-svelte';
   import Card from '$lib/components/ui/card.svelte';
   import { isAudioPlayingGlobal } from '$lib/audioStore';
@@ -115,7 +116,7 @@
     const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || 
                   cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
     }
     return cleaned;
   }
@@ -609,6 +610,17 @@
     (myProfileData.nis === $authStore.user.nis)
   );
 
+  // Close profile on route changes
+  $: if (currentPath) {
+    showMyProfile = false;
+    isEditingAdminProfile = false;
+  }
+
+  function handleNavClick() {
+    showMyProfile = false;
+    isEditingAdminProfile = false;
+  }
+
   // Reactive listener to open other alumni/admin profiles when clicked
   $: if (browser && $activeProfileStore) {
     const trigger = $activeProfileStore;
@@ -772,7 +784,7 @@
     
     <!-- Top Header for Branding & Mobile Settings -->
     <header class="sticky top-0 z-40 w-full bg-white/85 backdrop-blur-md border-b border-border/50 h-16 px-4 flex items-center justify-between md:px-8">
-      <a href="/" class="flex items-center space-x-3 group">
+      <a href="/" class="flex items-center space-x-3 group" on:click={handleNavClick}>
         <img 
           src="/logo.png" 
           alt="MAZEEDA Logo" 
@@ -787,6 +799,7 @@
           <a 
             href="/admin" 
             class="hidden md:flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+            on:click={handleNavClick}
           >
             <ShieldCheck class="h-4.5 w-4.5" />
             <span>Admin Panel</span>
@@ -922,6 +935,7 @@
           {#each navItems as item}
             <a
               href={item.path}
+              on:click={handleNavClick}
               class="flex items-center space-x-3.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200
                 {isActive(item.path) 
                   ? 'bg-primary text-white shadow-soft-sm hover:bg-primary-hover' 
@@ -937,6 +951,7 @@
               <span class="px-4 text-[10px] font-bold tracking-wider text-slate-400 uppercase">Management</span>
               <a
                 href="/admin"
+                on:click={handleNavClick}
                 class="flex items-center justify-between px-4 py-3 mt-1.5 rounded-xl text-sm font-semibold transition-all duration-200
                   {isActive('/admin') 
                     ? 'bg-primary text-white shadow-soft-sm hover:bg-primary-hover' 
@@ -987,13 +1002,13 @@
       <main class="flex-1 bg-white p-2 sm:p-4 md:p-8 {$page.url.searchParams.has('detail') ? 'pb-8' : 'pb-24'} md:pb-8 overflow-y-auto relative">
         {#if showMyProfile}
           {#if isLoadingProfile}
-            <div class="py-24 text-center space-y-4">
+          <div class="py-24 text-center space-y-4">
               <div class="animate-spin h-8 w-8 border-3 border-primary border-t-transparent rounded-full mx-auto"></div>
               <p class="text-xs font-semibold text-slate-500">Memuat profil pribadi Anda...</p>
             </div>
           {:else if myProfileData}
             <!-- MY DETAILED PROFILE VIEW -->
-            <div class="space-y-6 animate-in fade-in duration-300">
+            <div class="space-y-6" transition:fade={{ duration: 150 }}>
               <!-- Back Button Header -->
               <div class="flex items-center justify-between pb-2 border-b border-slate-100">
                 <button 
@@ -1326,7 +1341,10 @@
                       <p class="flex justify-between">
                         <span>WhatsApp:</span>
                         {#if myProfileData.no_whatsapp}
-                          <a href={getWhatsAppLink(myProfileData.no_whatsapp)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold">{formatWhatsApp(myProfileData.no_whatsapp)}</a>
+                          <a href={getWhatsAppLink(myProfileData.no_whatsapp)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                            <span>{formatWhatsApp(myProfileData.no_whatsapp)}</span>
+                            <ExternalLink class="h-3 w-3" />
+                          </a>
                         {:else}
                           <strong class="text-slate-800 font-bold">-</strong>
                         {/if}
@@ -1334,7 +1352,10 @@
                       <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2">
                         <span>Email:</span>
                         {#if myProfileData.email}
-                          <a href="https://mail.google.com/mail/?view=cm&fs=1&to={myProfileData.email}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold">{myProfileData.email}</a>
+                          <a href="https://mail.google.com/mail/?view=cm&fs=1&to={myProfileData.email}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 max-w-[180px]">
+                            <span class="truncate">{myProfileData.email}</span>
+                            <ExternalLink class="h-3 w-3 shrink-0" />
+                          </a>
                         {:else}
                           <strong class="text-slate-800 font-bold">-</strong>
                         {/if}
@@ -1342,7 +1363,10 @@
                       <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2">
                         <span>Instagram:</span>
                         {#if myProfileData.media_social}
-                          <a href={getInstagramLink(myProfileData.media_social)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold">{myProfileData.media_social.toLowerCase()}</a>
+                          <a href={getInstagramLink(myProfileData.media_social)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                            <span>{myProfileData.media_social.toLowerCase()}</span>
+                            <ExternalLink class="h-3 w-3" />
+                          </a>
                         {:else}
                           <strong class="text-slate-800 font-bold">-</strong>
                         {/if}
@@ -1350,7 +1374,10 @@
                       <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2">
                         <span>Tiktok:</span>
                         {#if myProfileData.tiktok_akun}
-                          <a href={getTiktokLink(myProfileData.tiktok_akun)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold">{myProfileData.tiktok_akun}</a>
+                          <a href={getTiktokLink(myProfileData.tiktok_akun)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                            <span>{myProfileData.tiktok_akun}</span>
+                            <ExternalLink class="h-3 w-3" />
+                          </a>
                         {:else}
                           <strong class="text-slate-800 font-bold">-</strong>
                         {/if}
@@ -1358,7 +1385,10 @@
                       <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2">
                         <span>X / Twitter:</span>
                         {#if myProfileData.xtwitter_akun}
-                          <a href={getXTwitterLink(myProfileData.xtwitter_akun)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold">{myProfileData.xtwitter_akun}</a>
+                          <a href={getXTwitterLink(myProfileData.xtwitter_akun)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                            <span>{myProfileData.xtwitter_akun}</span>
+                            <ExternalLink class="h-3 w-3" />
+                          </a>
                         {:else}
                           <strong class="text-slate-800 font-bold">-</strong>
                         {/if}
@@ -1519,24 +1549,23 @@
     <!-- 48px touch target sizes are strictly maintained -->
     {#if !$page.url.searchParams.has('detail') && !$isAudioPlayingGlobal}
 
-      <!-- The actual bottom nav - muncul saat long-press tombol Menu 3 detik -->
+      <!-- The actual bottom nav - muncul saat klik tombol Menu -->
       {#if showBottomNav}
         <nav
           id="mobile-bottom-nav"
-          class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-border/60 shadow-lg px-2 flex justify-around items-center h-20 pb-safe"
+          class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-border/60 shadow-lg px-2 flex justify-around items-center h-14 pb-safe"
           transition:slide={{ duration: 200 }}
         >
           {#each navItems as item}
             <a
               href={item.path}
               id="mobile-nav-{item.name.toLowerCase().replace(/[^a-z]/g, '')}"
-              on:click={resetAutoHide}
-              class="flex flex-col items-center justify-center flex-1 h-16 py-1 px-2 text-center transition-all duration-200
-                {isActive(item.path) ? 'text-primary scale-105' : 'text-slate-500'}"
+              on:click={() => { resetAutoHide(); handleNavClick(); }}
+              class="flex items-center justify-center flex-1 h-12 transition-all duration-200
+                {isActive(item.path) ? 'text-primary scale-110' : 'text-slate-500'}"
               style="min-width: 48px; min-height: 48px;"
             >
-              <svelte:component this={item.icon} class="h-6 w-6 mb-1 transition-transform" />
-              <span class="text-[10px] font-bold tracking-tight truncate max-w-full">{item.name}</span>
+              <svelte:component this={item.icon} class="h-6 w-6 transition-transform" />
             </a>
           {/each}
           
@@ -1544,13 +1573,12 @@
             <a
               href="/admin"
               id="mobile-nav-admin"
-              on:click={resetAutoHide}
-              class="flex flex-col items-center justify-center flex-1 h-16 py-1 px-2 text-center transition-all duration-200
-                {isActive('/admin') ? 'text-primary scale-105' : 'text-slate-500'}"
+              on:click={() => { resetAutoHide(); handleNavClick(); }}
+              class="flex items-center justify-center flex-1 h-12 transition-all duration-200
+                {isActive('/admin') ? 'text-primary scale-110' : 'text-slate-500'}"
               style="min-width: 48px; min-height: 48px;"
             >
-              <ShieldCheck class="h-6 w-6 mb-1" />
-              <span class="text-[10px] font-bold tracking-tight truncate max-w-full">Admin</span>
+              <ShieldCheck class="h-6 w-6 transition-transform" />
             </a>
           {/if}
         </nav>

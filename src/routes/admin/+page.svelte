@@ -21,7 +21,7 @@
     { label: '👥 Kelola Squad', value: 'members' },
     { label: '📖 Kelola Sangu', value: 'sangu' },
     { label: '📢 Pengumuman Mading', value: 'mading' },
-    { label: '📌 Sticky Notes', value: 'stickynotes' },
+    { label: '📌 Dinding Aspirasi', value: 'stickynotes' },
     { label: '📸 Kelola Timeline', value: 'timeline' },
     { label: '🔔 Notifikasi', value: 'notifikasi' },
     { label: '🎪 Banner Slide', value: 'carousel' }
@@ -258,7 +258,7 @@
     const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || 
                   cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
     }
     return cleaned;
   }
@@ -877,8 +877,8 @@
   // Moderate / Delete Sticky Note from Supabase
   async function deleteStickyNote(id: any) {
     runWithConfirmation(
-      'Hapus Sticky Note',
-      'Apakah Anda yakin ingin menghapus sticky note ini dari dinding aspirasi?',
+      'Hapus Aspirasi',
+      'Apakah Anda yakin ingin menghapus aspirasi ini dari dinding aspirasi?',
       async () => {
         try {
           const { error } = await supabase
@@ -887,11 +887,11 @@
             .eq('id', id);
 
           if (error) throw error;
-          triggerAlert('Sticky note berhasil dimoderasi / dihapus.');
+          triggerAlert('Aspirasi berhasil dimoderasi / dihapus.');
           await fetchStickyNotes();
         } catch (err: any) {
           stickyNotes = stickyNotes.filter(n => n.id !== id);
-          triggerAlert('Sticky note dihapus (Sesi Lokal).');
+          triggerAlert('Aspirasi dihapus (Sesi Lokal).');
         }
       }
     );
@@ -899,8 +899,8 @@
 
   async function handleDeleteAllStickyNotes() {
     runWithConfirmation(
-      'Hapus Semua Sticky Notes',
-      'Apakah Anda yakin ingin menghapus semua Sticky Notes dari dinding aspirasi? Tindakan ini tidak dapat dibatalkan.',
+      'Hapus Semua Aspirasi',
+      'Apakah Anda yakin ingin menghapus semua aspirasi dari dinding aspirasi? Tindakan ini tidak dapat dibatalkan.',
       async () => {
         try {
           const { error } = await supabase
@@ -908,10 +908,10 @@
             .delete()
             .neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
-          triggerAlert('Semua Sticky Notes berhasil dihapus.');
+          triggerAlert('Semua aspirasi berhasil dihapus.');
           await fetchStickyNotes();
         } catch (err: any) {
-          alert('Error deleting all sticky notes: ' + err.message);
+          alert('Error deleting all aspirations: ' + err.message);
         }
       }
     );
@@ -2221,10 +2221,10 @@
         <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
           {#if editingStickyId}
             <Edit class="h-5 w-5 text-amber-600" />
-            <span>Edit Sticky Note</span>
+            <span>Edit Aspirasi Dinding</span>
           {:else}
             <Plus class="h-5 w-5 text-amber-600" />
-            <span>Tulis Sticky Note Baru</span>
+            <span>Tulis Aspirasi Baru</span>
           {/if}
         </h2>
 
@@ -2274,7 +2274,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
             <FileText class="h-5 w-5 text-amber-600" />
-            <span>Moderasi Sticky Notes ({stickyNotes.length})</span>
+            <span>Moderasi Dinding Aspirasi ({stickyNotes.length})</span>
           </h2>
           <Button on:click={handleDeleteAllStickyNotes} variant="destructive" size="sm" class="font-bold flex items-center space-x-1">
             <Trash2 class="h-3.5 w-3.5" />
@@ -2288,23 +2288,23 @@
             <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Cari sticky notes berdasarkan pesan, pengirim..." 
+              placeholder="Cari aspirasi berdasarkan pesan, pengirim..." 
               class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-amber-500 focus:bg-white"
               bind:value={stickySearchQuery}
             />
           </div>
         </Card>
-
+ 
         <div class="space-y-2.5 max-h-[600px] overflow-y-auto pr-1">
           {#if isLoadingSticky}
-            <div class="py-6 text-center text-xs font-semibold text-slate-400">Memuat sticky notes...</div>
+            <div class="py-6 text-center text-xs font-semibold text-slate-400">Memuat aspirasi...</div>
           {:else}
             {@const filteredSticky = stickyNotes.filter(item => {
               if (!stickySearchQuery) return true;
               const q = stickySearchQuery.toLowerCase();
               return (item.message || '').toLowerCase().includes(q) || (item.sender_name || '').toLowerCase().includes(q);
             })}
-
+ 
             {#if filteredSticky.length > 0}
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {#each filteredSticky as item}
@@ -2321,7 +2321,7 @@
                         type="button"
                         on:click={() => startEditSticky(item)}
                         class="p-2 rounded-lg text-indigo-600 hover:text-white bg-indigo-50 hover:bg-indigo-600 border border-indigo-100 hover:border-indigo-600 transition-all duration-200 flex items-center justify-center"
-                        title="Edit Sticky Note"
+                        title="Edit Aspirasi"
                       >
                         <Edit class="h-4 w-4" />
                       </button>
@@ -2329,7 +2329,7 @@
                         type="button"
                         on:click={() => deleteStickyNote(item.id)}
                         class="p-2 rounded-lg text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-500 border border-rose-100 hover:border-rose-500 transition-all duration-200 flex items-center justify-center"
-                        title="Hapus Sticky Note"
+                        title="Hapus Aspirasi"
                       >
                         <Trash2 class="h-4 w-4" />
                       </button>
@@ -2338,7 +2338,7 @@
                 {/each}
               </div>
             {:else}
-              <div class="py-6 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Tidak ada sticky notes ditemukan.</div>
+              <div class="py-6 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Tidak ada aspirasi ditemukan.</div>
             {/if}
           {/if}
         </div>
