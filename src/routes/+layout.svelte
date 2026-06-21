@@ -392,10 +392,25 @@
       window.addEventListener('touchmove', onTouchMove, { passive: true });
       window.addEventListener('touchend', onTouchEnd);
 
-      // Register Service Worker
+      // Register Service Worker with Auto-Update logic
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
-          .then((reg) => console.log('Service Worker Registered with scope:', reg.scope))
+          .then((reg) => {
+            console.log('Service Worker Registered with scope:', reg.scope);
+            
+            // Listen for updates to the Service Worker
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('New version detected! Reloading to apply updates...');
+                    window.location.reload();
+                  }
+                });
+              }
+            });
+          })
           .catch((err) => console.error('Service worker registration failed:', err));
       }
 
