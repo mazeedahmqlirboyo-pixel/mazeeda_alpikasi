@@ -347,9 +347,9 @@
         </div>
         <p class="text-[10px] text-slate-400 font-bold mt-1">
           {#if diff > 0}
-            Putar ke kiri {Math.round(diff)}° lagi
+            Putar ke kanan {Math.round(diff)}° lagi
           {:else}
-            Putar ke kanan {Math.round(Math.abs(diff))}° lagi
+            Putar ke kiri {Math.round(Math.abs(diff))}° lagi
           {/if}
         </p>
       {/if}
