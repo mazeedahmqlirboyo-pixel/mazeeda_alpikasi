@@ -386,7 +386,8 @@
 
         <!-- Rotating Dial Face (Rotates with -heading to point North) -->
         <g 
-          style="transform: rotate(${-heading}deg); transform-origin: 100px 100px; transition: transform {isDragging ? '0s' : '0.15s'} cubic-bezier(0.1, 0.8, 0.2, 1);"
+          transform="rotate({-heading} 100 100)"
+          style="transition: transform {isDragging ? '0s' : '0.15s'} cubic-bezier(0.1, 0.8, 0.2, 1); transform-origin: center;"
         >
           <!-- Fine Ticks (every 2 degrees) -->
           {#each Array(180) as _, i}
