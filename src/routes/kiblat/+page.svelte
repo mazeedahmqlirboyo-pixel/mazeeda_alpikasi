@@ -1,9 +1,21 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { fade } from 'svelte/transition';
+  import { fade, fly } from 'svelte/transition';
   import Card from '$lib/components/ui/card.svelte';
   import Button from '$lib/components/ui/button.svelte';
-  import { ArrowLeft, Compass, MapPin, RefreshCw, Smartphone } from 'lucide-svelte';
+  import { 
+    ArrowLeft, 
+    Compass, 
+    MapPin, 
+    RefreshCw, 
+    Smartphone, 
+    Search, 
+    X, 
+    Check, 
+    Navigation,
+    Info,
+    HelpCircle
+  } from 'lucide-svelte';
 
   // Mecca Coordinates
   const MECCA_LAT = 21.4225;
@@ -30,30 +42,53 @@
   let dragStartAngle = 0;
   let baseRotation = 0;
 
-  // Searchable City Selector Fallback
-  let isCityDropdownOpen = false;
+  // Searchable City Selector Modal Fallback
+  let isCityModalOpen = false;
   let citySearchQuery = '';
 
-  const fallbackCities = [
-    { name: 'Jakarta', lat: -6.2088, lng: 106.8456 },
-    { name: 'Bandung', lat: -6.9175, lng: 107.6191 },
-    { name: 'Surabaya', lat: -7.2575, lng: 112.7521 },
-    { name: 'Yogyakarta', lat: -7.7956, lng: 110.3695 },
-    { name: 'Medan', lat: 3.5952, lng: 98.6722 },
-    { name: 'Makassar', lat: -5.1477, lng: 119.4327 },
-    { name: 'Semarang', lat: -6.9667, lng: 110.4167 },
-    { name: 'Palembang', lat: -2.9761, lng: 104.7754 },
-    { name: 'Denpasar', lat: -8.6705, lng: 115.2126 },
-    { name: 'Jayapura', lat: -2.5916, lng: 140.7178 },
-    { name: 'Banda Aceh', lat: 5.5483, lng: 95.3238 },
-    { name: 'Pontianak', lat: -0.0263, lng: 109.3425 },
-    { name: 'Banjarmasin', lat: -3.3167, lng: 114.5900 },
-    { name: 'Ambon', lat: -3.6954, lng: 128.1814 }
-  ];
 
-  $: filteredCities = fallbackCities.filter(c => 
-    c.name.toLowerCase().includes(citySearchQuery.toLowerCase())
-  );
+
+  // Online search state for all regions in Indonesia
+  let searchResults: { name: string; lat: number; lng: number }[] = [];
+  let isSearchingOnline = false;
+  let searchTimeout: any;
+
+  // Reactively trigger online search on input changes (debounce 600ms)
+  $: if (citySearchQuery.trim().length >= 3) {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(searchOnline, 600);
+  } else {
+    searchResults = [];
+  }
+
+  async function searchOnline() {
+    const q = citySearchQuery.trim();
+    if (!q) return;
+    try {
+      isSearchingOnline = true;
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=id&format=json&limit=5`;
+      const res = await fetch(url, {
+        headers: {
+          'Accept-Language': 'id'
+        }
+      });
+      if (!res.ok) throw new Error('API failed');
+      const data = await res.json();
+      searchResults = data.map((item: any) => {
+        const parts = item.display_name.split(', ');
+        const name = parts.slice(0, 3).join(', '); // Clean display name
+        return {
+          name,
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon)
+        };
+      });
+    } catch (e) {
+      console.warn('Geocoding lookup failed:', e);
+    } finally {
+      isSearchingOnline = false;
+    }
+  }
 
   // Calculate Qibla Bearing and Distance
   function updateQiblaCalculations(lat: number, lng: number) {
@@ -114,12 +149,12 @@
     updateQiblaCalculations(latitude, longitude);
   }
 
-  function selectCity(city: typeof fallbackCities[0]) {
+  function selectCity(city: { name: string; lat: number; lng: number }) {
     latitude = city.lat;
     longitude = city.lng;
     cityName = city.name;
     locationSource = 'city';
-    isCityDropdownOpen = false;
+    isCityModalOpen = false;
     citySearchQuery = '';
     updateQiblaCalculations(latitude, longitude);
   }
@@ -260,57 +295,74 @@
       window.removeEventListener('deviceorientation', handleOrientation);
     }
   });
-
-  function clickOutsideDropdown(event: MouseEvent) {
-    const container = document.getElementById('city-selector');
-    if (container && !container.contains(event.target as Node)) {
-      isCityDropdownOpen = false;
-    }
-  }
 </script>
 
-<svelte:window on:click={clickOutsideDropdown} />
+<div class="space-y-6 pb-12 max-w-xl mx-auto relative px-2">
+  <!-- Subtle premium ambient glow background -->
+  <div class="absolute -z-10 w-80 h-80 bg-indigo-500/10 blur-[120px] rounded-full top-[25%] left-1/2 -translate-x-1/2 pointer-events-none"></div>
+  <div class="absolute -z-10 w-80 h-80 bg-emerald-500/5 blur-[120px] rounded-full top-[45%] left-1/2 -translate-x-1/2 pointer-events-none"></div>
 
-<div class="space-y-6 pb-12 max-w-xl mx-auto">
   <!-- Header Bar -->
-  <div class="flex items-center justify-between">
-    <a href="/" class="inline-flex items-center space-x-2 text-slate-500 hover:text-primary transition-colors text-sm font-semibold">
-      <ArrowLeft class="h-4.5 w-4.5" />
-      <span>Kembali</span>
+  <div class="relative flex items-center justify-between border-b border-slate-100 pb-3 h-10">
+    <a href="/" class="inline-flex items-center space-x-2 text-slate-500 hover:text-primary transition-colors text-sm font-semibold z-10">
+      <ArrowLeft class="h-4 w-4" />
+      <span>Dashboard</span>
     </a>
-    <h1 class="text-base font-bold text-slate-800 uppercase tracking-wider">Arah Kiblat</h1>
-    <div class="w-10"></div> <!-- spacing balance -->
+    <h1 class="absolute left-1/2 -translate-x-1/2 text-sm font-black text-slate-800 uppercase tracking-widest text-center whitespace-nowrap">
+      Arah Kiblat
+    </h1>
+    <div class="w-10 z-10"></div> <!-- spacing balance -->
   </div>
 
-  <!-- Intro info card -->
-  <Card class="bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 text-white border-indigo-900/40 relative overflow-hidden shadow-soft-md">
-    <div class="absolute -right-6 -top-6 text-indigo-500 opacity-20 pointer-events-none">
-      <Compass class="h-28 w-28 animate-spin" style="animation-duration: 30s" />
+  <!-- Redesigned Info Card (Glassmorphic Dark Emerald-Indigo Gradient) -->
+  <Card class="bg-gradient-to-br from-indigo-950 via-slate-900 to-emerald-950 text-white border-slate-800/80 relative overflow-hidden shadow-xl p-5">
+    <!-- SVG Connection Backdrop Graphic -->
+    <div class="absolute inset-0 opacity-15 pointer-events-none">
+      <svg viewBox="0 0 400 200" class="w-full h-full" preserveAspectRatio="none">
+        <!-- Curved connection path from GPS to Kaaba -->
+        <path d="M 50,150 Q 200,20 350,150" fill="none" stroke="#34d399" stroke-width="2" stroke-dasharray="4,4" />
+        <circle cx="50" cy="150" r="4" fill="#60a5fa" />
+        <circle cx="350" cy="150" r="6" fill="#10b981" />
+        <!-- Concentric signal rings -->
+        <circle cx="50" cy="150" r="10" fill="none" stroke="#60a5fa" stroke-width="0.5" stroke-dasharray="2,2" />
+        <circle cx="350" cy="150" r="14" fill="none" stroke="#10b981" stroke-width="0.5" />
+      </svg>
+    </div>
+
+    <!-- Decorative floating spinning compass in background -->
+    <div class="absolute -right-8 -top-8 text-white/5 pointer-events-none">
+      <Compass class="h-32 w-32 animate-spin" style="animation-duration: 60s" />
     </div>
     
-    <div class="space-y-3 z-10 relative">
-      <div class="flex items-center justify-between">
-        <span class="bg-indigo-500/20 border border-indigo-400/25 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-indigo-300">
-          📍 {cityName}
-        </span>
+    <div class="space-y-4 z-10 relative">
+      <div class="flex items-start justify-between">
+        <div class="space-y-1.5">
+          <span class="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-300 shadow-soft-xs">
+            <MapPin class="h-3 w-3 text-emerald-400 shrink-0" />
+            <span>{cityName}</span>
+          </span>
+          <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider pt-2">Jarak ke Baitullah</p>
+          <div class="flex items-baseline gap-1.5">
+            <h2 class="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-emerald-200">
+              {distanceToMecca.toLocaleString('id-ID')}
+            </h2>
+            <span class="text-[10px] font-black text-emerald-300 uppercase tracking-widest">KM</span>
+          </div>
+        </div>
+        
         <button 
           on:click={requestLocation} 
-          class="text-white/60 hover:text-white transition-colors"
+          class="bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all p-2 rounded-xl active:scale-95 flex items-center justify-center cursor-pointer shadow-soft-xs hover:border-white/20"
           title="Refresh lokasi GPS"
         >
-          <RefreshCw class="h-4 w-4" />
+          <RefreshCw class="h-4 w-4 text-slate-200" />
         </button>
       </div>
 
-      <div class="space-y-1">
-        <p class="text-xs text-indigo-200/80 font-medium">Jarak ke Baitullah (Ka'bah)</p>
-        <h2 class="text-2xl font-black tracking-tight">{distanceToMecca.toLocaleString('id-ID')} <span class="text-sm font-bold">KM</span></h2>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 pt-2 text-center text-xs border-t border-white/10">
-        <div>
-          <span class="text-indigo-300/80 font-bold block text-[10px] uppercase">Koordinat Lokasi</span>
-          <span class="font-mono mt-0.5 block">
+      <div class="grid grid-cols-2 gap-4 pt-4 text-center text-xs border-t border-white/10">
+        <div class="text-left">
+          <span class="text-slate-400 font-bold block text-[9px] uppercase tracking-widest">Koordinat Saya</span>
+          <span class="font-mono mt-0.5 block font-semibold text-slate-200">
             {#if latitude !== null && longitude !== null}
               {latitude.toFixed(4)}°, {longitude.toFixed(4)}°
             {:else}
@@ -318,40 +370,47 @@
             {/if}
           </span>
         </div>
-        <div>
-          <span class="text-indigo-300/80 font-bold block text-[10px] uppercase">Sudut Kiblat</span>
-          <span class="font-mono mt-0.5 block font-bold text-emerald-400">{qiblaBearing}° dari Utara</span>
+        <div class="text-right">
+          <span class="text-slate-400 font-bold block text-[9px] uppercase tracking-widest">Sudut Kiblat</span>
+          <span class="font-mono mt-0.5 block font-black text-emerald-400 text-sm tracking-wide">
+            {qiblaBearing}° <span class="text-[9px] font-bold text-slate-300">Utara</span>
+          </span>
         </div>
       </div>
     </div>
   </Card>
 
-  <!-- Compass Widget -->
-  <Card class="bg-slate-50 border-slate-200/50 flex flex-col items-center py-8 relative overflow-hidden shadow-soft-sm">
+  <!-- Compass Widget Card -->
+  <Card class="bg-white/90 border-slate-200/60 backdrop-blur-md flex flex-col items-center py-8 relative overflow-hidden shadow-lg p-4">
+    <!-- Pulse glow background overlay when aligned -->
     {#if isAligned}
-      <div class="absolute inset-0 bg-emerald-500/5 animate-pulse duration-1000 pointer-events-none z-0"></div>
+      <div class="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent animate-pulse duration-1000 pointer-events-none z-0"></div>
     {/if}
 
-    <!-- Aligned / Rotating status info -->
-    <div class="mb-6 text-center z-10">
+    <!-- Aligned / Sighting status info -->
+    <div class="mb-7 text-center z-10 w-full px-4">
       {#if isAligned}
-        <div class="animate-bounce inline-flex items-center space-x-1.5 bg-emerald-500 text-white font-black text-xs px-4 py-1.5 rounded-full shadow-lg border border-emerald-400 uppercase tracking-widest">
-          <span>✨</span>
-          <span>Searah dengan Kiblat</span>
+        <div class="inline-flex flex-col items-center justify-center space-y-1">
+          <div class="inline-flex items-center space-x-1.5 bg-emerald-500 text-white font-extrabold text-[10px] px-5 py-2 rounded-full shadow-lg shadow-emerald-500/20 border border-emerald-400 uppercase tracking-widest animate-pulse">
+            <span class="inline-block">✨</span>
+            <span>Kiblat Terbimbing</span>
+          </div>
+          <p class="text-[10px] text-emerald-600 font-black mt-1.5">Sempurna! Sudut hadap ponsel Anda sudah tepat mengarah ke Ka'bah</p>
         </div>
-        <p class="text-[10px] text-emerald-600 font-extrabold mt-1">Sudut hadap Anda sudah tepat ke arah Ka'bah</p>
       {:else}
-        <div class="inline-flex items-center space-x-1.5 bg-slate-200/80 border border-slate-300/50 text-slate-600 font-bold text-xs px-4 py-1.5 rounded-full uppercase tracking-wider">
-          <span>🧭</span>
-          <span>Putar HP / Kompas</span>
+        <div class="inline-flex flex-col items-center justify-center space-y-1">
+          <div class="inline-flex items-center space-x-1.5 bg-slate-100 border border-slate-200 text-slate-500 font-bold text-[10px] px-4.5 py-1.5 rounded-full uppercase tracking-wider">
+            <span>🧭</span>
+            <span>Arahkan Ponsel</span>
+          </div>
+          <p class="text-[10px] text-slate-500 font-bold mt-1.5">
+            {#if diff > 0}
+              Putar ke kanan <span class="text-indigo-600 font-black font-mono">{Math.round(diff)}°</span> lagi
+            {:else}
+              Putar ke kiri <span class="text-indigo-600 font-black font-mono">{Math.round(Math.abs(diff))}°</span> lagi
+            {/if}
+          </p>
         </div>
-        <p class="text-[10px] text-slate-400 font-bold mt-1">
-          {#if diff > 0}
-            Putar ke kanan {Math.round(diff)}° lagi
-          {:else}
-            Putar ke kiri {Math.round(Math.abs(diff))}° lagi
-          {/if}
-        </p>
       {/if}
     </div>
 
@@ -365,33 +424,113 @@
       on:touchmove|passive={onDragMove}
       on:mouseup={onDragEnd}
       on:touchend={onDragEnd}
-      class="relative w-72 h-72 rounded-full bg-white border border-slate-200/80 shadow-md flex items-center justify-center cursor-grab select-none z-10 transition-all duration-300
-             {isAligned ? 'ring-8 ring-emerald-500/25 border-emerald-400 shadow-emerald-100/50' : 'active:cursor-grabbing hover:border-slate-350'}"
+      class="relative w-72 h-72 rounded-full bg-slate-50/50 border border-slate-200/80 shadow-md flex items-center justify-center cursor-grab select-none z-10 transition-all duration-300
+             {isAligned ? 'ring-10 ring-emerald-500/10 border-emerald-400 shadow-emerald-100/50' : 'active:cursor-grabbing hover:border-slate-300'}"
     >
-      <svg viewBox="0 0 200 200" class="w-full h-full p-2">
+      <svg viewBox="0 0 200 200" class="w-full h-full p-1 drop-shadow-md">
         <!-- Definitions for styling gradients and filters -->
         <defs>
-          <radialGradient id="compassGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="70%" stop-color="#ffffff" stop-opacity="1" />
-            <stop offset="100%" stop-color="#f8fafc" stop-opacity="1" />
-          </radialGradient>
-          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.15" />
+          <!-- Neon glows -->
+          <filter id="emeraldGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
           </filter>
+          
+          <filter id="redGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2.5" stdDeviation="3" flood-opacity="0.25" />
+          </filter>
+
+          <!-- Dial face gradient: deep space blue to slate-950 -->
+          <radialGradient id="dialGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#1e293b" />
+            <stop offset="70%" stop-color="#0f172a" />
+            <stop offset="100%" stop-color="#020617" />
+          </radialGradient>
+
+          <!-- Kaaba Badge Gradient -->
+          <radialGradient id="kaabaGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#34d399" />
+            <stop offset="60%" stop-color="#10b981" />
+            <stop offset="100%" stop-color="#047857" />
+          </radialGradient>
+
+          <!-- Gold gradients for compass rose and borders -->
+          <linearGradient id="gold1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fbbf24" />
+            <stop offset="100%" stop-color="#d97706" />
+          </linearGradient>
+          <linearGradient id="gold2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fef08a" />
+            <stop offset="100%" stop-color="#b45309" />
+          </linearGradient>
+
+          <!-- Luxury gold bezel gradient -->
+          <linearGradient id="bezelGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#b45309" />
+            <stop offset="30%" stop-color="#fbbf24" />
+            <stop offset="50%" stop-color="#fffbeb" />
+            <stop offset="70%" stop-color="#fbbf24" />
+            <stop offset="100%" stop-color="#78350f" />
+          </linearGradient>
+
+          <!-- Arc gradient -->
+          <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#6366f1" />
+            <stop offset="100%" stop-color="#a855f7" />
+          </linearGradient>
         </defs>
 
-        <!-- Outer Ring -->
-        <circle cx="100" cy="100" r="92" fill="url(#compassGlow)" stroke="#cbd5e1" stroke-width="1.5" />
-        <circle cx="100" cy="100" r="85" fill="none" stroke="#e2e8f0" stroke-width="0.75" stroke-dasharray="2,3" />
+        <!-- Outer Luxury Bezel Rings (Gold & Silver) -->
+        <circle cx="100" cy="100" r="97" fill="none" stroke="url(#bezelGrad)" stroke-width="1.5" />
+        <circle cx="100" cy="100" r="95" fill="none" stroke="#e2e8f0" stroke-width="1" />
+        <circle cx="100" cy="100" r="92" fill="url(#dialGrad)" stroke="#1e293b" stroke-width="1.5" filter="url(#shadow)" />
+        <circle cx="100" cy="100" r="89" fill="none" stroke="url(#gold2)" stroke-width="0.5" opacity="0.3" />
+
+        <!-- Celestial coordinate grid lines (astrolabe markings) -->
+        <circle cx="100" cy="100" r="70" fill="none" stroke="url(#gold2)" stroke-width="0.25" opacity="0.12" />
+        <circle cx="100" cy="100" r="50" fill="none" stroke="url(#gold2)" stroke-width="0.25" opacity="0.12" />
+        <line x1="100" y1="12" x2="100" y2="188" stroke="url(#gold2)" stroke-width="0.25" opacity="0.08" />
+        <line x1="12" y1="100" x2="188" y2="100" stroke="url(#gold2)" stroke-width="0.25" opacity="0.08" />
 
         <!-- Rotating Dial Face (Rotates with -heading to point North) -->
         <g transform="rotate({-heading} 100 100)">
+          <!-- Slow spinning geometric mandala behind the compass rose, fading in when aligned -->
+          <g class="transition-opacity duration-700 {isAligned ? 'opacity-35' : 'opacity-0'}">
+            <g class="animate-spin" style="animation-duration: 25s; transform-origin: 100px 100px;">
+              <!-- 8-Pointed Star (Rub el Hizb) Islamic pattern -->
+              <rect x="66" y="66" width="68" height="68" fill="none" stroke="url(#gold1)" stroke-width="0.5" transform="rotate(0 100 100)" />
+              <rect x="66" y="66" width="68" height="68" fill="none" stroke="url(#gold1)" stroke-width="0.5" transform="rotate(45 100 100)" />
+              <rect x="69" y="69" width="62" height="62" fill="none" stroke="url(#gold2)" stroke-width="0.3" stroke-dasharray="1,1" transform="rotate(15 100 100)" />
+              <rect x="69" y="69" width="62" height="62" fill="none" stroke="url(#gold2)" stroke-width="0.3" stroke-dasharray="1,1" transform="rotate(60 100 100)" />
+              
+              <!-- Core mandala nested rings -->
+              <circle cx="100" cy="100" r="39" fill="none" stroke="url(#gold1)" stroke-width="0.4" opacity="0.6" />
+              <circle cx="100" cy="100" r="31" fill="none" stroke="url(#gold2)" stroke-width="0.4" stroke-dasharray="2,2" opacity="0.5" />
+              
+              <!-- Small glowing star dots -->
+              {#each Array(8) as _, idx}
+                <circle cx="100" cy="48" r="1.2" fill="#fbbf24" transform="rotate({idx * 45} 100 100)" />
+              {/each}
+            </g>
+          </g>
+
           <!-- Fine Ticks (every 2 degrees) -->
           {#each Array(180) as _, i}
             {#if i % 15 !== 0 && i % 5 !== 0}
               <line 
-                x1="100" y1="11" x2="100" y2="14" 
-                stroke="#e2e8f0" stroke-width="0.5" 
+                x1="100" y1="12" x2="100" y2="14" 
+                stroke="#475569" stroke-width="0.5" 
                 transform="rotate({i * 2} 100 100)"
               />
             {/if}
@@ -401,8 +540,8 @@
           {#each Array(36) as _, i}
             {#if i % 3 !== 0}
               <line 
-                x1="100" y1="11" x2="100" y2="16" 
-                stroke="#cbd5e1" stroke-width="0.75" 
+                x1="100" y1="12" x2="100" y2="16" 
+                stroke="#64748b" stroke-width="0.75" 
                 transform="rotate({i * 10} 100 100)"
               />
             {/if}
@@ -411,15 +550,15 @@
           <!-- Major Ticks and Degree Labels (every 30 degrees) -->
           {#each Array(12) as _, i}
             <line 
-              x1="100" y1="11" x2="100" y2="19" 
-              stroke="#64748b" stroke-width="1.5" 
+              x1="100" y1="12" x2="100" y2="18.5" 
+              stroke="url(#gold1)" stroke-width="1" 
               transform="rotate({i * 30} 100 100)"
             />
             
             {#if i * 30 !== 0 && i * 30 !== 90 && i * 30 !== 180 && i * 30 !== 270}
               <text 
-                x="100" y="27" 
-                font-size="6" font-weight="900" fill="#94a3b8" 
+                x="100" y="25.5" 
+                font-size="4.5" font-weight="900" fill="#64748b" 
                 text-anchor="middle"
                 transform="rotate({i * 30} 100 100)"
               >
@@ -428,170 +567,320 @@
             {/if}
           {/each}
 
-          <!-- Cardinal Labels -->
-          <text x="100" y="24" font-size="11" font-weight="900" fill="#ef4444" text-anchor="middle" transform="rotate(0 100 100)" style="user-select: none;">U</text>
-          <text x="100" y="23" font-size="10" font-weight="900" fill="#334155" text-anchor="middle" transform="rotate(90 100 100)" style="user-select: none;">T</text>
-          <text x="100" y="23" font-size="10" font-weight="900" fill="#334155" text-anchor="middle" transform="rotate(180 100 100)" style="user-select: none;">S</text>
-          <text x="100" y="23" font-size="10" font-weight="900" fill="#334155" text-anchor="middle" transform="rotate(270 100 100)" style="user-select: none;">B</text>
+          <!-- Cardinal Labels (Indonesian) -->
+          <text x="100" y="24" font-size="10.5" font-weight="900" fill="#f43f5e" filter="url(#redGlow)" text-anchor="middle" transform="rotate(0 100 100)" style="user-select: none;">U</text>
+          <text x="100" y="22.5" font-size="8.5" font-weight="900" fill="#cbd5e1" text-anchor="middle" transform="rotate(90 100 100)" style="user-select: none;">T</text>
+          <text x="100" y="22.5" font-size="8.5" font-weight="900" fill="#cbd5e1" text-anchor="middle" transform="rotate(180 100 100)" style="user-select: none;">S</text>
+          <text x="100" y="22.5" font-size="8.5" font-weight="900" fill="#cbd5e1" text-anchor="middle" transform="rotate(270 100 100)" style="user-select: none;">B</text>
 
-          <!-- Shaded 3D Compass Rose -->
-          <g transform="translate(100, 100) scale(0.62)" opacity="0.35">
-            <!-- N / S -->
-            <polygon points="0,0 -8,-45 0,-50" fill="#475569" />
-            <polygon points="0,0 8,-45 0,-50" fill="#64748b" />
-            <polygon points="0,0 -8,45 0,50" fill="#64748b" />
-            <polygon points="0,0 8,45 0,50" fill="#475569" />
-            <!-- E / W -->
-            <polygon points="0,0 45,-8 50,0" fill="#475569" />
-            <polygon points="0,0 45,8 50,0" fill="#64748b" />
-            <polygon points="0,0 -45,-8 -50,0" fill="#64748b" />
-            <polygon points="0,0 -45,8 -50,0" fill="#475569" />
-            <!-- NE / NW / SE / SW -->
-            <polygon points="0,0 25,-29 32,-32" fill="#94a3b8" />
-            <polygon points="0,0 29,-25 32,-32" fill="#cbd5e1" />
-            <polygon points="0,0 -25,-29 -32,-32" fill="#cbd5e1" />
-            <polygon points="0,0 -29,-25 -32,-32" fill="#94a3b8" />
-            <polygon points="0,0 25,29 32,32" fill="#cbd5e1" />
-            <polygon points="0,0 29,25 32,32" fill="#94a3b8" />
-            <polygon points="0,0 -25,29 -32,32" fill="#94a3b8" />
-            <polygon points="0,0 -29,25 -32,32" fill="#cbd5e1" />
+          <!-- Elegant Gold 3D Compass Rose -->
+          <g transform="translate(100, 100) scale(0.56)" opacity="0.8">
+            <!-- N -->
+            <polygon points="0,0 -6,-45 0,-50" fill="url(#gold1)" />
+            <polygon points="0,0 6,-45 0,-50" fill="url(#gold2)" />
+            <!-- S -->
+            <polygon points="0,0 -6,45 0,50" fill="url(#gold2)" />
+            <polygon points="0,0 6,45 0,50" fill="url(#gold1)" />
+            <!-- E -->
+            <polygon points="0,0 45,-6 50,0" fill="url(#gold1)" />
+            <polygon points="0,0 45,6 50,0" fill="url(#gold2)" />
+            <!-- W -->
+            <polygon points="0,0 -45,-6 -50,0" fill="url(#gold2)" />
+            <polygon points="0,0 -45,6 -50,0" fill="url(#gold1)" />
+            
+            <!-- NE -->
+            <polygon points="0,0 23,-27 29,-30" fill="url(#gold2)" opacity="0.85" />
+            <polygon points="0,0 27,-23 29,-30" fill="url(#gold1)" opacity="0.85" />
+            <!-- NW -->
+            <polygon points="0,0 -23,-27 -29,-30" fill="url(#gold1)" opacity="0.85" />
+            <polygon points="0,0 -27,-23 -29,-30" fill="url(#gold2)" opacity="0.85" />
+            <!-- SE -->
+            <polygon points="0,0 23,29 29,30" fill="url(#gold1)" opacity="0.85" />
+            <polygon points="0,0 27,23 29,30" fill="url(#gold2)" opacity="0.85" />
+            <!-- SW -->
+            <polygon points="0,0 -23,29 -29,30" fill="url(#gold2)" opacity="0.85" />
+            <polygon points="0,0 -27,23 -29,30" fill="url(#gold1)" opacity="0.85" />
           </g>
 
           <!-- Qibla target needle inside the dial (Fixed at the calculated Qibla bearing) -->
           <g transform="rotate({qiblaBearing} 100 100)">
             <!-- Glow background line -->
-            <line x1="100" y1="100" x2="100" y2="33" stroke="#10b981" stroke-width="4.5" stroke-linecap="round" opacity="0.3" />
-            <line x1="100" y1="100" x2="100" y2="33" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" />
+            <line x1="100" y1="100" x2="100" y2="35" stroke="#10b981" stroke-width="4" stroke-linecap="round" opacity="0.3" filter="url(#emeraldGlow)" />
+            <!-- Elegant golden needle pointer pointer arrow -->
+            <polygon points="100,32 96,65 100,56 104,65" fill="url(#gold1)" stroke="url(#gold2)" stroke-width="0.5" />
+            <!-- Line connecting center to pointer -->
+            <line x1="100" y1="56" x2="100" y2="100" stroke="url(#gold1)" stroke-width="0.75" stroke-dasharray="2,2" />
+            <!-- Emerald glowing core line -->
+            <line x1="100" y1="56" x2="100" y2="100" stroke="#10b981" stroke-width="0.75" />
             
-            <!-- Kaaba Symbol Marker -->
+            <!-- Custom Vector 3D isometric Kaaba Marker -->
             <g transform="translate(100, 31)">
-              <circle cx="0" cy="0" r="11" fill="#10b981" stroke="#ffffff" stroke-width="2" filter="url(#shadow)" />
-              <text x="0" y="3" font-size="9" text-anchor="middle" fill="#ffffff" style="user-select: none;">🕋</text>
+              <!-- Outer glowing aura ring -->
+              <circle cx="0" cy="0" r="14" fill="url(#kaabaGlow)" stroke="#ffffff" stroke-width="1.5" filter="url(#shadow)" />
+              <circle cx="0" cy="0" r="14" fill="none" stroke="#34d399" stroke-width="1" class="animate-ping opacity-75" />
+              
+              <!-- 3D Vector Isometric Kaaba drawing -->
+              <g transform="translate(0, -1) scale(0.9)">
+                <!-- Left Wall (Facing shade) -->
+                <polygon points="-8,-3 0,1 0,8 -8,4" fill="#090d16" />
+                <!-- Right Wall (Facing light) -->
+                <polygon points="0,1 8,-3 8,4 0,8" fill="#1b2436" />
+                <!-- Roof -->
+                <polygon points="-8,-3 0,-7 8,-3 0,1" fill="#020611" />
+                
+                <!-- Gold Kiswah Band (Belt) -->
+                <!-- Left Belt -->
+                <polygon points="-8,-0.5 0,3.5 0,2.5 -8,-1.5" fill="url(#gold1)" />
+                <!-- Right Belt -->
+                <polygon points="0,3.5 8,-0.5 8,-1.5 0,2.5" fill="url(#gold1)" />
+                
+                <!-- Golden Door (Babut Taubah) on right wall -->
+                <polygon points="2.5,3.1 5.5,1.6 5.5,6.1 2.5,7.6" fill="url(#gold2)" />
+                <line x1="2.5" y1="3.1" x2="2.5" y2="7.6" stroke="#fbbf24" stroke-width="0.4" />
+                <line x1="5.5" y1="1.6" x2="5.5" y2="6.1" stroke="#fbbf24" stroke-width="0.4" />
+              </g>
             </g>
           </g>
         </g>
 
-        <!-- STATIONARY ELEMENTS (Overlaid on top, do not rotate with dial) -->
-
-        <!-- Dynamic turning guide arc -->
+        <!-- Dynamic turning guide arc (Visible when NOT aligned) -->
         {#if !isAligned && Math.abs(diff) > 2}
           <path 
             d={getArcPath(diff)} 
             fill="none" 
-            stroke={isAligned ? '#10b981' : '#6366f1'} 
+            stroke="url(#arcGrad)" 
             stroke-width="3" 
             stroke-linecap="round"
-            stroke-dasharray="2,3"
+            stroke-dasharray="4,3"
             opacity="0.8"
             class="animate-pulse"
           />
         {/if}
 
-        <!-- Center Stationary Marker / Pivot -->
-        <circle cx="100" cy="100" r="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)" />
-        <circle cx="100" cy="100" r="3.5" fill="#3b82f6" />
+        <!-- Center Stationary Marker / Pivot (luxury brass pin) -->
+        <circle cx="100" cy="100" r="8.5" fill="url(#gold1)" stroke="#ffffff" stroke-width="1" filter="url(#shadow)" />
+        <circle cx="100" cy="100" r="5" fill="#0f172a" />
+        <circle cx="100" cy="100" r="2.5" fill="url(#gold2)" />
+        <circle cx="100" cy="100" r="1.2" fill="#ffffff" />
 
-        <!-- Top Red Pointer Triangle indicating device orientation (front of user) -->
-        <g transform="translate(100, 8)" filter="url(#shadow)">
-          <polygon points="0,0 -6,-10 6,-10" fill="#ef4444" />
-          <line x1="0" y1="0" x2="0" y2="10" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="2,1" />
+        <!-- Top Sighting Alignment Pointer (Precision red cursor triangle pointer) -->
+        <g transform="translate(100, 4)" filter="url(#shadow)">
+          <polygon points="0,6 -5,0 5,0" fill="#f43f5e" filter="url(#redGlow)" />
+          <line x1="0" y1="0" x2="0" y2="18" stroke="#f43f5e" stroke-width="1" stroke-dasharray="3,1" opacity="0.8" />
         </g>
       </svg>
     </div>
 
-    <!-- Direction details -->
+    <!-- Centered Dashboard Degree counter details (Fulfills request #7 perfectly) -->
+    <div class="mt-6 flex justify-center items-center gap-5 text-center z-10 w-full max-w-xs mx-auto px-1">
+      <!-- Hadap Ponsel Counter -->
+      <div class="flex-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-3 shadow-soft-xs relative overflow-hidden transition-all duration-300 {isAligned ? 'bg-emerald-50/20 border-emerald-100 ring-2 ring-emerald-500/10' : ''}">
+        {#if isAligned}
+          <div class="absolute -right-3 -top-3 w-8 h-8 bg-emerald-500/5 rounded-full pointer-events-none"></div>
+        {/if}
+        <span class="text-[9px] font-black text-slate-400 block uppercase tracking-widest leading-none">Hadap Ponsel</span>
+        <span class="font-mono text-2xl font-black text-slate-800 block mt-1.5 transition-colors duration-300 {isAligned ? 'text-emerald-600' : ''}">
+          {Math.round(heading)}°
+        </span>
+      </div>
+      
+      <!-- Center Compass Icon separator -->
+      <div class="flex-shrink-0 h-9 w-9 rounded-full bg-slate-100 border border-slate-200/50 flex items-center justify-center shadow-soft-xs text-slate-400">
+        <Compass class="h-4.5 w-4.5 animate-spin" style="animation-duration: 25s; animation-play-state: {isDragging ? 'running' : 'paused'}" />
+      </div>
 
-    <div class="mt-6 flex gap-6 text-center text-xs font-bold text-slate-500 z-10">
-      <div>
-        <span class="text-[9px] font-black text-slate-400 block uppercase">Hadap Ponsel</span>
-        <span class="font-mono text-sm text-slate-700">{Math.round(heading)}°</span>
+      <!-- Arah Ka'bah Target Counter -->
+      <div class="flex-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-3 shadow-soft-xs relative overflow-hidden transition-all duration-300 {isAligned ? 'bg-emerald-50/20 border-emerald-100 ring-2 ring-emerald-500/10' : ''}">
+        {#if isAligned}
+          <div class="absolute -right-3 -top-3 w-8 h-8 bg-emerald-500/5 rounded-full pointer-events-none"></div>
+        {/if}
+        <span class="text-[9px] font-black text-slate-400 block uppercase tracking-widest leading-none">Arah Ka'bah</span>
+        <span class="font-mono text-2xl font-black text-emerald-600 block mt-1.5">
+          {qiblaBearing}°
+        </span>
       </div>
-      <div class="w-px bg-slate-200"></div>
-      <div>
-        <span class="text-[9px] font-black text-slate-400 block uppercase">Arah Ka'bah</span>
-        <span class="font-mono text-sm text-emerald-600">{qiblaBearing}°</span>
+    </div>
+
+    <!-- Manual City Selector Activation Button inside the main widget card -->
+    <div class="w-full border-t border-slate-100 mt-6 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left z-10 px-2">
+      <div class="space-y-0.5">
+        <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider">Lokasi Kurang Akurat?</h4>
+        <p class="text-[10px] text-slate-400 font-normal">Gunakan pilihan kota manual di seluruh Indonesia</p>
       </div>
+      <Button 
+        on:click={() => isCityModalOpen = true}
+        variant="outline" 
+        size="sm"
+        class="border-slate-200 text-slate-600 hover:text-primary hover:border-primary/20 hover:bg-slate-50 font-extrabold text-[10px] uppercase h-9 rounded-xl px-4 flex items-center gap-1.5 cursor-pointer shadow-soft-xs"
+      >
+        <Navigation class="h-3 w-3 shrink-0" />
+        <span>Pilih Kota Manual</span>
+      </Button>
     </div>
   </Card>
 
-  <!-- iOS Permission Trigger / Sensor status info -->
+  <!-- iOS Permission Trigger Card -->
   {#if isIOS && sensorStatus === 'loading'}
-    <Card class="bg-amber-50/70 border-amber-200/50 p-4 text-center space-y-3 shadow-soft-xs">
+    <Card class="bg-amber-50/80 border-amber-200/50 p-4.5 text-center space-y-3.5 shadow-md">
       <div class="flex justify-center text-amber-500">
-        <Smartphone class="h-6 w-6" />
+        <Smartphone class="h-6.5 w-6.5 animate-bounce" />
       </div>
       <div class="space-y-1">
-        <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">Aktivasi Kompas Otomatis</h3>
+        <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">Aktivasi Sensor Gerak Apple</h3>
         <p class="text-[10px] text-slate-500 leading-relaxed font-normal">
-          Perangkat Apple iOS memerlukan izin akses sensor gerakan untuk memutar kompas secara otomatis saat Anda berputar.
+          Perangkat Apple Safari/iOS memerlukan izin khusus agar kompas dapat memutar otomatis secara real-time saat Anda bergerak.
         </p>
       </div>
       <Button 
         on:click={requestCompassPermission} 
         size="sm" 
-        class="bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[10px] uppercase h-9 shadow-soft-sm px-6"
+        class="bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[10px] uppercase h-9.5 shadow-md px-6 rounded-xl cursor-pointer"
       >
         Aktifkan Sensor HP
       </Button>
     </Card>
   {/if}
 
-  <!-- Selection city fallback for users with issues -->
-  <div class="relative" id="city-selector">
-    <div class="flex items-center justify-between px-1">
-      <span class="text-xs text-slate-400 font-bold">Punya masalah sensor?</span>
-      <button 
-        on:click|stopPropagation={() => isCityDropdownOpen = !isCityDropdownOpen}
-        class="text-xs font-bold text-primary hover:underline focus:outline-none cursor-pointer"
-      >
-        Pilih Kota Manual &rarr;
-      </button>
+  <!-- Instruction list formatted as modern step cards -->
+  <div class="space-y-3">
+    <div class="flex items-center space-x-2 px-1">
+      <Info class="h-4 w-4 text-emerald-500" />
+      <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">Panduan Sighting Arah</h3>
     </div>
 
-    {#if isCityDropdownOpen}
-      <div 
-        class="absolute bottom-full left-0 right-0 mb-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-30 p-3 space-y-2 origin-bottom animate-in fade-in-50 slide-in-from-bottom-2 duration-150"
-      >
+    <div class="grid grid-cols-1 gap-2.5">
+      {#each [
+        { step: '1', title: 'Posisikan HP Mendatar', desc: 'Taruh ponsel Anda mendatar sejajar dengan dada untuk hasil sensor magnetometer yang maksimal.' },
+        { step: '2', title: 'Jauhi Gangguan Elektromagnetik', desc: 'Hindari meletakkan HP di dekat benda logam, magnet, speaker besar, atau laptop karena dapat mengacaukan sensor.' },
+        { step: '3', title: 'Sesuaikan Dial Manual', desc: 'Jika sensor HP Anda mati/tidak didukung, geser dial kompas di layar secara manual memakai jari Anda.' },
+        { step: '4', title: 'Hadapkan Ujung Atas HP', desc: 'Putar badan Anda sampai jarum Kaaba selaras dengan garis penunjuk merah di atas (Glow Hijau menyala).' }
+      ] as item}
+        <div class="bg-white/70 border border-slate-200/50 rounded-2xl p-4 flex gap-3.5 items-center hover:border-slate-300/80 transition-all duration-300 shadow-soft-xs">
+          <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white font-extrabold text-xs flex items-center justify-center text-center leading-none shadow-emerald-100/50 shadow-md">
+            {item.step}
+          </div>
+          <div class="space-y-0.5">
+            <h4 class="text-xs font-bold text-slate-800">{item.title}</h4>
+            <p class="text-[10px] text-slate-500 leading-relaxed font-normal">{item.desc}</p>
+          </div>
+        </div>
+      {/each}
+    </div>
+  </div>
+</div>
+
+<!-- Slide-Up Premium Bottom Sheet / Modal for manual region selection -->
+{#if isCityModalOpen}
+  <div 
+    class="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-0 sm:p-4"
+    transition:fade={{ duration: 150 }}
+  >
+    <!-- Backdrop overlay -->
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div 
+      class="absolute inset-0 bg-slate-950/60 backdrop-blur-xs"
+      on:click={() => isCityModalOpen = false}
+    ></div>
+
+    <!-- Modal Drawer Sheet -->
+    <div 
+      class="relative w-full max-w-md bg-white rounded-t-[2rem] sm:rounded-2xl shadow-2xl overflow-hidden border-t sm:border border-slate-100 flex flex-col max-h-[85vh] sm:max-h-[75vh] z-10"
+      transition:fly={{ y: 250, duration: 250 }}
+    >
+      <!-- Drag Handle for Mobile view -->
+      <div class="flex justify-center py-3.5 sm:hidden">
+        <div class="w-12 h-1 bg-slate-200 rounded-full"></div>
+      </div>
+
+      <!-- Modal Header -->
+      <div class="px-5 pt-2 pb-4 border-b border-slate-100 flex justify-between items-center">
+        <div>
+          <h2 class="text-sm font-black text-slate-800 uppercase tracking-wider">Pilih Daerah Indonesia</h2>
+          <p class="text-[10px] text-slate-400 font-normal">Cari kelurahan, kecamatan, atau kota di Indonesia secara manual</p>
+        </div>
+        <button 
+          on:click={() => isCityModalOpen = false}
+          class="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <X class="h-4.5 w-4.5" />
+        </button>
+      </div>
+
+      <!-- Search Input -->
+      <div class="p-5 pb-0">
         <div class="relative">
           <input 
             type="text" 
             bind:value={citySearchQuery} 
-            placeholder="Cari kota terdekat..." 
-            class="w-full bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 rounded-xl py-2 pl-8 pr-3 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium"
-            on:click|stopPropagation={() => {}}
+            placeholder="Ketik kelurahan, kecamatan, kota, atau kabupaten..." 
+            class="w-full bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 rounded-xl py-2.5 pl-9 pr-3 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-semibold"
           />
-          <svg class="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-
-        <div class="max-h-40 overflow-y-auto divide-y divide-slate-100 pr-1 custom-scrollbar">
-          {#each filteredCities as city}
-            <button 
-              on:click={() => selectCity(city)}
-              class="w-full text-left py-2 px-2.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-primary rounded-lg transition-colors flex justify-between items-center cursor-pointer font-bold"
-            >
-              <span>{city.name}</span>
-              <span class="text-[9px] font-black text-slate-400 font-mono">{city.lat.toFixed(1)}°, {city.lng.toFixed(1)}°</span>
-            </button>
-          {/each}
+          <Search class="absolute left-3.5 top-3.5 h-3.5 w-3.5 text-slate-400" />
         </div>
       </div>
-    {/if}
-  </div>
 
-  <!-- Instruction card -->
-  <Card class="bg-white border-slate-200/50 p-5 space-y-3.5 shadow-soft-sm">
-    <div class="flex items-center space-x-2 text-slate-800">
-      <MapPin class="h-4.5 w-4.5 text-primary" />
-      <h3 class="text-xs font-black uppercase tracking-wider">Panduan Kompas Kiblat</h3>
+      <!-- Scrollable Region list -->
+      <div class="px-5 pb-5 flex-1 overflow-y-auto max-h-72 custom-scrollbar space-y-2 mt-3">
+        <div class="divide-y divide-slate-100">
+          <!-- Search loading indicator -->
+          {#if isSearchingOnline}
+            <div class="text-center py-8 text-xs text-slate-400 font-semibold flex items-center justify-center gap-2">
+              <span class="animate-spin text-sm">🔄</span>
+              <span>Mencari data wilayah online...</span>
+            </div>
+          {/if}
+
+          <!-- Online search results -->
+          {#if searchResults.length > 0}
+            <div class="pb-2">
+              <div class="px-2.5 py-1 text-[9px] font-black text-primary bg-primary/5 rounded-md uppercase tracking-wider block mb-1.5">Hasil Wilayah di Indonesia</div>
+              {#each searchResults as result}
+                <button 
+                  on:click={() => selectCity(result)}
+                  class="w-full text-left py-2.5 px-3 text-xs text-slate-700 hover:bg-slate-50 hover:text-primary rounded-lg transition-colors flex justify-between items-center cursor-pointer font-bold border border-transparent hover:border-slate-100"
+                >
+                  <div class="flex items-center gap-2 truncate">
+                    <MapPin class="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <span class="truncate pr-2">{result.name}</span>
+                  </div>
+                  <span class="text-[9px] font-black text-slate-400 font-mono shrink-0">{result.lat.toFixed(2)}°, {result.lng.toFixed(2)}°</span>
+                </button>
+              {/each}
+            </div>
+          {/if}
+
+          <!-- Initial guidance state -->
+          {#if !citySearchQuery && !isSearchingOnline && searchResults.length === 0}
+            <div class="text-center py-10 px-4 text-xs text-slate-400 font-semibold space-y-3 flex flex-col items-center">
+              <div class="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 shadow-soft-xs border border-slate-100">
+                <Search class="h-4.5 w-4.5 text-slate-400 stroke-[2]" />
+              </div>
+              <div class="space-y-1">
+                <span class="text-slate-600 font-bold block">Mulai Mencari</span>
+                <span class="text-[10px] text-slate-400 font-normal leading-relaxed max-w-[240px] block">
+                  Ketik nama kelurahan, kecamatan, kota, atau kabupaten di Indonesia untuk mencari koordinat otomatis secara online.
+                </span>
+              </div>
+            </div>
+          {/if}
+
+          <!-- Empty search state -->
+          {#if citySearchQuery && searchResults.length === 0 && !isSearchingOnline}
+            <div class="text-center py-10 px-4 text-xs text-slate-400 font-semibold space-y-3 flex flex-col items-center">
+              <div class="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 shadow-soft-xs border border-slate-100">
+                <MapPin class="h-4.5 w-4.5 text-slate-400 stroke-[2]" />
+              </div>
+              <div class="space-y-1">
+                <span class="text-slate-600 font-bold block">Daerah Tidak Ditemukan</span>
+                <span class="text-[10px] text-slate-400 font-normal leading-relaxed max-w-[240px] block">
+                  Tidak dapat menemukan "{citySearchQuery}". Coba ketik nama kelurahan atau kecamatan yang lain.
+                </span>
+              </div>
+            </div>
+          {/if}
+        </div>
+      </div>
     </div>
-    
-    <ul class="space-y-2 text-xs text-slate-500 leading-relaxed font-normal list-decimal list-inside pl-1">
-      <li>Posisikan ponsel Anda dalam keadaan mendatar (horizontal) sejajar dengan dada.</li>
-      <li>Jauhkan HP dari benda logam, perangkat elektronik lain, atau magnet karena dapat mengganggu kalibrasi sensor kompas.</li>
-      <li>Jika kompas tidak merespon gerakan Anda, putar kompas secara manual dengan menyeret/drag dial kompas menggunakan jari atau klik pilihan <strong>Pilih Kota Manual</strong>.</li>
-      <li>Jika Anda menggunakan iPhone, tekan tombol <strong>Aktifkan Sensor HP</strong> di atas agar kompas dapat memutar otomatis secara real-time.</li>
-    </ul>
-  </Card>
-</div>
+  </div>
+{/if}
