@@ -200,6 +200,25 @@
   $: diff = (qiblaBearing - heading + 180) % 360 - 180;
   $: isAligned = Math.abs(diff) <= 3;
 
+  // Generate SVG path for the turning guide arc
+  function getArcPath(diffVal: number) {
+    if (Math.abs(diffVal) < 3) return '';
+    const r = 78;
+    const startAngle = -90; // Top pointer is at -90 degrees (facing straight up)
+    const endAngle = diffVal - 90; // Qibla target angle relative to heading
+    
+    const rad = (deg: number) => deg * Math.PI / 180;
+    const x1 = 100 + r * Math.cos(rad(startAngle));
+    const y1 = 100 + r * Math.sin(rad(startAngle));
+    const x2 = 100 + r * Math.cos(rad(endAngle));
+    const y2 = 100 + r * Math.sin(rad(endAngle));
+    
+    const largeArcFlag = Math.abs(diffVal) > 180 ? 1 : 0;
+    const sweepFlag = diffVal > 0 ? 1 : 0;
+    
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArcFlag} ${sweepFlag} ${x2} ${y2}`;
+  }
+
   // Haptic Feedback when aligned
   $: if (isAligned) {
     if (!hasVibrated) {
@@ -346,56 +365,144 @@
       on:touchmove|passive={onDragMove}
       on:mouseup={onDragEnd}
       on:touchend={onDragEnd}
-      class="relative w-64 h-64 rounded-full bg-white border border-slate-200/80 shadow-md flex items-center justify-center cursor-grab select-none z-10 transition-all duration-300
+      class="relative w-72 h-72 rounded-full bg-white border border-slate-200/80 shadow-md flex items-center justify-center cursor-grab select-none z-10 transition-all duration-300
              {isAligned ? 'ring-8 ring-emerald-500/25 border-emerald-400 shadow-emerald-100/50' : 'active:cursor-grabbing hover:border-slate-350'}"
     >
-      <!-- Real-time Compass Dial (Rotates in negative heading direction to align North) -->
-      <div 
-        class="absolute w-full h-full rounded-full p-4 flex items-center justify-center"
-        style="transform: rotate(${-heading}deg); transition: transform {isDragging ? '0s' : '0.1s'} ease-out;"
-      >
-        <!-- Cardinal Marks -->
-        <div class="absolute top-2 text-sm font-black text-rose-600 select-none">U</div>
-        <div class="absolute right-2 text-sm font-bold text-slate-400 select-none">T</div>
-        <div class="absolute bottom-2 text-sm font-bold text-slate-400 select-none">S</div>
-        <div class="absolute left-2 text-sm font-bold text-slate-400 select-none">B</div>
+      <svg viewBox="0 0 200 200" class="w-full h-full p-2">
+        <!-- Definitions for styling gradients and filters -->
+        <defs>
+          <radialGradient id="compassGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="70%" stop-color="#ffffff" stop-opacity="1" />
+            <stop offset="100%" stop-color="#f8fafc" stop-opacity="1" />
+          </radialGradient>
+          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.15" />
+          </filter>
+        </defs>
 
-        <!-- Compass Tick lines -->
-        {#each Array(12) as _, i}
-          <div 
-            class="absolute w-0.5 h-2 bg-slate-200" 
-            style="transform: rotate({i * 30}deg) translateY(-112px);"
-          ></div>
-        {/each}
+        <!-- Outer Ring -->
+        <circle cx="100" cy="100" r="92" fill="url(#compassGlow)" stroke="#cbd5e1" stroke-width="1.5" />
+        <circle cx="100" cy="100" r="85" fill="none" stroke="#e2e8f0" stroke-width="0.75" stroke-dasharray="2,3" />
 
-        <!-- Qibla target needle inside the dial (Fixed at the calculated Qibla bearing) -->
-        <div 
-          class="absolute flex flex-col items-center pointer-events-none"
-          style="transform: rotate({qiblaBearing}deg) translateY(-85px);"
+        <!-- Rotating Dial Face (Rotates with -heading to point North) -->
+        <g 
+          style="transform: rotate(${-heading}deg); transform-origin: 100px 100px; transition: transform {isDragging ? '0s' : '0.15s'} cubic-bezier(0.1, 0.8, 0.2, 1);"
         >
-          <!-- Needle head -->
-          <div class="w-5 h-5 flex items-center justify-center bg-emerald-500 rounded-full border border-white shadow-soft-sm animate-pulse z-15">
-            <span class="text-[9px] text-white">🕌</span>
-          </div>
-          <!-- Line pointing from center to mecca -->
-          <div class="w-0.5 h-24 bg-emerald-500 shadow-inner z-10 mt-1"></div>
-        </div>
-      </div>
+          <!-- Fine Ticks (every 2 degrees) -->
+          {#each Array(180) as _, i}
+            {#if i % 15 !== 0 && i % 5 !== 0}
+              <line 
+                x1="100" y1="11" x2="100" y2="14" 
+                stroke="#e2e8f0" stroke-width="0.5" 
+                transform="rotate({i * 2} 100 100)"
+              />
+            {/if}
+          {/each}
 
-      <!-- Center Device Marker (Stationary) -->
-      <div class="absolute w-12 h-12 rounded-full bg-slate-50 border border-slate-200 shadow-soft-sm flex items-center justify-center pointer-events-none z-20">
-        <div class="h-4 w-4 bg-primary rounded-full animate-ping opacity-15"></div>
-        <div class="absolute h-2.5 w-2.5 bg-primary rounded-full"></div>
-      </div>
+          <!-- Medium Ticks (every 10 degrees) -->
+          {#each Array(36) as _, i}
+            {#if i % 3 !== 0}
+              <line 
+                x1="100" y1="11" x2="100" y2="16" 
+                stroke="#cbd5e1" stroke-width="0.75" 
+                transform="rotate({i * 10} 100 100)"
+              />
+            {/if}
+          {/each}
 
-      <!-- Device Direction Arrow pointing straight up (Stationary) -->
-      <div class="absolute -top-3 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex flex-col items-center">
-        <div class="w-3 h-3 border-l-4 border-r-4 border-b-6 border-l-transparent border-r-transparent border-b-slate-700"></div>
-        <div class="w-0.5 h-3 bg-slate-700"></div>
-      </div>
+          <!-- Major Ticks and Degree Labels (every 30 degrees) -->
+          {#each Array(12) as _, i}
+            <line 
+              x1="100" y1="11" x2="100" y2="19" 
+              stroke="#64748b" stroke-width="1.5" 
+              transform="rotate({i * 30} 100 100)"
+            />
+            
+            {#if i * 30 !== 0 && i * 30 !== 90 && i * 30 !== 180 && i * 30 !== 270}
+              <text 
+                x="100" y="27" 
+                font-size="6" font-weight="900" fill="#94a3b8" 
+                text-anchor="middle"
+                transform="rotate({i * 30} 100 100)"
+              >
+                {i * 30}
+              </text>
+            {/if}
+          {/each}
+
+          <!-- Cardinal Labels -->
+          <text x="100" y="24" font-size="11" font-weight="900" fill="#ef4444" text-anchor="middle" transform="rotate(0 100 100)" style="user-select: none;">U</text>
+          <text x="100" y="23" font-size="10" font-weight="900" fill="#334155" text-anchor="middle" transform="rotate(90 100 100)" style="user-select: none;">T</text>
+          <text x="100" y="23" font-size="10" font-weight="900" fill="#334155" text-anchor="middle" transform="rotate(180 100 100)" style="user-select: none;">S</text>
+          <text x="100" y="23" font-size="10" font-weight="900" fill="#334155" text-anchor="middle" transform="rotate(270 100 100)" style="user-select: none;">B</text>
+
+          <!-- Shaded 3D Compass Rose -->
+          <g transform="translate(100, 100) scale(0.62)" opacity="0.35">
+            <!-- N / S -->
+            <polygon points="0,0 -8,-45 0,-50" fill="#475569" />
+            <polygon points="0,0 8,-45 0,-50" fill="#64748b" />
+            <polygon points="0,0 -8,45 0,50" fill="#64748b" />
+            <polygon points="0,0 8,45 0,50" fill="#475569" />
+            <!-- E / W -->
+            <polygon points="0,0 45,-8 50,0" fill="#475569" />
+            <polygon points="0,0 45,8 50,0" fill="#64748b" />
+            <polygon points="0,0 -45,-8 -50,0" fill="#64748b" />
+            <polygon points="0,0 -45,8 -50,0" fill="#475569" />
+            <!-- NE / NW / SE / SW -->
+            <polygon points="0,0 25,-29 32,-32" fill="#94a3b8" />
+            <polygon points="0,0 29,-25 32,-32" fill="#cbd5e1" />
+            <polygon points="0,0 -25,-29 -32,-32" fill="#cbd5e1" />
+            <polygon points="0,0 -29,-25 -32,-32" fill="#94a3b8" />
+            <polygon points="0,0 25,29 32,32" fill="#cbd5e1" />
+            <polygon points="0,0 29,25 32,32" fill="#94a3b8" />
+            <polygon points="0,0 -25,29 -32,32" fill="#94a3b8" />
+            <polygon points="0,0 -29,25 -32,32" fill="#cbd5e1" />
+          </g>
+
+          <!-- Qibla target needle inside the dial (Fixed at the calculated Qibla bearing) -->
+          <g transform="rotate({qiblaBearing} 100 100)">
+            <!-- Glow background line -->
+            <line x1="100" y1="100" x2="100" y2="33" stroke="#10b981" stroke-width="4.5" stroke-linecap="round" opacity="0.3" />
+            <line x1="100" y1="100" x2="100" y2="33" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" />
+            
+            <!-- Kaaba Symbol Marker -->
+            <g transform="translate(100, 31)">
+              <circle cx="0" cy="0" r="11" fill="#10b981" stroke="#ffffff" stroke-width="2" filter="url(#shadow)" />
+              <text x="0" y="3" font-size="9" text-anchor="middle" fill="#ffffff" style="user-select: none;">🕋</text>
+            </g>
+          </g>
+        </g>
+
+        <!-- STATIONARY ELEMENTS (Overlaid on top, do not rotate with dial) -->
+
+        <!-- Dynamic turning guide arc -->
+        {#if !isAligned && Math.abs(diff) > 2}
+          <path 
+            d={getArcPath(diff)} 
+            fill="none" 
+            stroke={isAligned ? '#10b981' : '#6366f1'} 
+            stroke-width="3" 
+            stroke-linecap="round"
+            stroke-dasharray="2,3"
+            opacity="0.8"
+            class="animate-pulse"
+          />
+        {/if}
+
+        <!-- Center Stationary Marker / Pivot -->
+        <circle cx="100" cy="100" r="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)" />
+        <circle cx="100" cy="100" r="3.5" fill="#3b82f6" />
+
+        <!-- Top Red Pointer Triangle indicating device orientation (front of user) -->
+        <g transform="translate(100, 8)" filter="url(#shadow)">
+          <polygon points="0,0 -6,-10 6,-10" fill="#ef4444" />
+          <line x1="0" y1="0" x2="0" y2="10" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="2,1" />
+        </g>
+      </svg>
     </div>
 
     <!-- Direction details -->
+
     <div class="mt-6 flex gap-6 text-center text-xs font-bold text-slate-500 z-10">
       <div>
         <span class="text-[9px] font-black text-slate-400 block uppercase">Hadap Ponsel</span>
