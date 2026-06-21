@@ -385,10 +385,7 @@
         <circle cx="100" cy="100" r="85" fill="none" stroke="#e2e8f0" stroke-width="0.75" stroke-dasharray="2,3" />
 
         <!-- Rotating Dial Face (Rotates with -heading to point North) -->
-        <g 
-          transform="rotate({-heading} 100 100)"
-          style="transition: transform {isDragging ? '0s' : '0.15s'} cubic-bezier(0.1, 0.8, 0.2, 1); transform-origin: center;"
-        >
+        <g transform="rotate({-heading} 100 100)">
           <!-- Fine Ticks (every 2 degrees) -->
           {#each Array(180) as _, i}
             {#if i % 15 !== 0 && i % 5 !== 0}
