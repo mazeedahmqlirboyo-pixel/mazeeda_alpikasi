@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import Card from '$lib/components/ui/card.svelte';
-  import SeasonalEffect from '$lib/components/SeasonalEffect.svelte';
   import Button from '$lib/components/ui/button.svelte';
   import { supabase } from '$lib/supabase';
   import { deferredPrompt, showInstallBtn } from '$lib/pwaStore';
@@ -79,10 +78,6 @@
   let cityTimezone = 'WIB';
   let prayerTimes: any = null;
   let nextPrayer = { name: '', time: '', countdown: '' };
-
-  // --- Seasonal Effects State ---
-  let activeSeasonalEffect = 'none';
-  let seasonalChannel: any;
   let hijriDate = '';
   let gregorianDate = '';
   let isLoadingPrayers = false;
@@ -687,24 +682,6 @@
     }
   }
 
-  // --- Seasonal Effects load method ---
-  async function fetchSeasonalEffect() {
-    try {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('active_seasonal_effect')
-        .eq('id', 1)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (data) {
-        activeSeasonalEffect = data.active_seasonal_effect || 'none';
-      }
-    } catch (e) {
-      console.warn('Failed to fetch seasonal effect setting:', e);
-    }
-  }
-
   onMount(() => {
     // Auto detect user location / timezone offset to select city default
     if (typeof window !== 'undefined') {
@@ -732,20 +709,6 @@
 
     // Recalculate next prayer countdown every minute
     prayerTimer = setInterval(calculateNextPrayer, 60000);
-
-    fetchSeasonalEffect();
-    
-    // Subscribe to realtime updates on app_settings table
-    if (typeof window !== 'undefined') {
-      seasonalChannel = supabase
-        .channel('app_settings_realtime')
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_settings' }, (payload) => {
-          if (payload.new && payload.new.active_seasonal_effect) {
-            activeSeasonalEffect = payload.new.active_seasonal_effect;
-          }
-        })
-        .subscribe();
-    }
   });
 
   onDestroy(() => {
@@ -754,9 +717,6 @@
     stopAutoPlay();
     if (typeof window !== 'undefined') {
       window.removeEventListener('click', handleClickOutside);
-    }
-    if (seasonalChannel) {
-      supabase.removeChannel(seasonalChannel);
     }
   });
 
@@ -768,8 +728,6 @@
     { name: 'Al-Qur\'an Progress', value: quranProgress, description: quranDescription, icon: BookOpen, color: 'text-indigo-600 bg-indigo-50 border-indigo-100/70', href: '/quran' }
   ];
 </script>
-
-<SeasonalEffect effect={activeSeasonalEffect} />
 
 <div class="space-y-6 pb-12">
   
