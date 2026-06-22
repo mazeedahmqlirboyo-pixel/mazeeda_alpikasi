@@ -340,6 +340,17 @@
 
   // --- Prayer Times logic ---
   async function fetchPrayerTimes() {
+    const INDO_MONTHS = [
+      'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
+      'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
+    ];
+
+    const INDO_HIJRI_MONTHS = [
+      'MUHARRAM', 'SAFAR', 'RABIUL AWWAL', 'RABIUL AKHIR',
+      'JUMADIL AWWAL', 'JUMADIL AKHIR', 'RAJAB', 'SYA\'BAN',
+      'RAMADHAN', 'SYAWWAL', 'DZULQA\'DAH', 'DZULHIJJAH'
+    ];
+
     isLoadingPrayers = true;
     
     let url = '';
@@ -363,8 +374,18 @@
           Maghrib: timings.Maghrib,
           Isya: timings.Isha
         };
-        hijriDate = `${json.data.date.hijri.day} ${json.data.date.hijri.month.en} ${json.data.date.hijri.year} H`;
-        gregorianDate = json.data.date.readable;
+        
+        const hijriDay = json.data.date.hijri.day;
+        const hijriMonthNum = parseInt(json.data.date.hijri.month.number, 10);
+        const hijriYear = json.data.date.hijri.year;
+        const indHijriMonth = INDO_HIJRI_MONTHS[hijriMonthNum - 1] || json.data.date.hijri.month.en.toUpperCase();
+        hijriDate = `${hijriDay} ${indHijriMonth} ${hijriYear} H.`;
+
+        const gregDay = json.data.date.gregorian.day;
+        const gregMonthNum = parseInt(json.data.date.gregorian.month.number, 10);
+        const gregYear = json.data.date.gregorian.year;
+        const indMonth = INDO_MONTHS[gregMonthNum - 1] || json.data.date.gregorian.month.en.toUpperCase();
+        gregorianDate = `${gregDay} ${indMonth} ${gregYear} M.`;
 
         // Auto parse timezone meta from API to support any custom city
         if (json.data.meta && json.data.meta.timezone) {
@@ -396,8 +417,8 @@
       };
       
       const now = new Date();
-      gregorianDate = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-      hijriDate = 'Kalender Hijriah';
+      gregorianDate = `${now.getDate()} ${INDO_MONTHS[now.getMonth()]} ${now.getFullYear()} M.`;
+      hijriDate = 'KALENDER HIJRIYAH H.';
     } finally {
       isLoadingPrayers = false;
       calculateNextPrayer();
@@ -884,10 +905,10 @@
       <div class="flex flex-col sm:flex-row justify-between items-center bg-white border border-slate-200/50 rounded-2xl p-3 gap-2 mt-2">
         <div class="flex items-center space-x-2">
           <Calendar class="h-4.5 w-4.5 text-slate-400" />
-          <span class="text-xs font-bold text-slate-600">{gregorianDate || 'Memuat Tanggal...'}</span>
+          <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">{gregorianDate || 'MEMUAT TANGGAL...'}</span>
         </div>
         <div class="text-xs font-black text-primary bg-blue-50 border border-blue-100 px-3 py-1 rounded-full uppercase tracking-wider">
-          🌙 {hijriDate || 'Memuat Kalender Hijriah...'}
+          🌙 {hijriDate || 'MEMUAT KALENDER HIJRIYAH...'}
         </div>
       </div>
     </Card>

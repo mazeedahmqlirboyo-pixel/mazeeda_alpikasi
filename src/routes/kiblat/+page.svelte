@@ -741,6 +741,21 @@
     </Card>
   {/if}
 
+  <!-- Insecure Context Warning (HTTP on Mobile) -->
+  {#if typeof window !== 'undefined' && !window.isSecureContext}
+    <Card class="bg-rose-50/80 border-rose-250/30 p-4.5 text-center space-y-3 shadow-md">
+      <div class="flex justify-center text-rose-500">
+        <span class="text-2xl">⚠️</span>
+      </div>
+      <div class="space-y-1">
+        <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider text-rose-700">Koneksi Tidak Aman (HTTP)</h3>
+        <p class="text-[10px] text-slate-500 leading-relaxed font-normal">
+          Apple iOS (iPhone) memblokir akses sensor arah kompas pada koneksi <strong>HTTP biasa</strong>. Sensor hanya dapat aktif jika situs diakses melalui <strong>HTTPS (Koneksi Aman)</strong>. Silakan deploy situs ke hosting HTTPS (seperti Supabase/Vercel) untuk mencoba sensor otomatis.
+        </p>
+      </div>
+    </Card>
+  {/if}
+
   <!-- Instruction list formatted as modern step cards -->
   <div class="space-y-3">
     <div class="flex items-center space-x-2 px-1">
