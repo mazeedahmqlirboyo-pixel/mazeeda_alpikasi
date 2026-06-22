@@ -184,20 +184,24 @@
   }
 
   // iOS Specific Permission
-  async function requestCompassPermission() {
-    if (isIOS && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-      try {
-        const response = await (DeviceOrientationEvent as any).requestPermission();
-        if (response === 'granted') {
-          sensorStatus = 'active';
-          window.addEventListener('deviceorientation', handleOrientation);
-        } else {
+  function requestCompassPermission() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+      (DeviceOrientationEvent as any).requestPermission()
+        .then((response: string) => {
+          if (response === 'granted') {
+            sensorStatus = 'active';
+            window.addEventListener('deviceorientation', handleOrientation);
+          } else {
+            sensorStatus = 'denied';
+          }
+        })
+        .catch((err: any) => {
+          console.error('Compass permission error:', err);
           sensorStatus = 'denied';
-        }
-      } catch (err) {
-        console.error('Compass permission error:', err);
-        sensorStatus = 'denied';
-      }
+        });
+    } else {
+      window.addEventListener('deviceorientation', handleOrientation);
+      sensorStatus = 'active';
     }
   }
 
