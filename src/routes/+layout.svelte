@@ -50,15 +50,30 @@
   // Do not show full layouts (sidebar / bottom-nav) on the Auth page
   $: isAuthPage = currentPath === '/auth';
   
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { authStore, initAuth, logout, activeProfileStore } from '$lib/auth';
 
   $: userRole = $authStore.user?.role || '';
 
+  // Global scroll to top on path or parameter navigation
+  async function resetScrollToTop() {
+    await tick();
+    if (browser) {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      const mainEl = document.querySelector('main');
+      if (mainEl) {
+        mainEl.scrollTop = 0;
+      }
+    }
+  }
 
-
+  $: if (browser && (currentPath || $page.url.searchParams)) {
+    resetScrollToTop();
+  }
 
   // Client-side routing redirects based on auth store
   $: if (browser && !$authStore.loading) {

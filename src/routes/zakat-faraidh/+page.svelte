@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fade, slide } from "svelte/transition";
+  import { page } from "$app/stores";
   import Card from "$lib/components/ui/card.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import Tabs from "$lib/components/ui/tabs.svelte";
@@ -13,24 +14,48 @@
     Wallet,
     Scale,
     RefreshCw,
+    ChevronDown,
   } from "lucide-svelte";
 
-  // Active Tab: 'penghasilan', 'maal', 'faraidh'
+  // Navigation & Calculator Type Choice
+  let calculatorType = "zakat"; // 'zakat' or 'faraidh'
   let activeTab = "penghasilan";
 
-  const tabItems = [
-    { label: "Zakat Penghasilan", value: "penghasilan" },
-    { label: "Zakat Maal (Harta)", value: "maal" },
-    { label: "Zakat Fitrah", value: "fitrah" },
-    { label: "Zakat Tabungan", value: "tabungan" },
-    { label: "Zakat Emas", value: "emas" },
-    { label: "Zakat Perak", value: "perak" },
-    { label: "Zakat Pertanian", value: "pertanian" },
-    { label: "Zakat Perdagangan", value: "perniagaan" },
-    { label: "Zakat Saham", value: "saham" },
-    { label: "Zakat Reksadana", value: "reksadana" },
-    { label: "Kalkulator Faraidh (Waris)", value: "faraidh" },
+  $: {
+    const typeParam = $page.url.searchParams.get("type");
+    if (typeParam === "faraidh") {
+      calculatorType = "faraidh";
+    } else if (typeParam === "zakat") {
+      calculatorType = "zakat";
+    }
+  }
+  let isDropdownOpen = false;
+
+  const zakatItems = [
+    { label: "Zakat Penghasilan", value: "penghasilan", icon: "💼" },
+    { label: "Zakat Maal (Harta)", value: "maal", icon: "💰" },
+    { label: "Zakat Fitrah", value: "fitrah", icon: "🌾" },
+    { label: "Zakat Tabungan", value: "tabungan", icon: "🏦" },
+    { label: "Zakat Emas", value: "emas", icon: "🪙" },
+    { label: "Zakat Perak", value: "perak", icon: "🥈" },
+    { label: "Zakat Pertanian", value: "pertanian", icon: "🚜" },
+    { label: "Zakat Perdagangan", value: "perniagaan", icon: "🏬" },
+    { label: "Zakat Saham", value: "saham", icon: "📈" },
+    { label: "Zakat Reksadana", value: "reksadana", icon: "📊" },
+    { label: "Zakat Peternakan", value: "peternakan", icon: "🐐" },
+    { label: "Zakat Tambak", value: "tambak", icon: "🐟" },
+    { label: "Zakat Perusahaan", value: "perusahaan", icon: "🏢" },
+    { label: "Zakat Properti", value: "properti_sewa", icon: "🏠" },
+    { label: "Zakat Pertambangan", value: "pertambangan", icon: "⛏️" },
   ];
+
+  $: {
+    if (calculatorType === "faraidh") {
+      activeTab = "faraidh";
+    } else if (calculatorType === "zakat" && activeTab === "faraidh") {
+      activeTab = "penghasilan";
+    }
+  }
 
   // Helper formatting numbers to Indonesian Rupiah currency
   function formatRupiah(num: number): string {
@@ -46,6 +71,12 @@
   let goldDataSource = "Default (Offline)";
   let goldMaterialType = "Emas Batangan";
   let goldUrlHomepage = "https://www.anekalogam.co.id";
+
+  // Real-time silver API state
+  let isLoadingSilver = false;
+  let silverLastUpdated = "";
+  let silverDataSource = "Default (Offline)";
+  let silverUrlHomepage = "https://harga-emas.org/perak";
 
   async function fetchGoldPrice() {
     try {
@@ -79,6 +110,27 @@
       goldDataSource = "Default (Offline)";
     } finally {
       isLoadingGold = false;
+    }
+  }
+
+  async function fetchSilverPrice() {
+    try {
+      isLoadingSilver = true;
+      const res = await fetch("/api/silver-price");
+      if (!res.ok) throw new Error("API failed");
+      const json = await res.json();
+      if (json.success && json.price) {
+        hargaPerak = json.price;
+        hargaPerakDisp = json.price.toLocaleString("id-ID");
+        silverLastUpdated =
+          json.recordedDate || new Date().toISOString().split("T")[0];
+        silverDataSource = "Harga Emas (API Realtime)";
+      }
+    } catch (e) {
+      console.warn("Failed to fetch silver price:", e);
+      silverDataSource = "Default (Offline)";
+    } finally {
+      isLoadingSilver = false;
     }
   }
 
@@ -169,7 +221,8 @@
   let kebutuhanBulananDisp = "";
 
   let uangTunaiDisp = "";
-  let emasPerakDisp = "";
+  let beratEmasMaalDisp = "";
+  let beratPerakMaalDisp = "";
   let investasiDisp = "";
   let propertiDisp = "";
   let piutangDisp = "";
@@ -182,6 +235,7 @@
 
   onMount(() => {
     fetchGoldPrice();
+    fetchSilverPrice();
   });
 
   // ==================== ZAKAT PENGHASILAN STATE & LOGIC ====================
@@ -206,13 +260,19 @@
     : 0;
 
   // ==================== ZAKAT MAAL STATE & LOGIC ====================
+  let showMaalInfo = false;
   let uangTunai = 0;
-  let emasPerak = 0;
+  let beratEmasMaal = 0;
+  let beratPerakMaal = 0;
   let investasi = 0;
   let properti = 0;
   let piutang = 0;
   let hutang = 0;
 
+  $: emasPerak = Math.round(
+    (beratEmasMaal || 0) * (hargaEmas || 0) +
+      (beratPerakMaal || 0) * (hargaPerak || 0),
+  );
   $: totalHartaMaal =
     (uangTunai || 0) +
     (emasPerak || 0) +
@@ -228,6 +288,7 @@
     : 0;
 
   // ==================== ZAKAT FITRAH STATE & LOGIC ====================
+  let showFitrahInfo = false;
   let jumlahJiwa = 1;
   let hargaBeras = 15000;
   let jumlahJiwaDisp = "1";
@@ -241,54 +302,79 @@
   let saldoTabunganDisp = "";
   $: nisabZakatTabungan = 85 * (hargaEmas || 0);
   $: wajibZakatTabungan = (saldoTabungan || 0) >= nisabZakatTabungan;
-  $: jumlahZakatTabungan = wajibZakatTabungan ? Math.round((saldoTabungan || 0) * 0.025) : 0;
-  $: sedekahRekomendasiTabungan = !wajibZakatTabungan ? Math.round((saldoTabungan || 0) * 0.025) : 0;
+  $: jumlahZakatTabungan = wajibZakatTabungan
+    ? Math.round((saldoTabungan || 0) * 0.025)
+    : 0;
+  $: sedekahRekomendasiTabungan = !wajibZakatTabungan
+    ? Math.round((saldoTabungan || 0) * 0.025)
+    : 0;
 
   // ==================== ZAKAT EMAS STATE & LOGIC ====================
-  let beratEmasSimpan = 0;
-  let beratEmasPakai = 0;
+  let showEmasInfo = false;
+  let beratEmasSimpan = undefined;
+  let beratEmasPakai = undefined;
   let beratEmasSimpanDisp = "";
   let beratEmasPakaiDisp = "";
   $: wajibZakatEmas = (beratEmasSimpan || 0) >= 85;
-  $: jumlahZakatEmas = wajibZakatEmas ? Math.round((beratEmasSimpan || 0) * (hargaEmas || 0) * 0.025) : 0;
+  $: jumlahZakatEmas = wajibZakatEmas
+    ? Math.round((beratEmasSimpan || 0) * (hargaEmas || 0) * 0.025)
+    : 0;
 
   // ==================== ZAKAT PERAK STATE & LOGIC ====================
-  let beratPerak = 0;
+  let showPerakInfo = false;
+  let beratPerak = undefined;
   let hargaPerak = 16000;
   let beratPerakDisp = "";
   let hargaPerakDisp = "16.000";
   $: wajibZakatPerak = (beratPerak || 0) >= 595;
-  $: jumlahZakatPerak = wajibZakatPerak ? Math.round((beratPerak || 0) * (hargaPerak || 0) * 0.025) : 0;
+  $: jumlahZakatPerak = wajibZakatPerak
+    ? Math.round((beratPerak || 0) * (hargaPerak || 0) * 0.025)
+    : 0;
 
   // ==================== ZAKAT PERTANIAN STATE & LOGIC ====================
-  let hasilPanen = 0;
+  let showPertanianInfo = false;
+  let hasilPanen = undefined;
   let hargaPanen = 0;
   let jenisPengairan = "pompa"; // 'pompa' or 'alami'
   let hasilPanenDisp = "";
   let hargaPanenDisp = "";
   $: nisabPertanianKg = 653; // 5 wasaq = 653 kg beras
   $: wajibZakatPertanian = (hasilPanen || 0) >= nisabPertanianKg;
-  $: tarifPertanian = jenisPengairan === "alami" ? 0.10 : 0.05;
-  $: jumlahZakatPertanianKg = wajibZakatPertanian ? (hasilPanen || 0) * tarifPertanian : 0;
-  $: jumlahZakatPertanianRupiah = wajibZakatPertanian ? Math.round(jumlahZakatPertanianKg * (hargaPanen || 0)) : 0;
+  $: tarifPertanian = jenisPengairan === "alami" ? 0.1 : 0.05;
+  $: jumlahZakatPertanianKg = wajibZakatPertanian
+    ? (hasilPanen || 0) * tarifPertanian
+    : 0;
+  $: jumlahZakatPertanianRupiah = wajibZakatPertanian
+    ? Math.round(jumlahZakatPertanianKg * (hargaPanen || 0))
+    : 0;
 
   // ==================== ZAKAT PERDAGANGAN (PERNIAGAAN) STATE & LOGIC ====================
-  let asetLancar = 0;
-  let uangKas = 0;
+  let showPerniagaanInfo = false;
+  let modalUsaha = 0;
+  let keuntunganUsaha = 0;
   let piutangDagang = 0;
   let hutangDagang = 0;
-  let asetLancarDisp = "";
-  let uangKasDisp = "";
+  let modalUsahaDisp = "";
+  let keuntunganUsahaDisp = "";
   let piutangDagangDisp = "";
   let hutangDagangDisp = "";
-  $: totalAsetUsaha = (asetLancar || 0) + (uangKas || 0) + (piutangDagang || 0);
-  $: hartaPerniagaanKenaZakat = Math.max(0, totalAsetUsaha - (hutangDagang || 0));
+  $: totalAsetUsaha =
+    (modalUsaha || 0) + (keuntunganUsaha || 0) + (piutangDagang || 0);
+  $: hartaPerniagaanKenaZakat = Math.max(
+    0,
+    totalAsetUsaha - (hutangDagang || 0),
+  );
   $: nisabPerniagaan = 85 * (hargaEmas || 0);
   $: wajibZakatPerniagaan = hartaPerniagaanKenaZakat >= nisabPerniagaan;
-  $: jumlahZakatPerniagaan = wajibZakatPerniagaan ? Math.round(hartaPerniagaanKenaZakat * 0.025) : 0;
-  $: sedekahRekomendasiPerniagaan = !wajibZakatPerniagaan ? Math.round(hartaPerniagaanKenaZakat * 0.025) : 0;
+  $: jumlahZakatPerniagaan = wajibZakatPerniagaan
+    ? Math.round(hartaPerniagaanKenaZakat * 0.025)
+    : 0;
+  $: sedekahRekomendasiPerniagaan = !wajibZakatPerniagaan
+    ? Math.round(hartaPerniagaanKenaZakat * 0.025)
+    : 0;
 
   // ==================== ZAKAT SAHAM STATE & LOGIC ====================
+  let showSahamInfo = false;
   let nilaiSaham = 0;
   let dividenSaham = 0;
   let hutangSaham = 0;
@@ -299,16 +385,239 @@
   $: hartaSahamKenaZakat = Math.max(0, totalAsetSaham - (hutangSaham || 0));
   $: nisabSaham = 85 * (hargaEmas || 0);
   $: wajibZakatSaham = hartaSahamKenaZakat >= nisabSaham;
-  $: jumlahZakatSaham = wajibZakatSaham ? Math.round(hartaSahamKenaZakat * 0.025) : 0;
-  $: sedekahRekomendasiSaham = !wajibZakatSaham ? Math.round(hartaSahamKenaZakat * 0.025) : 0;
+  $: jumlahZakatSaham = wajibZakatSaham
+    ? Math.round(hartaSahamKenaZakat * 0.025)
+    : 0;
+  $: sedekahRekomendasiSaham = !wajibZakatSaham
+    ? Math.round(hartaSahamKenaZakat * 0.025)
+    : 0;
 
   // ==================== ZAKAT REKSADANA STATE & LOGIC ====================
+  let showReksadanaInfo = false;
   let nilaiReksadana = 0;
   let nilaiReksadanaDisp = "";
   $: nisabReksadana = 85 * (hargaEmas || 0);
   $: wajibZakatReksadana = (nilaiReksadana || 0) >= nisabReksadana;
-  $: jumlahZakatReksadana = wajibZakatReksadana ? Math.round((nilaiReksadana || 0) * 0.025) : 0;
-  $: sedekahRekomendasiReksadana = !wajibZakatReksadana ? Math.round((nilaiReksadana || 0) * 0.025) : 0;
+  $: jumlahZakatReksadana = wajibZakatReksadana
+    ? Math.round((nilaiReksadana || 0) * 0.025)
+    : 0;
+  $: sedekahRekomendasiReksadana = !wajibZakatReksadana
+    ? Math.round((nilaiReksadana || 0) * 0.025)
+    : 0;
+
+  // ==================== ZAKAT PETERNAKAN STATE & LOGIC ====================
+  let showPeternakanInfo = false;
+  let jenisTernak = "kambing"; // 'kambing', 'domba', 'sapi', 'kerbau'
+  let jumlahTernak = undefined;
+  let hargaTernak = 3000000;
+  let jumlahTernakDisp = "";
+  let hargaTernakDisp = "3.000.000";
+
+  function hitungZakatKambingDomba(jumlah: number, jenis: string): { count: number; desc: string } {
+    const namaHewan = jenis === "kambing" ? "Kambing" : "Domba";
+    const syaratUmur = jenis === "kambing" 
+      ? "(Umur minimal 1 Tahun)" 
+      : "(Umur minimal 1 Tahun / telah tanggal gigi)";
+    
+    if (jumlah < 40) return { count: 0, desc: "Belum wajib zakat" };
+    if (jumlah <= 120) return { count: 1, desc: `1 Ekor ${namaHewan} ${syaratUmur}` };
+    if (jumlah <= 200) return { count: 2, desc: `2 Ekor ${namaHewan}` };
+    if (jumlah <= 300) return { count: 3, desc: `3 Ekor ${namaHewan}` };
+    if (jumlah <= 400) return { count: 4, desc: `4 Ekor ${namaHewan}` };
+    const tambahan = Math.floor((jumlah - 400) / 100);
+    const total = 4 + tambahan;
+    return {
+      count: total,
+      desc: `${total} Ekor ${namaHewan} (setiap kelipatan 100 ekor bertambah 1 ekor)`,
+    };
+  }
+
+  function hitungZakatSapiKerbau(jumlah: number, jenis: string): {
+    count: number;
+    desc: string;
+    tabiCount: number;
+    musinnahCount: number;
+  } {
+    const namaHewan = jenis === "sapi" ? "Sapi" : "Kerbau";
+    const labelTabi = `Tabi' (${namaHewan} jantan/betina umur 1 tahun)`;
+    const labelMusinnah = `Musinnah (${namaHewan} betina umur 2 tahun)`;
+
+    if (jumlah < 30)
+      return {
+        count: 0,
+        desc: "Belum wajib zakat",
+        tabiCount: 0,
+        musinnahCount: 0,
+      };
+    if (jumlah <= 39)
+      return {
+        count: 1,
+        desc: `1 Ekor ${labelTabi}`,
+        tabiCount: 1,
+        musinnahCount: 0,
+      };
+    if (jumlah <= 59)
+      return {
+        count: 1,
+        desc: `1 Ekor ${labelMusinnah}`,
+        tabiCount: 0,
+        musinnahCount: 1,
+      };
+    if (jumlah <= 69)
+      return { count: 2, desc: `2 Ekor ${labelTabi}`, tabiCount: 2, musinnahCount: 0 };
+    if (jumlah <= 79)
+      return {
+        count: 2,
+        desc: `1 Ekor ${labelTabi} dan 1 Ekor ${labelMusinnah}`,
+        tabiCount: 1,
+        musinnahCount: 1,
+      };
+    if (jumlah <= 89)
+      return {
+        count: 2,
+        desc: `2 Ekor ${labelMusinnah}`,
+        tabiCount: 0,
+        musinnahCount: 2,
+      };
+    if (jumlah <= 99)
+      return { count: 3, desc: `3 Ekor ${labelTabi}`, tabiCount: 3, musinnahCount: 0 };
+    if (jumlah <= 109)
+      return {
+        count: 3,
+        desc: `2 Ekor ${labelTabi} dan 1 Ekor ${labelMusinnah}`,
+        tabiCount: 2,
+        musinnahCount: 1,
+      };
+    if (jumlah <= 119)
+      return {
+        count: 3,
+        desc: `1 Ekor ${labelTabi} dan 2 Ekor ${labelMusinnah}`,
+        tabiCount: 1,
+        musinnahCount: 2,
+      };
+
+    let bestT = 0;
+    let bestM = 0;
+    let minSisa = jumlah;
+    for (let t = 0; t <= Math.floor(jumlah / 30); t++) {
+      const sisaSetelahT = jumlah - t * 30;
+      const m = Math.floor(sisaSetelahT / 40);
+      const sisa = sisaSetelahT - m * 40;
+      if (sisa < minSisa) {
+        minSisa = sisa;
+        bestT = t;
+        bestM = m;
+      } else if (sisa === minSisa) {
+        if (m > bestM) {
+          bestT = t;
+          bestM = m;
+        }
+      }
+    }
+    const tabiCount = bestT;
+    const musinnahCount = bestM;
+    let parts = [];
+    if (tabiCount > 0) parts.push(`${tabiCount} Ekor Tabi' (${namaHewan} umur 1 tahun)`);
+    if (musinnahCount > 0) parts.push(`${musinnahCount} Ekor Musinnah (${namaHewan} betina umur 2 tahun)`);
+    return {
+      count: tabiCount + musinnahCount,
+      desc: parts.join(" dan "),
+      tabiCount,
+      musinnahCount,
+    };
+  }
+
+  $: wajibZakatPeternakan =
+    (jenisTernak === "kambing" || jenisTernak === "domba")
+      ? (jumlahTernak || 0) >= 40
+      : (jumlahTernak || 0) >= 30;
+  $: zakatPeternakanResult =
+    (jenisTernak === "kambing" || jenisTernak === "domba")
+      ? hitungZakatKambingDomba(jumlahTernak || 0, jenisTernak)
+      : hitungZakatSapiKerbau(jumlahTernak || 0, jenisTernak);
+  $: jumlahZakatPeternakanRupiah = wajibZakatPeternakan
+    ? Math.round(zakatPeternakanResult.count * (hargaTernak || 0))
+    : 0;
+
+  // ==================== ZAKAT TAMBAK STATE & LOGIC ====================
+  let showTambakInfo = false;
+  let hasilPanenTambak = 0;
+  let kasTambak = 0;
+  let biayaTambak = 0;
+  let hutangTambak = 0;
+  let hasilPanenTambakDisp = "";
+  let kasTambakDisp = "";
+  let biayaTambakDisp = "";
+  let hutangTambakDisp = "";
+  $: totalAsetTambak = (hasilPanenTambak || 0) + (kasTambak || 0);
+  $: bersihTambak = Math.max(
+    0,
+    totalAsetTambak - (biayaTambak || 0) - (hutangTambak || 0),
+  );
+  $: nisabTambak = 85 * (hargaEmas || 0);
+  $: wajibZakatTambak = bersihTambak >= nisabTambak;
+  $: jumlahZakatTambak = wajibZakatTambak
+    ? Math.round(bersihTambak * 0.025)
+    : 0;
+  $: sedekahRekomendasiTambak = !wajibZakatTambak
+    ? Math.round(bersihTambak * 0.025)
+    : 0;
+
+  // ==================== ZAKAT PERUSAHAAN STATE & LOGIC ====================
+  let showPerusahaanInfo = false;
+  let asetLancarPerusahaan = 0;
+  let hutangLancarPerusahaan = 0;
+  let persenKepemilikan = 100;
+  let asetLancarPerusahaanDisp = "";
+  let hutangLancarPerusahaanDisp = "";
+  let persenKepemilikanDisp = "100";
+  $: bersihPerusahaan = Math.max(
+    0,
+    (asetLancarPerusahaan || 0) - (hutangLancarPerusahaan || 0),
+  );
+  $: porsiBersihPerusahaan = Math.round(
+    bersihPerusahaan * ((persenKepemilikan || 100) / 100),
+  );
+  $: nisabPerusahaan = 85 * (hargaEmas || 0);
+  $: wajibZakatPerusahaan = porsiBersihPerusahaan >= nisabPerusahaan;
+  $: jumlahZakatPerusahaan = wajibZakatPerusahaan
+    ? Math.round(porsiBersihPerusahaan * 0.025)
+    : 0;
+  $: sedekahRekomendasiPerusahaan = !wajibZakatPerusahaan
+    ? Math.round(porsiBersihPerusahaan * 0.025)
+    : 0;
+
+  // ==================== ZAKAT PROPERTI (SEWA) STATE & LOGIC ====================
+  let showPropertiSewaInfo = false;
+  let pendapatanSewa = 0;
+  let biayaProperti = 0;
+  let pendapatanSewaDisp = "";
+  let biayaPropertiDisp = "";
+  $: bersihProperti = Math.max(0, (pendapatanSewa || 0) - (biayaProperti || 0));
+  $: nisabProperti = 85 * (hargaEmas || 0);
+  $: wajibZakatProperti = bersihProperti >= nisabProperti;
+  $: jumlahZakatProperti = wajibZakatProperti
+    ? Math.round(bersihProperti * 0.025)
+    : 0;
+  $: sedekahRekomendasiProperti = !wajibZakatProperti
+    ? Math.round(bersihProperti * 0.025)
+    : 0;
+
+  // ==================== ZAKAT PERTAMBANGAN STATE & LOGIC ====================
+  let showPertambanganInfo = false;
+  let hasilTambang = 0;
+  let biayaTambang = 0;
+  let hasilTambangDisp = "";
+  let biayaTambangDisp = "";
+  $: bersihTambang = Math.max(0, (hasilTambang || 0) - (biayaTambang || 0));
+  $: nisabPertambangan = 85 * (hargaEmas || 0);
+  $: wajibZakatPertambangan = bersihTambang >= nisabPertambangan;
+  $: jumlahZakatPertambangan = wajibZakatPertambangan
+    ? Math.round(bersihTambang * 0.025)
+    : 0;
+  $: sedekahRekomendasiPertambangan = !wajibZakatPertambangan
+    ? Math.round(bersihTambang * 0.025)
+    : 0;
 
   // ==================== FARAIDH (WARIS) STATE & LOGIC ====================
   let hartaKotor = 0;
@@ -675,91 +984,254 @@
       <span>Kembali</span>
     </a>
     <h1 class="text-base font-bold text-slate-800 uppercase tracking-wider">
-      Hitung Syariah
+      {calculatorType === 'zakat' ? 'Kalkulator Zakat' : 'Waris (Faraidh)'}
     </h1>
     <div class="w-10"></div>
   </div>
 
-  <!-- Navigation Tabs -->
-  <div
-    class="bg-slate-50 border border-slate-200/50 p-1.5 rounded-2xl shadow-soft-xs"
-  >
-    <Tabs items={tabItems} bind:activeTab />
-  </div>
 
-  <!-- Harga Emas Customizer (Sticky or top widget for Zakat tabs) -->
-  {#if activeTab === "penghasilan" || activeTab === "maal" || activeTab === "tabungan" || activeTab === "emas" || activeTab === "perniagaan" || activeTab === "saham" || activeTab === "reksadana"}
+  {#if calculatorType === "zakat"}
+    <!-- Zakat Type Selector Dropdown -->
+    <div class="relative space-y-1.5">
+      <!-- svelte-ignore a11y-label-has-associated-control -->
+      <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none flex items-center gap-1">
+        <span>Pilih Jenis Zakat</span>
+        <span class="text-slate-350 text-[8px] animate-pulse">▼</span>
+      </label>
+      
+      <button
+        type="button"
+        on:click={() => (isDropdownOpen = !isDropdownOpen)}
+        class="w-full flex items-center justify-between px-4 h-12 bg-white border border-slate-200 hover:border-slate-350 hover:bg-slate-50/30 text-sm font-bold text-slate-700 rounded-xl focus:outline-none transition-all cursor-pointer shadow-soft-xs"
+      >
+        <div class="flex items-center gap-2.5">
+          <span class="text-base shrink-0">
+            {zakatItems.find(item => item.value === activeTab)?.icon || '🕌'}
+          </span>
+          <span class="truncate">
+            {zakatItems.find(item => item.value === activeTab)?.label || 'Pilih Zakat'}
+          </span>
+        </div>
+        <div class="text-emerald-500 transition-transform duration-200 shrink-0 {isDropdownOpen ? 'rotate-180' : ''}">
+          <ChevronDown class="h-4.5 w-4.5" />
+        </div>
+      </button>
+      <p class="text-[10px] text-slate-400/80 text-center font-medium leading-none pt-1">
+        *Ketuk tombol di atas untuk memilih atau mengubah jenis zakat yang ingin dihitung
+      </p>
+
+      {#if isDropdownOpen}
+        <!-- Backdrop to close dropdown on outside click -->
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div class="fixed inset-0 z-10" on:click={() => (isDropdownOpen = false)}></div>
+
+        <!-- Dropdown Menu List -->
+        <div
+          in:slide={{ duration: 150 }}
+          out:slide={{ duration: 100 }}
+          class="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200/80 rounded-xl shadow-lg z-20 max-h-80 overflow-y-auto divide-y divide-slate-100"
+        >
+          {#each zakatItems as item}
+            <button
+              type="button"
+              on:click={() => {
+                activeTab = item.value;
+                isDropdownOpen = false;
+              }}
+              class="w-full flex items-center gap-3 px-4 py-3 text-xs sm:text-sm font-bold text-left transition-colors cursor-pointer
+                     {activeTab === item.value 
+                ? 'bg-emerald-50/50 text-emerald-600' 
+                : 'text-slate-650 hover:bg-slate-50'}"
+            >
+              <span class="text-base">{item.icon}</span>
+              <span class="flex-1">{item.label}</span>
+              {#if activeTab === item.value}
+                <span class="text-emerald-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              {/if}
+            </button>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/if}
+
+  <!-- Harga Acuan Customizer (Emas & Perak) -->
+  {#if activeTab === "penghasilan" || activeTab === "maal" || activeTab === "tabungan" || activeTab === "emas" || activeTab === "perak" || activeTab === "perniagaan" || activeTab === "saham" || activeTab === "reksadana" || activeTab === "tambak" || activeTab === "perusahaan" || activeTab === "properti_sewa" || activeTab === "pertambangan"}
     <Card class="bg-emerald-50/30 border-emerald-250/20 p-4">
       <div
-        class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        class="grid grid-cols-1 {activeTab === 'maal'
+          ? 'md:grid-cols-2 gap-6'
+          : ''}"
       >
-        <div class="flex items-start space-x-2.5">
-          <Info class="h-4.5 w-4.5 text-emerald-600 mt-0.5 shrink-0" />
-          <div class="space-y-0.5">
-            <h4
-              class="text-xs font-black text-slate-800 uppercase flex items-center gap-1.5"
-            >
-              <span>Harga Emas Acuan (Nisab)</span>
-              {#if isLoadingGold}
-                <span
-                  class="animate-pulse bg-amber-200 text-amber-800 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider"
-                  >Syncing...</span
-                >
-              {:else if goldDataSource.includes("API")}
-                <span
-                  class="bg-emerald-100 text-emerald-800 text-[8px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider"
-                  >Realtime Aktif</span
-                >
-              {:else}
-                <span
-                  class="bg-slate-100 text-slate-500 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider"
-                  >Manual</span
-                >
-              {/if}
-            </h4>
-            <p class="text-[10px] text-slate-500 leading-normal font-normal">
-              Nisab setara 85 gram emas. Acuan: {goldMaterialType}
-              {#if goldLastUpdated}
-                <span class="text-slate-400 font-mono text-[9px]"
-                  >(Diperbarui: {goldLastUpdated} via {goldDataSource}.
-                  <a
-                    href={goldUrlHomepage}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="text-emerald-600 hover:text-emerald-700 underline font-bold"
-                    >Klik Disini</a
-                  > untuk mengakses halaman tersebut)</span
-                >
-              {/if}
-            </p>
-          </div>
-        </div>
-        <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
-          <div class="relative w-full sm:w-36 shrink-0">
-            <span
-              class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
-              >Rp</span
-            >
-            <input
-              type="text"
-              value={hargaEmas.toLocaleString("id-ID")}
-              on:input={handleGoldInput}
-              placeholder="1.400.000"
-              class="pl-8 pr-3 py-1.5 w-full bg-white border border-slate-200 text-xs font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-          </div>
-          <button
-            type="button"
-            on:click={fetchGoldPrice}
-            class="p-2 hover:bg-emerald-100/60 rounded-xl text-emerald-700 transition-colors border border-emerald-200/40 bg-white cursor-pointer shadow-soft-xs"
-            title="Sync harga emas terbaru"
-            disabled={isLoadingGold}
+        <!-- Harga Emas Acuan (Tampil jika bukan tab Perak) -->
+        {#if activeTab !== "perak"}
+          <div
+            class="flex flex-col gap-3 {activeTab === 'maal'
+              ? 'border-b md:border-b-0 md:border-r border-slate-200/60 pb-5 md:pb-0 md:pr-6'
+              : ''}"
           >
-            <RefreshCw
-              class="h-3.5 w-3.5 {isLoadingGold ? 'animate-spin' : ''}"
-            />
-          </button>
-        </div>
+            <div class="flex items-start space-x-2.5">
+              <Info class="h-4.5 w-4.5 text-emerald-600 mt-0.5 shrink-0" />
+              <div class="space-y-1">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span
+                    class="text-xs font-black text-slate-800 uppercase tracking-wider"
+                    >Harga Emas Acuan</span
+                  >
+                  {#if isLoadingGold}
+                    <span
+                      class="animate-pulse bg-amber-200 text-amber-800 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider"
+                      >Syncing...</span
+                    >
+                  {:else if goldDataSource.includes("API")}
+                    <span
+                      class="bg-emerald-100 text-emerald-800 text-[8px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider"
+                      >Realtime Aktif</span
+                    >
+                  {:else}
+                    <span
+                      class="bg-slate-100 text-slate-500 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider"
+                      >Manual</span
+                    >
+                  {/if}
+                </div>
+                <p
+                  class="text-[10px] text-slate-550 leading-relaxed font-normal"
+                >
+                  Nisab 85g emas. Acuan: {goldMaterialType}
+                  {#if goldLastUpdated}
+                    <span class="text-slate-400 font-mono text-[9px] block"
+                      >(Diperbarui: {goldLastUpdated} via {goldDataSource}.
+                      <a
+                        href={goldUrlHomepage}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-emerald-600 hover:text-emerald-700 underline font-bold"
+                        >Klik Disini</a
+                      > untuk mengakses halaman tersebut)</span
+                    >
+                  {/if}
+                </p>
+              </div>
+            </div>
+
+            <!-- Input & Refresh Button Row -->
+            <div class="flex items-center gap-2 w-full mt-1">
+              <div class="relative flex-1">
+                <span
+                  class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+                  >Rp</span
+                >
+                <input
+                  type="text"
+                  value={hargaEmas.toLocaleString("id-ID")}
+                  on:input={handleGoldInput}
+                  placeholder="1.400.000"
+                  class="pl-9 pr-3 py-2 w-full bg-white border border-slate-200 text-xs font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary shadow-soft-xs"
+                />
+              </div>
+              <button
+                type="button"
+                on:click={fetchGoldPrice}
+                class="p-2.5 hover:bg-emerald-100/60 rounded-xl text-emerald-700 transition-colors border border-emerald-250/20 bg-white cursor-pointer shadow-soft-xs flex items-center justify-center shrink-0"
+                title="Sync harga emas terbaru"
+                disabled={isLoadingGold}
+              >
+                <RefreshCw
+                  class="h-3.5 w-3.5 {isLoadingGold ? 'animate-spin' : ''}"
+                />
+              </button>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Harga Perak Acuan (Tampil hanya di tab Maal dan Perak) -->
+        {#if activeTab === "maal" || activeTab === "perak"}
+          <div class="flex flex-col gap-3">
+            <div class="flex items-start space-x-2.5">
+              <Info class="h-4.5 w-4.5 text-emerald-600 mt-0.5 shrink-0" />
+              <div class="space-y-1">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span
+                    class="text-xs font-black text-slate-800 uppercase tracking-wider"
+                    >Harga Perak Acuan</span
+                  >
+                  {#if isLoadingSilver}
+                    <span
+                      class="animate-pulse bg-amber-200 text-amber-800 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider"
+                      >Syncing...</span
+                    >
+                  {:else if silverDataSource.includes("API")}
+                    <span
+                      class="bg-emerald-100 text-emerald-800 text-[8px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider"
+                      >Realtime Aktif</span
+                    >
+                  {:else}
+                    <span
+                      class="bg-slate-100 text-slate-500 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider"
+                      >Manual</span
+                    >
+                  {/if}
+                </div>
+                <p
+                  class="text-[10px] text-slate-550 leading-relaxed font-normal"
+                >
+                  Nisab 595g perak.
+                  {#if silverLastUpdated}
+                    <span class="text-slate-400 font-mono text-[9px] block"
+                      >(Diperbarui: {silverLastUpdated} via {silverDataSource}.
+                      <a
+                        href={silverUrlHomepage}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-emerald-600 hover:text-emerald-700 underline font-bold"
+                        >Klik Disini</a
+                      > untuk mengakses halaman tersebut)</span
+                    >
+                  {/if}
+                </p>
+              </div>
+            </div>
+
+            <!-- Input & Refresh Button Row -->
+            <div class="flex items-center gap-2 w-full mt-1">
+              <div class="relative flex-1">
+                <span
+                  class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+                  >Rp</span
+                >
+                <input
+                  type="text"
+                  value={hargaPerak.toLocaleString("id-ID")}
+                  on:input={(e) =>
+                    handleNumericInput(e, (v) => {
+                      hargaPerak = v;
+                      hargaPerakDisp = v ? v.toLocaleString("id-ID") : "";
+                      silverDataSource = "Manual (User)";
+                    })}
+                  placeholder="37.970"
+                  class="pl-9 pr-3 py-2 w-full bg-white border border-slate-200 text-xs font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary shadow-soft-xs"
+                />
+              </div>
+              <button
+                type="button"
+                on:click={fetchSilverPrice}
+                class="p-2.5 hover:bg-emerald-100/60 rounded-xl text-emerald-700 transition-colors border border-emerald-250/20 bg-white cursor-pointer shadow-soft-xs flex items-center justify-center shrink-0"
+                title="Sync harga perak terbaru"
+                disabled={isLoadingSilver}
+              >
+                <RefreshCw
+                  class="h-3.5 w-3.5 {isLoadingSilver ? 'animate-spin' : ''}"
+                />
+              </button>
+            </div>
+          </div>
+        {/if}
       </div>
     </Card>
   {/if}
@@ -769,7 +1241,9 @@
     <div in:fade={{ duration: 150 }} class="space-y-5">
       <!-- Input Card -->
       <Card class="p-5 space-y-4 shadow-soft-sm">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
+        >
           <h3
             class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
           >
@@ -790,19 +1264,67 @@
           <div
             in:slide={{ duration: 200 }}
             out:slide={{ duration: 150 }}
-            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-600 space-y-2 leading-relaxed text-justify"
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
           >
-            <p>
-              <strong>Zakat penghasilan</strong> atau yang dikenal juga sebagai zakat profesi adalah bagian dari zakat mal yang wajib dikeluarkan atas harta yang berasal dari pendapatan / penghasilan rutin dari pekerjaan yang tidak melanggar syariah.
-            </p>
-            <p>
-              Nishab zakat penghasilan sebesar <strong>85 gram emas per tahun</strong>. Kadar zakat penghasilan senilai <strong>2,5%</strong>.
-            </p>
-            <p>
-              Dalam praktiknya, zakat penghasilan dapat ditunaikan setiap bulan dengan nilai nishab per bulannya adalah setara dengan nilai seperduabelas dari 85 gram emas, dengan kadar 2,5%. Jadi apabila penghasilan setiap bulan telah melebihi nilai nishab bulanan, maka wajib dikeluarkan zakatnya sebesar 2,5% dari penghasilannya tersebut.
-            </p>
-            <p class="text-[10px] text-slate-400 mt-1 border-t border-emerald-100/30 pt-1.5 italic">
-              (Sumber: Al Qur'an Surah Al Baqarah ayat 267, Peraturan Menteri Agama Nomor 31 Tahun 2019, Fatwa MUI Nomor 3 Tahun 2003, dan pendapat Shaikh Yusuf Qardawi).
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Nisab (Batas Minimum):</strong> Setara dengan nilai 85
+                  gram emas per tahun (atau 1/12 dari 85 gram emas per bulannya).
+                </li>
+                <li>
+                  <strong>Kadar Zakat:</strong> 2,5% dari total pendapatan bersih.
+                </li>
+                <li>
+                  <strong>Waktu Pembayaran:</strong> Bisa ditunaikan setiap bulan
+                  saat menerima gaji/penghasilan atau secara tahunan.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (3 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Hitung Total Pendapatan:</strong> Jumlahkan gaji bulanan
+                  dan bonus/pendapatan lain.
+                </li>
+                <li>
+                  <strong>Kurangi Pengeluaran Pokok (Opsional):</strong> Sebagian
+                  ulama memperbolehkan mengurangkan kebutuhan pokok (sandang, pangan,
+                  papan, hutang jatuh tempo) terlebih dahulu.
+                </li>
+                <li>
+                  <strong>Hitung Zakatnya:</strong> Jika sisa pendapatan bulanan
+                  mencapai nisab bulanan, kalikan sisa tersebut dengan 2,5%.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div
+                class="bg-white border border-emerald-100 rounded-xl p-2.5 text-center font-black text-emerald-700 font-mono text-xs"
+              >
+                Zakat Penghasilan = Pendapatan Kena Zakat &times; 2,5%
+              </div>
+            </div>
+            <p
+              class="text-[10px] text-slate-400 mt-1 border-t border-emerald-100/30 pt-1.5 italic"
+            >
+              (Sumber: Al Qur'an Surah Al Baqarah ayat 267, Peraturan Menteri
+              Agama Nomor 31 Tahun 2019, Fatwa MUI Nomor 3 Tahun 2003, dan
+              pendapat Shaikh Yusuf Qardawi).
             </p>
           </div>
         {/if}
@@ -999,8 +1521,15 @@
               {formatRupiah(jumlahZakatPenghasilan)}
               <span class="text-xs font-bold">/ bln</span>
             </h2>
+            {#if jumlahZakatPenghasilan > 0}
+              <p
+                class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(jumlahZakatPenghasilan)}
+              </p>
+            {/if}
             <p
-              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1.5"
             >
               "Keluarkanlah zakat dari sebagian harta mereka guna membersihkan
               dan menyucikan mereka." (QS. At-Taubah: 103)
@@ -1015,8 +1544,15 @@
               {formatRupiah(sedekahRekomendasiPenghasilan)}
               <span class="text-xs font-bold">/ bln</span>
             </h2>
+            {#if sedekahRekomendasiPenghasilan > 0}
+              <p
+                class="text-[10px] text-primary font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(sedekahRekomendasiPenghasilan)}
+              </p>
+            {/if}
             <p
-              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1.5"
             >
               Pendapatan Anda berada di bawah nisab. Mengeluarkan infaq 2.5%
               bersifat anjuran sukarela demi keberkahan harta.
@@ -1032,12 +1568,86 @@
     <div in:fade={{ duration: 150 }} class="space-y-5">
       <!-- Input Card -->
       <Card class="p-5 space-y-4 shadow-soft-sm">
-        <h3
-          class="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5"
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
         >
-          <Wallet class="h-4.5 w-4.5 text-primary" />
-          <span>Aset Maal (Kekayaan)</span>
-        </h3>
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Wallet class="h-4.5 w-4.5 text-primary" />
+            <span>Aset Maal (Kekayaan)</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showMaalInfo = !showMaalInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Maal"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        {#if showMaalInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Syarat & Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Nisab (Batas Minimum):</strong> Harta bersih minimal setara
+                  dengan nilai 85 gram emas.
+                </li>
+                <li>
+                  <strong>Haul (Waktu):</strong> Harta tersebut telah dimiliki secara
+                  penuh selama 1 tahun.
+                </li>
+                <li>
+                  <strong>Kadar Zakat:</strong> 2,5% dari total harta bersih.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (3 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Hitung Total Harta:</strong> Jumlahkan semua aset (uang
+                  tunai, tabungan, emas, perak, investasi, dan barang dagangan).
+                </li>
+                <li>
+                  <strong>Kurangi Utang:</strong> Kurangkan total harta tersebut
+                  dengan utang yang jatuh tempo pada tahun itu untuk mendapatkan
+                  Harta Bersih.
+                </li>
+                <li>
+                  <strong>Hitung Zakatnya:</strong> Jika Harta Bersih sudah mencapai
+                  nilai nisab (85 gram emas), kalikan dengan 2,5%.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div
+                class="bg-white border border-emerald-100 rounded-xl p-2.5 text-center font-black text-emerald-700 font-mono text-xs"
+              >
+                Zakat Mal = Total Harta Bersih &times; 2,5%
+              </div>
+            </div>
+          </div>
+        {/if}
 
         <!-- Uang Tunai/Tabungan -->
         <div class="space-y-1.5">
@@ -1072,37 +1682,86 @@
           {/if}
         </div>
 
-        <!-- Emas/Logam Mulia -->
+        <!-- Emas/Logam Mulia Maal (Split Input) -->
         <div class="space-y-1.5">
-          <label for="emasPerak" class="text-xs font-bold text-slate-600"
-            >Emas / Perak / Logam Mulia (Nilai pasar)</label
+          <label for="beratEmasMaal" class="text-xs font-bold text-slate-600"
+            >Emas / Logam Mulia (gram)</label
           >
           <div class="relative">
-            <span
-              class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
-              >Rp</span
-            >
             <input
-              id="emasPerak"
+              id="beratEmasMaal"
               type="text"
-              value={emasPerakDisp}
+              value={beratEmasMaalDisp}
               on:input={(e) =>
                 handleNumericInput(e, (v) => {
-                  emasPerak = v;
-                  emasPerakDisp = v ? v.toLocaleString("id-ID") : "";
+                  beratEmasMaal = v;
+                  beratEmasMaalDisp = v ? v.toLocaleString("id-ID") : "";
                 })}
               placeholder="0"
-              class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+              class="pr-12 pl-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
             />
-          </div>
-          {#if emasPerak > 0}
-            <p
-              in:slide={{ duration: 150 }}
-              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            <span
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >gram</span
             >
-              🗣️ Terbilang: {terbilang(emasPerak)}
-            </p>
-          {/if}
+          </div>
+          <div
+            class="flex flex-col sm:flex-row justify-between sm:items-center gap-1 text-[10px] mt-1 font-semibold"
+          >
+            <span class="text-slate-505 font-medium"
+              >Estimasi Nilai: {formatRupiah(
+                (beratEmasMaal || 0) * (hargaEmas || 0),
+              )}</span
+            >
+            {#if (beratEmasMaal || 0) > 0}
+              <span class="text-emerald-600 font-extrabold capitalize"
+                >🗣️ Terbilang: {terbilang(
+                  (beratEmasMaal || 0) * (hargaEmas || 0),
+                )}</span
+              >
+            {/if}
+          </div>
+        </div>
+
+        <!-- Perak Maal (Split Input) -->
+        <div class="space-y-1.5">
+          <label for="beratPerakMaal" class="text-xs font-bold text-slate-600"
+            >Perak (gram)</label
+          >
+          <div class="relative">
+            <input
+              id="beratPerakMaal"
+              type="text"
+              value={beratPerakMaalDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  beratPerakMaal = v;
+                  beratPerakMaalDisp = v ? v.toLocaleString("id-ID") : "";
+                })}
+              placeholder="0"
+              class="pr-12 pl-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+            <span
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >gram</span
+            >
+          </div>
+          <div
+            class="flex flex-col sm:flex-row justify-between sm:items-center gap-1 text-[10px] mt-1 font-semibold"
+          >
+            <span class="text-slate-505 font-medium"
+              >Estimasi Nilai: {formatRupiah(
+                (beratPerakMaal || 0) * (hargaPerak || 0),
+              )}</span
+            >
+            {#if (beratPerakMaal || 0) > 0}
+              <span class="text-emerald-600 font-extrabold capitalize"
+                >🗣️ Terbilang: {terbilang(
+                  (beratPerakMaal || 0) * (hargaPerak || 0),
+                )}</span
+              >
+            {/if}
+          </div>
         </div>
 
         <!-- Saham/Reksadana/Investasi -->
@@ -1308,8 +1967,15 @@
             <h2 class="text-3xl font-black text-emerald-600 tracking-tight">
               {formatRupiah(jumlahZakatMaal)}
             </h2>
+            {#if jumlahZakatMaal > 0}
+              <p
+                class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(jumlahZakatMaal)}
+              </p>
+            {/if}
             <p
-              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1.5"
             >
               Harta bersih Anda telah melebihi nisab tahunan. Wajib dikeluarkan
               zakat sebesar 2,5% jika kepemilikan aset telah mencapai haul (1
@@ -1324,8 +1990,15 @@
             <h2 class="text-2xl font-black text-primary tracking-tight">
               {formatRupiah(sedekahRekomendasiMaal)}
             </h2>
+            {#if sedekahRekomendasiMaal > 0}
+              <p
+                class="text-[10px] text-primary font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(sedekahRekomendasiMaal)}
+              </p>
+            {/if}
             <p
-              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1.5"
             >
               Harta bersih Anda berada di bawah nisab tahunan. Anda disarankan
               mengeluarkan infaq/sedekah sukarela untuk mensucikan rezeki.
@@ -1341,12 +2014,105 @@
     <div in:fade={{ duration: 150 }} class="space-y-5">
       <!-- Input Card -->
       <Card class="p-5 space-y-4 shadow-soft-sm">
-        <h3
-          class="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5"
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
         >
-          <Wallet class="h-4.5 w-4.5 text-primary" />
-          <span>Isi Data Zakat Fitrah</span>
-        </h3>
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Wallet class="h-4.5 w-4.5 text-primary" />
+            <span>Isi Data Zakat Fitrah</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showFitrahInfo = !showFitrahInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Fitrah"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        {#if showFitrahInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Waktu Pembayaran:</strong> Selama bulan Ramadhan, paling
+                  lambat sebelum salat Idulfitri.
+                </li>
+                <li>
+                  <strong>Besaran per Jiwa:</strong> Bahan makanan pokok seberat
+                  2,5 kg (atau 3,5 liter). Bisa diganti dengan uang tunai yang nilainya
+                  setara dengan harga beras tersebut (mengikuti ketetapan BAZNAS
+                  daerah setempat).
+                </li>
+                <li>
+                  <strong>Siapa yang Wajib?</strong> Setiap muslim (termasuk bayi
+                  yang baru lahir sebelum matahari terbenam di akhir Ramadhan) yang
+                  memiliki kelebihan makanan untuk malam dan hari raya.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (2 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Hitung Jumlah Jiwa:</strong> Data semua anggota keluarga
+                  yang ditanggung (termasuk diri sendiri, pasangan, anak, atau asisten
+                  rumah tangga).
+                </li>
+                <li>
+                  <strong>Kalikan dengan Besaran Zakat:</strong> Kalikan total jiwa
+                  dengan ketetapan zakat fitrah per jiwa.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5 space-y-2">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div class="space-y-1.5 font-mono text-xs">
+                <div
+                  class="bg-white border border-emerald-100 rounded-xl p-2 text-center text-emerald-750"
+                >
+                  <span
+                    class="text-[9px] text-slate-400 font-semibold uppercase block"
+                    >Rumus Beras:</span
+                  >
+                  <span class="font-black"
+                    >Total Zakat = Jumlah Jiwa &times; 2,5 kg</span
+                  >
+                </div>
+                <div
+                  class="bg-white border border-emerald-100 rounded-xl p-2 text-center text-emerald-750"
+                >
+                  <span
+                    class="text-[9px] text-slate-400 font-semibold uppercase block"
+                    >Rumus Uang:</span
+                  >
+                  <span class="font-black"
+                    >Total Zakat = Jumlah Jiwa &times; Harga Beras/Jiwa</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        {/if}
 
         <!-- Jumlah Jiwa -->
         <div class="space-y-1.5">
@@ -1363,7 +2129,8 @@
             />
           </div>
           <p class="text-[10px] text-slate-400 block leading-tight">
-            Masing-masing jiwa wajib mengeluarkan 2,5 kg beras (makanan pokok) atau uang senilai dengannya.
+            Masing-masing jiwa wajib mengeluarkan 2,5 kg beras (makanan pokok)
+            atau uang senilai dengannya.
           </p>
         </div>
 
@@ -1402,11 +2169,18 @@
       </Card>
 
       <!-- Output Card -->
-      <Card class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden">
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
         <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
-        <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between">
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
           <span>Hasil Perhitungan Zakat Fitrah</span>
-          <span class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Wajib Zakat</span>
+          <span
+            class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+            >Wajib Zakat</span
+          >
         </h3>
 
         <div class="divide-y divide-slate-100 text-xs">
@@ -1420,19 +2194,40 @@
           </div>
           <div class="py-2.5 flex justify-between items-center">
             <span class="text-slate-500 font-medium">Harga Beras per kg</span>
-            <span class="font-bold text-slate-700">{formatRupiah(hargaBeras)}</span>
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(hargaBeras)}</span
+            >
           </div>
         </div>
 
-        <div class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-2">
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-2"
+        >
           <div>
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Zakat (Beras)</p>
-            <h2 class="text-2xl font-black text-emerald-600 tracking-tight">{totalZakatBerasFitrah} kg <span class="text-sm font-bold text-slate-500">Beras</span></h2>
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1"
+            >
+              Total Zakat (Beras)
+            </p>
+            <h2 class="text-2xl font-black text-emerald-600 tracking-tight">
+              {totalZakatBerasFitrah} kg
+              <span class="text-sm font-bold text-slate-500">Beras</span>
+            </h2>
           </div>
           <div class="pt-2 border-t border-slate-200/50">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Atau Jika Berupa Uang</p>
-            <h2 class="text-2xl font-black text-emerald-600 tracking-tight">{formatRupiah(totalZakatUangFitrah)}</h2>
-            <p class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize">🗣️ Terbilang: {terbilang(totalZakatUangFitrah)}</p>
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1"
+            >
+              Atau Jika Berupa Uang
+            </p>
+            <h2 class="text-2xl font-black text-emerald-600 tracking-tight">
+              {formatRupiah(totalZakatUangFitrah)}
+            </h2>
+            <p
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(totalZakatUangFitrah)}
+            </p>
           </div>
         </div>
       </Card>
@@ -1486,43 +2281,87 @@
       </Card>
 
       <!-- Output Card -->
-      <Card class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden">
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
         {#if wajibZakatTabungan}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
         {:else}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-slate-300"></div>
         {/if}
 
-        <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between">
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
           <span>Hasil Perhitungan Zakat Tabungan</span>
           {#if wajibZakatTabungan}
-            <span class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Wajib Zakat</span>
+            <span
+              class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Wajib Zakat</span
+            >
           {:else}
-            <span class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Belum Wajib Zakat</span>
+            <span
+              class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Belum Wajib Zakat</span
+            >
           {/if}
         </h3>
 
         <div class="divide-y divide-slate-100 text-xs">
           <div class="py-2.5 flex justify-between items-center">
             <span class="text-slate-500 font-medium">Total Saldo Tabungan</span>
-            <span class="font-bold text-slate-700">{formatRupiah(saldoTabungan)}</span>
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(saldoTabungan)}</span
+            >
           </div>
           <div class="py-2.5 flex justify-between items-center">
-            <span class="text-slate-500 font-medium">Nisab Tabungan (85 gram Emas)</span>
-            <span class="font-bold text-slate-700">{formatRupiah(nisabZakatTabungan)}</span>
+            <span class="text-slate-500 font-medium"
+              >Nisab Tabungan (85 gram Emas)</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(nisabZakatTabungan)}</span
+            >
           </div>
         </div>
 
-        <div class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5">
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5"
+        >
           {#if wajibZakatTabungan}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Zakat yang Wajib Dikeluarkan (2.5%)</p>
-            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">{formatRupiah(jumlahZakatTabungan)}</h2>
-            <p class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize">🗣️ Terbilang: {terbilang(jumlahZakatTabungan)}</p>
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Zakat yang Wajib Dikeluarkan (2.5%)
+            </p>
+            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">
+              {formatRupiah(jumlahZakatTabungan)}
+            </h2>
+            <p
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(jumlahZakatTabungan)}
+            </p>
           {:else}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Rekomendasi Sedekah / Infaq (2.5%)</p>
-            <h2 class="text-2xl font-black text-primary tracking-tight">{formatRupiah(sedekahRekomendasiTabungan)}</h2>
-            <p class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1">
-              Saldo tabungan Anda belum mencapai nishab tahunan. Anda disarankan mengeluarkan sedekah sukarela.
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Rekomendasi Sedekah / Infaq (2.5%)
+            </p>
+            <h2 class="text-2xl font-black text-primary tracking-tight">
+              {formatRupiah(sedekahRekomendasiTabungan)}
+            </h2>
+            {#if sedekahRekomendasiTabungan > 0}
+              <p
+                class="text-[10px] text-primary font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(sedekahRekomendasiTabungan)}
+              </p>
+            {/if}
+            <p
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+            >
+              Saldo tabungan Anda belum mencapai nishab tahunan. Anda disarankan
+              mengeluarkan sedekah sukarela.
             </p>
           {/if}
         </div>
@@ -1535,12 +2374,88 @@
     <div in:fade={{ duration: 150 }} class="space-y-5">
       <!-- Input Card -->
       <Card class="p-5 space-y-4 shadow-soft-sm">
-        <h3
-          class="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5"
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
         >
-          <Wallet class="h-4.5 w-4.5 text-primary" />
-          <span>Isi Jumlah Kepemilikan Emas</span>
-        </h3>
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Wallet class="h-4.5 w-4.5 text-primary" />
+            <span>Isi Jumlah Kepemilikan Emas</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showEmasInfo = !showEmasInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Emas"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        {#if showEmasInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Nisab (Batas Minimum):</strong> 85 gram emas simpanan/investasi.
+                </li>
+                <li>
+                  <strong>Haul (Waktu):</strong> Telah dimiliki secara penuh selama
+                  1 tahun hijriah.
+                </li>
+                <li>
+                  <strong>Kadar Zakat:</strong> 2,5% dari nilai emas yang disimpan.
+                </li>
+                <li>
+                  <strong>Emas Perhiasan:</strong> Emas perhiasan yang rutin dipakai
+                  sehari-hari tidak wajib dizakati menurut mayoritas ulama (selama
+                  dalam batas wajar), sedangkan emas simpanan/investasi wajib dizakati
+                  jika mencapai nisab.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (2 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Masukkan Berat Emas:</strong> Tentukan jumlah gram emas
+                  simpanan/investasi Anda.
+                </li>
+                <li>
+                  <strong>Hitung Zakatnya:</strong> Jika berat emas simpanan mencapai
+                  atau melebihi 85 gram, kalikan berat tersebut dengan harga acuan
+                  emas saat ini, lalu kalikan dengan 2,5%.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div
+                class="bg-white border border-emerald-100 rounded-xl p-2.5 text-center font-black text-emerald-700 font-mono text-xs"
+              >
+                Zakat Emas = Berat Emas Simpanan &times; Harga Emas/gram &times;
+                2,5%
+              </div>
+            </div>
+          </div>
+        {/if}
 
         <!-- Emas Simpanan -->
         <div class="space-y-1.5">
@@ -1556,7 +2471,8 @@
             class="px-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
           />
           <p class="text-[10px] text-slate-400 block leading-tight">
-            Emas batangan, koin emas, atau perhiasan yang disimpan dan jarang dipakai (wajib zakat jika >= 85 gram).
+            Emas batangan, koin emas, atau perhiasan yang disimpan dan jarang
+            dipakai (wajib zakat jika >= 85 gram).
           </p>
         </div>
 
@@ -1574,57 +2490,99 @@
             class="px-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
           />
           <p class="text-[10px] text-slate-400 block leading-tight">
-            Emas yang digunakan sebagai perhiasan sehari-hari (tidak wajib zakat menurut mayoritas ulama jika dalam batas wajar).
+            Emas yang digunakan sebagai perhiasan sehari-hari (tidak wajib zakat
+            menurut mayoritas ulama jika dalam batas wajar).
           </p>
         </div>
       </Card>
 
       <!-- Output Card -->
-      <Card class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden">
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
         {#if wajibZakatEmas}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
         {:else}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-slate-300"></div>
         {/if}
 
-        <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between">
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
           <span>Hasil Perhitungan Zakat Emas</span>
           {#if wajibZakatEmas}
-            <span class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Wajib Zakat</span>
+            <span
+              class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Wajib Zakat</span
+            >
           {:else}
-            <span class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Belum Wajib Zakat</span>
+            <span
+              class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Belum Wajib Zakat</span
+            >
           {/if}
         </h3>
 
         <div class="divide-y divide-slate-100 text-xs">
           <div class="py-2.5 flex justify-between items-center">
             <span class="text-slate-500 font-medium">Emas Wajib Zakat</span>
-            <span class="font-bold text-slate-700">{beratEmasSimpan || 0} gram</span>
+            <span class="font-bold text-slate-700"
+              >{beratEmasSimpan || 0} gram</span
+            >
           </div>
           <div class="py-2.5 flex justify-between items-center">
             <span class="text-slate-500 font-medium">Nisab Emas</span>
             <span class="font-bold text-slate-700">85 gram</span>
           </div>
           <div class="py-2.5 flex justify-between items-center">
-            <span class="text-slate-500 font-medium">Nilai Emas Acuan per gram</span>
-            <span class="font-bold text-slate-700">{formatRupiah(hargaEmas)}</span>
+            <span class="text-slate-500 font-medium"
+              >Nilai Emas Acuan per gram</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(hargaEmas)}</span
+            >
           </div>
           <div class="py-2.5 flex justify-between items-center">
-            <span class="text-slate-500 font-medium">Total Estimasi Nilai Emas</span>
-            <span class="font-bold text-slate-700">{formatRupiah((beratEmasSimpan || 0) * hargaEmas)}</span>
+            <span class="text-slate-500 font-medium"
+              >Total Estimasi Nilai Emas</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah((beratEmasSimpan || 0) * hargaEmas)}</span
+            >
           </div>
         </div>
 
-        <div class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5">
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5"
+        >
           {#if wajibZakatEmas}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Zakat yang Wajib Dikeluarkan (2.5%)</p>
-            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">{formatRupiah(jumlahZakatEmas)}</h2>
-            <p class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize">🗣️ Terbilang: {terbilang(jumlahZakatEmas)}</p>
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Zakat yang Wajib Dikeluarkan (2.5%)
+            </p>
+            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">
+              {formatRupiah(jumlahZakatEmas)}
+            </h2>
+            <p
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(jumlahZakatEmas)}
+            </p>
           {:else}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Rekomendasi Sedekah / Infaq</p>
-            <h2 class="text-2xl font-black text-primary tracking-tight">Rp 0</h2>
-            <p class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1">
-              Berat emas simpanan Anda ({beratEmasSimpan || 0} gram) masih di bawah batas nishab (85 gram).
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Rekomendasi Sedekah / Infaq
+            </p>
+            <h2 class="text-2xl font-black text-primary tracking-tight">
+              Rp 0
+            </h2>
+            <p
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+            >
+              Berat emas simpanan Anda ({beratEmasSimpan || 0} gram) masih di bawah
+              batas nishab (85 gram).
             </p>
           {/if}
         </div>
@@ -1637,12 +2595,77 @@
     <div in:fade={{ duration: 150 }} class="space-y-5">
       <!-- Input Card -->
       <Card class="p-5 space-y-4 shadow-soft-sm">
-        <h3
-          class="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5"
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
         >
-          <Wallet class="h-4.5 w-4.5 text-primary" />
-          <span>Isi Jumlah Kepemilikan Perak</span>
-        </h3>
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Wallet class="h-4.5 w-4.5 text-primary" />
+            <span>Isi Jumlah Kepemilikan Perak</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showPerakInfo = !showPerakInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Perak"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        {#if showPerakInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li><strong>Nisab (Batas Minimum):</strong> 595 gram perak.</li>
+                <li>
+                  <strong>Haul (Waktu):</strong> Telah dimiliki secara penuh selama
+                  1 tahun hijriah.
+                </li>
+                <li><strong>Kadar Zakat:</strong> 2,5% dari nilai perak.</li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (2 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Masukkan Berat Perak:</strong> Tentukan jumlah gram perak
+                  simpanan/investasi Anda.
+                </li>
+                <li>
+                  <strong>Hitung Zakatnya:</strong> Jika berat perak mencapai atau
+                  melebihi 595 gram, kalikan berat tersebut dengan harga perak saat
+                  ini, lalu kalikan dengan 2,5%.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div
+                class="bg-white border border-emerald-100 rounded-xl p-2.5 text-center font-black text-emerald-700 font-mono text-xs"
+              >
+                Zakat Perak = Berat Perak &times; Harga Perak/gram &times; 2,5%
+              </div>
+            </div>
+          </div>
+        {/if}
 
         <!-- Perak Simpanan -->
         <div class="space-y-1.5">
@@ -1658,7 +2681,8 @@
             class="px-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
           />
           <p class="text-[10px] text-slate-400 block leading-tight">
-            Perak wajib dikeluarkan zakatnya jika total beratnya mencapai batas nishab **595 gram**.
+            Perak wajib dikeluarkan zakatnya jika total beratnya mencapai batas
+            nishab **595 gram**.
           </p>
         </div>
 
@@ -1697,19 +2721,29 @@
       </Card>
 
       <!-- Output Card -->
-      <Card class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden">
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
         {#if wajibZakatPerak}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
         {:else}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-slate-300"></div>
         {/if}
 
-        <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between">
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
           <span>Hasil Perhitungan Zakat Perak</span>
           {#if wajibZakatPerak}
-            <span class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Wajib Zakat</span>
+            <span
+              class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Wajib Zakat</span
+            >
           {:else}
-            <span class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Belum Wajib Zakat</span>
+            <span
+              class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Belum Wajib Zakat</span
+            >
           {/if}
         </h3>
 
@@ -1724,24 +2758,49 @@
           </div>
           <div class="py-2.5 flex justify-between items-center">
             <span class="text-slate-500 font-medium">Harga Perak per gram</span>
-            <span class="font-bold text-slate-700">{formatRupiah(hargaPerak)}</span>
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(hargaPerak)}</span
+            >
           </div>
           <div class="py-2.5 flex justify-between items-center">
             <span class="text-slate-500 font-medium">Total Nilai Perak</span>
-            <span class="font-bold text-slate-700">{formatRupiah((beratPerak || 0) * hargaPerak)}</span>
+            <span class="font-bold text-slate-700"
+              >{formatRupiah((beratPerak || 0) * hargaPerak)}</span
+            >
           </div>
         </div>
 
-        <div class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5">
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5"
+        >
           {#if wajibZakatPerak}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Zakat yang Wajib Dikeluarkan (2.5%)</p>
-            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">{formatRupiah(jumlahZakatPerak)}</h2>
-            <p class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize">🗣️ Terbilang: {terbilang(jumlahZakatPerak)}</p>
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Zakat yang Wajib Dikeluarkan (2.5%)
+            </p>
+            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">
+              {formatRupiah(jumlahZakatPerak)}
+            </h2>
+            <p
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(jumlahZakatPerak)}
+            </p>
           {:else}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Rekomendasi Sedekah / Infaq</p>
-            <h2 class="text-2xl font-black text-primary tracking-tight">Rp 0</h2>
-            <p class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1">
-              Berat perak simpanan Anda ({beratPerak || 0} gram) masih di bawah batas nishab (595 gram).
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Rekomendasi Sedekah / Infaq
+            </p>
+            <h2 class="text-2xl font-black text-primary tracking-tight">
+              Rp 0
+            </h2>
+            <p
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+            >
+              Berat perak simpanan Anda ({beratPerak || 0} gram) masih di bawah batas
+              nishab (595 gram).
             </p>
           {/if}
         </div>
@@ -1754,12 +2813,107 @@
     <div in:fade={{ duration: 150 }} class="space-y-5">
       <!-- Input Card -->
       <Card class="p-5 space-y-4 shadow-soft-sm">
-        <h3
-          class="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5"
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
         >
-          <Scale class="h-4.5 w-4.5 text-primary" />
-          <span>Isi Hasil Pertanian</span>
-        </h3>
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Scale class="h-4.5 w-4.5 text-primary" />
+            <span>Isi Hasil Pertanian</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showPertanianInfo = !showPertanianInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Pertanian"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        {#if showPertanianInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Syarat & Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Nisab (Batas Minimum):</strong> 5 Wasaq, setara dengan
+                  <strong>653 kg beras</strong>
+                  (atau <strong>1.323 kg gabah kering giling</strong>).
+                </li>
+                <li>
+                  <strong>Kadar Zakat:</strong> Tergantung metode pengairan yang
+                  digunakan:
+                  <ul class="list-disc pl-4 mt-0.5 space-y-0.5">
+                    <li>
+                      <strong>5%</strong> jika menggunakan pengairan buatan/berbayar
+                      (pompa air, irigasi berbayar).
+                    </li>
+                    <li>
+                      <strong>10%</strong> jika menggunakan pengairan alami/tanpa
+                      biaya (air hujan, sungai, mata air).
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  <strong>Haul (Waktu):</strong> Tidak disyaratkan satu tahun.
+                  Zakat pertanian wajib dikeluarkan
+                  <strong>setiap kali panen</strong>.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (3 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Hitung Hasil Panen:</strong> Tentukan total berat bersih
+                  hasil panen pertanian dalam kilogram.
+                </li>
+                <li>
+                  <strong>Tentukan Tarif Zakat:</strong> Tentukan tarif berdasarkan
+                  sumber pengairan (5% jika berbayar, 10% jika tadah hujan/alami).
+                </li>
+                <li>
+                  <strong>Hitung Zakatnya:</strong> Jika total hasil panen mencapai
+                  nisab (653 kg beras), kalikan total hasil panen dengan tarif tersebut.
+                  Jika ingin diuangkan, kalikan hasilnya dengan harga jual beras
+                  per kg.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div
+                class="bg-white border border-emerald-100 rounded-xl p-2.5 text-center font-black text-emerald-700 font-mono text-[10px] sm:text-xs space-y-1"
+              >
+                <div>
+                  Zakat Pertanian (kg) = Hasil Panen &times; Tarif Zakat (5% /
+                  10%)
+                </div>
+                <div class="text-[9px] text-slate-400 font-normal font-sans">
+                  Jika Diuangkan: Zakat (Rupiah) = Zakat Pertanian (kg) &times;
+                  Harga Jual per kg
+                </div>
+              </div>
+            </div>
+          </div>
+        {/if}
 
         <!-- Hasil Panen -->
         <div class="space-y-1.5">
@@ -1775,7 +2929,8 @@
             class="px-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
           />
           <p class="text-[10px] text-slate-400 block leading-tight">
-            Nishab zakat pertanian adalah 5 wasaq (setara **653 kg beras** / **1323 kg gabah kering giling**).
+            Nishab zakat pertanian adalah 5 wasaq (setara **653 kg beras** /
+            **1323 kg gabah kering giling**).
           </p>
         </div>
 
@@ -1815,14 +2970,30 @@
         <!-- Jenis Pengairan -->
         <div class="space-y-1.5">
           <!-- svelte-ignore a11y-label-has-associated-control -->
-          <label class="text-xs font-bold text-slate-600">Metode Pengairan / Irigasi</label>
+          <label class="text-xs font-bold text-slate-600"
+            >Metode Pengairan / Irigasi</label
+          >
           <div class="flex gap-4 flex-col sm:flex-row">
-            <label class="flex items-center space-x-2 text-xs font-semibold text-slate-650 cursor-pointer">
-              <input type="radio" bind:group={jenisPengairan} value="pompa" class="h-4 w-4 border-slate-350 text-primary focus:ring-primary/20" />
+            <label
+              class="flex items-center space-x-2 text-xs font-semibold text-slate-650 cursor-pointer"
+            >
+              <input
+                type="radio"
+                bind:group={jenisPengairan}
+                value="pompa"
+                class="h-4 w-4 border-slate-350 text-primary focus:ring-primary/20"
+              />
               <span>Pompa / Air Berbayar / Irigasi Buatan (Tarif 5%)</span>
             </label>
-            <label class="flex items-center space-x-2 text-xs font-semibold text-slate-650 cursor-pointer">
-              <input type="radio" bind:group={jenisPengairan} value="alami" class="h-4 w-4 border-slate-350 text-primary focus:ring-primary/20" />
+            <label
+              class="flex items-center space-x-2 text-xs font-semibold text-slate-650 cursor-pointer"
+            >
+              <input
+                type="radio"
+                bind:group={jenisPengairan}
+                value="alami"
+                class="h-4 w-4 border-slate-350 text-primary focus:ring-primary/20"
+              />
               <span>Alami / Air Hujan / Sungai (Bebas Biaya - Tarif 10%)</span>
             </label>
           </div>
@@ -1830,19 +3001,29 @@
       </Card>
 
       <!-- Output Card -->
-      <Card class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden">
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
         {#if wajibZakatPertanian}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
         {:else}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-slate-300"></div>
         {/if}
 
-        <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between">
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
           <span>Hasil Perhitungan Zakat Pertanian</span>
           {#if wajibZakatPertanian}
-            <span class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Wajib Zakat</span>
+            <span
+              class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Wajib Zakat</span
+            >
           {:else}
-            <span class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Belum Wajib Zakat</span>
+            <span
+              class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Belum Wajib Zakat</span
+            >
           {/if}
         </h3>
 
@@ -1857,26 +3038,73 @@
           </div>
           <div class="py-2.5 flex justify-between items-center">
             <span class="text-slate-500 font-medium">Tarif Zakat</span>
-            <span class="font-bold text-slate-700">{jenisPengairan === 'alami' ? '10%' : '5%'}</span>
+            <span class="font-bold text-slate-700"
+              >{jenisPengairan === "alami" ? "10%" : "5%"}</span
+            >
           </div>
         </div>
 
-        <div class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-2">
+        <!-- Detail Perhitungan -->
+        <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5 bg-slate-50/50 p-3 rounded-xl text-left">
+          <p class="font-bold text-slate-700 uppercase tracking-wider text-[9px] mb-1.5">🔬 Detail Perhitungan:</p>
+          <p>• <strong>Total Panen:</strong> {hasilPanen || 0} kg (Nisab: 653 kg beras)</p>
+          <p>• <strong>Metode Pengairan:</strong> {jenisPengairan === 'alami' ? 'Alami / Tadah Hujan (Tarif 10%)' : 'Buatan / Pompa Berbayar (Tarif 5%)'}</p>
+          <p>• <strong>Status:</strong> {#if wajibZakatPertanian}<span class="text-emerald-600 font-bold">Wajib Zakat (Panen >= 653 kg)</span>{:else}<span class="text-slate-500 font-bold">Belum Wajib Zakat</span>{/if}</p>
+          {#if wajibZakatPertanian}
+            <p>• <strong>Kadar Zakat (kg):</strong> {hasilPanen || 0} kg &times; {jenisPengairan === 'alami' ? '10%' : '5%'} = <strong class="text-emerald-600">{jumlahZakatPertanianKg.toFixed(1)} kg</strong></p>
+            {#if hargaPanen > 0}
+              <p>• <strong>Jika Diuangkan:</strong> {jumlahZakatPertanianKg.toFixed(1)} kg &times; {formatRupiah(hargaPanen)} / kg = <strong class="text-emerald-600">{formatRupiah(jumlahZakatPertanianRupiah)}</strong></p>
+            {/if}
+          {:else}
+            <p class="text-slate-400 italic">• Tidak ada kewajiban zakat hasil pertanian karena total hasil panen di bawah batas minimum (nisab).</p>
+          {/if}
+        </div>
+
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-2"
+        >
           {#if wajibZakatPertanian}
             <div>
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Zakat Hasil Panen (dalam kg)</p>
-              <h2 class="text-2xl font-black text-emerald-600 tracking-tight">{jumlahZakatPertanianKg.toFixed(1)} kg <span class="text-sm font-bold text-slate-500">Hasil Panen</span></h2>
+              <p
+                class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1"
+              >
+                Zakat Hasil Panen (dalam kg)
+              </p>
+              <h2 class="text-2xl font-black text-emerald-600 tracking-tight">
+                {jumlahZakatPertanianKg.toFixed(1)} kg
+                <span class="text-sm font-bold text-slate-500">Hasil Panen</span
+                >
+              </h2>
             </div>
             <div class="pt-2 border-t border-slate-200/50">
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Atau Jika Diuangkan</p>
-              <h2 class="text-2xl font-black text-emerald-600 tracking-tight">{formatRupiah(jumlahZakatPertanianRupiah)}</h2>
-              <p class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize">🗣️ Terbilang: {terbilang(jumlahZakatPertanianRupiah)}</p>
+              <p
+                class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1"
+              >
+                Atau Jika Diuangkan
+              </p>
+              <h2 class="text-2xl font-black text-emerald-600 tracking-tight">
+                {formatRupiah(jumlahZakatPertanianRupiah)}
+              </h2>
+              <p
+                class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(jumlahZakatPertanianRupiah)}
+              </p>
             </div>
           {:else}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Rekomendasi Sedekah / Infaq</p>
-            <h2 class="text-2xl font-black text-primary tracking-tight">Rp 0</h2>
-            <p class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1">
-              Hasil panen Anda ({hasilPanen || 0} kg) masih di bawah batas nishab (653 kg beras).
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Rekomendasi Sedekah / Infaq
+            </p>
+            <h2 class="text-2xl font-black text-primary tracking-tight">
+              Rp 0
+            </h2>
+            <p
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+            >
+              Hasil panen Anda ({hasilPanen || 0} kg) masih di bawah batas nishab
+              (653 kg beras).
             </p>
           {/if}
         </div>
@@ -1889,17 +3117,93 @@
     <div in:fade={{ duration: 150 }} class="space-y-5">
       <!-- Input Card -->
       <Card class="p-5 space-y-4 shadow-soft-sm">
-        <h3
-          class="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5"
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
         >
-          <Wallet class="h-4.5 w-4.5 text-primary" />
-          <span>Isi Aset Perniagaan (Usaha Dagang)</span>
-        </h3>
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Wallet class="h-4.5 w-4.5 text-primary" />
+            <span>Isi Aset Perniagaan (Usaha Dagang)</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showPerniagaanInfo = !showPerniagaanInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Perdagangan"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
 
-        <!-- Aset Lancar / Stok Dagangan -->
+        {#if showPerniagaanInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Syarat & Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Nisab (Batas Minimum):</strong> Setara dengan nilai
+                  <strong>85 gram Emas</strong>.
+                </li>
+                <li>
+                  <strong>Kadar Zakat:</strong> 2,5% dari total harta bersih usaha.
+                </li>
+                <li>
+                  <strong>Haul (Waktu):</strong> Usaha perdagangan telah berjalan
+                  selama 1 tahun.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (3 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Hitung Total Aset Usaha:</strong> Jumlahkan modal usaha
+                  (nilai barang dagangan/stok/bahan baku), keuntungan bersih, dan
+                  piutang lancar (yang pasti terbayar).
+                </li>
+                <li>
+                  <strong>Kurangi Hutang Usaha:</strong> Kurangkan total aset dengan
+                  hutang jangka pendek (hutang jatuh tempo terkait operasional usaha)
+                  untuk mendapatkan Harta Bersih Usaha.
+                </li>
+                <li>
+                  <strong>Hitung Zakatnya:</strong> Jika Harta Bersih Usaha mencapai
+                  nisab (85 gram emas), kalikan harta bersih tersebut dengan 2,5%.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div
+                class="bg-white border border-emerald-100 rounded-xl p-2.5 text-center font-black text-emerald-700 font-mono text-[10px] sm:text-xs"
+              >
+                Zakat Perdagangan = (Modal Usaha + Keuntungan + Piutang -
+                Hutang) &times; 2,5%
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Modal Usaha -->
         <div class="space-y-1.5">
-          <label for="asetLancar" class="text-xs font-bold text-slate-600"
-            >Nilai Barang Dagangan / Stok Barang / Bahan Baku (Rupiah)</label
+          <label for="modalUsaha" class="text-xs font-bold text-slate-600"
+            >Modal Usaha / Stok Barang / Bahan Baku / Aset Lancar (Rupiah)</label
           >
           <div class="relative">
             <span
@@ -1907,32 +3211,32 @@
               >Rp</span
             >
             <input
-              id="asetLancar"
+              id="modalUsaha"
               type="text"
-              value={asetLancarDisp}
+              value={modalUsahaDisp}
               on:input={(e) =>
                 handleNumericInput(e, (v) => {
-                  asetLancar = v;
-                  asetLancarDisp = v ? v.toLocaleString("id-ID") : "";
+                  modalUsaha = v;
+                  modalUsahaDisp = v ? v.toLocaleString("id-ID") : "";
                 })}
               placeholder="0"
               class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
             />
           </div>
-          {#if asetLancar > 0}
+          {#if modalUsaha > 0}
             <p
               in:slide={{ duration: 150 }}
               class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
             >
-              🗣️ Terbilang: {terbilang(asetLancar)}
+              🗣️ Terbilang: {terbilang(modalUsaha)}
             </p>
           {/if}
         </div>
 
-        <!-- Uang Kas Usaha -->
+        <!-- Keuntungan -->
         <div class="space-y-1.5">
-          <label for="uangKas" class="text-xs font-bold text-slate-600"
-            >Uang Kas Usaha / Saldo Bank Khusus Usaha (Rupiah)</label
+          <label for="keuntunganUsaha" class="text-xs font-bold text-slate-600"
+            >Keuntungan Bersih Usaha (Rupiah)</label
           >
           <div class="relative">
             <span
@@ -1940,24 +3244,24 @@
               >Rp</span
             >
             <input
-              id="uangKas"
+              id="keuntunganUsaha"
               type="text"
-              value={uangKasDisp}
+              value={keuntunganUsahaDisp}
               on:input={(e) =>
                 handleNumericInput(e, (v) => {
-                  uangKas = v;
-                  uangKasDisp = v ? v.toLocaleString("id-ID") : "";
+                  keuntunganUsaha = v;
+                  keuntunganUsahaDisp = v ? v.toLocaleString("id-ID") : "";
                 })}
               placeholder="0"
               class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
             />
           </div>
-          {#if uangKas > 0}
+          {#if keuntunganUsaha > 0}
             <p
               in:slide={{ duration: 150 }}
               class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
             >
-              🗣️ Terbilang: {terbilang(uangKas)}
+              🗣️ Terbilang: {terbilang(keuntunganUsaha)}
             </p>
           {/if}
         </div>
@@ -1998,7 +3302,7 @@
         <!-- Hutang Dagang -->
         <div class="space-y-1.5">
           <label for="hutangDagang" class="text-xs font-bold text-slate-600"
-            >Hutang Jangka Pendek / Hutang Dagang Jatuh Tempo (Rupiah)</label
+            >Hutang Dagang / Hutang Jatuh Tempo Terkait Usaha (Rupiah)</label
           >
           <div class="relative">
             <span
@@ -2030,51 +3334,118 @@
       </Card>
 
       <!-- Output Card -->
-      <Card class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden">
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
         {#if wajibZakatPerniagaan}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
         {:else}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-slate-300"></div>
         {/if}
 
-        <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between">
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
           <span>Hasil Perhitungan Zakat Perdagangan</span>
           {#if wajibZakatPerniagaan}
-            <span class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Wajib Zakat</span>
+            <span
+              class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Wajib Zakat</span
+            >
           {:else}
-            <span class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Belum Wajib Zakat</span>
+            <span
+              class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Belum Wajib Zakat</span
+            >
           {/if}
         </h3>
 
         <div class="divide-y divide-slate-100 text-xs">
           <div class="py-2.5 flex justify-between items-center">
-            <span class="text-slate-500 font-medium">Total Aset Lancar Usaha</span>
-            <span class="font-bold text-slate-700">{formatRupiah(totalAsetUsaha)}</span>
+            <span class="text-slate-500 font-medium"
+              >Total Aset Lancar Usaha</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(totalAsetUsaha)}</span
+            >
           </div>
           <div class="py-2.5 flex justify-between items-center">
             <span class="text-slate-500 font-medium">Hutang Jangka Pendek</span>
-            <span class="font-bold text-slate-700">- {formatRupiah(hutangDagang)}</span>
+            <span class="font-bold text-slate-700"
+              >- {formatRupiah(hutangDagang)}</span
+            >
           </div>
           <div class="py-2.5 flex justify-between items-center">
-            <span class="text-slate-505 font-bold">Harta Perdagangan Wajib Zakat</span>
-            <span class="font-black text-slate-800">{formatRupiah(hartaPerniagaanKenaZakat)}</span>
+            <span class="text-slate-550 font-bold"
+              >Harta Perdagangan Wajib Zakat</span
+            >
+            <span class="font-black text-slate-800"
+              >{formatRupiah(hartaPerniagaanKenaZakat)}</span
+            >
           </div>
           <div class="py-2.5 flex justify-between items-center">
-            <span class="text-slate-500 font-medium">Nisab Perdagangan (85 gram Emas)</span>
-            <span class="font-bold text-slate-700">{formatRupiah(nisabPerniagaan)}</span>
+            <span class="text-slate-500 font-medium"
+              >Nisab Perdagangan (85 gram Emas)</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(nisabPerniagaan)}</span
+            >
           </div>
         </div>
 
-        <div class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5">
+        <!-- Detail Perhitungan -->
+        <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5 bg-slate-50/50 p-3 rounded-xl text-left">
+          <p class="font-bold text-slate-700 uppercase tracking-wider text-[9px] mb-1.5">🔬 Detail Perhitungan:</p>
+          <p>• <strong>Total Aset Usaha:</strong> Modal Usaha ({formatRupiah(modalUsaha || 0)}) + Keuntungan ({formatRupiah(keuntunganUsaha || 0)}) + Piutang ({formatRupiah(piutangDagang || 0)}) = {formatRupiah(totalAsetUsaha)}</p>
+          <p>• <strong>Hutang Dagang/Usaha:</strong> - {formatRupiah(hutangDagang || 0)}</p>
+          <p>• <strong>Harta Bersih Perdagangan:</strong> {formatRupiah(totalAsetUsaha)} - {formatRupiah(hutangDagang || 0)} = <strong>{formatRupiah(hartaPerniagaanKenaZakat)}</strong></p>
+          <p>• <strong>Batas Nisab (85g Emas):</strong> {formatRupiah(nisabPerniagaan)}</p>
+          <p>• <strong>Status:</strong> {#if wajibZakatPerniagaan}<span class="text-emerald-600 font-bold">Mencapai Nisab (Wajib Zakat 2.5%)</span>{:else}<span class="text-slate-500 font-bold">Belum Mencapai Nisab</span>{/if}</p>
           {#if wajibZakatPerniagaan}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Zakat yang Wajib Dikeluarkan (2.5%)</p>
-            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">{formatRupiah(jumlahZakatPerniagaan)}</h2>
-            <p class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize">🗣️ Terbilang: {terbilang(jumlahZakatPerniagaan)}</p>
+            <p>• <strong>Kadar Zakat:</strong> {formatRupiah(hartaPerniagaanKenaZakat)} &times; 2.5% = <strong class="text-emerald-600">{formatRupiah(jumlahZakatPerniagaan)}</strong></p>
           {:else}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Rekomendasi Sedekah / Infaq</p>
-            <h2 class="text-2xl font-black text-primary tracking-tight">{formatRupiah(sedekahRekomendasiPerniagaan)}</h2>
-            <p class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1">
-              Aset bersih perdagangan Anda masih di bawah nishab tahunan. Anda disarankan mengeluarkan sedekah sukarela.
+            <p>• <strong>Rekomendasi Sedekah:</strong> {formatRupiah(hartaPerniagaanKenaZakat)} &times; 2.5% = <strong class="text-primary">{formatRupiah(sedekahRekomendasiPerniagaan)}</strong></p>
+          {/if}
+        </div>
+
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5"
+        >
+          {#if wajibZakatPerniagaan}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Zakat yang Wajib Dikeluarkan (2.5%)
+            </p>
+            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">
+              {formatRupiah(jumlahZakatPerniagaan)}
+            </h2>
+            <p
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(jumlahZakatPerniagaan)}
+            </p>
+          {:else}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Rekomendasi Sedekah / Infaq
+            </p>
+            <h2 class="text-2xl font-black text-primary tracking-tight">
+              {formatRupiah(sedekahRekomendasiPerniagaan)}
+            </h2>
+            {#if sedekahRekomendasiPerniagaan > 0}
+              <p
+                class="text-[10px] text-primary font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(sedekahRekomendasiPerniagaan)}
+              </p>
+            {/if}
+            <p
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+            >
+              Aset bersih perdagangan Anda masih di bawah nishab tahunan. Anda
+              disarankan mengeluarkan sedekah sukarela.
             </p>
           {/if}
         </div>
@@ -2087,12 +3458,94 @@
     <div in:fade={{ duration: 150 }} class="space-y-5">
       <!-- Input Card -->
       <Card class="p-5 space-y-4 shadow-soft-sm">
-        <h3
-          class="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5"
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
         >
-          <Wallet class="h-4.5 w-4.5 text-primary" />
-          <span>Isi Nilai Portofolio Saham</span>
-        </h3>
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Wallet class="h-4.5 w-4.5 text-primary" />
+            <span>Isi Nilai Portofolio Saham</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showSahamInfo = !showSahamInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Saham"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        {#if showSahamInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Nisab (Batas Minimum):</strong> Nilai bersih portofolio
+                  saham setara dengan nilai 85 gram emas.
+                </li>
+                <li>
+                  <strong>Haul (Waktu):</strong> Saham tersebut telah dimiliki secara
+                  penuh selama 1 tahun.
+                </li>
+                <li>
+                  <strong>Kadar Zakat:</strong> 2,5% dari total nilai bersih saham
+                  (nilai pasar + dividen - hutang margin).
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (3 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Hitung Nilai Portofolio:</strong> Tentukan nilai pasar
+                  dari portofolio saham Anda saat ini.
+                </li>
+                <li>
+                  <strong>Tambahkan Dividen & Kurangi Hutang:</strong> Jumlahkan
+                  dengan dividen tunai yang diterima, lalu kurangkan dengan hutang
+                  margin/lancar pembelian saham.
+                </li>
+                <li>
+                  <strong>Hitung Zakatnya:</strong> Jika total nilai bersih mencapai
+                  nisab, kalikan dengan 2,5%.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div
+                class="bg-white border border-emerald-100 rounded-xl p-2.5 text-center font-black text-emerald-700 font-mono text-xs"
+              >
+                Zakat Saham = (Nilai Pasar Saham + Dividen - Hutang Margin)
+                &times; 2,5%
+              </div>
+            </div>
+            <p
+              class="text-[10px] text-slate-400 mt-1 border-t border-emerald-100/30 pt-1.5 italic"
+            >
+              (Sumber: Keputusan Fatwa MUI, BAZNAS, dan fiqh kontemporer tentang
+              zakat investasi keuangan).
+            </p>
+          </div>
+        {/if}
 
         <!-- Nilai Portofolio Saham -->
         <div class="space-y-1.5">
@@ -2195,55 +3648,124 @@
       </Card>
 
       <!-- Output Card -->
-      <Card class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden">
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
         {#if wajibZakatSaham}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
         {:else}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-slate-300"></div>
         {/if}
 
-        <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between">
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
           <span>Hasil Perhitungan Zakat Saham</span>
           {#if wajibZakatSaham}
-            <span class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Wajib Zakat</span>
+            <span
+              class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Wajib Zakat</span
+            >
           {:else}
-            <span class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Belum Wajib Zakat</span>
+            <span
+              class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Belum Wajib Zakat</span
+            >
           {/if}
         </h3>
 
         <div class="divide-y divide-slate-100 text-xs">
           <div class="py-2.5 flex justify-between items-center">
-            <span class="text-slate-500 font-medium">Nilai Portofolio Saham</span>
-            <span class="font-bold text-slate-700">{formatRupiah(nilaiSaham)}</span>
+            <span class="text-slate-500 font-medium"
+              >Nilai Portofolio Saham</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(nilaiSaham)}</span
+            >
           </div>
           <div class="py-2.5 flex justify-between items-center">
             <span class="text-slate-500 font-medium">Dividen Saham</span>
-            <span class="font-bold text-slate-700">+ {formatRupiah(dividenSaham)}</span>
+            <span class="font-bold text-slate-700"
+              >+ {formatRupiah(dividenSaham)}</span
+            >
           </div>
           <div class="py-2.5 flex justify-between items-center">
             <span class="text-slate-500 font-medium">Hutang Lancar Saham</span>
-            <span class="font-bold text-slate-700">- {formatRupiah(hutangSaham)}</span>
+            <span class="font-bold text-slate-700"
+              >- {formatRupiah(hutangSaham)}</span
+            >
           </div>
           <div class="py-2.5 flex justify-between items-center">
-            <span class="text-slate-505 font-bold">Harta Saham Wajib Zakat</span>
-            <span class="font-black text-slate-800">{formatRupiah(hartaSahamKenaZakat)}</span>
+            <span class="text-slate-505 font-bold">Harta Saham Wajib Zakat</span
+            >
+            <span class="font-black text-slate-800"
+              >{formatRupiah(hartaSahamKenaZakat)}</span
+            >
           </div>
           <div class="py-2.5 flex justify-between items-center">
-            <span class="text-slate-500 font-medium">Nisab Saham (85 gram Emas)</span>
-            <span class="font-bold text-slate-700">{formatRupiah(nisabSaham)}</span>
+            <span class="text-slate-500 font-medium"
+              >Nisab Saham (85 gram Emas)</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(nisabSaham)}</span
+            >
           </div>
         </div>
 
-        <div class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5">
+        <!-- Detail Perhitungan -->
+        <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5 bg-slate-50/50 p-3 rounded-xl text-left">
+          <p class="font-bold text-slate-700 uppercase tracking-wider text-[9px] mb-1.5">🔬 Detail Perhitungan:</p>
+          <p>• <strong>Nilai Saham:</strong> {formatRupiah(nilaiSaham || 0)}</p>
+          <p>• <strong>Dividen Saham:</strong> + {formatRupiah(dividenSaham || 0)}</p>
+          <p>• <strong>Hutang Saham:</strong> - {formatRupiah(hutangSaham || 0)}</p>
+          <p>• <strong>Harta Saham Kena Zakat:</strong> ({formatRupiah(nilaiSaham || 0)} + {formatRupiah(dividenSaham || 0)}) - {formatRupiah(hutangSaham || 0)} = <strong>{formatRupiah(hartaSahamKenaZakat)}</strong></p>
+          <p>• <strong>Batas Nisab (85g Emas):</strong> {formatRupiah(nisabSaham)}</p>
+          <p>• <strong>Status:</strong> {#if wajibZakatSaham}<span class="text-emerald-600 font-bold">Mencapai Nisab (Wajib Zakat 2.5%)</span>{:else}<span class="text-slate-500 font-bold">Belum Mencapai Nisab</span>{/if}</p>
           {#if wajibZakatSaham}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Zakat yang Wajib Dikeluarkan (2.5%)</p>
-            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">{formatRupiah(jumlahZakatSaham)}</h2>
-            <p class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize">🗣️ Terbilang: {terbilang(jumlahZakatSaham)}</p>
+            <p>• <strong>Kadar Zakat:</strong> {formatRupiah(hartaSahamKenaZakat)} &times; 2.5% = <strong class="text-emerald-600">{formatRupiah(jumlahZakatSaham)}</strong></p>
           {:else}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Rekomendasi Sedekah / Infaq</p>
-            <h2 class="text-2xl font-black text-primary tracking-tight">{formatRupiah(sedekahRekomendasiSaham)}</h2>
-            <p class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1">
-              Aset saham bersih Anda masih di bawah nishab tahunan. Anda disarankan mengeluarkan sedekah sukarela.
+            <p>• <strong>Rekomendasi Sedekah:</strong> {formatRupiah(hartaSahamKenaZakat)} &times; 2.5% = <strong class="text-primary">{formatRupiah(sedekahRekomendasiSaham)}</strong></p>
+          {/if}
+        </div>
+
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5"
+        >
+          {#if wajibZakatSaham}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Zakat yang Wajib Dikeluarkan (2.5%)
+            </p>
+            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">
+              {formatRupiah(jumlahZakatSaham)}
+            </h2>
+            <p
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(jumlahZakatSaham)}
+            </p>
+          {:else}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Rekomendasi Sedekah / Infaq
+            </p>
+            <h2 class="text-2xl font-black text-primary tracking-tight">
+              {formatRupiah(sedekahRekomendasiSaham)}
+            </h2>
+            {#if sedekahRekomendasiSaham > 0}
+              <p
+                class="text-[10px] text-primary font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(sedekahRekomendasiSaham)}
+              </p>
+            {/if}
+            <p
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+            >
+              Aset saham bersih Anda masih di bawah nishab tahunan. Anda
+              disarankan mengeluarkan sedekah sukarela.
             </p>
           {/if}
         </div>
@@ -2256,12 +3778,88 @@
     <div in:fade={{ duration: 150 }} class="space-y-5">
       <!-- Input Card -->
       <Card class="p-5 space-y-4 shadow-soft-sm">
-        <h3
-          class="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5"
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
         >
-          <Wallet class="h-4.5 w-4.5 text-primary" />
-          <span>Isi Nilai Reksa Dana</span>
-        </h3>
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Wallet class="h-4.5 w-4.5 text-primary" />
+            <span>Isi Nilai Reksa Dana</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showReksadanaInfo = !showReksadanaInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Reksa Dana"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        {#if showReksadanaInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Nisab (Batas Minimum):</strong> Nilai investasi reksa dana
+                  setara dengan nilai 85 gram emas.
+                </li>
+                <li>
+                  <strong>Haul (Waktu):</strong> Kepemilikan investasi reksa dana
+                  telah berjalan selama 1 tahun.
+                </li>
+                <li>
+                  <strong>Kadar Zakat:</strong> 2,5% dari total nilai pasar reksa
+                  dana saat mencapai haul.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (2 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Tentukan Nilai Investasi:</strong> Masukkan total nilai
+                  pasar dari portofolio investasi Reksa Dana Anda saat ini.
+                </li>
+                <li>
+                  <strong>Hitung Zakatnya:</strong> Jika total nilai tersebut mencapai
+                  nisab, kalikan nilai tersebut dengan 2,5%.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div
+                class="bg-white border border-emerald-100 rounded-xl p-2.5 text-center font-black text-emerald-700 font-mono text-xs"
+              >
+                Zakat Reksa Dana = Nilai Reksadana &times; 2,5%
+              </div>
+            </div>
+            <p
+              class="text-[10px] text-slate-400 mt-1 border-t border-emerald-100/30 pt-1.5 italic"
+            >
+              (Sumber: Fatwa MUI & BAZNAS tentang zakat aset keuangan /
+              investasi reksa dana).
+            </p>
+          </div>
+        {/if}
 
         <!-- Nilai Investasi Reksadana -->
         <div class="space-y-1.5">
@@ -2298,43 +3896,1635 @@
       </Card>
 
       <!-- Output Card -->
-      <Card class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden">
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
         {#if wajibZakatReksadana}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
         {:else}
           <div class="absolute inset-x-0 top-0 h-1.5 bg-slate-300"></div>
         {/if}
 
-        <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between">
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
           <span>Hasil Perhitungan Zakat Reksa Dana</span>
           {#if wajibZakatReksadana}
-            <span class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Wajib Zakat</span>
+            <span
+              class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Wajib Zakat</span
+            >
           {:else}
-            <span class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">Belum Wajib Zakat</span>
+            <span
+              class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Belum Wajib Zakat</span
+            >
           {/if}
         </h3>
 
         <div class="divide-y divide-slate-100 text-xs">
           <div class="py-2.5 flex justify-between items-center">
-            <span class="text-slate-500 font-medium">Nilai Investasi Reksa Dana</span>
-            <span class="font-bold text-slate-700">{formatRupiah(nilaiReksadana)}</span>
+            <span class="text-slate-500 font-medium"
+              >Nilai Investasi Reksa Dana</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(nilaiReksadana)}</span
+            >
           </div>
           <div class="py-2.5 flex justify-between items-center">
-            <span class="text-slate-500 font-medium">Nisab Reksa Dana (85 gram Emas)</span>
-            <span class="font-bold text-slate-700">{formatRupiah(nisabReksadana)}</span>
+            <span class="text-slate-500 font-medium"
+              >Nisab Reksa Dana (85 gram Emas)</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(nisabReksadana)}</span
+            >
           </div>
         </div>
 
-        <div class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5">
+        <!-- Detail Perhitungan -->
+        <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5 bg-slate-50/50 p-3 rounded-xl text-left">
+          <p class="font-bold text-slate-700 uppercase tracking-wider text-[9px] mb-1.5">🔬 Detail Perhitungan:</p>
+          <p>• <strong>Nilai Reksadana:</strong> <strong>{formatRupiah(nilaiReksadana || 0)}</strong></p>
+          <p>• <strong>Batas Nisab (85g Emas):</strong> {formatRupiah(nisabReksadana)}</p>
+          <p>• <strong>Status:</strong> {#if wajibZakatReksadana}<span class="text-emerald-600 font-bold">Mencapai Nisab (Wajib Zakat 2.5%)</span>{:else}<span class="text-slate-500 font-bold">Belum Mencapai Nisab</span>{/if}</p>
           {#if wajibZakatReksadana}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Zakat yang Wajib Dikeluarkan (2.5%)</p>
-            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">{formatRupiah(jumlahZakatReksadana)}</h2>
-            <p class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize">🗣️ Terbilang: {terbilang(jumlahZakatReksadana)}</p>
+            <p>• <strong>Kadar Zakat:</strong> {formatRupiah(nilaiReksadana || 0)} &times; 2.5% = <strong class="text-emerald-600">{formatRupiah(jumlahZakatReksadana)}</strong></p>
           {:else}
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Rekomendasi Sedekah / Infaq</p>
-            <h2 class="text-2xl font-black text-primary tracking-tight">{formatRupiah(sedekahRekomendasiReksadana)}</h2>
-            <p class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1">
-              Aset reksa dana Anda masih di bawah nishab tahunan. Anda disarankan mengeluarkan sedekah sukarela.
+            <p>• <strong>Rekomendasi Sedekah:</strong> {formatRupiah(nilaiReksadana || 0)} &times; 2.5% = <strong class="text-primary">{formatRupiah(sedekahRekomendasiReksadana)}</strong></p>
+          {/if}
+        </div>
+
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5"
+        >
+          {#if wajibZakatReksadana}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Zakat yang Wajib Dikeluarkan (2.5%)
+            </p>
+            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">
+              {formatRupiah(jumlahZakatReksadana)}
+            </h2>
+            <p
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(jumlahZakatReksadana)}
+            </p>
+          {:else}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Rekomendasi Sedekah / Infaq
+            </p>
+            <h2 class="text-2xl font-black text-primary tracking-tight">
+              {formatRupiah(sedekahRekomendasiReksadana)}
+            </h2>
+            {#if sedekahRekomendasiReksadana > 0}
+              <p
+                class="text-[10px] text-primary font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(sedekahRekomendasiReksadana)}
+              </p>
+            {/if}
+            <p
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+            >
+              Aset reksa dana Anda masih di bawah nishab tahunan. Anda
+              disarankan mengeluarkan sedekah sukarela.
+            </p>
+          {/if}
+        </div>
+      </Card>
+    </div>
+  {/if}
+
+  <!-- ==================== TAB: ZAKAT PETERNAKAN ==================== -->
+  {#if activeTab === "peternakan"}
+    <div in:fade={{ duration: 150 }} class="space-y-5">
+      <!-- Input Card -->
+      <Card class="p-5 space-y-4 shadow-soft-sm">
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
+        >
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Wallet class="h-4.5 w-4.5 text-primary" />
+            <span>Isi Data Hewan Ternak</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showPeternakanInfo = !showPeternakanInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Peternakan"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        {#if showPeternakanInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li><strong>Nisab Kambing/Domba:</strong> minimal 40 ekor.</li>
+                <li><strong>Nisab Sapi/Kerbau:</strong> minimal 30 ekor.</li>
+                <li>
+                  <strong>Haul (Waktu):</strong> Telah dimiliki secara penuh selama
+                  1 tahun.
+                </li>
+                <li>
+                  <strong>Syarat Ternak:</strong> Digembalakan di tempat rumput bebas
+                  (Saimah) dan tidak diperkerjakan untuk membajak sawah/alat angkut.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (Hadis Riwayat Bukhari)
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Kambing/Domba:</strong>
+                  <ul class="list-circle pl-4 space-y-0.5 mt-0.5 text-[11px]">
+                    <li>40 - 120 ekor = 1 kambing (1 thn/2 thn)</li>
+                    <li>121 - 200 ekor = 2 kambing</li>
+                    <li>201 - 300 ekor = 3 kambing</li>
+                    <li>
+                      &gt; 300 ekor = setiap kelipatan 100 bertambah 1 kambing
+                    </li>
+                  </ul>
+                </li>
+                <li class="mt-1">
+                  <strong>Sapi/Kerbau:</strong>
+                  <ul class="list-circle pl-4 space-y-0.5 mt-0.5 text-[11px]">
+                    <li>
+                      30 - 39 ekor = 1 tabi' (sapi jantan/betina umur 1 thn)
+                    </li>
+                    <li>40 - 59 ekor = 1 musinnah (sapi betina umur 2 thn)</li>
+                    <li>60 - 69 ekor = 2 tabi'</li>
+                    <li>70 - 79 ekor = 1 tabi' &amp; 1 musinnah</li>
+                    <li>80 - 89 ekor = 2 musinnah</li>
+                    <li>
+                      &gt;= 120 ekor = setiap 30 ekor tambah 1 tabi', setiap 40
+                      ekor tambah 1 musinnah
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+            <p
+              class="text-[10px] text-slate-400 mt-1 border-t border-emerald-100/30 pt-1.5 italic"
+            >
+              (Sumber: Hadis Riwayat Bukhari nomor 1454, Peraturan Menteri Agama
+              RI Nomor 52 Tahun 2014, dan BAZNAS).
+            </p>
+          </div>
+        {/if}
+
+        <!-- Jenis Ternak Selector -->
+        <div class="space-y-1.5">
+          <span class="text-xs font-bold text-slate-600 block"
+            >Jenis Hewan Ternak (dengan Batas Nisab)</span
+          >
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button
+              type="button"
+              on:click={() => {
+                jenisTernak = "kambing";
+              }}
+              class="py-2.5 px-2 text-[10px] sm:text-xs font-bold rounded-xl border transition-all duration-200 focus:outline-none flex flex-col items-center justify-center gap-1
+                     {jenisTernak === 'kambing'
+                ? 'bg-primary text-white border-primary shadow-soft-sm'
+                : 'bg-slate-50 text-slate-650 border-slate-200 hover:bg-slate-100'}"
+            >
+              <span>🐐 Kambing</span>
+              <span class="text-[9px] font-medium opacity-80">(Nisab: 40)</span>
+            </button>
+            <button
+              type="button"
+              on:click={() => {
+                jenisTernak = "domba";
+              }}
+              class="py-2.5 px-2 text-[10px] sm:text-xs font-bold rounded-xl border transition-all duration-200 focus:outline-none flex flex-col items-center justify-center gap-1
+                     {jenisTernak === 'domba'
+                ? 'bg-primary text-white border-primary shadow-soft-sm'
+                : 'bg-slate-50 text-slate-650 border-slate-200 hover:bg-slate-100'}"
+            >
+              <span>🐑 Domba</span>
+              <span class="text-[9px] font-medium opacity-80">(Nisab: 40)</span>
+            </button>
+            <button
+              type="button"
+              on:click={() => {
+                jenisTernak = "sapi";
+              }}
+              class="py-2.5 px-2 text-[10px] sm:text-xs font-bold rounded-xl border transition-all duration-200 focus:outline-none flex flex-col items-center justify-center gap-1
+                     {jenisTernak === 'sapi'
+                ? 'bg-primary text-white border-primary shadow-soft-sm'
+                : 'bg-slate-50 text-slate-650 border-slate-200 hover:bg-slate-100'}"
+            >
+              <span>🐂 Sapi</span>
+              <span class="text-[9px] font-medium opacity-80">(Nisab: 30)</span>
+            </button>
+            <button
+              type="button"
+              on:click={() => {
+                jenisTernak = "kerbau";
+              }}
+              class="py-2.5 px-2 text-[10px] sm:text-xs font-bold rounded-xl border transition-all duration-200 focus:outline-none flex flex-col items-center justify-center gap-1
+                     {jenisTernak === 'kerbau'
+                ? 'bg-primary text-white border-primary shadow-soft-sm'
+                : 'bg-slate-50 text-slate-650 border-slate-200 hover:bg-slate-100'}"
+            >
+              <span>🐃 Kerbau</span>
+              <span class="text-[9px] font-medium opacity-80">(Nisab: 30)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Jumlah Ternak -->
+        <div class="space-y-1.5">
+          <label for="jumlahTernak" class="text-xs font-bold text-slate-600"
+            >Jumlah Ternak yang Dimiliki (Ekor)</label
+          >
+          <div class="relative">
+            <input
+              id="jumlahTernak"
+              type="text"
+              value={jumlahTernakDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  jumlahTernak = v;
+                  jumlahTernakDisp = v ? v.toLocaleString("id-ID") : "";
+                })}
+              placeholder="0"
+              class="pr-12 pl-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+            <span
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >ekor</span
+            >
+          </div>
+        </div>
+
+        <!-- Harga Rata-rata per Ekor -->
+        <div class="space-y-1.5">
+          <label for="hargaTernak" class="text-xs font-bold text-slate-600">
+            Estimasi Harga Rata-rata per Ekor (Rupiah) - jika diuangkan
+          </label>
+          <div class="relative">
+            <span
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >Rp</span
+            >
+            <input
+              id="hargaTernak"
+              type="text"
+              value={hargaTernakDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  hargaTernak = v;
+                  hargaTernakDisp = v ? v.toLocaleString("id-ID") : "";
+                })}
+              placeholder="3.000.000"
+              class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+          </div>
+          {#if hargaTernak > 0}
+            <p
+              in:slide={{ duration: 150 }}
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(hargaTernak)}
+            </p>
+          {/if}
+        </div>
+      </Card>
+
+      <!-- Output Card -->
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
+        {#if wajibZakatPeternakan}
+          <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
+        {:else}
+          <div class="absolute inset-x-0 top-0 h-1.5 bg-slate-300"></div>
+        {/if}
+
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
+          <span>Hasil Perhitungan Zakat Peternakan</span>
+          {#if wajibZakatPeternakan}
+            <span
+              class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Wajib Zakat</span
+            >
+          {:else}
+            <span
+              class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Belum Wajib Zakat</span
+            >
+          {/if}
+        </h3>
+
+        <div class="divide-y divide-slate-100 text-xs">
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium">Total Ternak</span>
+            <span class="font-bold text-slate-700"
+              >{jumlahTernak || 0} ekor</span
+            >
+          </div>
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium">Batas Nisab</span>
+            <span class="font-bold text-slate-700"
+              >{(jenisTernak === "kambing" || jenisTernak === "domba") ? "40" : "30"} ekor</span
+            >
+          </div>
+          {#if wajibZakatPeternakan}
+            <div class="py-2.5 flex justify-between items-center">
+              <span class="text-slate-500 font-medium">Zakat Wajib (Hewan)</span>
+              <span class="font-bold text-emerald-600"
+                >{zakatPeternakanResult.desc}</span
+              >
+            </div>
+          {/if}
+        </div>
+
+        <!-- Detail Perhitungan -->
+        <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5 bg-slate-50/50 p-3 rounded-xl">
+          <p class="font-bold text-slate-700 uppercase tracking-wider text-[9px] mb-1.5">🔬 Detail Perhitungan:</p>
+          <p>• <strong>Jenis Ternak:</strong> <span class="capitalize">{jenisTernak}</span> (Nisab: {(jenisTernak === "kambing" || jenisTernak === "domba") ? "40" : "30"} ekor)</p>
+          <p>• <strong>Jumlah Kepemilikan:</strong> {jumlahTernak || 0} ekor</p>
+          <p>• <strong>Status Nisab:</strong> 
+            {#if wajibZakatPeternakan}
+              <span class="text-emerald-600 font-bold">Mencapai Nisab (Wajib Zakat)</span>
+            {:else}
+              <span class="text-slate-500 font-bold">Belum Mencapai Nisab</span>
+            {/if}
+          </p>
+          {#if wajibZakatPeternakan}
+            <p>• <strong>Kewajiban Zakat:</strong> {zakatPeternakanResult.desc}</p>
+            <p>• <strong>Rincian Jika Diuangkan:</strong> {zakatPeternakanResult.count} ekor zakat &times; {formatRupiah(hargaTernak)} / ekor = <strong class="text-emerald-600">{formatRupiah(jumlahZakatPeternakanRupiah)}</strong></p>
+          {:else}
+            <p class="text-slate-400 italic">• Tidak ada kewajiban zakat ternak karena jumlah di bawah batas minimum (nisab).</p>
+          {/if}
+        </div>
+
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5"
+        >
+          {#if wajibZakatPeternakan}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Estimasi Nilai Zakat (Dalam Rupiah)
+            </p>
+            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">
+              {formatRupiah(jumlahZakatPeternakanRupiah)}
+            </h2>
+            <p
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(jumlahZakatPeternakanRupiah)}
+            </p>
+          {:else}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Rekomendasi Infaq / Sedekah
+            </p>
+            <h2 class="text-2xl font-black text-primary tracking-tight">
+              Rp 0
+            </h2>
+            <p
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+            >
+              Jumlah ternak Anda ({jumlahTernak || 0} ekor) belum mencapai nisab
+              minimum ({jenisTernak === "kambing" ? "40" : "30"} ekor).
+            </p>
+          {/if}
+        </div>
+      </Card>
+    </div>
+  {/if}
+
+  <!-- ==================== TAB: ZAKAT TAMBAK ==================== -->
+  {#if activeTab === "tambak"}
+    <div in:fade={{ duration: 150 }} class="space-y-5">
+      <!-- Input Card -->
+      <Card class="p-5 space-y-4 shadow-soft-sm">
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
+        >
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Wallet class="h-4.5 w-4.5 text-primary" />
+            <span>Isi Data Aset Tambak (Perikanan)</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showTambakInfo = !showTambakInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Tambak"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        {#if showTambakInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-655 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Nisab (Batas Minimum):</strong> Nilai keuntungan bersih
+                  tambak setara 85 gram emas per tahun.
+                </li>
+                <li>
+                  <strong>Haul (Waktu):</strong> Diambil pada akhir tahun buku/panen
+                  tahunan.
+                </li>
+                <li>
+                  <strong>Kadar Zakat:</strong> 2,5% dari keuntungan bersih.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (3 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Hitung Pendapatan Tambak:</strong> Jumlahkan total penjualan
+                  hasil panen perikanan/tambak ditambah uang kas usaha yang mengendap.
+                </li>
+                <li>
+                  <strong>Kurangi Pengeluaran:</strong> Kurangkan dengan biaya operasional
+                  tambak (pakan, bibit, upah, perawatan) dan hutang jatuh tempo.
+                </li>
+                <li>
+                  <strong>Hitung Zakatnya:</strong> Jika hasil bersih mencapai nisab
+                  85g emas, kalikan dengan 2,5%.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div
+                class="bg-white border border-emerald-100 rounded-xl p-2.5 text-center font-black text-emerald-700 font-mono text-xs"
+              >
+                Zakat Tambak = (Hasil Panen + Kas - Biaya Operasional - Hutang)
+                &times; 2,5%
+              </div>
+            </div>
+            <p
+              class="text-[10px] text-slate-400 mt-1 border-t border-emerald-100/30 pt-1.5 italic"
+            >
+              (Sumber: Fiqh Zakat Yusuf Qardawi, Keputusan BAZNAS tentang zakat
+              sektor perikanan budidaya/tambak).
+            </p>
+          </div>
+        {/if}
+
+        <!-- Hasil Panen Tambak -->
+        <div class="space-y-1.5">
+          <label for="hasilPanenTambak" class="text-xs font-bold text-slate-600"
+            >Total Penjualan Hasil Keuntungan Panen Tambak (Rupiah)</label
+          >
+          <div class="relative">
+            <span
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >Rp</span
+            >
+            <input
+              id="hasilPanenTambak"
+              type="text"
+              value={hasilPanenTambakDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  hasilPanenTambak = v;
+                  hasilPanenTambakDisp = v ? v.toLocaleString("id-ID") : "";
+                })}
+              placeholder="0"
+              class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+          </div>
+          {#if hasilPanenTambak > 0}
+            <p
+              in:slide={{ duration: 150 }}
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(hasilPanenTambak)}
+            </p>
+          {/if}
+        </div>
+
+        <!-- Uang Kas Tambak -->
+        <div class="space-y-1.5">
+          <label for="kasTambak" class="text-xs font-bold text-slate-600"
+            >Uang Kas Tambak / Saldo Bank Usaha Tambak (Rupiah)</label
+          >
+          <div class="relative">
+            <span
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >Rp</span
+            >
+            <input
+              id="kasTambak"
+              type="text"
+              value={kasTambakDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  kasTambak = v;
+                  kasTambakDisp = v ? v.toLocaleString("id-ID") : "";
+                })}
+              placeholder="0"
+              class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+          </div>
+          {#if kasTambak > 0}
+            <p
+              in:slide={{ duration: 150 }}
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(kasTambak)}
+            </p>
+          {/if}
+        </div>
+
+        <!-- Biaya Tambak -->
+        <div class="space-y-1.5">
+          <label for="biayaTambak" class="text-xs font-bold text-slate-600"
+            >Biaya Operasional (Pakan, Bibit, Perawatan, Upah) (Rupiah)</label
+          >
+          <div class="relative">
+            <span
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >Rp</span
+            >
+            <input
+              id="biayaTambak"
+              type="text"
+              value={biayaTambakDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  biayaTambak = v;
+                  biayaTambakDisp = v ? v.toLocaleString("id-ID") : "";
+                })}
+              placeholder="0"
+              class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+          </div>
+          {#if biayaTambak > 0}
+            <p
+              in:slide={{ duration: 150 }}
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(biayaTambak)}
+            </p>
+          {/if}
+        </div>
+
+        <!-- Hutang Usaha Tambak -->
+        <div class="space-y-1.5">
+          <label for="hutangTambak" class="text-xs font-bold text-slate-600"
+            >Hutang Jatuh Tempo Usaha Tambak (Rupiah)</label
+          >
+          <div class="relative">
+            <span
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >Rp</span
+            >
+            <input
+              id="hutangTambak"
+              type="text"
+              value={hutangTambakDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  hutangTambak = v;
+                  hutangTambakDisp = v ? v.toLocaleString("id-ID") : "";
+                })}
+              placeholder="0"
+              class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+          </div>
+          {#if hutangTambak > 0}
+            <p
+              in:slide={{ duration: 150 }}
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(hutangTambak)}
+            </p>
+          {/if}
+        </div>
+      </Card>
+
+      <!-- Output Card -->
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
+        {#if wajibZakatTambak}
+          <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
+        {:else}
+          <div class="absolute inset-x-0 top-0 h-1.5 bg-slate-300"></div>
+        {/if}
+
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
+          <span>Hasil Perhitungan Zakat Tambak</span>
+          {#if wajibZakatTambak}
+            <span
+              class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Wajib Zakat</span
+            >
+          {:else}
+            <span
+              class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Belum Wajib Zakat</span
+            >
+          {/if}
+        </h3>
+
+        <div class="divide-y divide-slate-100 text-xs">
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium"
+              >Total Aset Lancar Tambak</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(totalAsetTambak)}</span
+            >
+          </div>
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium">Biaya &amp; Hutang</span>
+            <span class="font-bold text-slate-700"
+              >- {formatRupiah((biayaTambak || 0) + (hutangTambak || 0))}</span
+            >
+          </div>
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-550 font-bold">Harta Tambak Kena Zakat</span
+            >
+            <span class="font-black text-slate-800"
+              >{formatRupiah(bersihTambak)}</span
+            >
+          </div>
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium"
+              >Nisab Tambak (85 gram Emas)</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(nisabTambak)}</span
+            >
+          </div>
+        </div>
+
+        <!-- Detail Perhitungan -->
+        <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5 bg-slate-50/50 p-3 rounded-xl text-left">
+          <p class="font-bold text-slate-700 uppercase tracking-wider text-[9px] mb-1.5">🔬 Detail Perhitungan:</p>
+          <p>• <strong>Total Aset Tambak:</strong> Hasil Panen ({formatRupiah(hasilPanenTambak || 0)}) + Uang Kas ({formatRupiah(kasTambak || 0)}) = {formatRupiah(totalAsetTambak)}</p>
+          <p>• <strong>Pengurang:</strong> Biaya Operasional ({formatRupiah(biayaTambak || 0)}) + Hutang Jatuh Tempo ({formatRupiah(hutangTambak || 0)}) = {formatRupiah((biayaTambak || 0) + (hutangTambak || 0))}</p>
+          <p>• <strong>Aset Bersih Tambak:</strong> {formatRupiah(totalAsetTambak)} - {formatRupiah((biayaTambak || 0) + (hutangTambak || 0))} = <strong>{formatRupiah(bersihTambak)}</strong></p>
+          <p>• <strong>Batas Nisab (85g Emas):</strong> {formatRupiah(nisabTambak)}</p>
+          <p>• <strong>Status:</strong> {#if wajibZakatTambak}<span class="text-emerald-600 font-bold">Mencapai Nisab (Wajib Zakat 2.5%)</span>{:else}<span class="text-slate-500 font-bold">Belum Mencapai Nisab</span>{/if}</p>
+          {#if wajibZakatTambak}
+            <p>• <strong>Kadar Zakat:</strong> {formatRupiah(bersihTambak)} &times; 2.5% = <strong class="text-emerald-600">{formatRupiah(jumlahZakatTambak)}</strong></p>
+          {:else}
+            <p>• <strong>Rekomendasi Sedekah:</strong> {formatRupiah(bersihTambak)} &times; 2.5% = <strong class="text-primary">{formatRupiah(sedekahRekomendasiTambak)}</strong></p>
+          {/if}
+        </div>
+
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5"
+        >
+          {#if wajibZakatTambak}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Zakat yang Wajib Dikeluarkan (2.5%)
+            </p>
+            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">
+              {formatRupiah(jumlahZakatTambak)}
+            </h2>
+            <p
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(jumlahZakatTambak)}
+            </p>
+          {:else}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Rekomendasi Sedekah / Infaq
+            </p>
+            <h2 class="text-2xl font-black text-primary tracking-tight">
+              {formatRupiah(sedekahRekomendasiTambak)}
+            </h2>
+            {#if sedekahRekomendasiTambak > 0}
+              <p
+                class="text-[10px] text-primary font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(sedekahRekomendasiTambak)}
+              </p>
+            {/if}
+            <p
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+            >
+              Aset tambak bersih Anda masih di bawah nishab tahunan. Anda
+              disarankan mengeluarkan sedekah sukarela.
+            </p>
+          {/if}
+        </div>
+      </Card>
+    </div>
+  {/if}
+
+  <!-- ==================== TAB: ZAKAT PERUSAHAAN ==================== -->
+  {#if activeTab === "perusahaan"}
+    <div in:fade={{ duration: 150 }} class="space-y-5">
+      <!-- Input Card -->
+      <Card class="p-5 space-y-4 shadow-soft-sm">
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
+        >
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Wallet class="h-4.5 w-4.5 text-primary" />
+            <span>Isi Data Aset Perusahaan</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showPerusahaanInfo = !showPerusahaanInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Perusahaan"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        {#if showPerusahaanInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Nisab (Batas Minimum):</strong> Nilai kekayaan bersih perusahaan
+                  (aset lancar - hutang jangka pendek) setara 85 gram emas.
+                </li>
+                <li>
+                  <strong>Haul (Waktu):</strong> Perusahaan telah berdiri/beroperasi
+                  selama 1 tahun.
+                </li>
+                <li>
+                  <strong>Kadar Zakat:</strong> 2,5% dari kekayaan bersih perusahaan
+                  yang disesuaikan dengan persentase kepemilikan Anda.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (3 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Hitung Aset Bersih Perusahaan:</strong> Kurangi total aset
+                  lancar (uang kas, tabungan, stok barang dagangan, piutang lancar)
+                  dengan hutang jangka pendek yang jatuh tempo tahun tersebut.
+                </li>
+                <li>
+                  <strong>Hitung Porsi Kepemilikan Anda:</strong> Kalikan hasil bersih
+                  tersebut dengan persentase saham/kepemilikan Anda di perusahaan.
+                </li>
+                <li>
+                  <strong>Hitung Zakatnya:</strong> Jika porsi kepemilikan Anda mencapai
+                  nisab (85 gram emas), kalikan dengan 2,5%.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div
+                class="bg-white border border-emerald-100 rounded-xl p-2.5 text-center font-black text-emerald-700 font-mono text-xs"
+              >
+                Zakat Perusahaan = (Aset Lancar - Hutang Lancar) &times; %
+                Kepemilikan &times; 2,5%
+              </div>
+            </div>
+            <p
+              class="text-[10px] text-slate-400 mt-1 border-t border-emerald-100/30 pt-1.5 italic"
+            >
+              (Sumber: Muktamar Zakat Internasional ke-1, Fatwa MUI, BAZNAS, dan
+              fiqh korporasi).
+            </p>
+          </div>
+        {/if}
+
+        <!-- Aset Lancar Perusahaan -->
+        <div class="space-y-1.5">
+          <label
+            for="asetLancarPerusahaan"
+            class="text-xs font-bold text-slate-600"
+            >Aset Lancar Perusahaan (Kas, Bank, Stok Dagangan, Piutang) (Rupiah)</label
+          >
+          <div class="relative">
+            <span
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >Rp</span
+            >
+            <input
+              id="asetLancarPerusahaan"
+              type="text"
+              value={asetLancarPerusahaanDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  asetLancarPerusahaan = v;
+                  asetLancarPerusahaanDisp = v ? v.toLocaleString("id-ID") : "";
+                })}
+              placeholder="0"
+              class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+          </div>
+          {#if asetLancarPerusahaan > 0}
+            <p
+              in:slide={{ duration: 150 }}
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(asetLancarPerusahaan)}
+            </p>
+          {/if}
+        </div>
+
+        <!-- Hutang Lancar Perusahaan -->
+        <div class="space-y-1.5">
+          <label
+            for="hutangLancarPerusahaan"
+            class="text-xs font-bold text-slate-600"
+            >Memiliki Hutang (Rupiah)</label
+          >
+          <div class="relative">
+            <span
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >Rp</span
+            >
+            <input
+              id="hutangLancarPerusahaan"
+              type="text"
+              value={hutangLancarPerusahaanDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  hutangLancarPerusahaan = v;
+                  hutangLancarPerusahaanDisp = v
+                    ? v.toLocaleString("id-ID")
+                    : "";
+                })}
+              placeholder="0"
+              class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+          </div>
+          {#if hutangLancarPerusahaan > 0}
+            <p
+              in:slide={{ duration: 150 }}
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(hutangLancarPerusahaan)}
+            </p>
+          {/if}
+        </div>
+
+        <!-- Persentase Kepemilikan -->
+        <div class="space-y-1.5">
+          <label
+            for="persenKepemilikan"
+            class="text-xs font-bold text-slate-600"
+            >Persentase Kepemilikan Saham Anda (%)</label
+          >
+          <div class="relative">
+            <input
+              id="persenKepemilikan"
+              type="text"
+              value={persenKepemilikanDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  persenKepemilikan = Math.min(100, Math.max(0, v));
+                  persenKepemilikanDisp = v
+                    ? Math.min(100, v).toLocaleString("id-ID")
+                    : "";
+                })}
+              placeholder="100"
+              class="pr-12 pl-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+            <span
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >%</span
+            >
+          </div>
+        </div>
+      </Card>
+
+      <!-- Output Card -->
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
+        {#if wajibZakatPerusahaan}
+          <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
+        {:else}
+          <div class="absolute inset-x-0 top-0 h-1.5 bg-slate-300"></div>
+        {/if}
+
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
+          <span>Hasil Perhitungan Zakat Perusahaan</span>
+          {#if wajibZakatPerusahaan}
+            <span
+              class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Wajib Zakat</span
+            >
+          {:else}
+            <span
+              class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Belum Wajib Zakat</span
+            >
+          {/if}
+        </h3>
+
+        <div class="divide-y divide-slate-100 text-xs">
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium"
+              >Aset Bersih Perusahaan (Total)</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(bersihPerusahaan)}</span
+            >
+          </div>
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium"
+              >Porsi Kepemilikan Anda ({persenKepemilikan}%)</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(porsiBersihPerusahaan)}</span
+            >
+          </div>
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium"
+              >Nisab Zakat Perusahaan (85 gram Emas)</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(nisabPerusahaan)}</span
+            >
+          </div>
+        </div>
+
+        <!-- Detail Perhitungan -->
+        <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5 bg-slate-50/50 p-3 rounded-xl text-left">
+          <p class="font-bold text-slate-700 uppercase tracking-wider text-[9px] mb-1.5">🔬 Detail Perhitungan:</p>
+          <p>• <strong>Bersih Perusahaan (Total):</strong> Aset Lancar ({formatRupiah(asetLancarPerusahaan || 0)}) - Hutang Lancar ({formatRupiah(hutangLancarPerusahaan || 0)}) = {formatRupiah(bersihPerusahaan)}</p>
+          <p>• <strong>Porsi Kepemilikan Anda ({persenKepemilikan}%):</strong> {formatRupiah(bersihPerusahaan)} &times; {persenKepemilikan}% = <strong>{formatRupiah(porsiBersihPerusahaan)}</strong></p>
+          <p>• <strong>Batas Nisab (85g Emas):</strong> {formatRupiah(nisabPerusahaan)}</p>
+          <p>• <strong>Status:</strong> {#if wajibZakatPerusahaan}<span class="text-emerald-600 font-bold">Mencapai Nisab (Wajib Zakat 2.5%)</span>{:else}<span class="text-slate-500 font-bold">Belum Mencapai Nisab</span>{/if}</p>
+          {#if wajibZakatPerusahaan}
+            <p>• <strong>Kadar Zakat:</strong> {formatRupiah(porsiBersihPerusahaan)} &times; 2.5% = <strong class="text-emerald-600">{formatRupiah(jumlahZakatPerusahaan)}</strong></p>
+          {:else}
+            <p>• <strong>Rekomendasi Sedekah:</strong> {formatRupiah(porsiBersihPerusahaan)} &times; 2.5% = <strong class="text-primary">{formatRupiah(sedekahRekomendasiPerusahaan)}</strong></p>
+          {/if}
+        </div>
+
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5"
+        >
+          {#if wajibZakatPerusahaan}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Zakat yang Wajib Dikeluarkan (2.5%)
+            </p>
+            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">
+              {formatRupiah(jumlahZakatPerusahaan)}
+            </h2>
+            <p
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(jumlahZakatPerusahaan)}
+            </p>
+          {:else}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Rekomendasi Sedekah / Infaq
+            </p>
+            <h2 class="text-2xl font-black text-primary tracking-tight">
+              {formatRupiah(sedekahRekomendasiPerusahaan)}
+            </h2>
+            {#if sedekahRekomendasiPerusahaan > 0}
+              <p
+                class="text-[10px] text-primary font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(sedekahRekomendasiPerusahaan)}
+              </p>
+            {/if}
+            <p
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+            >
+              Porsi kekayaan bersih Anda di perusahaan masih di bawah nishab
+              tahunan. Anda disarankan mengeluarkan sedekah sukarela.
+            </p>
+          {/if}
+        </div>
+      </Card>
+    </div>
+  {/if}
+
+  <!-- ==================== TAB: ZAKAT PROPERTI ==================== -->
+  {#if activeTab === "properti_sewa"}
+    <div in:fade={{ duration: 150 }} class="space-y-5">
+      <!-- Input Card -->
+      <Card class="p-5 space-y-4 shadow-soft-sm">
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
+        >
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Wallet class="h-4.5 w-4.5 text-primary" />
+            <span>Isi Pendapatan Sewa Properti</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showPropertiSewaInfo = !showPropertiSewaInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Properti"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        {#if showPropertiSewaInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Nisab (Batas Minimum):</strong> Pendapatan bersih sewa
+                  properti setara dengan nilai 85 gram emas per tahun.
+                </li>
+                <li>
+                  <strong>Objek Zakat:</strong> Zakat dikenakan pada **hasil sewa**
+                  properti (bukan pada nilai fisik bangunan rumah/apartemen/tanah
+                  itu sendiri).
+                </li>
+                <li>
+                  <strong>Kadar Zakat:</strong> 2,5% dari pendapatan bersih hasil
+                  sewa setelah dikurangi biaya operasional pemeliharaan.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (3 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Hitung Hasil Sewa:</strong> Tentukan total uang hasil sewa
+                  properti yang didapatkan dalam 1 tahun.
+                </li>
+                <li>
+                  <strong>Kurangi Biaya Perawatan:</strong> Kurangkan dengan biaya
+                  pemeliharaan, perawatan, renovasi, atau pajak properti yang dibayarkan.
+                </li>
+                <li>
+                  <strong>Hitung Zakatnya:</strong> Jika hasil bersih sewa mencapai
+                  nisab 85g emas, kalikan dengan 2,5%.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div
+                class="bg-white border border-emerald-100 rounded-xl p-2.5 text-center font-black text-emerald-700 font-mono text-xs"
+              >
+                Zakat Properti Sewa = (Pendapatan Sewa - Biaya Perawatan)
+                &times; 2,5%
+              </div>
+            </div>
+            <p
+              class="text-[10px] text-slate-400 mt-1 border-t border-emerald-100/30 pt-1.5 italic"
+            >
+              (Sumber: Fatwa Majelis Ulama Indonesia, Fatwa Yusuf Qardawi, dan
+              Ketentuan Zakat BAZNAS tentang aset komersial/investasi properti).
+            </p>
+          </div>
+        {/if}
+
+        <!-- Pendapatan Sewa -->
+        <div class="space-y-1.5">
+          <label for="pendapatanSewa" class="text-xs font-bold text-slate-600"
+            >Total Pendapatan Sewa Diterima (Rupiah / Tahunan)</label
+          >
+          <div class="relative">
+            <span
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >Rp</span
+            >
+            <input
+              id="pendapatanSewa"
+              type="text"
+              value={pendapatanSewaDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  pendapatanSewa = v;
+                  pendapatanSewaDisp = v ? v.toLocaleString("id-ID") : "";
+                })}
+              placeholder="0"
+              class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+          </div>
+          {#if pendapatanSewa > 0}
+            <p
+              in:slide={{ duration: 150 }}
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(pendapatanSewa)}
+            </p>
+          {/if}
+        </div>
+
+        <!-- Biaya Properti -->
+        <div class="space-y-1.5">
+          <label for="biayaProperti" class="text-xs font-bold text-slate-600"
+            >Biaya Perawatan / Renovasi / Pajak Properti (Rupiah / Tahunan)</label
+          >
+          <div class="relative">
+            <span
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >Rp</span
+            >
+            <input
+              id="biayaProperti"
+              type="text"
+              value={biayaPropertiDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  biayaProperti = v;
+                  biayaPropertiDisp = v ? v.toLocaleString("id-ID") : "";
+                })}
+              placeholder="0"
+              class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+          </div>
+          {#if biayaProperti > 0}
+            <p
+              in:slide={{ duration: 150 }}
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(biayaProperti)}
+            </p>
+          {/if}
+        </div>
+      </Card>
+
+      <!-- Output Card -->
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
+        {#if wajibZakatProperti}
+          <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
+        {:else}
+          <div class="absolute inset-x-0 top-0 h-1.5 bg-slate-300"></div>
+        {/if}
+
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
+          <span>Hasil Perhitungan Zakat Properti Sewa</span>
+          {#if wajibZakatProperti}
+            <span
+              class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Wajib Zakat</span
+            >
+          {:else}
+            <span
+              class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Belum Wajib Zakat</span
+            >
+          {/if}
+        </h3>
+
+        <div class="divide-y divide-slate-100 text-xs">
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium">Total Pendapatan Sewa</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(pendapatanSewa)}</span
+            >
+          </div>
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium"
+              >Biaya Perawatan Properti</span
+            >
+            <span class="font-bold text-slate-700"
+              >- {formatRupiah(biayaProperti)}</span
+            >
+          </div>
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-505 font-bold">Hasil Sewa Bersih</span>
+            <span class="font-black text-slate-800"
+              >{formatRupiah(bersihProperti)}</span
+            >
+          </div>
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium"
+              >Nisab Sewa Properti (85 gram Emas)</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(nisabProperti)}</span
+            >
+          </div>
+        </div>
+
+        <!-- Detail Perhitungan -->
+        <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5 bg-slate-50/50 p-3 rounded-xl text-left">
+          <p class="font-bold text-slate-700 uppercase tracking-wider text-[9px] mb-1.5">🔬 Detail Perhitungan:</p>
+          <p>• <strong>Total Pendapatan Sewa:</strong> {formatRupiah(pendapatanSewa || 0)}</p>
+          <p>• <strong>Biaya Perawatan Properti:</strong> - {formatRupiah(biayaProperti || 0)}</p>
+          <p>• <strong>Hasil Sewa Bersih:</strong> {formatRupiah(pendapatanSewa || 0)} - {formatRupiah(biayaProperti || 0)} = <strong>{formatRupiah(bersihProperti)}</strong></p>
+          <p>• <strong>Batas Nisab (85g Emas):</strong> {formatRupiah(nisabProperti)}</p>
+          <p>• <strong>Status:</strong> {#if wajibZakatProperti}<span class="text-emerald-600 font-bold">Mencapai Nisab (Wajib Zakat 2.5%)</span>{:else}<span class="text-slate-500 font-bold">Belum Mencapai Nisab</span>{/if}</p>
+          {#if wajibZakatProperti}
+            <p>• <strong>Kadar Zakat:</strong> {formatRupiah(bersihProperti)} &times; 2.5% = <strong class="text-emerald-600">{formatRupiah(jumlahZakatProperti)}</strong></p>
+          {:else}
+            <p>• <strong>Rekomendasi Sedekah:</strong> {formatRupiah(bersihProperti)} &times; 2.5% = <strong class="text-primary">{formatRupiah(sedekahRekomendasiProperti)}</strong></p>
+          {/if}
+        </div>
+
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5"
+        >
+          {#if wajibZakatProperti}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Zakat yang Wajib Dikeluarkan (2.5%)
+            </p>
+            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">
+              {formatRupiah(jumlahZakatProperti)}
+            </h2>
+            <p
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(jumlahZakatProperti)}
+            </p>
+          {:else}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Rekomendasi Sedekah / Infaq
+            </p>
+            <h2 class="text-2xl font-black text-primary tracking-tight">
+              {formatRupiah(sedekahRekomendasiProperti)}
+            </h2>
+            {#if sedekahRekomendasiProperti > 0}
+              <p
+                class="text-[10px] text-primary font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(sedekahRekomendasiProperti)}
+              </p>
+            {/if}
+            <p
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+            >
+              Pendapatan sewa bersih properti Anda belum mencapai nishab
+              tahunan. Anda disarankan mengeluarkan sedekah sukarela.
+            </p>
+          {/if}
+        </div>
+      </Card>
+    </div>
+  {/if}
+
+  <!-- ==================== TAB: ZAKAT PERTAMBANGAN ==================== -->
+  {#if activeTab === "pertambangan"}
+    <div in:fade={{ duration: 150 }} class="space-y-5">
+      <!-- Input Card -->
+      <Card class="p-5 space-y-4 shadow-soft-sm">
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-2"
+        >
+          <h3
+            class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <Wallet class="h-4.5 w-4.5 text-primary" />
+            <span>Isi Data Hasil Tambang</span>
+          </h3>
+          <button
+            type="button"
+            on:click={() => (showPertambanganInfo = !showPertambanganInfo)}
+            class="p-1 hover:bg-slate-100 text-slate-400 hover:text-primary rounded-lg transition-colors cursor-pointer"
+            title="Penjelasan Zakat Pertambangan"
+          >
+            <HelpCircle class="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        {#if showPertambanganInfo}
+          <div
+            in:slide={{ duration: 200 }}
+            out:slide={{ duration: 150 }}
+            class="bg-emerald-50/40 border border-emerald-100/50 rounded-xl p-3.5 text-xs text-slate-650 space-y-3 leading-relaxed text-justify"
+          >
+            <div>
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Ketentuan Utama
+              </h4>
+              <ul class="list-disc pl-4.5 space-y-1">
+                <li>
+                  <strong>Nisab (Batas Minimum):</strong> Hasil pertambangan bersih
+                  bernilai setara 85 gram emas.
+                </li>
+                <li>
+                  <strong>Haul (Waktu):</strong> Tidak disyaratkan haul. Wajib dikeluarkan
+                  zakatnya seketika saat hasil tambang diperoleh/dibersihkan.
+                </li>
+                <li>
+                  <strong>Kadar Zakat:</strong> 2,5% dari hasil tambang bersih setelah
+                  dikurangi biaya eksploitasi/operasional.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <h4
+                class="font-bold text-slate-800 uppercase text-[10px] mb-1 tracking-wider"
+              >
+                Cara Menghitung (3 Langkah Mudah)
+              </h4>
+              <ul class="list-decimal pl-4.5 space-y-1">
+                <li>
+                  <strong>Tentukan Nilai Hasil Tambang:</strong> Hitung total nilai
+                  pasar/jual dari bahan tambang yang diperoleh.
+                </li>
+                <li>
+                  <strong>Kurangi Biaya Eksploitasi:</strong> Kurangkan dengan biaya
+                  operasional penambangan (alat, energi, transportasi, upah kerja).
+                </li>
+                <li>
+                  <strong>Hitung Zakatnya:</strong> Jika nilai bersih mencapai nisab
+                  85g emas, kalikan dengan 2,5% untuk mendapatkan kewajiban zakatnya.
+                </li>
+              </ul>
+            </div>
+            <div class="border-t border-emerald-100/30 pt-2.5">
+              <span
+                class="font-bold text-slate-800 uppercase text-[10px] block mb-1 tracking-wider"
+                >Rumus:</span
+              >
+              <div
+                class="bg-white border border-emerald-100 rounded-xl p-2.5 text-center font-black text-emerald-700 font-mono text-xs"
+              >
+                Zakat Pertambangan = (Nilai Hasil Tambang - Biaya Eksploitasi)
+                &times; 2,5%
+              </div>
+            </div>
+            <p
+              class="text-[10px] text-slate-400 mt-1 border-t border-emerald-100/30 pt-1.5 italic"
+            >
+              (Sumber: Undang-Undang RI Nomor 23 Tahun 2011 tentang Pengelolaan
+              Zakat, Fatwa MUI, dan Keputusan BAZNAS).
+            </p>
+          </div>
+        {/if}
+
+        <!-- Nilai Hasil Tambang -->
+        <div class="space-y-1.5">
+          <label for="hasilTambang" class="text-xs font-bold text-slate-600"
+            >Total Nilai Pasar Hasil Tambang yang Diperoleh (Rupiah)</label
+          >
+          <div class="relative">
+            <span
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >Rp</span
+            >
+            <input
+              id="hasilTambang"
+              type="text"
+              value={hasilTambangDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  hasilTambang = v;
+                  hasilTambangDisp = v ? v.toLocaleString("id-ID") : "";
+                })}
+              placeholder="0"
+              class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+          </div>
+          {#if hasilTambang > 0}
+            <p
+              in:slide={{ duration: 150 }}
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(hasilTambang)}
+            </p>
+          {/if}
+        </div>
+
+        <!-- Biaya Eksploitasi -->
+        <div class="space-y-1.5">
+          <label for="biayaTambang" class="text-xs font-bold text-slate-600"
+            >Biaya Eksploitasi / Operasional Tambang (Rupiah)</label
+          >
+          <div class="relative">
+            <span
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400"
+              >Rp</span
+            >
+            <input
+              id="biayaTambang"
+              type="text"
+              value={biayaTambangDisp}
+              on:input={(e) =>
+                handleNumericInput(e, (v) => {
+                  biayaTambang = v;
+                  biayaTambangDisp = v ? v.toLocaleString("id-ID") : "";
+                })}
+              placeholder="0"
+              class="pl-10 pr-4 h-11 w-full bg-slate-50/50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all"
+            />
+          </div>
+          {#if biayaTambang > 0}
+            <p
+              in:slide={{ duration: 150 }}
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(biayaTambang)}
+            </p>
+          {/if}
+        </div>
+      </Card>
+
+      <!-- Output Card -->
+      <Card
+        class="p-5 space-y-4 border-slate-200 shadow-soft-sm relative overflow-hidden"
+      >
+        {#if wajibZakatPertambangan}
+          <div class="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
+        {:else}
+          <div class="absolute inset-x-0 top-0 h-1.5 bg-slate-300"></div>
+        {/if}
+
+        <h3
+          class="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center justify-between"
+        >
+          <span>Hasil Perhitungan Zakat Pertambangan</span>
+          {#if wajibZakatPertambangan}
+            <span
+              class="bg-emerald-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Wajib Zakat</span
+            >
+          {:else}
+            <span
+              class="bg-slate-200 text-slate-500 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider"
+              >Belum Wajib Zakat</span
+            >
+          {/if}
+        </h3>
+
+        <div class="divide-y divide-slate-100 text-xs">
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium"
+              >Total Nilai Hasil Tambang</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(hasilTambang)}</span
+            >
+          </div>
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium">Biaya Eksploitasi</span>
+            <span class="font-bold text-slate-700"
+              >- {formatRupiah(biayaTambang)}</span
+            >
+          </div>
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-505 font-bold">Hasil Tambang Bersih</span>
+            <span class="font-black text-slate-800"
+              >{formatRupiah(bersihTambang)}</span
+            >
+          </div>
+          <div class="py-2.5 flex justify-between items-center">
+            <span class="text-slate-500 font-medium"
+              >Nisab Pertambangan (85 gram Emas)</span
+            >
+            <span class="font-bold text-slate-700"
+              >{formatRupiah(nisabPertambangan)}</span
+            >
+          </div>
+        </div>
+
+        <!-- Detail Perhitungan -->
+        <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5 bg-slate-50/50 p-3 rounded-xl text-left">
+          <p class="font-bold text-slate-700 uppercase tracking-wider text-[9px] mb-1.5">🔬 Detail Perhitungan:</p>
+          <p>• <strong>Total Nilai Hasil Tambang:</strong> {formatRupiah(hasilTambang || 0)}</p>
+          <p>• <strong>Biaya Eksploitasi/Operasional:</strong> - {formatRupiah(biayaTambang || 0)}</p>
+          <p>• <strong>Hasil Tambang Bersih:</strong> {formatRupiah(hasilTambang || 0)} - {formatRupiah(biayaTambang || 0)} = <strong>{formatRupiah(bersihTambang)}</strong></p>
+          <p>• <strong>Batas Nisab (85g Emas):</strong> {formatRupiah(nisabPertambangan)}</p>
+          <p>• <strong>Status:</strong> {#if wajibZakatPertambangan}<span class="text-emerald-600 font-bold">Mencapai Nisab (Wajib Zakat 2.5%)</span>{:else}<span class="text-slate-500 font-bold">Belum Mencapai Nisab</span>{/if}</p>
+          {#if wajibZakatPertambangan}
+            <p>• <strong>Kadar Zakat:</strong> {formatRupiah(bersihTambang)} &times; 2.5% = <strong class="text-emerald-600">{formatRupiah(jumlahZakatPertambangan)}</strong></p>
+          {:else}
+            <p>• <strong>Rekomendasi Sedekah:</strong> {formatRupiah(bersihTambang)} &times; 2.5% = <strong class="text-primary">{formatRupiah(sedekahRekomendasiPertambangan)}</strong></p>
+          {/if}
+        </div>
+
+        <div
+          class="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-center mt-2 space-y-1.5"
+        >
+          {#if wajibZakatPertambangan}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Zakat yang Wajib Dikeluarkan (2.5%)
+            </p>
+            <h2 class="text-3xl font-black text-emerald-600 tracking-tight">
+              {formatRupiah(jumlahZakatPertambangan)}
+            </h2>
+            <p
+              class="text-[10px] text-emerald-600 font-extrabold mt-1 tracking-wide leading-none capitalize"
+            >
+              🗣️ Terbilang: {terbilang(jumlahZakatPertambangan)}
+            </p>
+          {:else}
+            <p
+              class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"
+            >
+              Rekomendasi Sedekah / Infaq
+            </p>
+            <h2 class="text-2xl font-black text-primary tracking-tight">
+              {formatRupiah(sedekahRekomendasiPertambangan)}
+            </h2>
+            {#if sedekahRekomendasiPertambangan > 0}
+              <p
+                class="text-[10px] text-primary font-extrabold mt-1 tracking-wide leading-none capitalize"
+              >
+                🗣️ Terbilang: {terbilang(sedekahRekomendasiPertambangan)}
+              </p>
+            {/if}
+            <p
+              class="text-[10px] text-slate-400 font-medium max-w-[280px] mx-auto leading-normal pt-1"
+            >
+              Hasil tambang bersih Anda masih di bawah nishab. Anda disarankan
+              mengeluarkan sedekah sukarela.
             </p>
           {/if}
         </div>

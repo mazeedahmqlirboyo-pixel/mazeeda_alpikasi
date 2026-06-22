@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import Card from '$lib/components/ui/card.svelte';
+  import SeasonalEffect from '$lib/components/SeasonalEffect.svelte';
   import Button from '$lib/components/ui/button.svelte';
   import { supabase } from '$lib/supabase';
   import { deferredPrompt, showInstallBtn } from '$lib/pwaStore';
@@ -25,7 +26,8 @@
     Twitter,
     Instagram,
     Youtube,
-    Rss
+    Rss,
+    Scale
   } from 'lucide-svelte';
 
   // --- Reactive PWA State ---
@@ -77,6 +79,10 @@
   let cityTimezone = 'WIB';
   let prayerTimes: any = null;
   let nextPrayer = { name: '', time: '', countdown: '' };
+
+  // --- Seasonal Effects State ---
+  let activeSeasonalEffect = 'none';
+  let seasonalChannel: any;
   let hijriDate = '';
   let gregorianDate = '';
   let isLoadingPrayers = false;
@@ -681,6 +687,24 @@
     }
   }
 
+  // --- Seasonal Effects load method ---
+  async function fetchSeasonalEffect() {
+    try {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('active_seasonal_effect')
+        .eq('id', 1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        activeSeasonalEffect = data.active_seasonal_effect || 'none';
+      }
+    } catch (e) {
+      console.warn('Failed to fetch seasonal effect setting:', e);
+    }
+  }
+
   onMount(() => {
     // Auto detect user location / timezone offset to select city default
     if (typeof window !== 'undefined') {
@@ -708,6 +732,20 @@
 
     // Recalculate next prayer countdown every minute
     prayerTimer = setInterval(calculateNextPrayer, 60000);
+
+    fetchSeasonalEffect();
+    
+    // Subscribe to realtime updates on app_settings table
+    if (typeof window !== 'undefined') {
+      seasonalChannel = supabase
+        .channel('app_settings_realtime')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_settings' }, (payload) => {
+          if (payload.new && payload.new.active_seasonal_effect) {
+            activeSeasonalEffect = payload.new.active_seasonal_effect;
+          }
+        })
+        .subscribe();
+    }
   });
 
   onDestroy(() => {
@@ -716,6 +754,9 @@
     stopAutoPlay();
     if (typeof window !== 'undefined') {
       window.removeEventListener('click', handleClickOutside);
+    }
+    if (seasonalChannel) {
+      supabase.removeChannel(seasonalChannel);
     }
   });
 
@@ -727,6 +768,8 @@
     { name: 'Al-Qur\'an Progress', value: quranProgress, description: quranDescription, icon: BookOpen, color: 'text-indigo-600 bg-indigo-50 border-indigo-100/70', href: '/quran' }
   ];
 </script>
+
+<SeasonalEffect effect={activeSeasonalEffect} />
 
 <div class="space-y-6 pb-12">
   
@@ -1019,47 +1062,74 @@
   <!-- ==================== FITUR ISLAMI WIDGET ==================== -->
   <section class="space-y-4">
     <h2 class="text-lg font-bold text-slate-800 tracking-tight">Fitur Islami</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
       <!-- Card 1: Qibla Compass -->
-      <a href="/kiblat" class="block transition-all hover:-translate-y-1 hover:shadow-soft-md duration-200">
-        <Card class="bg-gradient-to-br from-indigo-900 to-slate-900 border-indigo-950 text-white relative overflow-hidden h-36 flex items-center p-6">
-          <div class="absolute -right-4 -bottom-6 opacity-10 text-white pointer-events-none">
+      <a href="/kiblat" class="group block transition-all hover:-translate-y-1.5 duration-300">
+        <div class="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 border-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_8px_30px_rgba(99,102,241,0.2)] text-white p-5 h-44 flex flex-col justify-between transition-all duration-300">
+          <div class="absolute -right-4 -bottom-6 opacity-10 text-white pointer-events-none group-hover:scale-110 group-hover:rotate-12 transition-all duration-500">
             <Compass class="h-32 w-32" />
           </div>
-          <div class="space-y-2 z-10 flex-1">
-            <span class="inline-flex items-center space-x-1.5 bg-indigo-500/30 border border-indigo-400/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-300">
+          <div class="space-y-1.5 z-10">
+            <span class="inline-flex items-center space-x-1.5 bg-indigo-500/20 border border-indigo-400/20 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-indigo-300 leading-none">
               🧭 Kompas Arah
             </span>
-            <h3 class="text-xl font-extrabold tracking-tight">Arah Kiblat</h3>
-            <p class="text-xs text-indigo-200 leading-relaxed font-normal max-w-sm">
-              Cari arah kiblat sholat secara real-time dengan sensor HP atau lokasi GPS Anda.
+            <h3 class="text-xl font-extrabold tracking-tight mt-1">Arah Kiblat</h3>
+            <p class="text-xs text-indigo-200/80 leading-relaxed font-normal max-w-xs">
+              Cari arah kiblat sholat secara real-time dengan HP atau GPS.
             </p>
           </div>
-          <div class="bg-white/10 hover:bg-white/20 text-white rounded-full p-2.5 transition-colors shrink-0 shadow-soft-sm">
-            <ArrowRight class="h-5 w-5" />
+          <div class="z-10 flex justify-end">
+            <div class="bg-white/5 border border-white/10 group-hover:bg-white/10 group-hover:border-white/20 text-white rounded-full p-2 transition-all duration-300 group-hover:scale-105">
+              <ArrowRight class="h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+            </div>
           </div>
-        </Card>
+        </div>
       </a>
 
-      <!-- Card 2: Zakat & Faraidh Calculator -->
-      <a href="/zakat-faraidh" class="block transition-all hover:-translate-y-1 hover:shadow-soft-md duration-200">
-        <Card class="bg-gradient-to-br from-emerald-900 to-slate-900 border-emerald-950 text-white relative overflow-hidden h-36 flex items-center p-6">
-          <div class="absolute -right-4 -bottom-6 opacity-10 text-white pointer-events-none">
+      <!-- Card 2: Zakat Calculator -->
+      <a href="/zakat-faraidh?type=zakat" class="group block transition-all hover:-translate-y-1.5 duration-300">
+        <div class="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-900 border-emerald-500/20 hover:border-emerald-500/40 hover:shadow-[0_8px_30px_rgba(16,185,129,0.2)] text-white p-5 h-44 flex flex-col justify-between transition-all duration-300">
+          <div class="absolute -right-4 -bottom-6 opacity-10 text-white pointer-events-none group-hover:scale-110 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-500">
             <Wallet class="h-32 w-32" />
           </div>
-          <div class="space-y-2 z-10 flex-1">
-            <span class="inline-flex items-center space-x-1.5 bg-emerald-500/30 border border-emerald-400/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-emerald-300">
-              🧮 Hitung Syariah
+          <div class="space-y-1.5 z-10">
+            <span class="inline-flex items-center space-x-1.5 bg-emerald-500/20 border border-emerald-400/20 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-300 leading-none">
+              🧮 Hitung Zakat
             </span>
-            <h3 class="text-xl font-extrabold tracking-tight">Zakat & Faraidh</h3>
-            <p class="text-xs text-emerald-200 leading-relaxed font-normal max-w-sm">
-              Alat hitung Zakat Penghasilan, Zakat Maal, dan pembagian waris dasar secara instan.
+            <h3 class="text-xl font-extrabold tracking-tight mt-1">Kalkulator Zakat</h3>
+            <p class="text-xs text-emerald-200/80 leading-relaxed font-normal max-w-xs">
+              Hitung Zakat Penghasilan, Maal, Emas, Peternakan, Saham, dll.
             </p>
           </div>
-          <div class="bg-white/10 hover:bg-white/20 text-white rounded-full p-2.5 transition-colors shrink-0 shadow-soft-sm">
-            <ArrowRight class="h-5 w-5" />
+          <div class="z-10 flex justify-end">
+            <div class="bg-white/5 border border-white/10 group-hover:bg-white/10 group-hover:border-white/20 text-white rounded-full p-2 transition-all duration-300 group-hover:scale-105">
+              <ArrowRight class="h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+            </div>
           </div>
-        </Card>
+        </div>
+      </a>
+
+      <!-- Card 3: Faraidh Calculator -->
+      <a href="/zakat-faraidh?type=faraidh" class="group block transition-all hover:-translate-y-1.5 duration-300">
+        <div class="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-amber-950 via-slate-900 to-amber-900 border-amber-500/20 hover:border-amber-500/40 hover:shadow-[0_8px_30px_rgba(245,158,11,0.2)] text-white p-5 h-44 flex flex-col justify-between transition-all duration-300">
+          <div class="absolute -right-4 -bottom-6 opacity-10 text-white pointer-events-none group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500">
+            <Scale class="h-32 w-32" />
+          </div>
+          <div class="space-y-1.5 z-10">
+            <span class="inline-flex items-center space-x-1.5 bg-amber-500/20 border border-amber-400/20 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-amber-300 leading-none">
+              ⚖️ Pembagian Waris
+            </span>
+            <h3 class="text-xl font-extrabold tracking-tight mt-1">Kalkulator Faraidh</h3>
+            <p class="text-xs text-amber-200/80 leading-relaxed font-normal max-w-xs">
+              Hitung pembagian waris secara syariat Islam dengan mudah.
+            </p>
+          </div>
+          <div class="z-10 flex justify-end">
+            <div class="bg-white/5 border border-white/10 group-hover:bg-white/10 group-hover:border-white/20 text-white rounded-full p-2 transition-all duration-300 group-hover:scale-105">
+              <ArrowRight class="h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+            </div>
+          </div>
+        </div>
       </a>
     </div>
   </section>

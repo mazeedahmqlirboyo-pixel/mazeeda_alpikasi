@@ -14,7 +14,7 @@
   } from 'lucide-svelte';
 
   // Current active management tab
-  let activeSection = 'members'; // 'members' | 'sangu' | 'mading' | 'stickynotes' | 'timeline' | 'notifikasi' | 'carousel'
+  let activeSection = 'members'; // 'members' | 'sangu' | 'mading' | 'stickynotes' | 'timeline' | 'notifikasi' | 'carousel' | 'effects'
 
   // Admin Management Tabs Configuration
   const sections = [
@@ -24,7 +24,8 @@
     { label: '📌 Dinding Aspirasi', value: 'stickynotes' },
     { label: '📸 Kelola Timeline', value: 'timeline' },
     { label: '🔔 Notifikasi', value: 'notifikasi' },
-    { label: '🎪 Banner Slide', value: 'carousel' }
+    { label: '🎪 Banner Slide', value: 'carousel' },
+    { label: '🎨 Efek Musiman', value: 'effects' }
   ];
 
   // Custom confirmation modal states
@@ -1394,11 +1395,53 @@
     );
   }
 
+  // --- Seasonal Effects State & Logic ---
+  let adminSeasonalEffect = 'none';
+  let isSavingEffects = false;
+
+  async function fetchSeasonalEffectSetting() {
+    try {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('active_seasonal_effect')
+        .eq('id', 1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        adminSeasonalEffect = data.active_seasonal_effect || 'none';
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch seasonal effect settings:', err.message);
+    }
+  }
+
+  async function saveSeasonalEffectSetting() {
+    try {
+      isSavingEffects = true;
+      const { error } = await supabase
+        .from('app_settings')
+        .update({ 
+          active_seasonal_effect: adminSeasonalEffect,
+          updated_at: new Date().toISOString(),
+          updated_by: 'Admin'
+        })
+        .eq('id', 1);
+
+      if (error) throw error;
+      triggerAlert('Efek musiman berhasil diperbarui secara realtime!');
+    } catch (err: any) {
+      alert('Gagal menyimpan efek: ' + err.message);
+    } finally {
+      isSavingEffects = false;
+    }
+  }
+
   onMount(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const tab = urlParams.get('tab');
-      if (tab && ['members', 'sangu', 'mading', 'stickynotes', 'timeline', 'notifikasi', 'carousel'].includes(tab)) {
+      if (tab && ['members', 'sangu', 'mading', 'stickynotes', 'timeline', 'notifikasi', 'carousel', 'effects'].includes(tab)) {
         activeSection = tab;
       }
     }
@@ -1409,6 +1452,7 @@
     fetchPhotos();
     fetchNotifList();
     fetchCarouselSlides();
+    fetchSeasonalEffectSetting();
   });
 </script>
 
@@ -2809,6 +2853,54 @@
           {/if}
         </div>
       </div>
+    </div>
+  {:else if activeSection === 'effects'}
+    <!-- Seasonal Effects Management Tab -->
+    <div in:fade={{ duration: 150 }} class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">🎨 Pengaturan Efek Musiman</h2>
+        <p class="text-xs text-slate-500 font-medium leading-relaxed">
+          Aktifkan efek animasi musiman pada halaman Dashboard untuk membuat suasana aplikasi terasa hidup.
+        </p>
+      </div>
+
+      <!-- Effects Settings Card -->
+      <Card class="p-6 max-w-xl space-y-6">
+        <div class="space-y-2">
+          <label for="seasonalEffectSelect" class="text-xs font-bold text-slate-700">Pilih Efek Yang Aktif</label>
+          <select 
+            id="seasonalEffectSelect"
+            bind:value={adminSeasonalEffect}
+            class="w-full h-11 px-4 bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all cursor-pointer"
+          >
+            <option value="none">🚫 Nonaktifkan Efek</option>
+            <option value="ramadhan">🌙 Bulan Ramadhan (Lentera & Ketupat)</option>
+            <option value="hujan">🌧️ Hujan Syahdu (Rintik Air Canvas)</option>
+            <option value="salju">❄️ Salju Syahdu (Butiran Salju Canvas)</option>
+            <option value="idul_fitri">✨ Hari Raya / Idul Fitri (Bulan & Bintang)</option>
+            <option value="valentine">💙 Hari Valentine (Hati Nuansa Biru)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between border-t border-slate-100 pt-4 gap-4">
+          <p class="text-[10px] text-slate-400 font-medium">
+            *Efek akan langsung diterapkan secara realtime di Dashboard pengguna saat disimpan.
+          </p>
+          <Button 
+            on:click={saveSeasonalEffectSetting}
+            disabled={isSavingEffects}
+            class="font-extrabold text-xs h-10 px-5 flex items-center space-x-1.5 shrink-0"
+          >
+            {#if isSavingEffects}
+              <div class="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full"></div>
+              <span>Menyimpan...</span>
+            {:else}
+              <Save class="h-4 w-4" />
+              <span>Terapkan Efek</span>
+            {/if}
+          </Button>
+        </div>
+      </Card>
     </div>
   {/if}
 </div>
