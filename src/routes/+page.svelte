@@ -26,7 +26,8 @@
     Instagram,
     Youtube,
     Rss,
-    Scale
+    Scale,
+    Award
   } from 'lucide-svelte';
 
   // --- Reactive PWA State ---
@@ -345,6 +346,10 @@
       'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
     ];
 
+    const INDO_DAYS_ARRAY = [
+      'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU'
+    ];
+
     const INDO_HIJRI_MONTHS = [
       'MUHARRAM', 'SAFAR', 'RABIUL AWWAL', 'RABIUL AKHIR',
       'JUMADIL AWWAL', 'JUMADIL AKHIR', 'RAJAB', 'SYA\'BAN',
@@ -385,7 +390,13 @@
         const gregMonthNum = parseInt(json.data.date.gregorian.month.number, 10);
         const gregYear = json.data.date.gregorian.year;
         const indMonth = INDO_MONTHS[gregMonthNum - 1] || json.data.date.gregorian.month.en.toUpperCase();
-        gregorianDate = `${gregDay} ${indMonth} ${gregYear} M.`;
+        
+        // Calculate day name from gregorian date string DD-MM-YYYY
+        const [d, m, y] = json.data.date.gregorian.date.split('-');
+        const dateObj = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+        const indDayName = INDO_DAYS_ARRAY[dateObj.getDay()];
+        
+        gregorianDate = `${indDayName}, ${gregDay} ${indMonth} ${gregYear} M.`;
 
         // Auto parse timezone meta from API to support any custom city
         if (json.data.meta && json.data.meta.timezone) {
@@ -417,7 +428,8 @@
       };
       
       const now = new Date();
-      gregorianDate = `${now.getDate()} ${INDO_MONTHS[now.getMonth()]} ${now.getFullYear()} M.`;
+      const indDayName = INDO_DAYS_ARRAY[now.getDay()];
+      gregorianDate = `${indDayName}, ${now.getDate()} ${INDO_MONTHS[now.getMonth()]} ${now.getFullYear()} M.`;
       hijriDate = 'KALENDER HIJRIYAH H.';
     } finally {
       isLoadingPrayers = false;
@@ -1044,21 +1056,21 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
       <!-- Card 1: Qibla Compass -->
       <a href="/kiblat" class="group block transition-all hover:-translate-y-1.5 duration-300">
-        <div class="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 border-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_8px_30px_rgba(99,102,241,0.2)] text-white p-5 h-44 flex flex-col justify-between transition-all duration-300">
-          <div class="absolute -right-4 -bottom-6 opacity-10 text-white pointer-events-none group-hover:scale-110 group-hover:rotate-12 transition-all duration-500">
-            <Compass class="h-32 w-32" />
+        <div class="relative overflow-hidden rounded-2xl border border-indigo-100/80 bg-gradient-to-br from-indigo-50/40 via-white to-white hover:border-indigo-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300">
+          <div class="absolute -right-4 -bottom-6 text-indigo-500/10 pointer-events-none group-hover:scale-105 group-hover:rotate-6 transition-all duration-500">
+            <Compass class="h-28 w-28 stroke-[1.5]" />
           </div>
           <div class="space-y-1.5 z-10">
-            <span class="inline-flex items-center space-x-1.5 bg-indigo-500/20 border border-indigo-400/20 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-indigo-300 leading-none">
+            <span class="inline-flex items-center space-x-1.5 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600 leading-none">
               🧭 Kompas Arah
             </span>
-            <h3 class="text-xl font-extrabold tracking-tight mt-1">Arah Kiblat</h3>
-            <p class="text-xs text-indigo-200/80 leading-relaxed font-normal max-w-xs">
+            <h3 class="text-lg font-extrabold tracking-tight mt-1 text-slate-800">Arah Kiblat</h3>
+            <p class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs">
               Cari arah kiblat sholat secara real-time dengan HP atau GPS.
             </p>
           </div>
           <div class="z-10 flex justify-end">
-            <div class="bg-white/5 border border-white/10 group-hover:bg-white/10 group-hover:border-white/20 text-white rounded-full p-2 transition-all duration-300 group-hover:scale-105">
+            <div class="bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-full p-2 transition-all duration-300 group-hover:bg-indigo-600 group-hover:text-white group-hover:scale-105">
               <ArrowRight class="h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
             </div>
           </div>
@@ -1067,21 +1079,21 @@
 
       <!-- Card 2: Zakat Calculator -->
       <a href="/zakat-faraidh?type=zakat" class="group block transition-all hover:-translate-y-1.5 duration-300">
-        <div class="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-900 border-emerald-500/20 hover:border-emerald-500/40 hover:shadow-[0_8px_30px_rgba(16,185,129,0.2)] text-white p-5 h-44 flex flex-col justify-between transition-all duration-300">
-          <div class="absolute -right-4 -bottom-6 opacity-10 text-white pointer-events-none group-hover:scale-110 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-500">
-            <Wallet class="h-32 w-32" />
+        <div class="relative overflow-hidden rounded-2xl border border-emerald-100/80 bg-gradient-to-br from-emerald-50/40 via-white to-white hover:border-emerald-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300">
+          <div class="absolute -right-4 -bottom-6 text-emerald-500/10 pointer-events-none group-hover:scale-105 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-500">
+            <Wallet class="h-28 w-28 stroke-[1.5]" />
           </div>
           <div class="space-y-1.5 z-10">
-            <span class="inline-flex items-center space-x-1.5 bg-emerald-500/20 border border-emerald-400/20 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-300 leading-none">
+            <span class="inline-flex items-center space-x-1.5 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-emerald-600 leading-none">
               🧮 Hitung Zakat
             </span>
-            <h3 class="text-xl font-extrabold tracking-tight mt-1">Kalkulator Zakat</h3>
-            <p class="text-xs text-emerald-200/80 leading-relaxed font-normal max-w-xs">
+            <h3 class="text-lg font-extrabold tracking-tight mt-1 text-slate-800">Kalkulator Zakat</h3>
+            <p class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs">
               Hitung Zakat Penghasilan, Maal, Emas, Peternakan, Saham, dll.
             </p>
           </div>
           <div class="z-10 flex justify-end">
-            <div class="bg-white/5 border border-white/10 group-hover:bg-white/10 group-hover:border-white/20 text-white rounded-full p-2 transition-all duration-300 group-hover:scale-105">
+            <div class="bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-full p-2 transition-all duration-300 group-hover:bg-emerald-600 group-hover:text-white group-hover:scale-105">
               <ArrowRight class="h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
             </div>
           </div>
@@ -1090,29 +1102,53 @@
 
       <!-- Card 3: Faraidh Calculator -->
       <a href="/zakat-faraidh?type=faraidh" class="group block transition-all hover:-translate-y-1.5 duration-300">
-        <div class="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-amber-950 via-slate-900 to-amber-900 border-amber-500/20 hover:border-amber-500/40 hover:shadow-[0_8px_30px_rgba(245,158,11,0.2)] text-white p-5 h-44 flex flex-col justify-between transition-all duration-300">
-          <div class="absolute -right-4 -bottom-6 opacity-10 text-white pointer-events-none group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500">
-            <Scale class="h-32 w-32" />
+        <div class="relative overflow-hidden rounded-2xl border border-amber-100/80 bg-gradient-to-br from-amber-50/40 via-white to-white hover:border-amber-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300">
+          <div class="absolute -right-4 -bottom-6 text-amber-500/10 pointer-events-none group-hover:scale-105 group-hover:-rotate-6 transition-all duration-500">
+            <Scale class="h-28 w-28 stroke-[1.5]" />
           </div>
           <div class="space-y-1.5 z-10">
-            <span class="inline-flex items-center space-x-1.5 bg-amber-500/20 border border-amber-400/20 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-amber-300 leading-none">
+            <span class="inline-flex items-center space-x-1.5 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-amber-600 leading-none">
               ⚖️ Pembagian Waris
             </span>
-            <h3 class="text-xl font-extrabold tracking-tight mt-1">Kalkulator Faraidh</h3>
-            <p class="text-xs text-amber-200/80 leading-relaxed font-normal max-w-xs">
+            <h3 class="text-lg font-extrabold tracking-tight mt-1 text-slate-800">Kalkulator Faraidh</h3>
+            <p class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs">
               Hitung pembagian waris secara syariat Islam dengan mudah.
             </p>
           </div>
           <div class="z-10 flex justify-end">
-            <div class="bg-white/5 border border-white/10 group-hover:bg-white/10 group-hover:border-white/20 text-white rounded-full p-2 transition-all duration-300 group-hover:scale-105">
+            <div class="bg-amber-50 border border-amber-100 text-amber-600 rounded-full p-2 transition-all duration-300 group-hover:bg-amber-600 group-hover:text-white group-hover:scale-105">
               <ArrowRight class="h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
             </div>
           </div>
         </div>
       </a>
-    </div>
   </section>
 
+  <!-- ==================== KABINET KEPENGURUSAN BANNER ==================== -->
+  <section class="space-y-4">
+    <h2 class="text-lg font-bold text-slate-800 tracking-tight">Kepengurusan</h2>
+    <a href="/kepengurusan" class="group block transition-all hover:-translate-y-1.5 duration-300">
+      <div class="relative overflow-hidden rounded-2xl border border-blue-100/80 bg-gradient-to-br from-blue-50/40 via-white to-white hover:border-blue-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300">
+        <div class="absolute -right-4 -bottom-6 text-blue-500/10 pointer-events-none group-hover:scale-105 group-hover:rotate-6 transition-all duration-500">
+          <Award class="h-28 w-28 stroke-[1.5]" />
+        </div>
+        <div class="space-y-1.5 z-10">
+          <span class="inline-flex items-center space-x-1.5 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-blue-600 leading-none">
+            👥 Kepengurusan Santri
+          </span>
+          <h3 class="text-lg font-extrabold tracking-tight mt-1 text-slate-800">Kenangan Kepengurusan Santri</h3>
+          <p class="text-xs text-slate-500 leading-relaxed font-normal max-w-xl">
+            Jelajahi rekam jejak kepengurusan siswi yang pernah menjabat pada periode tahun ajaran 2026 - 2032.
+          </p>
+        </div>
+        <div class="z-10 flex justify-end">
+          <div class="bg-blue-50 border border-blue-100 text-blue-600 rounded-full p-2 transition-all duration-300 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-105">
+            <ArrowRight class="h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+          </div>
+        </div>
+      </div>
+    </a>
+  </section>
 
   <!-- ==================== QUICK STATS GRID ==================== -->
   <section class="space-y-4">

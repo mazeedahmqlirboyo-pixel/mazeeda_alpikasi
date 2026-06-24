@@ -10,15 +10,16 @@
   import { 
     Users, Megaphone, Image, Plus, Trash2, Edit, Save, CheckCircle,
     UserPlus, UploadCloud, FileText, Heart, Globe, Phone, Home, 
-    Award, Music, X, Bell, Search, BookOpen
+    Award, Music, X, Bell, Search, BookOpen, Info, Calendar
   } from 'lucide-svelte';
 
   // Current active management tab
-  let activeSection = 'members'; // 'members' | 'sangu' | 'mading' | 'stickynotes' | 'timeline' | 'notifikasi' | 'carousel'
+  let activeSection = 'members'; // 'members' | 'sangu' | 'mading' | 'stickynotes' | 'timeline' | 'notifikasi' | 'carousel' | 'kepengurusan'
 
   // Admin Management Tabs Configuration
   const sections = [
     { label: '👥 Kelola Squad', value: 'members' },
+    { label: '🎓 Kelola Kepengurusan', value: 'kepengurusan' },
     { label: '📖 Kelola Sangu', value: 'sangu' },
     { label: '📢 Pengumuman Mading', value: 'mading' },
     { label: '📌 Dinding Aspirasi', value: 'stickynotes' },
@@ -1394,11 +1395,277 @@
     );
   }
 
+  // --- 5. KEPENGURUSAN HISTORY CRUD ---
+  let kepengurusanList: any[] = [];
+  let isLoadingKepengurusan = false;
+  let kepengurusanSearchQuery = '';
+  
+  // Form input states
+  let kep_tahunAjaran = '2026-2027';
+  let kep_namaLengkap = '';
+  let kep_jabatan = '';
+  let kep_divisi = '';
+  let kep_fotoCustomUrl = '';
+  let editingKepId: any = null;
+  let kepengurusanYearFilter = 'all';
+
+  $: squadMap = squad.reduce((map: Record<string, any>, item) => {
+    map[item.nama_lengkap.trim().toLowerCase()] = item;
+    return map;
+  }, {});
+
+  // CSV states for Kepengurusan
+  let kep_isDragging = false;
+  let kep_csvFile: File | null = null;
+  let kep_parsedCSVData: any[] = [];
+  let kep_csvImportStatus = '';
+  let kep_csvImportError = '';
+
+  async function fetchKepengurusan() {
+    try {
+      isLoadingKepengurusan = true;
+      const { data, error } = await supabase
+        .from('kepengurusan_history')
+        .select('*')
+        .order('tahun_ajaran', { ascending: false });
+      if (!error && data) {
+        kepengurusanList = data;
+      }
+    } catch (err) {
+      console.error('Failed to fetch kepengurusan:', err);
+    } finally {
+      isLoadingKepengurusan = false;
+    }
+  }
+
+  function startEditKepengurusan(item: any) {
+    editingKepId = item.id;
+    kep_tahunAjaran = (item.tahun_ajaran || '2026-2027').replace(/\//g, '-');
+    kep_namaLengkap = item.nama_lengkap || '';
+    kep_jabatan = item.jabatan || '';
+    kep_divisi = item.divisi || 'Pengurus Harian';
+    kep_fotoCustomUrl = item.foto_custom_url || '';
+  }
+
+  function cancelEditKepengurusan() {
+    editingKepId = null;
+    kep_tahunAjaran = '2026-2027';
+    kep_namaLengkap = '';
+    kep_jabatan = '';
+    kep_divisi = '';
+    kep_fotoCustomUrl = '';
+  }
+
+  async function handleSaveKepengurusan() {
+    if (!kep_namaLengkap || !kep_jabatan || !kep_divisi) {
+      alert('Nama, Jabatan, dan Divisi wajib diisi!');
+      return;
+    }
+
+    isSubmitting = true;
+    const payload = {
+      tahun_ajaran: kep_tahunAjaran,
+      nama_lengkap: kep_namaLengkap.trim(),
+      jabatan: kep_jabatan.trim(),
+      divisi: kep_divisi.trim(),
+      foto_custom_url: kep_fotoCustomUrl.trim()
+    };
+
+    try {
+      if (editingKepId) {
+        const { error } = await supabase
+          .from('kepengurusan_history')
+          .update(payload)
+          .eq('id', editingKepId);
+        if (error) throw error;
+        triggerAlert('Data kepengurusan berhasil diperbarui!');
+      } else {
+        const { error } = await supabase
+          .from('kepengurusan_history')
+          .insert([payload]);
+        if (error) throw error;
+        triggerAlert('Pengurus baru berhasil ditambahkan!');
+      }
+      cancelEditKepengurusan();
+      await fetchKepengurusan();
+    } catch (err: any) {
+      alert('Gagal menyimpan data kepengurusan: ' + err.message);
+    } finally {
+      isSubmitting = false;
+    }
+  }
+
+  async function deleteKepengurusan(id: any) {
+    runWithConfirmation(
+      'Hapus Pengurus',
+      'Apakah Anda yakin ingin menghapus data pengurus ini?',
+      async () => {
+        try {
+          const { error } = await supabase
+            .from('kepengurusan_history')
+            .delete()
+            .eq('id', id);
+          if (error) throw error;
+          triggerAlert('Data pengurus berhasil dihapus.');
+          await fetchKepengurusan();
+        } catch (err: any) {
+          alert('Gagal menghapus data pengurus: ' + err.message);
+        }
+      }
+    );
+  }
+
+  async function handleDeleteAllKepengurusan() {
+    runWithConfirmation(
+      'Hapus Semua Data Kepengurusan',
+      'Apakah Anda yakin ingin menghapus seluruh riwayat kepengurusan dari database? Tindakan ini tidak dapat dibatalkan.',
+      async () => {
+        try {
+          const { error } = await supabase
+            .from('kepengurusan_history')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000');
+          if (error) throw error;
+          triggerAlert('Semua data kepengurusan berhasil dihapus.');
+          await fetchKepengurusan();
+        } catch (err: any) {
+          alert('Gagal menghapus semua data kepengurusan: ' + err.message);
+        }
+      }
+    );
+  }
+
+  // CSV Import logic for Kepengurusan
+  function kep_handleDragOver(e: DragEvent) {
+    e.preventDefault();
+    kep_isDragging = true;
+  }
+  function kep_handleDragLeave() {
+    kep_isDragging = false;
+  }
+  function kep_handleDrop(e: DragEvent) {
+    e.preventDefault();
+    kep_isDragging = false;
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      kep_processCSV(files[0]);
+    }
+  }
+  function kep_handleFileSelect(e: any) {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      kep_processCSV(files[0]);
+    }
+  }
+  function kep_processCSV(file: File) {
+    kep_csvImportError = "";
+    kep_csvImportStatus = "";
+    if (!file.name.endsWith(".csv")) {
+      kep_csvImportError = "File harus berupa format .csv";
+      return;
+    }
+    kep_csvFile = file;
+    const reader = new FileReader();
+    reader.onload = (event: any) => {
+      const text = event.target.result;
+      const lines = text.split(/\r?\n/).map((line: string) => line.trim()).filter((line: string) => line.length > 0);
+      if (lines.length === 0) {
+        kep_csvImportError = "File CSV kosong.";
+        kep_csvFile = null;
+        return;
+      }
+      let separator = ',';
+      if (lines[0].includes(';')) separator = ';';
+      else if (lines[0].includes('\t')) separator = '\t';
+
+      const rawHeaders = parseCSVLine(lines[0], separator);
+      const headers = rawHeaders.map(h => h.toLowerCase().trim().replace(/[\s_-]+/g, ''));
+
+      function findIndex(aliases: string[]) {
+        for (const alias of aliases) {
+          const idx = headers.indexOf(alias.toLowerCase().replace(/[\s_-]+/g, ''));
+          if (idx !== -1) return idx;
+        }
+        return -1;
+      }
+
+      const indices = {
+        tahun_ajaran: findIndex(["tahun_ajaran", "tahun ajaran", "tahun", "periode"]),
+        nama_lengkap: findIndex(["nama_lengkap", "nama lengkap", "nama", "name"]),
+        jabatan: findIndex(["jabatan", "role", "position"]),
+        divisi: findIndex(["divisi", "bagian", "division", "section"]),
+        foto_custom_url: findIndex(["foto_custom_url", "foto custom url", "foto", "image"])
+      };
+
+      if (indices.nama_lengkap === -1 || indices.jabatan === -1 || indices.divisi === -1 || indices.tahun_ajaran === -1) {
+        kep_csvImportError = "Kolom 'tahun_ajaran', 'nama_lengkap', 'jabatan', dan 'divisi' wajib ada.";
+        kep_csvFile = null;
+        return;
+      }
+
+      function getValue(columns: string[], field: keyof typeof indices, fallback: any = "") {
+        const idx = indices[field];
+        if (idx !== -1 && idx < columns.length) {
+          return columns[idx] || fallback;
+        }
+        return fallback;
+      }
+
+      const list = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        const columns = parseCSVLine(line, separator);
+        const nameVal = getValue(columns, "nama_lengkap");
+        if (nameVal && !["nama", "name", "nama lengkap"].includes(nameVal.toLowerCase())) {
+          list.push({
+            tahun_ajaran: getValue(columns, "tahun_ajaran", "2026-2027").replace(/\//g, '-'),
+            nama_lengkap: nameVal,
+            jabatan: getValue(columns, "jabatan"),
+            divisi: getValue(columns, "divisi"),
+            foto_custom_url: getValue(columns, "foto_custom_url")
+          });
+        }
+      }
+
+      if (list.length === 0) {
+        kep_csvImportError = "Tidak ditemukan data valid di CSV.";
+        kep_csvFile = null;
+      } else {
+        kep_parsedCSVData = list;
+        kep_csvImportStatus = `Berhasil memproses ${kep_parsedCSVData.length} baris data dari CSV.`;
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  async function kep_handleUploadCSVData() {
+    if (kep_parsedCSVData.length === 0) return;
+    isSubmitting = true;
+    kep_csvImportStatus = "Mengunggah data ke database...";
+    kep_csvImportError = "";
+    try {
+      const { error } = await supabase
+        .from('kepengurusan_history')
+        .insert(kep_parsedCSVData);
+      if (error) throw error;
+      triggerAlert(`Berhasil mengimpor ${kep_parsedCSVData.length} data pengurus dari CSV!`);
+      kep_parsedCSVData = [];
+      kep_csvFile = null;
+      kep_csvImportStatus = "";
+      await fetchKepengurusan();
+    } catch (err: any) {
+      kep_csvImportError = "Gagal mengunggah data: " + err.message;
+      kep_csvImportStatus = "";
+    } finally {
+      isSubmitting = false;
+    }
+  }
+
   onMount(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const tab = urlParams.get('tab');
-      if (tab && ['members', 'sangu', 'mading', 'stickynotes', 'timeline', 'notifikasi', 'carousel'].includes(tab)) {
+      if (tab && ['members', 'sangu', 'mading', 'stickynotes', 'timeline', 'notifikasi', 'carousel', 'kepengurusan'].includes(tab)) {
         activeSection = tab;
       }
     }
@@ -1409,6 +1676,7 @@
     fetchPhotos();
     fetchNotifList();
     fetchCarouselSlides();
+    fetchKepengurusan();
   });
 </script>
 
@@ -1452,6 +1720,18 @@
               <span>Impor Data dari CSV</span>
             </h3>
             <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bulk Upload</span>
+          </div>
+
+          <!-- Instruction Rules -->
+          <div class="bg-indigo-50/60 rounded-xl p-3 text-[11px] leading-relaxed text-indigo-900 border border-indigo-100/50">
+            <p class="font-bold text-indigo-950 mb-1 flex items-center gap-1">
+              <Info class="h-3.5 w-3.5" /> Aturan Berkas CSV Alumni:
+            </p>
+            <ul class="list-disc pl-4 space-y-0.5">
+              <li>Header kolom **wajib**: <code class="font-mono bg-indigo-100 px-1 rounded">nama_lengkap</code> (sisanya opsional).</li>
+              <li>Header kolom lain yang didukung: <code class="font-mono bg-indigo-100 px-1 rounded">nama_panggilan</code>, <code class="font-mono bg-indigo-100 px-1 rounded">nis</code>, <code class="font-mono bg-indigo-100 px-1 rounded">email</code>, <code class="font-mono bg-indigo-100 px-1 rounded">no_whatsapp</code>, <code class="font-mono bg-indigo-100 px-1 rounded">tempat_lahir</code>, <code class="font-mono bg-indigo-100 px-1 rounded">tahun_lahir</code>, <code class="font-mono bg-indigo-100 px-1 rounded">golongan_darah</code>, <code class="font-mono bg-indigo-100 px-1 rounded">foto_url</code>, dll.</li>
+              <li>Pemisah kolom otomatis terdeteksi (koma `,`, titik koma `;`, atau tab).</li>
+            </ul>
           </div>
 
           <!-- Drag and Drop Zone -->
@@ -2805,6 +3085,292 @@
               {/each}
             {:else}
               <div class="py-12 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Belum ada banner slide yang dibuat.</div>
+            {/if}
+          {/if}
+        </div>
+      </div>
+    </div>
+  {:else if activeSection === 'kepengurusan'}
+    <!-- ==================== TAB: KEPENGURUSAN ==================== -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200" transition:fade={{ duration: 150 }}>
+      <!-- LEFT SIDE: INPUT FORM & CSV UPLOAD -->
+      <div class="lg:col-span-6 space-y-4">
+        <!-- CSV Import Widget for Kepengurusan -->
+        <Card class="p-5 space-y-3 border-dashed border-2 border-slate-200 bg-slate-50/20 mb-4">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center space-x-2">
+              <UploadCloud class="h-4.5 w-4.5 text-primary" />
+              <span>Impor Data Pengurus (.CSV)</span>
+            </h3>
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bulk Upload</span>
+          </div>
+
+          <!-- Rules / Instructions -->
+          <div class="bg-indigo-50/60 rounded-xl p-3 text-[11px] leading-relaxed text-indigo-900 border border-indigo-100/50">
+            <p class="font-bold text-indigo-950 mb-1 flex items-center gap-1">
+              <Info class="h-3.5 w-3.5" /> Aturan Berkas CSV:
+            </p>
+            <ul class="list-disc pl-4 space-y-0.5">
+              <li>Header kolom **wajib**: <code class="font-mono bg-indigo-100 px-1 rounded">tahun_ajaran</code>, <code class="font-mono bg-indigo-100 px-1 rounded">nama_lengkap</code>, <code class="font-mono bg-indigo-100 px-1 rounded">jabatan</code>, <code class="font-mono bg-indigo-100 px-1 rounded">divisi</code></li>
+              <li>Header kolom **opsional**: <code class="font-mono bg-indigo-100 px-1 rounded">foto_custom_url</code></li>
+              <li>Format Tahun Ajaran menggunakan tanda hubung (e.g. <code class="font-mono bg-indigo-100 px-1 rounded">2026-2027</code>).</li>
+              <li>Nama lengkap harus persis sama dengan data di database Alumni.</li>
+            </ul>
+          </div>
+
+          <!-- Drag and Drop Zone -->
+          <div 
+            on:dragover={kep_handleDragOver}
+            on:dragleave={kep_handleDragLeave}
+            on:drop={kep_handleDrop}
+            class="border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors
+              {kep_isDragging ? 'border-primary bg-blue-50/30' : 'border-slate-200 bg-white hover:border-primary/40'}"
+            on:click={() => document.getElementById('kep-csv-file-input')?.click()}
+          >
+            <input 
+              type="file" 
+              id="kep-csv-file-input" 
+              accept=".csv" 
+              class="hidden" 
+              on:change={kep_handleFileSelect}
+            />
+            <UploadCloud class="h-7 w-7 text-slate-400 mx-auto mb-1.5" />
+            {#if kep_csvFile}
+              <p class="text-xs font-bold text-slate-700 truncate max-w-xs mx-auto">{kep_csvFile.name}</p>
+              <p class="text-[10px] text-slate-400 mt-1">{(kep_csvFile.size / 1024).toFixed(1)} KB</p>
+            {:else}
+              <p class="text-xs font-bold text-slate-600 text-center">Tarik & letakkan berkas CSV, atau klik untuk memilih</p>
+            {/if}
+          </div>
+
+          <!-- Alert / Status messages -->
+          {#if kep_csvImportError}
+            <p class="text-xs font-semibold text-rose-600 bg-rose-50/50 p-2.5 rounded-lg border border-rose-100">{kep_csvImportError}</p>
+          {/if}
+          {#if kep_csvImportStatus}
+            <p class="text-xs font-semibold text-emerald-600 bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-100">{kep_csvImportStatus}</p>
+          {/if}
+
+          <!-- Upload triggers -->
+          {#if kep_parsedCSVData.length > 0}
+            <div class="flex gap-2 justify-end pt-1">
+              <Button variant="secondary" on:click={() => { kep_parsedCSVData = []; kep_csvFile = null; kep_csvImportStatus = ''; }} size="sm">Batal</Button>
+              <Button on:click={kep_handleUploadCSVData} disabled={isSubmitting} size="sm" class="font-bold">
+                <span>Unggah {kep_parsedCSVData.length} Pengurus</span>
+              </Button>
+            </div>
+          {/if}
+        </Card>
+
+        <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+          {#if editingKepId}
+            <Edit class="h-5 w-5 text-indigo-600" />
+            <span>Edit Pengurus</span>
+          {:else}
+            <Plus class="h-5 w-5 text-primary" />
+            <span>Tambah Pengurus Baru</span>
+          {/if}
+        </h2>
+
+        <!-- Form Input -->
+        <Card class="p-5">
+          <form on:submit|preventDefault={handleSaveKepengurusan} class="space-y-4">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Tahun Ajaran -->
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-500" for="kep_year">Tahun Ajaran *</label>
+                <select id="kep_year" class="flex h-11 w-full rounded-xl border border-slate-200/80 bg-white px-3 text-xs font-semibold text-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" bind:value={kep_tahunAjaran}>
+                  <option value="2026-2027">2026-2027</option>
+                  <option value="2027-2028">2027-2028</option>
+                  <option value="2028-2029">2028-2029</option>
+                  <option value="2029-2030">2029-2030</option>
+                  <option value="2030-2031">2030-2031</option>
+                  <option value="2031-2032">2031-2032</option>
+                </select>
+              </div>
+
+              <!-- Nama Lengkap -->
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-500" for="kep_name">Nama Pengurus *</label>
+                <select id="kep_name" class="flex h-11 w-full rounded-xl border border-slate-200/80 bg-white px-3 text-xs font-semibold text-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" bind:value={kep_namaLengkap}>
+                  <option value="">-- Pilih Anggota --</option>
+                  {#each squad.sort((a, b) => a.nama_lengkap.localeCompare(b.nama_lengkap)) as item}
+                    <option value={item.nama_lengkap}>{item.nama_lengkap} ({item.nama_panggilan || '-'})</option>
+                  {/each}
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Jabatan -->
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-500" for="kep_role">Jabatan / Peran *</label>
+                <Input id="kep_role" placeholder="e.g. Ketua Koordinator" class="h-11 rounded-xl text-xs" bind:value={kep_jabatan} required />
+              </div>
+
+              <!-- Divisi / Bagian -->
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-500" for="kep_division">Divisi / Bagian *</label>
+                <Input id="kep_division" placeholder="e.g. Pengurus Harian" class="h-11 rounded-xl text-xs" bind:value={kep_divisi} required />
+              </div>
+            </div>
+
+            <!-- Custom Photo URL (opsional) -->
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-500" for="kep_photo">URL Foto Khusus (Opsional)</label>
+              <Input id="kep_photo" placeholder="Kosongkan untuk memakai foto profil asli alumni" class="h-11 rounded-xl text-xs" bind:value={kep_fotoCustomUrl} />
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              {#if editingKepId}
+                <Button type="button" variant="secondary" on:click={cancelEditKepengurusan} size="sm">Batal</Button>
+              {/if}
+              <Button type="submit" disabled={isSubmitting} size="sm" class="flex items-center justify-center space-x-1.5 bg-primary hover:bg-primary/95 text-white font-bold h-10 px-4 rounded-xl">
+                {#if isSubmitting}
+                  <span>Menyimpan...</span>
+                {:else if editingKepId}
+                  <Save class="h-4 w-4" />
+                  <span>Simpan</span>
+                {:else}
+                  <Plus class="h-4 w-4" />
+                  <span>Tambah</span>
+                {/if}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </div>
+
+      <!-- RIGHT SIDE: KEPENGURUSAN LIST -->
+      <div class="lg:col-span-6 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+            <FileText class="h-5 w-5 text-indigo-600" />
+            <span>Database Pengurus ({kepengurusanList.length})</span>
+          </h2>
+          <Button on:click={handleDeleteAllKepengurusan} variant="destructive" size="sm" class="font-bold flex items-center space-x-1">
+            <Trash2 class="h-3.5 w-3.5" />
+            <span>Hapus Semua</span>
+          </Button>
+        </div>
+
+        <!-- Search Bar with Integrated Year Filter -->
+        <div class="relative w-full">
+          <div class="relative flex items-center w-full bg-slate-50 border border-slate-200 rounded-xl transition-all duration-300 h-10 overflow-hidden focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20">
+            <!-- Search Icon -->
+            <Search class="h-4 w-4 text-slate-400 ml-3.5 shrink-0 pointer-events-none" />
+            
+            <!-- Search Input -->
+            <input 
+              type="text" 
+              placeholder="Cari pengurus berdasarkan nama, jabatan, divisi..." 
+              class="flex-1 h-full bg-transparent pl-2.5 pr-2 text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none"
+              bind:value={kepengurusanSearchQuery}
+            />
+
+            <!-- Divider -->
+            <div class="w-px h-5 bg-slate-200 shrink-0"></div>
+
+            <!-- Dropdown Filter inside search bar -->
+            <div class="relative shrink-0 flex items-center pr-2 h-full hover:bg-slate-100/50 transition-colors">
+              <Calendar class="absolute left-3 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+              <select
+                bind:value={kepengurusanYearFilter}
+                class="pl-8 pr-7 py-2 bg-transparent text-[11px] font-black text-slate-600 hover:text-slate-800 transition-colors appearance-none cursor-pointer focus:outline-none h-full"
+              >
+                <option value="all">Semua TA</option>
+                <option value="2026-2027">2026-2027</option>
+                <option value="2027-2028">2027-2028</option>
+                <option value="2028-2029">2028-2029</option>
+                <option value="2029-2030">2029-2030</option>
+                <option value="2030-2031">2030-2031</option>
+                <option value="2031-2032">2031-2032</option>
+              </select>
+              <div class="absolute right-3 pointer-events-none">
+                <svg class="h-2.5 w-2.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- List View -->
+        <div class="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+          {#if isLoadingKepengurusan}
+            <div class="py-12 text-center text-xs font-semibold text-slate-400">Memuat data pengurus...</div>
+          {:else}
+            {@const filteredKep = kepengurusanList.filter(item => {
+              // 1. Filter by Year
+              if (kepengurusanYearFilter !== 'all') {
+                const itemYear = (item.tahun_ajaran || '').replace(/\//g, '-');
+                const filterYear = kepengurusanYearFilter.replace(/\//g, '-');
+                if (itemYear !== filterYear) return false;
+              }
+              // 2. Filter by Search Query
+              if (!kepengurusanSearchQuery) return true;
+              const q = kepengurusanSearchQuery.toLowerCase();
+              return (
+                (item.nama_lengkap || '').toLowerCase().includes(q) ||
+                (item.jabatan || '').toLowerCase().includes(q) ||
+                (item.divisi || '').toLowerCase().includes(q) ||
+                (item.tahun_ajaran || '').toLowerCase().includes(q)
+              );
+            })}
+
+            {#if filteredKep.length > 0}
+              {#each filteredKep as item}
+                {@const alumni = squadMap[item.nama_lengkap.trim().toLowerCase()]}
+                {@const profilePhoto = item.foto_custom_url || (alumni && alumni.foto_url)}
+                <Card noPadding class="border-slate-100 hover:shadow-soft-sm hover:border-indigo-100/80 transition-all duration-300">
+                  <div class="p-3.5 flex items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3.5 min-w-0">
+                      {#if profilePhoto}
+                        <img 
+                          src={convertDriveUrl(profilePhoto)} 
+                          alt={item.nama_lengkap} 
+                          class="h-11 w-11 rounded-full object-cover shadow-soft-sm border border-slate-100 shrink-0"
+                        />
+                      {:else}
+                        <div class="h-11 w-11 rounded-full flex items-center justify-center font-bold text-xs bg-indigo-50 border border-indigo-100 text-indigo-600 shrink-0">
+                          {getInitials(item.nama_lengkap)}
+                        </div>
+                      {/if}
+
+                      <div class="min-w-0 leading-snug">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                          <h4 class="font-extrabold text-slate-800 text-sm truncate">{item.nama_lengkap}</h4>
+                          <span class="px-1.5 py-0.5 rounded-md bg-indigo-50 border border-indigo-100/50 text-indigo-700 text-[9px] font-black tracking-tight">{item.tahun_ajaran}</span>
+                        </div>
+                        <p class="text-xs text-primary font-black uppercase tracking-wider mt-0.5">{item.jabatan}</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide mt-0.5">{item.divisi}</p>
+                      </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        on:click={() => startEditKepengurusan(item)}
+                        class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors flex items-center justify-center"
+                        title="Edit Pengurus"
+                      >
+                        <Edit class="h-4.5 w-4.5" />
+                      </button>
+                      <button 
+                        type="button"
+                        on:click={() => deleteKepengurusan(item.id)}
+                        class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center"
+                        title="Hapus Pengurus"
+                      >
+                        <Trash2 class="h-4.5 w-4.5" />
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              {/each}
+            {:else}
+              <div class="py-12 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Tidak ada pengurus ditemukan.</div>
             {/if}
           {/if}
         </div>
