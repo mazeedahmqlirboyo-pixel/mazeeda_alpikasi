@@ -43,20 +43,29 @@
   // --- Helper to parse Indonesian Date ---
   function parseIndonesianDate(dateStr: string | undefined): string | null {
     if (!dateStr) return null;
-    if (dateStr.includes('-')) return dateStr; // Already YYYY-MM-DD
-    const parts = dateStr.trim().split(' ');
+    if (dateStr.includes("-")) return dateStr; // Already YYYY-MM-DD
+    const parts = dateStr.trim().split(" ");
     if (parts.length >= 3) {
-      const day = parts[0].padStart(2, '0');
+      const day = parts[0].padStart(2, "0");
       const monthStr = parts[1].toLowerCase();
       const year = parts[parts.length - 1]; // Use last part as year
-      
+
       const monthMap: Record<string, string> = {
-        'januari': '01', 'februari': '02', 'maret': '03', 'april': '04',
-        'mei': '05', 'juni': '06', 'juli': '07', 'agustus': '08',
-        'september': '09', 'oktober': '10', 'november': '11', 'desember': '12'
+        januari: "01",
+        februari: "02",
+        maret: "03",
+        april: "04",
+        mei: "05",
+        juni: "06",
+        juli: "07",
+        agustus: "08",
+        september: "09",
+        oktober: "10",
+        november: "11",
+        desember: "12",
       };
-      
-      const month = monthMap[monthStr] || '01';
+
+      const month = monthMap[monthStr] || "01";
       return `${year}-${month}-${day}`;
     }
     return null;
@@ -74,7 +83,8 @@
       user.name = $authStore.user.name;
       // Convert "22 September 2010" to "2010-09-22"
       if ($authStore.user.tahun_lahir) {
-        user.tanggal_lahir = parseIndonesianDate($authStore.user.tahun_lahir) || "";
+        user.tanggal_lahir =
+          parseIndonesianDate($authStore.user.tahun_lahir) || "";
       }
     }
   }
@@ -245,7 +255,12 @@
   let cityTimezone = "WIB";
   let prayerTimes: any = null;
   let nextPrayer = { name: "", time: "", countdown: "" };
-  $: isFridayLocal = new Date(new Date().getTime() + new Date().getTimezoneOffset() * 60000 + 3600000 * timezoneOffset).getDay() === 5;
+  $: isFridayLocal =
+    new Date(
+      new Date().getTime() +
+        new Date().getTimezoneOffset() * 60000 +
+        3600000 * timezoneOffset,
+    ).getDay() === 5;
   let hijriDate = "";
   let gregorianDate = "";
   let isLoadingPrayers = false;
@@ -532,33 +547,53 @@
 
           // Reverse Geocoding using Nominatim (OpenStreetMap)
           try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${gpsLatitude}&lon=${gpsLongitude}&format=json&accept-language=id`);
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${gpsLatitude}&lon=${gpsLongitude}&format=json&accept-language=id`,
+            );
             const data = await res.json();
             if (data && data.address) {
               const addr = data.address;
-              
+
               const road = addr.road || addr.pedestrian || "";
-              
-              let village = addr.village || addr.neighbourhood || addr.hamlet || "";
-              if (village && !village.toLowerCase().includes("kelurahan") && !village.toLowerCase().includes("desa") && !village.toLowerCase().includes("kel.")) {
+
+              let village =
+                addr.village || addr.neighbourhood || addr.hamlet || "";
+              if (
+                village &&
+                !village.toLowerCase().includes("kelurahan") &&
+                !village.toLowerCase().includes("desa") &&
+                !village.toLowerCase().includes("kel.")
+              ) {
                 village = "Kel. " + village;
               }
 
-              let district = addr.city_district || addr.district || addr.suburb || addr.town || addr.municipality || "";
-              if (district && !district.toLowerCase().includes("kecamatan") && !district.toLowerCase().includes("kec.")) {
+              let district =
+                addr.city_district ||
+                addr.district ||
+                addr.suburb ||
+                addr.town ||
+                addr.municipality ||
+                "";
+              if (
+                district &&
+                !district.toLowerCase().includes("kecamatan") &&
+                !district.toLowerCase().includes("kec.")
+              ) {
                 district = "Kec. " + district;
               }
 
               let city = addr.city || addr.county || addr.state_district || "";
-              
+
               // Gabungkan nama lokasi selengkap mungkin
-              const rawParts = [road, village, district, city].filter(p => p && p.trim() !== "" && p !== "Kel. " && p !== "Kec. ");
-              
+              const rawParts = [road, village, district, city].filter(
+                (p) => p && p.trim() !== "" && p !== "Kel. " && p !== "Kec. ",
+              );
+
               // Hapus duplikat nama berurutan atau nama yang mirip
               const uniqueParts = [...new Set(rawParts)];
-              
+
               if (uniqueParts.length > 0) {
-                selectedCity = uniqueParts.join(', ');
+                selectedCity = uniqueParts.join(", ");
               } else {
                 selectedCity = "Lokasi Saat Ini";
               }
@@ -575,9 +610,7 @@
         (error) => {
           console.error("Geolocation error:", error);
           isLoadingPrayers = false;
-          alert(
-            "Gagal mengakses lokasi GPS Anda. Pastikan izin lokasi aktif.",
-          );
+          alert("Gagal mengakses lokasi GPS Anda. Pastikan izin lokasi aktif.");
         },
         { enableHighAccuracy: true, timeout: 10000 },
       );
@@ -753,7 +786,10 @@
 
     const prayerOrder = [
       { name: "Subuh", time: prayerTimes.Subuh },
-      { name: localNow.getDay() === 5 ? "Jum'at" : "Dzuhur", time: prayerTimes.Dzuhur },
+      {
+        name: localNow.getDay() === 5 ? "Jum'at" : "Dzuhur",
+        time: prayerTimes.Dzuhur,
+      },
       { name: "Ashar", time: prayerTimes.Ashar },
       { name: "Maghrib", time: prayerTimes.Maghrib },
       { name: "Isya", time: prayerTimes.Isya },
@@ -1092,8 +1128,6 @@
 
     // Default to using GPS
     requestGeolocation();
-
-
 
     // Recalculate next prayer countdown every minute
     prayerTimer = setInterval(calculateNextPrayer, 60000);
@@ -1451,8 +1485,6 @@
                   {tz.offset}
                 </td>
 
-
-
                 <!-- Status -->
                 <td class="py-2.5 px-3 text-center">
                   {#if isActive || isWIS}
@@ -1502,16 +1534,28 @@
         class="relative -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 rounded-t-2xl bg-gradient-to-r from-emerald-50 via-teal-50/50 to-cyan-50 p-4 sm:px-5 sm:py-4 flex items-center justify-start border-b border-emerald-100/60 shadow-inner mb-4"
       >
         <!-- Dekorasi Background -->
-        <div class="absolute inset-0 overflow-hidden rounded-t-2xl pointer-events-none z-0">
-          <div class="absolute inset-0 opacity-[0.35] bg-[url('/images/makkah_bg.png')] bg-cover bg-[position:center_55%] bg-no-repeat mix-blend-multiply"></div>
-          <div class="absolute right-0 top-0 w-32 h-32 bg-emerald-400/20 rounded-full blur-2xl -mt-10 -mr-10"></div>
-          <div class="absolute left-10 bottom-0 w-24 h-24 bg-cyan-400/20 rounded-full blur-xl -mb-10"></div>
+        <div
+          class="absolute inset-0 overflow-hidden rounded-t-2xl pointer-events-none z-0"
+        >
+          <div
+            class="absolute inset-0 opacity-[0.35] bg-[url('/images/makkah_bg.png')] bg-cover bg-[position:center_55%] bg-no-repeat mix-blend-multiply"
+          ></div>
+          <div
+            class="absolute right-0 top-0 w-32 h-32 bg-emerald-400/20 rounded-full blur-2xl -mt-10 -mr-10"
+          ></div>
+          <div
+            class="absolute left-10 bottom-0 w-24 h-24 bg-cyan-400/20 rounded-full blur-xl -mb-10"
+          ></div>
         </div>
 
-
-        <div class="relative z-10 bg-white/70 backdrop-blur-md border border-emerald-200/50 px-3 py-1.5 rounded-full shadow-sm flex items-center space-x-1.5">
+        <div
+          class="relative z-10 bg-white/70 backdrop-blur-md border border-emerald-200/50 px-3 py-1.5 rounded-full shadow-sm flex items-center space-x-1.5"
+        >
           <span class="text-xs">🕌</span>
-          <span class="text-[9px] text-emerald-700 font-black uppercase tracking-widest">Jadwal Sholat</span>
+          <span
+            class="text-[9px] text-emerald-700 font-black uppercase tracking-widest"
+            >Jadwal Sholat</span
+          >
         </div>
       </div>
 
@@ -1528,9 +1572,13 @@
             class="inline-flex items-center justify-center space-x-1.5 text-[13px] font-bold text-slate-600 hover:text-primary transition-colors focus:outline-none cursor-pointer py-1 px-3 rounded-full hover:bg-slate-50"
           >
             <MapPin class="h-3.5 w-3.5 text-primary" />
-            <span class="whitespace-normal leading-tight text-center break-words max-w-[85vw] sm:max-w-[500px]"
+            <span
+              class="whitespace-normal leading-tight text-center break-words max-w-[85vw] sm:max-w-[500px]"
               >{selectedCity === "Lokasi Saya" ? "Lokasi Saya" : selectedCity}
-              <span class="text-slate-400 ml-0.5 font-semibold text-[11px] whitespace-nowrap">({cityTimezone})</span></span
+              <span
+                class="text-slate-400 ml-0.5 font-semibold text-[11px] whitespace-nowrap"
+                >({cityTimezone})</span
+              ></span
             >
             <span
               class="text-slate-400 text-[10px] transform transition-transform duration-200 ml-1"
@@ -1725,7 +1773,7 @@
     <h2 class="text-lg font-bold text-slate-800 tracking-tight">
       Fitur Islami
     </h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       <!-- Card 1: Qibla Compass -->
       <a
         href="/kiblat"
@@ -1739,7 +1787,11 @@
             class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
             style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
           >
-            <img src="/images/kiblat_bg.png" alt="Arah Kiblat" class="w-full h-full object-contain" />
+            <img
+              src="/images/kiblat_bg.png"
+              alt="Arah Kiblat"
+              class="w-full h-full object-contain"
+            />
           </div>
           <div class="space-y-1.5 z-10">
             <span
@@ -1774,7 +1826,11 @@
             class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
             style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
           >
-            <img src="/images/zakat_bg.png" alt="Hitung Zakat" class="w-full h-full object-contain" />
+            <img
+              src="/images/zakat_bg.png"
+              alt="Hitung Zakat"
+              class="w-full h-full object-contain"
+            />
           </div>
           <div class="space-y-1.5 z-10">
             <span
@@ -1809,7 +1865,11 @@
             class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
             style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
           >
-            <img src="/images/faraidh_bg.png" alt="Kalkulator Waris" class="w-full h-full object-contain" />
+            <img
+              src="/images/faraidh_bg.png"
+              alt="Kalkulator Waris"
+              class="w-full h-full object-contain"
+            />
           </div>
           <div class="space-y-1.5 z-10">
             <span
@@ -1826,6 +1886,46 @@
               class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
             >
               Hitung pembagian waris secara syariat Islam dengan mudah.
+            </p>
+          </div>
+        </div>
+      </a>
+
+      <!-- Card 4: Kalender Hijriah -->
+      <a
+        href="/kalender"
+        class="group block transition-all hover:-translate-y-1.5 duration-300"
+      >
+        <div
+          class="relative overflow-hidden rounded-2xl border border-green-200 bg-gradient-to-br from-green-50/40 via-white to-white hover:border-green-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+        >
+          <!-- Dekorasi AI -->
+          <div
+            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
+            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+          >
+            <img
+              src="/images/kalender_bg.png"
+              alt="Kalender Hijriah"
+              class="w-full h-full object-contain scale-125 translate-x-2 translate-y-2"
+            />
+          </div>
+          <div class="space-y-1.5 z-10">
+            <span
+              class="inline-flex items-center space-x-1.5 bg-green-50 border border-green-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-green-600 leading-none"
+            >
+              📅 Kalender
+            </span>
+            <h3
+              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800"
+            >
+              Masehi & Hijriah
+            </h3>
+            <p
+              class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
+            >
+              Lihat penanggalan Masehi dan Hijriah secara interaktif dalam satu
+              layar.
             </p>
           </div>
         </div>
@@ -1850,7 +1950,11 @@
           class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
           style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
         >
-          <img src="/images/kepengurusan_bg.png" alt="Kepengurusan" class="w-full h-full object-contain" />
+          <img
+            src="/images/kepengurusan_bg.png"
+            alt="Kepengurusan"
+            class="w-full h-full object-contain"
+          />
         </div>
         <div class="space-y-1.5 z-10">
           <span
@@ -1906,10 +2010,16 @@
                   {stat.description}
                 </p>
               </div>
-              
+
               {#if stat.image}
-                <div class="h-20 w-20 sm:h-24 sm:w-24 rounded-[1.25rem] bg-gradient-to-br {stat.gradient} border border-white/60 shadow-inner overflow-hidden flex items-center justify-center p-2 shrink-0 group-hover:scale-110 group-hover:-rotate-2 transition-transform duration-300 relative">
-                  <img src={stat.image} alt={stat.name} class="w-full h-full object-contain mix-blend-multiply drop-shadow-md scale-110 relative z-10" />
+                <div
+                  class="h-20 w-20 sm:h-24 sm:w-24 rounded-[1.25rem] bg-gradient-to-br {stat.gradient} border border-white/60 shadow-inner overflow-hidden flex items-center justify-center p-2 shrink-0 group-hover:scale-110 group-hover:-rotate-2 transition-transform duration-300 relative"
+                >
+                  <img
+                    src={stat.image}
+                    alt={stat.name}
+                    class="w-full h-full object-contain mix-blend-multiply drop-shadow-md scale-110 relative z-10"
+                  />
                 </div>
               {:else}
                 <div class="p-3 rounded-xl border {stat.color}">
