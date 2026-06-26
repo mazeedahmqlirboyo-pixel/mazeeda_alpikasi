@@ -76,7 +76,8 @@
           email: match.email,
           nis: match.nis,
           nama_ayah: match.nama_ayah,
-          foto_url: match.foto_url
+          foto_url: match.foto_url,
+          tahun_lahir: match.tahun_lahir
         });
 
         message = { type: 'success', content: `Selamat datang kembali, ${match.nama_lengkap}!` };

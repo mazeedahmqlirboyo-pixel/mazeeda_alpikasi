@@ -9,6 +9,7 @@ export interface UserSession {
   nis?: string;
   nama_ayah?: string;
   foto_url?: string;
+  tahun_lahir?: string;
 }
 
 export interface AuthState {
@@ -82,7 +83,7 @@ export function initAuth() {
   });
 }
 
-export function loginAsStudent(studentData: { name: string; email?: string; nis: string; nama_ayah: string; foto_url?: string }) {
+export function loginAsStudent(studentData: { name: string; email?: string; nis: string; nama_ayah: string; foto_url?: string; tahun_lahir?: string }) {
   if (!browser) return;
   const session: UserSession = {
     role: 'member',
@@ -90,7 +91,8 @@ export function loginAsStudent(studentData: { name: string; email?: string; nis:
     email: studentData.email || '',
     nis: studentData.nis,
     nama_ayah: studentData.nama_ayah,
-    foto_url: studentData.foto_url
+    foto_url: studentData.foto_url,
+    tahun_lahir: studentData.tahun_lahir
   };
   localStorage.setItem('mazeeda_logged_user', JSON.stringify(session));
   authStore.set({ loading: false, user: session });

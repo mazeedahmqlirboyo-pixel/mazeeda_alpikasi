@@ -9,7 +9,7 @@
   on:keydown
   role="button"
   tabindex="0"
-  class="bg-white border border-slate-200/80 rounded-2xl shadow-soft-sm hover:shadow-soft-md hover:border-primary/20 transition-all duration-300 overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-primary/10 {className}"
+  class="bg-white border border-slate-200 rounded-2xl shadow-soft-sm hover:shadow-soft-md hover:border-slate-300 transition-all duration-300 overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-primary/10 {className}"
 >
   {#if $$slots.header || $$slots.title || $$slots.description}
     <div class="p-4 sm:p-5 pb-3 flex flex-col space-y-1">

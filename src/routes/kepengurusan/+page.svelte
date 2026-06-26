@@ -19,6 +19,22 @@
   let dropdownContainer: HTMLDivElement;
   let showYearDropdown = false;
 
+  // Lightbox State
+  let showLightbox = false;
+  let lightboxUrl = '';
+
+  function openLightbox(url: string, e: MouseEvent) {
+    e.stopPropagation();
+    if (url) {
+      lightboxUrl = convertDriveUrl(url);
+      showLightbox = true;
+    }
+  }
+
+  function closeLightbox() {
+    showLightbox = false;
+  }
+
   function toggleDropdown(e: MouseEvent) {
     e.stopPropagation();
     showYearDropdown = !showYearDropdown;
@@ -266,7 +282,8 @@
                     <img 
                       src={convertDriveUrl(profilePhoto)} 
                       alt={member.nama_lengkap} 
-                      class="h-16 w-16 rounded-full object-cover shadow-soft-sm ring-2 {accent.ring}"
+                      on:click={(e) => openLightbox(profilePhoto, e)}
+                      class="h-16 w-16 rounded-full object-cover shadow-soft-sm ring-2 {accent.ring} hover:scale-110 transition-transform cursor-pointer"
                     />
                   {:else}
                     <div class="h-16 w-16 rounded-full flex items-center justify-center font-bold text-lg shadow-soft-sm ring-2 {accent.avatar} {accent.ring}">
@@ -319,7 +336,8 @@
                           <img 
                             src={convertDriveUrl(profilePhoto)} 
                             alt={member.nama_lengkap} 
-                            class="h-10 w-10 rounded-full object-cover shadow-soft-sm ring-1 {accent.ring} shrink-0"
+                            on:click={(e) => openLightbox(profilePhoto, e)}
+                            class="h-10 w-10 rounded-full object-cover shadow-soft-sm ring-1 {accent.ring} shrink-0 hover:scale-110 transition-transform cursor-pointer"
                           />
                         {:else}
                           <div class="h-10 w-10 rounded-full flex items-center justify-center font-bold text-xs shadow-soft-sm ring-1 {accent.avatar} {accent.ring} shrink-0">
@@ -348,3 +366,46 @@
   {/if}
 
 </div>
+
+<!-- ===== PHOTO LIGHTBOX MODAL ===== -->
+{#if showLightbox}
+  <div 
+    class="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+    style="background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);"
+    on:click={closeLightbox}
+    transition:fade={{ duration: 200 }}
+  >
+    <!-- Close Button -->
+    <button
+      type="button"
+      on:click|stopPropagation={closeLightbox}
+      class="absolute top-4 right-4 z-10 h-10 w-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors"
+      title="Tutup"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+
+    <!-- Foto Besar -->
+    <div 
+      class="max-w-sm w-full mx-auto"
+      on:click|stopPropagation
+      style="animation: lightboxZoomIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;"
+    >
+      <img 
+        src={lightboxUrl} 
+        alt="Foto Profil"
+        class="w-full rounded-3xl shadow-2xl object-cover border-2 border-white/20"
+        style="max-height: 80vh; object-fit: contain;"
+        on:error={(e) => { closeLightbox(); }}
+      />
+      <p class="text-center text-white/60 text-xs font-semibold mt-3">Klik di luar untuk menutup</p>
+    </div>
+  </div>
+{/if}
+
+<style>
+  @keyframes lightboxZoomIn {
+    from { opacity: 0; transform: scale(0.7); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+</style>
