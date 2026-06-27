@@ -428,7 +428,7 @@
       on:touchmove|passive={onDragMove}
       on:mouseup={onDragEnd}
       on:touchend={onDragEnd}
-      class="relative w-72 h-72 rounded-full bg-slate-50/50 border border-slate-200/80 shadow-md flex items-center justify-center cursor-grab select-none z-10 transition-all duration-300
+      class="relative w-72 h-72 mx-auto rounded-full bg-slate-50/50 border border-slate-200/80 shadow-md flex items-center justify-center cursor-grab select-none z-10 transition-all duration-300
              {isAligned ? 'ring-10 ring-emerald-500/10 border-emerald-400 shadow-emerald-100/50' : 'active:cursor-grabbing hover:border-slate-300'}"
     >
       <svg viewBox="0 0 200 200" class="w-full h-full p-1 drop-shadow-md">

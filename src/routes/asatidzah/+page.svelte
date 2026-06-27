@@ -29,10 +29,10 @@
   // Category configuration
   const categories = [
     { label: 'Semua', value: 'semua' },
-    { label: 'Alumni', value: 'alumni' },
-    { label: 'Alumnus', value: 'alumnus' },
-    { label: 'Mustahiq', value: 'mustahiq' },
-    { label: 'Mustahiqoh', value: 'mustahiqoh' }
+    { label: 'Pengajar', value: 'pengajar' },
+    { label: 'Musyrif', value: 'musyrif' },
+    { label: 'Musyrifah', value: 'musyrifah' },
+    { label: 'Staf / Karyawan', value: 'staf' }
   ];
 
   // Unique daerah list from loaded members
@@ -47,7 +47,7 @@
 
   // Mock fallbacks if Supabase table is empty
   const mockFallback = [
-    { id: 1, nama_lengkap: 'A\'ISYAH NUR ARLYANA', kategori_mazeeda: 'alumni', email: 'nama.kamu@email.com', no_whatsapp: '89507436989', alamat_domisili: 'HMQ', tahun_masuk: '2022', nama_panggilan: 'Kapten', tempat_lahir: 'JAKARTA', tahun_lahir: '22 September 2010', golongan_darah: '1', alamat_ktp: 'DUSUN III Rt-015 Rw-008, KALIWEDI KIDUL, KALIWEDI, CIREBON, JAWA BARAT.', riwayat_pendidikan: 'SDN SIMPANG', keterampilan_khusus: 'Graphic Design, Copywriting, & Public Speaking', kutipan_kenangan: 'Masa perjuangan tak akan terlupakan', music: 'Shalawat Merdu', hobi: 'Membaca Tafsir', kesan: 'Sangat berkesan belajar di pondok', pesan: 'Tetap jaga ukhuwah islamiyah', daerah_santri: 'EROPA', tiktok_akun: 'a_tiktok', facebook_akun: 'a.fb', xtwitter_akun: 'a_tw', rute_lengkap: 'Dari stasiun mana saja, silakan naik KRL Commuter Line arah Bekasi/Cikarang dan turun di Stasiun Klender. Setelah keluar stasiun, Anda bisa melanjutkan perjalanan menggunakan transportasi online (Grab/Gojek) dengan tujuan ke [Nama Jalan/Perumahan Kamu]. Estimasi waktu perjalanan dari stasiun sekitar 10–15 menit tergantung kondisi lalu lintas', kamar_santri: 'Faza 02', tahfidz_santri: 'BIN NADZRI' }
+    { id: 1, nama_lengkap: 'USTADZ MAZEEDA', kategori_mazeeda: 'pengajar', email: 'pengajar@email.com', no_whatsapp: '8950000000', alamat_domisili: 'Ponpes', tahun_masuk: '2020', nama_panggilan: 'Ustadz', tempat_lahir: 'CIREBON', tahun_lahir: '22 September 1990', golongan_darah: 'O', alamat_ktp: 'KALIWEDI', riwayat_pendidikan: 'S1', keterampilan_khusus: 'Pendidikan', kutipan_kenangan: 'Menjadi teladan', music: '', hobi: 'Membaca', kesan: 'Luar biasa', pesan: 'Istiqomah', daerah_santri: 'LOKAL', tiktok_akun: '', facebook_akun: '', xtwitter_akun: '', rute_lengkap: '', kamar_santri: '', tahfidz_santri: '' }
   ];
 
   // Fetch data onMount
@@ -55,7 +55,7 @@
     try {
       isLoading = true;
       const { data, error } = await supabase
-        .from('allowed_alumni')
+        .from('asatidzah')
         .select('*');
         
       if (error) throw error;
@@ -252,7 +252,7 @@
         <span>Kembali ke Direktori</span>
       </button>
       
-      <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">MAZEEDA SQUAD PROFILE</span>
+      <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">PROFIL ASATIDZAH</span>
     </div>    <Card noPadding class="overflow-hidden border-slate-200/80 shadow-soft-sm">
       <!-- Profile Header Banner -->
       {@const accent = getAccent(selectedMember.nama_lengkap)}
@@ -638,7 +638,7 @@
     {#if isLoading}
       <div class="py-24 text-center space-y-4">
         <div class="animate-spin h-8 w-8 border-3 border-primary border-t-transparent rounded-full mx-auto"></div>
-        <p class="text-xs font-semibold text-slate-500">Menyinkronkan data alumni...</p>
+        <p class="text-xs font-semibold text-slate-500">Menyinkronkan data asatidzah...</p>
       </div>
     {:else}
       {#if filteredMembers.length > 0}

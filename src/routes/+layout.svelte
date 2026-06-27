@@ -105,13 +105,22 @@
     if (!currentUser || currentUser.foto_url) return;
     
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('allowed_alumni')
         .select('foto_url')
         .eq('nis', currentUser.nis)
         .maybeSingle();
         
-      if (!error && data && data.foto_url) {
+      if (!data) {
+        const asatidzahRes = await supabase
+          .from('asatidzah')
+          .select('foto_url')
+          .eq('nis', currentUser.nis)
+          .maybeSingle();
+        data = asatidzahRes.data;
+      }
+
+      if (data && data.foto_url) {
         const updated = { ...currentUser, foto_url: data.foto_url };
         localStorage.setItem('mazeeda_logged_user', JSON.stringify(updated));
         authStore.update(state => ({ ...state, user: updated }));
@@ -131,7 +140,8 @@
     const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || 
                   cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+      // Menggunakan lh3.googleusercontent.com karena drive.google.com/thumbnail mulai sering diblokir (403)
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
     }
     return cleaned;
   }
@@ -395,10 +405,13 @@
       // Validate if logged-in member still exists in the database
       const u = $authStore.user;
       if (u && u.role === 'member' && u.nis) {
-        supabase.from('allowed_alumni').select('id').eq('nis', u.nis).maybeSingle().then(({ data, error }) => {
-          if (!data || error) {
-            console.warn('User no longer exists in database. Forcing logout.');
-            logout();
+        supabase.from('allowed_alumni').select('id').eq('nis', u.nis).maybeSingle().then(async ({ data, error }) => {
+          if (!data) {
+            const { data: asatidzahData } = await supabase.from('asatidzah').select('id').eq('nis', u.nis).maybeSingle();
+            if (!asatidzahData) {
+              console.warn('User no longer exists in database. Forcing logout.');
+              logout();
+            }
           }
         });
       }
@@ -608,21 +621,42 @@
 
     try {
       isLoadingProfile = true;
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('allowed_alumni')
         .select('*')
         .eq('nis', $authStore.user.nis)
         .maybeSingle();
 
       if (error) throw error;
+      
+      if (!data) {
+        const asatidzahRes = await supabase
+          .from('asatidzah')
+          .select('*')
+          .eq('nis', $authStore.user.nis)
+          .maybeSingle();
+        if (asatidzahRes.error) throw asatidzahRes.error;
+        data = asatidzahRes.data;
+      }
+
       if (data) {
         myProfileData = data;
       } else {
-        const { data: nameData, error: nameError } = await supabase
+        let { data: nameData, error: nameError } = await supabase
           .from('allowed_alumni')
           .select('*')
           .eq('nama_lengkap', $authStore.user.name)
           .maybeSingle();
+          
+        if (!nameData) {
+          const asatidzahNameRes = await supabase
+            .from('asatidzah')
+            .select('*')
+            .eq('nama_lengkap', $authStore.user.name)
+            .maybeSingle();
+          nameData = asatidzahNameRes.data;
+        }
+
         if (nameError) throw nameError;
         myProfileData = nameData || $authStore.user;
       }
@@ -676,15 +710,19 @@
       } else {
         query = query.ilike('nama_lengkap', nameOrNis);
       }
+      
       let { data, error } = await query.maybeSingle();
-      if (error || !data) {
-        // Fallback: search case-insensitive name if NIS search failed or vice-versa
-        const { data: fallbackData } = await supabase
-          .from('allowed_alumni')
-          .select('*')
-          .ilike('nama_lengkap', nameOrNis)
-          .maybeSingle();
-        data = fallbackData;
+
+      if (!data) {
+        let asatidzahQuery = supabase.from('asatidzah').select('*');
+        if (/^\d+$/.test(nameOrNis)) {
+          asatidzahQuery = asatidzahQuery.eq('nis', nameOrNis);
+        } else {
+          asatidzahQuery = asatidzahQuery.ilike('nama_lengkap', nameOrNis);
+        }
+        const asatidzahRes = await asatidzahQuery.maybeSingle();
+        data = asatidzahRes.data;
+        error = asatidzahRes.error;
       }
 
       if (data) {
@@ -737,7 +775,7 @@
       on:click|stopPropagation
       style="animation: lightboxZoomIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;"
     >
-      <img 
+      <img referrerpolicy="no-referrer" 
         src={lightboxUrl} 
         alt="Foto Profil"
         class="w-full rounded-3xl shadow-2xl object-cover border-2 border-white/20"
@@ -815,7 +853,7 @@
     <!-- Top Header for Branding & Mobile Settings -->
     <header class="sticky top-0 z-40 w-full bg-white/85 backdrop-blur-md border-b border-border/50 h-16 px-4 flex items-center justify-between md:px-8">
       <a href="/" class="flex items-center space-x-3 group" on:click={handleNavClick}>
-        <img 
+        <img referrerpolicy="no-referrer" 
           src="/logo.png" 
           alt="MAZEEDA Logo" 
           class="h-9 w-9 object-contain rounded-xl shadow-soft-sm group-hover:scale-105 transition-transform" 
@@ -929,7 +967,7 @@
             >
               {#key $authStore.user.foto_url}
                 {#if $authStore.user.foto_url}
-                  <img 
+                  <img referrerpolicy="no-referrer" 
                     src={convertDriveUrl($authStore.user.foto_url)} 
                     alt={$authStore.user.name} 
                     class="h-full w-full object-cover" 
@@ -1005,7 +1043,7 @@
             <div class="h-10 w-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-primary font-bold shrink-0 overflow-hidden shadow-soft-sm">
               {#key $authStore.user.foto_url}
                 {#if $authStore.user.foto_url}
-                  <img 
+                  <img referrerpolicy="no-referrer" 
                     src={convertDriveUrl($authStore.user.foto_url)} 
                     alt={$authStore.user.name} 
                     class="h-full w-full object-cover" 
@@ -1284,7 +1322,7 @@
                       title={myProfileData.foto_url ? 'Klik untuk perbesar foto' : ''}
                     >
                       {#if myProfileData.foto_url}
-                        <img 
+                        <img referrerpolicy="no-referrer" 
                           src={convertDriveUrl(myProfileData.foto_url)} 
                           alt={myProfileData.nama_lengkap} 
                           class="h-full w-full object-cover" 
@@ -1454,7 +1492,7 @@
                           <div class="mt-2 rounded-xl overflow-hidden aspect-video border border-slate-200 shadow-soft-sm">
                             <iframe 
                               class="w-full h-full"
-                              src="https://www.youtube.com/embed/{getYouTubeId(myProfileData.music)}" 
+                              src="https://www.youtube-nocookie.com/embed/{getYouTubeId(myProfileData.music)}" 
                               title="YouTube video player" 
                               frameborder="0" 
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 

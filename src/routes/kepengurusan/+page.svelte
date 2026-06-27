@@ -137,7 +137,7 @@
     const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || 
                   cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
     }
     return cleaned;
   }
@@ -279,7 +279,7 @@
                 <!-- Photo/Avatar -->
                 <div class="relative shrink-0">
                   {#if profilePhoto}
-                    <img 
+                    <img referrerpolicy="no-referrer" 
                       src={convertDriveUrl(profilePhoto)} 
                       alt={member.nama_lengkap} 
                       on:click={(e) => openLightbox(profilePhoto, e)}
@@ -333,7 +333,7 @@
                     >
                       <div class="flex items-center space-x-3.5 min-w-0">
                         {#if profilePhoto}
-                          <img 
+                          <img referrerpolicy="no-referrer" 
                             src={convertDriveUrl(profilePhoto)} 
                             alt={member.nama_lengkap} 
                             on:click={(e) => openLightbox(profilePhoto, e)}
@@ -391,7 +391,7 @@
       on:click|stopPropagation
       style="animation: lightboxZoomIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;"
     >
-      <img 
+      <img referrerpolicy="no-referrer" 
         src={lightboxUrl} 
         alt="Foto Profil"
         class="w-full rounded-3xl shadow-2xl object-cover border-2 border-white/20"

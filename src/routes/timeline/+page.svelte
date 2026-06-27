@@ -325,7 +325,7 @@
     const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
                   cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
     }
     return cleaned;
   }
@@ -377,13 +377,13 @@
           <!-- Image Area -->
           <div class="h-56 w-full relative overflow-hidden bg-slate-950 flex items-center justify-center">
             <!-- Blurred background image to fill different aspect ratios smoothly -->
-            <img 
+            <img referrerpolicy="no-referrer" 
               src={memory.image_url} 
               alt="" 
               class="absolute inset-0 w-full h-full object-cover blur-lg opacity-40 scale-110 pointer-events-none" 
             />
             <!-- Clean foreground image shown in full scale without cropping -->
-            <img 
+            <img referrerpolicy="no-referrer" 
               src={memory.image_url} 
               alt={memory.title} 
               class="relative z-10 max-w-full max-h-full object-contain transition-transform duration-500 group-hover:scale-[1.02]" 
@@ -500,12 +500,12 @@
       <!-- Left: Image Area (7 cols on desktop, fixed height on mobile) -->
       <div class="md:col-span-7 bg-slate-950 flex items-center justify-center relative h-60 sm:h-72 md:h-full p-2 overflow-hidden shrink-0">
         <!-- Blurred background image inside lightbox for premium visual cohesion -->
-        <img 
+        <img referrerpolicy="no-referrer" 
           src={selectedMemory.image_url} 
           alt="" 
           class="absolute inset-0 w-full h-full object-cover blur-2xl opacity-35 scale-110 pointer-events-none" 
         />
-        <img 
+        <img referrerpolicy="no-referrer" 
           src={selectedMemory.image_url} 
           alt={selectedMemory.title} 
           class="relative z-10 max-w-full max-h-full object-contain"
@@ -565,7 +565,7 @@
                       : 'bg-primary/10 text-primary border border-primary/20 font-black'}"
                   >
                     {#if avatarUrl}
-                      <img src={avatarUrl} alt={comment.user_name} class="h-full w-full object-cover"
+                      <img referrerpolicy="no-referrer" src={avatarUrl} alt={comment.user_name} class="h-full w-full object-cover"
                         on:error={(e) => { e.currentTarget.style.display = 'none'; }} />
                     {:else}
                       {getInitials(comment.user_name)}
@@ -665,7 +665,7 @@
                 <div class="h-8 w-8 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-[10px] font-black
                   {$authStore.user.role === 'admin' ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-primary/10 text-primary border border-primary/20'}">
                   {#if myAvatar}
-                    <img src={myAvatar} alt="Saya" class="h-full w-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                    <img referrerpolicy="no-referrer" src={myAvatar} alt="Saya" class="h-full w-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
                   {:else}
                     {getInitials($authStore.user.name)}
                   {/if}

@@ -15,6 +15,13 @@
     Scale,
     RefreshCw,
     ChevronDown,
+    X,
+    User,
+    CheckCircle2,
+    Users,
+    Coins,
+    HeartPulse,
+    PieChart
   } from "lucide-svelte";
 
   // Navigation & Calculator Type Choice
@@ -632,6 +639,15 @@
   let sonsCount = 0;
   let daughtersCount = 0;
 
+  // Advanced Faraidh Mode State
+  let isAdvancedFaraidh = false;
+  let hasKakek = false;
+  let hasNenekAyah = false;
+  let hasNenekIbu = false;
+  let cucuLakiCount = 0;
+  let cucuPerempuanCount = 0;
+  let saudaraKandungLakiCount = 0;
+  let saudaraKandungPerempuanCount = 0;
   $: totalDeductions =
     (hutangPewaris || 0) + (biayaJenazah || 0) + (wasiatPewaris || 0);
   $: netEstate = Math.max(0, (hartaKotor || 0) - totalDeductions);
@@ -657,318 +673,205 @@
     totalDistributedPercentage = 0;
 
     if (netEstate > 0) {
-      const hasChildren = sonsCount > 0 || daughtersCount > 0;
+      // Determine active heirs based on advanced mode or not
+      const _kakek = isAdvancedFaraidh ? hasKakek : false;
+      const _nenekAyah = isAdvancedFaraidh ? hasNenekAyah : false;
+      const _nenekIbu = isAdvancedFaraidh ? hasNenekIbu : false;
+      const _cucuLaki = isAdvancedFaraidh ? cucuLakiCount : 0;
+      const _cucuPr = isAdvancedFaraidh ? cucuPerempuanCount : 0;
+      const _saudaraLaki = isAdvancedFaraidh ? saudaraKandungLakiCount : 0;
+      const _saudaraPr = isAdvancedFaraidh ? saudaraKandungPerempuanCount : 0;
 
-      // 1. Spouse Share (Fardh)
-      let spouseShare = 0;
-      let spouseExplanation = "";
+      // --- 1. HIJAB (BLOCKING) RULES ---
+      const isAnakLakiExist = sonsCount > 0;
+      const isCucuLakiExist = _cucuLaki > 0;
+      
+      const effCucuLaki = isAnakLakiExist ? 0 : _cucuLaki;
+      const effCucuPr = (isAnakLakiExist || (daughtersCount >= 2 && effCucuLaki === 0)) ? 0 : _cucuPr;
+      
+      const effNenekIbu = hasMother ? false : _nenekIbu;
+      const effNenekAyah = (hasMother || hasFather) ? false : _nenekAyah;
+      const nenekCount = (effNenekIbu ? 1 : 0) + (effNenekAyah ? 1 : 0);
+
+      const effKakek = hasFather ? false : _kakek;
+
+      const isSaudaraBlocked = hasFather || effKakek || isAnakLakiExist || effCucuLaki > 0;
+      const effSaudaraLaki = isSaudaraBlocked ? 0 : _saudaraLaki;
+      const effSaudaraPr = isSaudaraBlocked ? 0 : _saudaraPr;
+
+      const hasFarikWaris = sonsCount > 0 || daughtersCount > 0 || effCucuLaki > 0 || effCucuPr > 0;
+      const hasMultipleSaudara = (effSaudaraLaki + effSaudaraPr) >= 2 || (_saudaraLaki + _saudaraPr) >= 2;
+
+      // --- 2. CALCULATE FARDH SHARES ---
+      let shares: any = {};
+      let sumFardh = 0;
+      
       if (spouseType === "suami") {
-        spouseShare = hasChildren ? 0.25 : 0.5;
-        spouseExplanation = hasChildren
-          ? "Mendapat 1/4 bagian karena pewaris memiliki anak."
-          : "Mendapat 1/2 bagian karena pewaris tidak memiliki anak.";
-      } else if (spouseType === "istri") {
-        spouseShare = hasChildren ? 0.125 : 0.25;
-        spouseExplanation = hasChildren
-          ? `Mendapat 1/8 bagian (dibagi rata untuk ${istriCount} istri) karena pewaris memiliki anak.`
-          : `Mendapat 1/4 bagian (dibagi rata untuk ${istriCount} istri) karena pewaris tidak memiliki anak.`;
+        shares.suami = hasFarikWaris ? 1/4 : 1/2;
+        sumFardh += shares.suami;
+      } else if (spouseType === "istri" && istriCount > 0) {
+        shares.istri = hasFarikWaris ? 1/8 : 1/4;
+        sumFardh += shares.istri;
       }
 
-      // 2. Mother Share (Fardh)
-      let motherShare = 0;
-      let motherExplanation = "";
       if (hasMother) {
-        motherShare = hasChildren ? 1 / 6 : 1 / 3;
-        motherExplanation = hasChildren
-          ? "Mendapat 1/6 bagian karena pewaris memiliki anak."
-          : "Mendapat 1/3 bagian karena pewaris tidak memiliki anak.";
+        shares.ibu = (hasFarikWaris || hasMultipleSaudara) ? 1/6 : 1/3;
+        sumFardh += shares.ibu;
       }
 
-      // 3. Father Share (Fixed/Fardh part)
-      let fatherShare = 0;
-      let fatherExplanation = "";
-      if (hasFather) {
-        if (hasChildren) {
-          fatherShare = 1 / 6;
-          fatherExplanation =
-            sonsCount > 0
-              ? "Mendapat 1/6 bagian (fardh) karena pewaris memiliki anak laki-laki."
-              : "Mendapat 1/6 bagian (fardh) dan berhak mendapat sisa (asabah) karena pewaris hanya memiliki anak perempuan.";
-        } else {
-          fatherShare = 0; // Purely asabah
-          fatherExplanation =
-            "Mendapat sisa harta (asabah) karena pewaris tidak memiliki anak.";
-        }
+      if (nenekCount > 0) {
+        shares.nenek = 1/6;
+        sumFardh += shares.nenek;
       }
 
-      // 4. Daughters Share (Fixed/Fardh if NO sons)
-      let daughtersFixedShare = 0;
-      let daughtersExplanation = "";
       if (sonsCount === 0 && daughtersCount > 0) {
+        shares.anakPr = daughtersCount === 1 ? 1/2 : 2/3;
+        sumFardh += shares.anakPr;
+      }
+
+      if (effCucuPr > 0 && effCucuLaki === 0) {
         if (daughtersCount === 1) {
-          daughtersFixedShare = 0.5;
-          daughtersExplanation =
-            "Mendapat 1/2 bagian karena merupakan anak perempuan tunggal.";
+          shares.cucuPr = 1/6; // Takmilah 2/3
+        } else if (daughtersCount === 0) {
+          shares.cucuPr = effCucuPr === 1 ? 1/2 : 2/3;
         } else {
-          daughtersFixedShare = 2 / 3;
-          daughtersExplanation = `Mendapat 2/3 bagian (dibagi rata untuk ${daughtersCount} anak perempuan) karena ada lebih dari satu anak perempuan dan tidak ada anak laki-laki.`;
+          shares.cucuPr = 0;
+        }
+        if(shares.cucuPr) sumFardh += shares.cucuPr;
+      }
+
+      let ayahAsabah = false;
+      let kakekAsabah = false;
+      
+      if (hasFather) {
+        shares.ayah = 1/6;
+        sumFardh += shares.ayah;
+        if (!isAnakLakiExist && effCucuLaki === 0) ayahAsabah = true;
+      } else if (effKakek) {
+        shares.kakek = 1/6;
+        sumFardh += shares.kakek;
+        if (!isAnakLakiExist && effCucuLaki === 0) kakekAsabah = true;
+      }
+
+      let saudaraPrAsabahMaalGhair = false;
+      if (effSaudaraPr > 0 && effSaudaraLaki === 0) {
+        if (daughtersCount > 0 || effCucuPr > 0) {
+          saudaraPrAsabahMaalGhair = true;
+        } else {
+          shares.saudaraPr = effSaudaraPr === 1 ? 1/2 : 2/3;
+          sumFardh += shares.saudaraPr;
         }
       }
 
-      // Sum of fixed fractions
-      const sumFixed =
-        spouseShare +
-        motherShare +
-        fatherShare +
-        (sonsCount === 0 ? daughtersFixedShare : 0);
-
-      // Handle AUL (if sum of fixed fractions exceeds 1)
+      // --- 3. AUL ---
       let scale = 1;
-      let aulApplied = false;
-      if (sumFixed > 1) {
-        scale = 1 / sumFixed;
-        aulApplied = true;
+      let isAul = false;
+      if (sumFardh > 1) {
+        scale = 1 / sumFardh;
+        isAul = true;
       }
 
-      // Apply scaled values for fixed heirs
-      const finalSpouseShare = spouseShare * scale;
-      const finalMotherShare = motherShare * scale;
-      const finalFatherShare = fatherShare * scale;
-      const finalDaughtersShare =
-        (sonsCount === 0 ? daughtersFixedShare : 0) * scale;
+      const pushResult = (name: string, fraction: string, percentage: number, amount: number, explanation: string) => {
+        faraidhResults.push({ name, fractionStr: fraction, percentage: percentage * 100, amount: Math.round(amount), explanation });
+      }
 
-      // Add Spouse to results
-      if (spouseType === "suami") {
-        faraidhResults.push({
-          name: "Suami",
-          fractionStr: aulApplied
-            ? `${(spouseShare * 24).toFixed(0)}/24 (Aul)`
-            : hasChildren
-              ? "1/4"
-              : "1/2",
-          percentage: finalSpouseShare * 100,
-          amount: Math.round(netEstate * finalSpouseShare),
-          explanation:
-            spouseExplanation +
-            (aulApplied
-              ? " (Bagian disesuaikan/Aul karena total ahli waris berlebih)"
-              : ""),
-        });
-      } else if (spouseType === "istri") {
-        const totalSpouseAmt = netEstate * finalSpouseShare;
-        const perIstriAmt = totalSpouseAmt / istriCount;
-        for (let i = 1; i <= istriCount; i++) {
-          faraidhResults.push({
-            name: istriCount > 1 ? `Istri ke-${i}` : "Istri",
-            fractionStr: aulApplied
-              ? `${(spouseShare * 24).toFixed(0)}/24 (Aul)`
-              : hasChildren
-                ? "1/8"
-                : "1/4",
-            percentage: (finalSpouseShare / istriCount) * 100,
-            amount: Math.round(perIstriAmt),
-            explanation:
-              spouseExplanation +
-              (aulApplied
-                ? " (Bagian disesuaikan/Aul karena total ahli waris berlebih)"
-                : ""),
-          });
+      let sSuami = (shares.suami || 0) * scale;
+      let sIstri = (shares.istri || 0) * scale;
+      let sIbu = (shares.ibu || 0) * scale;
+      let sNenek = (shares.nenek || 0) * scale;
+      let sAyah = (shares.ayah || 0) * scale;
+      let sKakek = (shares.kakek || 0) * scale;
+      let sAnakPr = (shares.anakPr || 0) * scale;
+      let sCucuPr = (shares.cucuPr || 0) * scale;
+      let sSaudaraPr = (shares.saudaraPr || 0) * scale;
+
+      // --- 4. RADD ---
+      let remainder = Math.max(0, 1 - sumFardh);
+      let hasAsabah = (sonsCount > 0) || (effCucuLaki > 0) || ayahAsabah || kakekAsabah || effSaudaraLaki > 0 || saudaraPrAsabahMaalGhair;
+      
+      if (remainder > 0 && !hasAsabah) {
+        const raddBase = sumFardh - (shares.suami || 0) - (shares.istri || 0);
+        if (raddBase > 0) {
+          sIbu += remainder * ((shares.ibu || 0) / raddBase);
+          sNenek += remainder * ((shares.nenek || 0) / raddBase);
+          sAnakPr += remainder * ((shares.anakPr || 0) / raddBase);
+          sCucuPr += remainder * ((shares.cucuPr || 0) / raddBase);
+          sSaudaraPr += remainder * ((shares.saudaraPr || 0) / raddBase);
+          remainder = 0;
         }
       }
 
-      // Add Mother to results
-      if (hasMother) {
-        faraidhResults.push({
-          name: "Ibu",
-          fractionStr: aulApplied
-            ? `${(motherShare * 24).toFixed(0)}/24 (Aul)`
-            : hasChildren
-              ? "1/6"
-              : "1/3",
-          percentage: finalMotherShare * 100,
-          amount: Math.round(netEstate * finalMotherShare),
-          explanation:
-            motherExplanation +
-            (aulApplied
-              ? " (Bagian disesuaikan/Aul karena total ahli waris berlebih)"
-              : ""),
-        });
+      // --- RESULTS PUSH ---
+      if (sSuami > 0) pushResult("Suami", isAul ? "Aul" : hasFarikWaris ? "1/4" : "1/2", sSuami, sSuami * netEstate, hasFarikWaris ? "Pewaris memiliki keturunan." : "Pewaris tidak memiliki keturunan.");
+      if (sIstri > 0) {
+        const pIstri = sIstri/istriCount;
+        for(let i=1; i<=istriCount; i++) pushResult(istriCount>1?`Istri ke-${i}`:"Istri", isAul ? "Aul" : hasFarikWaris ? "1/8" : "1/4", pIstri, pIstri * netEstate, hasFarikWaris ? "Pewaris memiliki keturunan." : "Pewaris tidak memiliki keturunan.");
+      }
+      if (sIbu > 0) pushResult("Ibu", isAul ? "Aul" : (hasFarikWaris || hasMultipleSaudara) ? "1/6" : "1/3", sIbu, sIbu * netEstate, (hasFarikWaris || hasMultipleSaudara) ? "Pewaris memiliki keturunan atau beberapa saudara." : "Pewaris tidak memiliki keturunan dan saudara < 2.");
+      
+      if (nenekCount > 0 && sNenek > 0) {
+        const pNenek = sNenek / nenekCount;
+        if (effNenekAyah) pushResult("Nenek (Pihak Ayah)", isAul ? "Aul" : "1/6", pNenek, pNenek * netEstate, "Mendapat 1/6 (dibagi rata dengan nenek pihak ibu).");
+        if (effNenekIbu) pushResult("Nenek (Pihak Ibu)", isAul ? "Aul" : "1/6", pNenek, pNenek * netEstate, "Mendapat 1/6 (dibagi rata dengan nenek pihak ayah).");
       }
 
-      // Remainder for Asabah
-      const remainderFraction = Math.max(0, 1 - sumFixed);
+      if (sAnakPr > 0) {
+        const pAnakPr = sAnakPr / daughtersCount;
+        for(let i=1; i<=daughtersCount; i++) pushResult(daughtersCount>1?`Anak Pr ke-${i}`:"Anak Perempuan", isAul ? "Aul" : (daughtersCount===1?"1/2":"2/3"), pAnakPr, pAnakPr * netEstate, "Bagian Fardh (tidak ada anak laki-laki).");
+      }
 
-      // 5. Calculate children / father asabah distributions
-      if (hasChildren) {
+      if (sCucuPr > 0) {
+        const pCucuPr = sCucuPr / effCucuPr;
+        for(let i=1; i<=effCucuPr; i++) pushResult(effCucuPr>1?`Cucu Pr ke-${i}`:"Cucu Perempuan", isAul ? "Aul" : (daughtersCount===1?"1/6":"Fardh"), pCucuPr, pCucuPr * netEstate, "Bagian Fardh karena menggantikan kedudukan anak.");
+      }
+
+      if (sSaudaraPr > 0 && !saudaraPrAsabahMaalGhair) {
+        const pSaudPr = sSaudaraPr / effSaudaraPr;
+        for(let i=1; i<=effSaudaraPr; i++) pushResult(effSaudaraPr>1?`Saudari ke-${i}`:"Saudari Kandung", isAul ? "Aul" : (effSaudaraPr===1?"1/2":"2/3"), pSaudPr, pSaudPr * netEstate, "Bagian Fardh.");
+      }
+
+      // --- 5. ASABAH (REMAINDER) ---
+      if (remainder > 0) {
         if (sonsCount > 0) {
-          // Sons & Daughters share remainder as Asabah Bil Ghair (2:1)
-          const totalUnits = sonsCount * 2 + daughtersCount;
-          const sonShare = (remainderFraction * 2) / totalUnits;
-          const daughterShare = (remainderFraction * 1) / totalUnits;
-
-          const perSonAmt = netEstate * sonShare;
-          const perDaughterAmt = netEstate * daughterShare;
-
-          for (let i = 1; i <= sonsCount; i++) {
-            faraidhResults.push({
-              name: sonsCount > 1 ? `Anak Laki-laki ke-${i}` : "Anak Laki-laki",
-              fractionStr: `Asabah (${remainderFraction > 0 ? "Sisa" : "0"})`,
-              percentage: sonShare * 100,
-              amount: Math.round(perSonAmt),
-              explanation:
-                "Mendapat sisa harta (asabah) bersama anak perempuan dengan rasio 2:1.",
-            });
-          }
-
-          for (let i = 1; i <= daughtersCount; i++) {
-            faraidhResults.push({
-              name:
-                daughtersCount > 1
-                  ? `Anak Perempuan ke-${i}`
-                  : "Anak Perempuan",
-              fractionStr: `Asabah (${remainderFraction > 0 ? "Sisa" : "0"})`,
-              percentage: daughterShare * 100,
-              amount: Math.round(perDaughterAmt),
-              explanation:
-                "Mendapat sisa harta (asabah) bersama anak laki-laki dengan rasio 2:1.",
-            });
-          }
-
-          // Add Father (Fixed 1/6)
-          if (hasFather) {
-            faraidhResults.push({
-              name: "Ayah",
-              fractionStr: aulApplied
-                ? `${(fatherShare * 24).toFixed(0)}/24 (Aul)`
-                : "1/6",
-              percentage: finalFatherShare * 100,
-              amount: Math.round(netEstate * finalFatherShare),
-              explanation: fatherExplanation,
-            });
-          }
-        } else {
-          // Only daughters (and no sons). They got their fixed share.
-          // Add Daughters to results
-          const perDaughterAmt =
-            (netEstate * finalDaughtersShare) / daughtersCount;
-          for (let i = 1; i <= daughtersCount; i++) {
-            faraidhResults.push({
-              name:
-                daughtersCount > 1
-                  ? `Anak Perempuan ke-${i}`
-                  : "Anak Perempuan",
-              fractionStr: aulApplied
-                ? `${(daughtersFixedShare * 24).toFixed(0)}/24 (Aul)`
-                : daughtersCount === 1
-                  ? "1/2"
-                  : "2/3",
-              percentage: (finalDaughtersShare / daughtersCount) * 100,
-              amount: Math.round(perDaughterAmt),
-              explanation:
-                daughtersExplanation +
-                (aulApplied ? " (Bagian disesuaikan/Aul)" : ""),
-            });
-          }
-
-          // Remaining goes to Father as Asabah.
-          if (hasFather) {
-            const fatherTotalShare = finalFatherShare + remainderFraction;
-            faraidhResults.push({
-              name: "Ayah",
-              fractionStr: "1/6 + Asabah",
-              percentage: fatherTotalShare * 100,
-              amount: Math.round(netEstate * fatherTotalShare),
-              explanation:
-                fatherExplanation +
-                " Ditambah sisa harta (asabah) karena tidak ada anak laki-laki.",
-            });
-          } else {
-            // No Father, no Sons, but there are Daughters.
-            // Redistribution of remainder to daughters and mother (Radd)
-            // Recalculate everything with Radd if there's remaining
-            if (remainderFraction > 0) {
-              const totalRaddShares = finalDaughtersShare + finalMotherShare;
-              if (totalRaddShares > 0) {
-                const motherRaddShare =
-                  finalMotherShare +
-                  remainderFraction * (finalMotherShare / totalRaddShares);
-                const daughtersRaddShare =
-                  finalDaughtersShare +
-                  remainderFraction * (finalDaughtersShare / totalRaddShares);
-
-                // Update Mother in results
-                if (hasMother) {
-                  const mIndex = faraidhResults.findIndex(
-                    (r) => r.name === "Ibu",
-                  );
-                  if (mIndex >= 0) {
-                    faraidhResults[mIndex].fractionStr = "Fardh + Radd";
-                    faraidhResults[mIndex].percentage = motherRaddShare * 100;
-                    faraidhResults[mIndex].amount = Math.round(
-                      netEstate * motherRaddShare,
-                    );
-                    faraidhResults[mIndex].explanation +=
-                      " Ditambah sisa pengembalian (Radd).";
-                  }
-                }
-
-                // Update Daughters in results
-                const perDaughterRaddAmt =
-                  (netEstate * daughtersRaddShare) / daughtersCount;
-                faraidhResults = faraidhResults.map((r) => {
-                  if (r.name.startsWith("Anak Perempuan")) {
-                    return {
-                      ...r,
-                      fractionStr: "Fardh + Radd",
-                      percentage: (daughtersRaddShare / daughtersCount) * 100,
-                      amount: Math.round(perDaughterRaddAmt),
-                      explanation:
-                        r.explanation + " Ditambah sisa pengembalian (Radd).",
-                    };
-                  }
-                  return r;
-                });
-              }
-            }
-          }
+          const units = sonsCount * 2 + daughtersCount;
+          const perSon = (remainder / units) * 2;
+          const perDaughter = (remainder / units) * 1;
+          for(let i=1; i<=sonsCount; i++) pushResult(sonsCount>1?`Anak Lk ke-${i}`:"Anak Laki-laki", "Asabah (2:1)", perSon, perSon * netEstate, "Sisa harta bersama anak perempuan (2:1).");
+          for(let i=1; i<=daughtersCount; i++) pushResult(daughtersCount>1?`Anak Pr ke-${i}`:"Anak Perempuan", "Asabah (2:1)", perDaughter, perDaughter * netEstate, "Sisa harta ditarik asabah oleh anak laki-laki.");
+        } 
+        else if (effCucuLaki > 0) {
+          const units = effCucuLaki * 2 + effCucuPr;
+          const perCucuLk = (remainder / units) * 2;
+          const perCucuPr = (remainder / units) * 1;
+          for(let i=1; i<=effCucuLaki; i++) pushResult(effCucuLaki>1?`Cucu Lk ke-${i}`:"Cucu Laki-laki", "Asabah (2:1)", perCucuLk, perCucuLk * netEstate, "Sisa harta sebagai asabah.");
+          for(let i=1; i<=effCucuPr; i++) pushResult(effCucuPr>1?`Cucu Pr ke-${i}`:"Cucu Perempuan", "Asabah (2:1)", perCucuPr, perCucuPr * netEstate, "Sisa harta ditarik asabah oleh cucu laki-laki.");
         }
-      } else {
-        // No children.
-        // Remainder goes to Father as Asabah.
-        if (hasFather) {
-          faraidhResults.push({
-            name: "Ayah",
-            fractionStr: "Asabah (Sisa)",
-            percentage: remainderFraction * 100,
-            amount: Math.round(netEstate * remainderFraction),
-            explanation: fatherExplanation,
-          });
-        } else {
-          // No children, no Father.
-          // Remainder goes to Mother (Radd).
-          if (hasMother && remainderFraction > 0) {
-            const motherTotalShare = finalMotherShare + remainderFraction;
-            const mIndex = faraidhResults.findIndex((r) => r.name === "Ibu");
-            if (mIndex >= 0) {
-              faraidhResults[mIndex].fractionStr = "Fardh + Radd";
-              faraidhResults[mIndex].percentage = motherTotalShare * 100;
-              faraidhResults[mIndex].amount = Math.round(
-                netEstate * motherTotalShare,
-              );
-              faraidhResults[mIndex].explanation +=
-                " Ditambah sisa pengembalian (Radd) karena tidak ada ayah atau anak.";
-            }
-          } else {
-            // Remainder goes to Baitul Maal if no eligible heirs for residue
-            baitulMaalAmount = Math.round(netEstate * remainderFraction);
-          }
+        else if (ayahAsabah) {
+          sAyah += remainder;
+        }
+        else if (kakekAsabah) {
+          sKakek += remainder;
+        }
+        else if (effSaudaraLaki > 0) {
+          const units = effSaudaraLaki * 2 + effSaudaraPr;
+          const perSaudLk = (remainder / units) * 2;
+          const perSaudPr = (remainder / units) * 1;
+          for(let i=1; i<=effSaudaraLaki; i++) pushResult(effSaudaraLaki>1?`Saudara ke-${i}`:"Saudara Kandung Laki", "Asabah", perSaudLk, perSaudLk * netEstate, "Sisa harta sebagai asabah.");
+          for(let i=1; i<=effSaudaraPr; i++) pushResult(effSaudaraPr>1?`Saudari ke-${i}`:"Saudari Kandung", "Asabah (2:1)", perSaudPr, perSaudPr * netEstate, "Sisa harta ditarik asabah oleh saudara laki-laki.");
+        }
+        else if (saudaraPrAsabahMaalGhair) {
+          const perSaudPr = remainder / effSaudaraPr;
+          for(let i=1; i<=effSaudaraPr; i++) pushResult(effSaudaraPr>1?`Saudari ke-${i}`:"Saudari Kandung", "Asabah Ma'al Ghair", perSaudPr, perSaudPr * netEstate, "Asabah menyusul adanya keturunan perempuan (Ma'al Ghair).");
+        }
+        else {
+          baitulMaalAmount = Math.round(netEstate * remainder);
         }
       }
 
-      // Sum final percentages to display/check
-      totalDistributedPercentage =
-        faraidhResults.reduce((acc, curr) => acc + curr.percentage, 0) +
-        (baitulMaalAmount / netEstate) * 100;
+      if (sAyah > 0) pushResult("Ayah", ayahAsabah ? (sAyah === remainder ? "Asabah" : "1/6 + Asabah") : (isAul ? "Aul" : "1/6"), sAyah, sAyah * netEstate, ayahAsabah ? "Mendapat sisa harta setelah fardh karena tidak ada keturunan laki-laki." : "Bagian Fardh karena ada keturunan laki-laki.");
+      if (sKakek > 0) pushResult("Kakek", kakekAsabah ? (sKakek === remainder ? "Asabah" : "1/6 + Asabah") : (isAul ? "Aul" : "1/6"), sKakek, sKakek * netEstate, "Kakek menempati kedudukan ayah.");
+
+      totalDistributedPercentage = faraidhResults.reduce((acc, curr) => acc + curr.percentage, 0) + (baitulMaalAmount / netEstate) * 100;
     }
   }
 </script>
@@ -5705,66 +5608,89 @@
       <!-- Input Card: Heirs -->
       <Card class="p-5 space-y-4 shadow-soft-sm">
         <h3
-          class="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5"
+          class="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center justify-between"
         >
-          <HelpCircle class="h-4.5 w-4.5 text-primary" />
-          <span>Ahli Waris yang Ditinggalkan</span>
+          <div class="flex items-center gap-1.5">
+            <HelpCircle class="h-4.5 w-4.5 text-primary" />
+            <span>Ahli Waris yang Ditinggalkan</span>
+          </div>
+          <button
+            type="button"
+            on:click={() => (isAdvancedFaraidh = !isAdvancedFaraidh)}
+            class="px-3 py-1.5 {isAdvancedFaraidh ? 'bg-slate-700 hover:bg-slate-800' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-lg text-[10px] font-black tracking-wider transition-all uppercase shadow-md hover:shadow-lg flex items-center gap-1.5"
+          >
+            {isAdvancedFaraidh ? 'Tutup Lanjutan' : '✨ Mode Lanjutan'}
+          </button>
         </h3>
 
         <!-- Spouse Selector -->
-        <div class="space-y-2">
+        <div class="space-y-3">
           <span class="text-xs font-bold text-slate-600 block"
             >Hubungan Suami / Istri (Pasangan)</span
           >
-          <div class="grid grid-cols-3 gap-2">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button
               type="button"
               on:click={() => (spouseType = "none")}
-              class="py-2.5 text-xs font-bold rounded-xl border transition-all duration-200 focus:outline-none
+              class="relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 focus:outline-none overflow-hidden group
                      {spouseType === 'none'
-                ? 'bg-primary text-white border-primary shadow-soft-sm'
-                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}"
+                ? 'bg-slate-50 border-slate-400 shadow-md'
+                : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/50'}"
             >
-              Tidak Ada
+              <div class="h-10 w-10 rounded-full flex items-center justify-center mb-2 transition-colors {spouseType === 'none' ? 'bg-slate-200 text-slate-700' : 'bg-slate-50 text-slate-400 group-hover:text-slate-500'}">
+                <X class="h-5 w-5" />
+              </div>
+              <span class="text-xs font-bold {spouseType === 'none' ? 'text-slate-800' : 'text-slate-500'}">Tidak Ada</span>
             </button>
             <button
               type="button"
               on:click={() => (spouseType = "suami")}
-              class="py-2.5 text-xs font-bold rounded-xl border transition-all duration-200 focus:outline-none
+              class="relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 focus:outline-none overflow-hidden group
                      {spouseType === 'suami'
-                ? 'bg-primary text-white border-primary shadow-soft-sm'
-                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}"
+                ? 'bg-sky-50 border-sky-400 shadow-md'
+                : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-sky-50/30'}"
             >
-              Meninggalkan Suami
+              <div class="h-10 w-10 rounded-full flex items-center justify-center mb-2 transition-colors {spouseType === 'suami' ? 'bg-sky-200 text-sky-700' : 'bg-sky-50 text-sky-400 group-hover:text-sky-500'}">
+                <User class="h-5 w-5" />
+              </div>
+              <span class="text-xs font-bold {spouseType === 'suami' ? 'text-sky-800' : 'text-slate-500'}">Meninggalkan Suami</span>
+              {#if spouseType === 'suami'}
+                <div class="absolute top-2 right-2 text-sky-500"><CheckCircle2 class="h-4 w-4" /></div>
+              {/if}
             </button>
             <button
               type="button"
               on:click={() => (spouseType = "istri")}
-              class="py-2.5 text-xs font-bold rounded-xl border transition-all duration-200 focus:outline-none
+              class="relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 focus:outline-none overflow-hidden group
                      {spouseType === 'istri'
-                ? 'bg-primary text-white border-primary shadow-soft-sm'
-                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}"
+                ? 'bg-rose-50 border-rose-400 shadow-md'
+                : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-rose-50/30'}"
             >
-              Meninggalkan Istri
+              <div class="h-10 w-10 rounded-full flex items-center justify-center mb-2 transition-colors {spouseType === 'istri' ? 'bg-rose-200 text-rose-700' : 'bg-rose-50 text-rose-400 group-hover:text-rose-500'}">
+                <Users class="h-5 w-5" />
+              </div>
+              <span class="text-xs font-bold {spouseType === 'istri' ? 'text-rose-800' : 'text-slate-500'}">Meninggalkan Istri</span>
+              {#if spouseType === 'istri'}
+                <div class="absolute top-2 right-2 text-rose-500"><CheckCircle2 class="h-4 w-4" /></div>
+              {/if}
             </button>
           </div>
 
           {#if spouseType === "istri"}
             <div
               in:slide={{ duration: 150 }}
-              class="flex items-center space-x-3 pl-1 pt-1.5"
+              class="flex items-center justify-center space-x-3 p-3 bg-rose-50/50 rounded-xl border border-rose-100 mt-2"
             >
-              <span class="text-xs font-bold text-slate-500">Jumlah Istri:</span
-              >
+              <span class="text-xs font-bold text-slate-600">Jumlah Istri:</span>
               <div class="flex items-center space-x-1">
                 {#each [1, 2, 3, 4] as count}
                   <button
                     type="button"
                     on:click={() => (istriCount = count)}
-                    class="h-7 w-7 rounded-lg text-xs font-bold border transition-colors flex items-center justify-center
+                    class="h-8 w-8 rounded-lg text-xs font-bold border transition-colors flex items-center justify-center
                            {istriCount === count
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}"
+                      ? 'bg-rose-500 text-white border-rose-500 shadow-md'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-rose-50 hover:text-rose-600'}"
                   >
                     {count}
                   </button>
@@ -5775,99 +5701,183 @@
         </div>
 
         <!-- Parents Selector -->
-        <div class="pt-2 border-t border-slate-100 space-y-2">
+        <div class="pt-4 border-t border-slate-100 space-y-3">
           <span class="text-xs font-bold text-slate-600 block"
             >Orang Tua Kandung</span
           >
-          <div class="flex items-center gap-4">
-            <!-- svelte-ignore a11y-label-has-associated-control -->
-            <label
-              class="flex items-center space-x-2 cursor-pointer select-none"
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              on:click={() => (hasFather = !hasFather)}
+              class="relative flex items-center p-3 rounded-2xl border-2 transition-all duration-300 focus:outline-none text-left
+                     {hasFather
+                ? 'bg-emerald-50 border-emerald-400 shadow-md'
+                : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-emerald-50/30'}"
             >
-              <input
-                type="checkbox"
-                bind:checked={hasFather}
-                class="h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary/20"
-              />
-              <span class="text-xs font-bold text-slate-600"
-                >Ayah Kandung (Masih hidup)</span
-              >
-            </label>
-            <!-- svelte-ignore a11y-label-has-associated-control -->
-            <label
-              class="flex items-center space-x-2 cursor-pointer select-none"
+              <div class="h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-colors {hasFather ? 'bg-emerald-200 text-emerald-700' : 'bg-emerald-50 text-emerald-400'}">
+                <User class="h-5 w-5" />
+              </div>
+              <div class="flex flex-col flex-1 min-w-0 px-3">
+                <span class="text-sm font-bold truncate {hasFather ? 'text-emerald-800' : 'text-slate-600'}">Ayah Kandung</span>
+                <span class="text-[9px] text-slate-400 font-medium leading-tight mt-0.5">Masih hidup saat pewaris wafat</span>
+              </div>
+              <div class="shrink-0 flex items-center justify-center">
+                <div class="w-5 h-5 rounded border {hasFather ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 bg-white'} flex items-center justify-center transition-colors">
+                  {#if hasFather}<CheckCircle2 class="w-3 h-3 text-white" />{/if}
+                </div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              on:click={() => (hasMother = !hasMother)}
+              class="relative flex items-center p-3 rounded-2xl border-2 transition-all duration-300 focus:outline-none text-left
+                     {hasMother
+                ? 'bg-amber-50 border-amber-400 shadow-md'
+                : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-amber-50/30'}"
             >
-              <input
-                type="checkbox"
-                bind:checked={hasMother}
-                class="h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary/20"
-              />
-              <span class="text-xs font-bold text-slate-600"
-                >Ibu Kandung (Masih hidup)</span
-              >
-            </label>
+              <div class="h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-colors {hasMother ? 'bg-amber-200 text-amber-700' : 'bg-amber-50 text-amber-400'}">
+                <User class="h-5 w-5" />
+              </div>
+              <div class="flex flex-col flex-1 min-w-0 px-3">
+                <span class="text-sm font-bold truncate {hasMother ? 'text-amber-800' : 'text-slate-600'}">Ibu Kandung</span>
+                <span class="text-[9px] text-slate-400 font-medium leading-tight mt-0.5">Masih hidup saat pewaris wafat</span>
+              </div>
+              <div class="shrink-0 flex items-center justify-center">
+                <div class="w-5 h-5 rounded border {hasMother ? 'bg-amber-500 border-amber-500' : 'border-slate-300 bg-white'} flex items-center justify-center transition-colors">
+                  {#if hasMother}<CheckCircle2 class="w-3 h-3 text-white" />{/if}
+                </div>
+              </div>
+            </button>
           </div>
         </div>
 
         <!-- Children Selector -->
-        <div class="pt-2 border-t border-slate-100 grid grid-cols-2 gap-4">
+        <div class="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <!-- Sons Count -->
-          <div class="space-y-1.5">
-            <label for="sonsCount" class="text-xs font-bold text-slate-600"
-              >Anak Kandung Laki-laki</label
-            >
-            <div class="flex items-center space-x-2">
-              <button
-                type="button"
-                on:click={() => (sonsCount = Math.max(0, sonsCount - 1))}
-                class="h-9 w-9 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-xl font-black text-sm flex items-center justify-center cursor-pointer"
-                >-</button
-              >
-              <input
-                id="sonsCount"
-                type="number"
-                bind:value={sonsCount}
-                min="0"
-                class="h-9 w-12 text-center bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:outline-none"
-              />
-              <button
-                type="button"
-                on:click={() => (sonsCount = sonsCount + 1)}
-                class="h-9 w-9 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-xl font-black text-sm flex items-center justify-center cursor-pointer"
-                >+</button
-              >
+          <div class="flex items-center justify-between p-3 rounded-2xl border-2 bg-white transition-colors gap-2 {sonsCount > 0 ? 'border-sky-300 bg-sky-50/20' : 'border-slate-100 hover:border-slate-200'}">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <div class="h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-colors {sonsCount > 0 ? 'bg-sky-100 text-sky-600' : 'bg-slate-100 text-slate-400'}">
+                <User class="h-5 w-5" />
+              </div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-xs sm:text-sm font-bold leading-tight {sonsCount > 0 ? 'text-sky-800' : 'text-slate-600'}">Anak Laki-laki</span>
+              </div>
+            </div>
+            
+            <div class="flex items-center space-x-1 shrink-0 bg-slate-50 p-1 rounded-xl border border-slate-100">
+              <button type="button" on:click={() => (sonsCount = Math.max(0, sonsCount - 1))} class="h-7 w-7 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg font-black text-sm flex items-center justify-center transition-colors shadow-sm cursor-pointer focus:outline-none">-</button>
+              <input type="number" bind:value={sonsCount} min="0" class="h-7 w-8 text-center bg-transparent border-none font-bold text-slate-700 text-sm focus:outline-none p-0" />
+              <button type="button" on:click={() => (sonsCount = sonsCount + 1)} class="h-7 w-7 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg font-black text-sm flex items-center justify-center transition-colors shadow-sm cursor-pointer focus:outline-none">+</button>
             </div>
           </div>
 
           <!-- Daughters Count -->
-          <div class="space-y-1.5">
-            <label for="daughtersCount" class="text-xs font-bold text-slate-600"
-              >Anak Kandung Perempuan</label
-            >
-            <div class="flex items-center space-x-2">
-              <button
-                type="button"
-                on:click={() =>
-                  (daughtersCount = Math.max(0, daughtersCount - 1))}
-                class="h-9 w-9 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-xl font-black text-sm flex items-center justify-center cursor-pointer"
-                >-</button
-              >
-              <input
-                id="daughtersCount"
-                type="number"
-                bind:value={daughtersCount}
-                min="0"
-                class="h-9 w-12 text-center bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:outline-none"
-              />
-              <button
-                type="button"
-                on:click={() => (daughtersCount = daughtersCount + 1)}
-                class="h-9 w-9 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-xl font-black text-sm flex items-center justify-center cursor-pointer"
-                >+</button
-              >
+          <div class="flex items-center justify-between p-3 rounded-2xl border-2 bg-white transition-colors gap-2 {daughtersCount > 0 ? 'border-rose-300 bg-rose-50/20' : 'border-slate-100 hover:border-slate-200'}">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <div class="h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-colors {daughtersCount > 0 ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-400'}">
+                <User class="h-5 w-5" />
+              </div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-xs sm:text-sm font-bold leading-tight {daughtersCount > 0 ? 'text-rose-800' : 'text-slate-600'}">Anak Perempuan</span>
+              </div>
+            </div>
+            
+            <div class="flex items-center space-x-1 shrink-0 bg-slate-50 p-1 rounded-xl border border-slate-100">
+              <button type="button" on:click={() => (daughtersCount = Math.max(0, daughtersCount - 1))} class="h-7 w-7 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg font-black text-sm flex items-center justify-center transition-colors shadow-sm cursor-pointer focus:outline-none">-</button>
+              <input type="number" bind:value={daughtersCount} min="0" class="h-7 w-8 text-center bg-transparent border-none font-bold text-slate-700 text-sm focus:outline-none p-0" />
+              <button type="button" on:click={() => (daughtersCount = daughtersCount + 1)} class="h-7 w-7 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg font-black text-sm flex items-center justify-center transition-colors shadow-sm cursor-pointer focus:outline-none">+</button>
             </div>
           </div>
         </div>
+
+        <!-- Advanced Heirs Mode -->
+        {#if isAdvancedFaraidh}
+          <div in:slide={{ duration: 200 }} class="pt-4 mt-2 border-t border-slate-100 space-y-4 bg-slate-50/70 p-4 -mx-2 rounded-2xl">
+            <!-- Grandparents -->
+            <div class="space-y-3">
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Kakek & Nenek</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button type="button" on:click={() => (hasKakek = !hasKakek)} class="relative flex items-center p-2.5 rounded-xl border-2 transition-all focus:outline-none text-left {hasKakek ? 'bg-indigo-50 border-indigo-400' : 'bg-white border-slate-100 hover:border-slate-200'}">
+                  <div class="flex flex-col flex-1 min-w-0 px-2">
+                    <span class="text-xs font-bold leading-tight {hasKakek ? 'text-indigo-800' : 'text-slate-600'}">Kakek (dari Ayah)</span>
+                  </div>
+                  <div class="shrink-0 flex items-center justify-center pr-2">
+                    <div class="w-4 h-4 rounded border {hasKakek ? 'bg-indigo-500 border-indigo-500' : 'border-slate-300 bg-white'} flex items-center justify-center transition-colors">
+                      {#if hasKakek}<CheckCircle2 class="w-2.5 h-2.5 text-white" />{/if}
+                    </div>
+                  </div>
+                </button>
+                <button type="button" on:click={() => (hasNenekAyah = !hasNenekAyah)} class="relative flex items-center p-2.5 rounded-xl border-2 transition-all focus:outline-none text-left {hasNenekAyah ? 'bg-indigo-50 border-indigo-400' : 'bg-white border-slate-100 hover:border-slate-200'}">
+                  <div class="flex flex-col flex-1 min-w-0 px-2">
+                    <span class="text-xs font-bold leading-tight {hasNenekAyah ? 'text-indigo-800' : 'text-slate-600'}">Nenek (dari Ayah)</span>
+                  </div>
+                  <div class="shrink-0 flex items-center justify-center pr-2">
+                    <div class="w-4 h-4 rounded border {hasNenekAyah ? 'bg-indigo-500 border-indigo-500' : 'border-slate-300 bg-white'} flex items-center justify-center transition-colors">
+                      {#if hasNenekAyah}<CheckCircle2 class="w-2.5 h-2.5 text-white" />{/if}
+                    </div>
+                  </div>
+                </button>
+                <button type="button" on:click={() => (hasNenekIbu = !hasNenekIbu)} class="relative flex items-center p-2.5 rounded-xl border-2 transition-all focus:outline-none text-left {hasNenekIbu ? 'bg-indigo-50 border-indigo-400' : 'bg-white border-slate-100 hover:border-slate-200'}">
+                  <div class="flex flex-col flex-1 min-w-0 px-2">
+                    <span class="text-xs font-bold leading-tight {hasNenekIbu ? 'text-indigo-800' : 'text-slate-600'}">Nenek (dari Ibu)</span>
+                  </div>
+                  <div class="shrink-0 flex items-center justify-center pr-2">
+                    <div class="w-4 h-4 rounded border {hasNenekIbu ? 'bg-indigo-500 border-indigo-500' : 'border-slate-300 bg-white'} flex items-center justify-center transition-colors">
+                      {#if hasNenekIbu}<CheckCircle2 class="w-2.5 h-2.5 text-white" />{/if}
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Grandchildren -->
+            <div class="space-y-3 pt-2 border-t border-slate-200/50">
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Cucu (Dari Anak Laki-laki)</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="flex items-center justify-between p-2.5 rounded-xl border-2 bg-white transition-colors gap-2 {cucuLakiCount > 0 ? 'border-sky-300 bg-sky-50/20' : 'border-slate-100'}">
+                  <span class="text-xs font-bold leading-tight px-2 flex-1 {cucuLakiCount > 0 ? 'text-sky-800' : 'text-slate-600'}">Cucu Laki-laki</span>
+                  <div class="flex items-center space-x-1 shrink-0 bg-slate-50 p-1 rounded-lg border border-slate-100">
+                    <button type="button" on:click={() => (cucuLakiCount = Math.max(0, cucuLakiCount - 1))} class="h-6 w-6 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded font-black text-xs flex items-center justify-center shadow-sm">-</button>
+                    <input type="number" bind:value={cucuLakiCount} min="0" class="h-6 w-8 text-center bg-transparent border-none font-bold text-slate-700 text-sm focus:outline-none p-0" />
+                    <button type="button" on:click={() => (cucuLakiCount = cucuLakiCount + 1)} class="h-6 w-6 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded font-black text-xs flex items-center justify-center shadow-sm">+</button>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between p-2.5 rounded-xl border-2 bg-white transition-colors gap-2 {cucuPerempuanCount > 0 ? 'border-rose-300 bg-rose-50/20' : 'border-slate-100'}">
+                  <span class="text-xs font-bold leading-tight px-2 flex-1 {cucuPerempuanCount > 0 ? 'text-rose-800' : 'text-slate-600'}">Cucu Perempuan</span>
+                  <div class="flex items-center space-x-1 shrink-0 bg-slate-50 p-1 rounded-lg border border-slate-100">
+                    <button type="button" on:click={() => (cucuPerempuanCount = Math.max(0, cucuPerempuanCount - 1))} class="h-6 w-6 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded font-black text-xs flex items-center justify-center shadow-sm">-</button>
+                    <input type="number" bind:value={cucuPerempuanCount} min="0" class="h-6 w-8 text-center bg-transparent border-none font-bold text-slate-700 text-sm focus:outline-none p-0" />
+                    <button type="button" on:click={() => (cucuPerempuanCount = cucuPerempuanCount + 1)} class="h-6 w-6 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded font-black text-xs flex items-center justify-center shadow-sm">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Siblings -->
+            <div class="space-y-3 pt-2 border-t border-slate-200/50">
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Saudara Kandung</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="flex items-center justify-between p-2.5 rounded-xl border-2 bg-white transition-colors gap-2 {saudaraKandungLakiCount > 0 ? 'border-teal-300 bg-teal-50/20' : 'border-slate-100'}">
+                  <span class="text-xs font-bold leading-tight px-2 flex-1 {saudaraKandungLakiCount > 0 ? 'text-teal-800' : 'text-slate-600'}">Saudara Laki-laki</span>
+                  <div class="flex items-center space-x-1 shrink-0 bg-slate-50 p-1 rounded-lg border border-slate-100">
+                    <button type="button" on:click={() => (saudaraKandungLakiCount = Math.max(0, saudaraKandungLakiCount - 1))} class="h-6 w-6 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded font-black text-xs flex items-center justify-center shadow-sm">-</button>
+                    <input type="number" bind:value={saudaraKandungLakiCount} min="0" class="h-6 w-8 text-center bg-transparent border-none font-bold text-slate-700 text-sm focus:outline-none p-0" />
+                    <button type="button" on:click={() => (saudaraKandungLakiCount = saudaraKandungLakiCount + 1)} class="h-6 w-6 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded font-black text-xs flex items-center justify-center shadow-sm">+</button>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between p-2.5 rounded-xl border-2 bg-white transition-colors gap-2 {saudaraKandungPerempuanCount > 0 ? 'border-orange-300 bg-orange-50/20' : 'border-slate-100'}">
+                  <span class="text-xs font-bold leading-tight px-2 flex-1 {saudaraKandungPerempuanCount > 0 ? 'text-orange-800' : 'text-slate-600'}">Saudara Perempuan</span>
+                  <div class="flex items-center space-x-1 shrink-0 bg-slate-50 p-1 rounded-lg border border-slate-100">
+                    <button type="button" on:click={() => (saudaraKandungPerempuanCount = Math.max(0, saudaraKandungPerempuanCount - 1))} class="h-6 w-6 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded font-black text-xs flex items-center justify-center shadow-sm">-</button>
+                    <input type="number" bind:value={saudaraKandungPerempuanCount} min="0" class="h-6 w-8 text-center bg-transparent border-none font-bold text-slate-700 text-sm focus:outline-none p-0" />
+                    <button type="button" on:click={() => (saudaraKandungPerempuanCount = saudaraKandungPerempuanCount + 1)} class="h-6 w-6 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded font-black text-xs flex items-center justify-center shadow-sm">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {/if}
       </Card>
 
       <!-- Faraidh Calculation output -->
@@ -5891,63 +5901,76 @@
               tua, atau anak di atas.
             </div>
           {:else}
-            <!-- Results list -->
-            <div class="space-y-3">
-              {#each faraidhResults as heir}
-                <div
-                  class="p-3 bg-slate-50 border border-slate-150 rounded-2xl space-y-1.5 hover:border-slate-300 transition-colors"
-                >
-                  <div class="flex items-center justify-between">
-                    <span class="text-xs font-black text-slate-800"
-                      >{heir.name}</span
-                    >
-                    <span
-                      class="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full font-mono"
-                    >
-                      {heir.fractionStr} ({heir.percentage.toFixed(2)}%)
+            <!-- Visual Distribution Bar -->
+            <div class="space-y-1.5 mb-6">
+              <div class="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <span>Distribusi Visual</span>
+                <span>100%</span>
+              </div>
+              <div class="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
+                {#each faraidhResults as heir, i}
+                  <div 
+                    class="h-full flex items-center justify-center text-[8px] text-white font-bold opacity-90 transition-all hover:opacity-100 cursor-help
+                           {['bg-sky-500', 'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-indigo-500', 'bg-purple-500'][i % 6]}"
+                    style="width: {heir.percentage}%;"
+                    title="{heir.name}: {heir.percentage.toFixed(1)}%"
+                  ></div>
+                {/each}
+                {#if baitulMaalAmount > 0}
+                  <div class="h-full bg-slate-400 opacity-90 hover:opacity-100 transition-all cursor-help" style="width: {((baitulMaalAmount / netEstate) * 100)}%;" title="Baitul Maal: {((baitulMaalAmount / netEstate) * 100).toFixed(1)}%"></div>
+                {/if}
+              </div>
+            </div>
+
+            <!-- Results Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {#each faraidhResults as heir, i}
+                <div class="p-4 bg-white border-2 border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md rounded-2xl space-y-2.5 transition-all group relative overflow-hidden">
+                  <!-- Decorative accent -->
+                  <div class="absolute right-0 top-0 w-16 h-16 rounded-bl-full -z-10 group-hover:scale-110 transition-transform opacity-10 {['bg-sky-500', 'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-indigo-500', 'bg-purple-500'][i % 6]}"></div>
+                  
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white {['bg-sky-500', 'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-indigo-500', 'bg-purple-500'][i % 6]} shadow-sm">
+                        <User class="w-4 h-4" />
+                      </div>
+                      <span class="text-xs sm:text-sm font-bold text-slate-800 line-clamp-1 pr-1">{heir.name}</span>
+                    </div>
+                    <span class="text-[9px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-mono whitespace-nowrap shrink-0 shadow-sm">
+                      {heir.fractionStr} ({heir.percentage.toFixed(1)}%)
                     </span>
                   </div>
-                  <div class="flex items-baseline justify-between">
-                    <span class="text-[10px] text-slate-400 font-medium"
-                      >Nominal Bagian</span
-                    >
-                    <span class="text-sm font-black text-slate-800 font-mono"
-                      >{formatRupiah(heir.amount)}</span
-                    >
+                  
+                  <div class="flex flex-col">
+                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Nominal Bagian</span>
+                    <span class="text-base sm:text-lg font-black text-slate-800 font-mono tracking-tight">{formatRupiah(heir.amount)}</span>
                   </div>
-                  <p
-                    class="text-[10px] text-slate-500 font-medium leading-relaxed border-t border-slate-200/50 pt-1.5"
-                  >
-                    📖 {heir.explanation}
+                  
+                  <p class="text-[10px] text-slate-500 font-medium leading-relaxed border-t border-slate-100 pt-2 line-clamp-2 hover:line-clamp-none transition-all cursor-pointer">
+                    {heir.explanation}
                   </p>
                 </div>
               {/each}
 
               {#if baitulMaalAmount > 0}
-                <div
-                  class="p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-slate-700"
-                >
-                  <div class="flex items-center justify-between">
-                    <span class="text-xs font-black"
-                      >Baitul Maal (Sisa tak teralokasi)</span
-                    >
-                    <span class="text-[10px] font-black font-mono">
-                      {((baitulMaalAmount / netEstate) * 100).toFixed(2)}%
+                <div class="p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl space-y-2.5 opacity-80">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-8 h-8 rounded-full bg-slate-300 text-slate-600 flex items-center justify-center shrink-0">
+                        <Users class="w-4 h-4" />
+                      </div>
+                      <span class="text-xs sm:text-sm font-bold text-slate-800">Baitul Maal</span>
+                    </div>
+                    <span class="text-[9px] font-black text-slate-600 bg-slate-200 border border-slate-300 px-2 py-0.5 rounded-full font-mono shrink-0">
+                      {((baitulMaalAmount / netEstate) * 100).toFixed(1)}%
                     </span>
                   </div>
-                  <div class="flex items-baseline justify-between">
-                    <span class="text-[10px] text-slate-500 font-medium"
-                      >Nominal</span
-                    >
-                    <span class="text-sm font-black font-mono"
-                      >{formatRupiah(baitulMaalAmount)}</span
-                    >
+                  <div class="flex flex-col">
+                    <span class="text-[10px] text-slate-500 font-medium uppercase tracking-widest">Sisa Nominal</span>
+                    <span class="text-base sm:text-lg font-black text-slate-700 font-mono tracking-tight">{formatRupiah(baitulMaalAmount)}</span>
                   </div>
-                  <p
-                    class="text-[10px] text-slate-500 font-medium leading-relaxed border-t border-slate-200/50 pt-1.5"
-                  >
-                    Sisa warisan diserahkan ke Baitul Maal/Kemasyarakatan Islam
-                    karena tidak ada sisa asabah yang mencukupi syarat.
+                  <p class="text-[10px] text-slate-500 font-medium leading-relaxed border-t border-slate-200 pt-2">
+                    Sisa warisan diserahkan ke Baitul Maal karena tidak ada sisa asabah yang mencukupi syarat (tidak ada ahli waris asabah).
                   </p>
                 </div>
               {/if}

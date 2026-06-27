@@ -212,7 +212,7 @@
     const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
                   cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
     }
     return cleaned;
   }
@@ -1686,7 +1686,7 @@
                       {isAdminComment ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}"
                     >
                       {#if avatarUrl}
-                        <img src={avatarUrl} alt={comment.author} class="h-full w-full object-cover"
+                        <img referrerpolicy="no-referrer" src={avatarUrl} alt={comment.author} class="h-full w-full object-cover"
                           on:error={(e) => { e.currentTarget.style.display = 'none'; }} />
                       {:else}
                         {getInitials(comment.author)}
@@ -1772,7 +1772,7 @@
             <div class="shrink-0 h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-black
               {$authStore.user.role === 'admin' ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}">
               {#if myAvatarUrl}
-                <img src={myAvatarUrl} alt="Saya" class="h-full w-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                <img referrerpolicy="no-referrer" src={myAvatarUrl} alt="Saya" class="h-full w-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
               {:else}
                 {getInitials($authStore.user.name)}
               {/if}
@@ -1896,7 +1896,7 @@
                       {isAdminComment ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}"
                     >
                       {#if avatarUrl}
-                        <img src={avatarUrl} alt={comment.author} class="h-full w-full object-cover"
+                        <img referrerpolicy="no-referrer" src={avatarUrl} alt={comment.author} class="h-full w-full object-cover"
                           on:error={(e) => { e.currentTarget.style.display = 'none'; }} />
                       {:else}
                         {getInitials(comment.author)}
@@ -1980,7 +1980,7 @@
             <div class="shrink-0 h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-black
               {$authStore.user.role === 'admin' ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-blue-50 border border-blue-100 text-primary'}">
               {#if myAvatarUrl}
-                <img src={myAvatarUrl} alt="Saya" class="h-full w-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                <img referrerpolicy="no-referrer" src={myAvatarUrl} alt="Saya" class="h-full w-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
               {:else}
                 {getInitials($authStore.user.name)}
               {/if}

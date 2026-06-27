@@ -19,6 +19,7 @@
   // Admin Management Tabs Configuration
   const sections = [
     { label: '👥 Kelola Squad', value: 'members' },
+    { label: '🧑‍🏫 Kelola Asatidzah', value: 'asatidzah' },
     { label: '🎓 Kelola Kepengurusan', value: 'kepengurusan' },
     { label: '📖 Kelola Sangu', value: 'sangu' },
     { label: '📢 Pengumuman Mading', value: 'mading' },
@@ -137,7 +138,7 @@
     no_whatsapp = ''; email = ''; media_social = ''; riwayat_pendidikan = '';
     alamat_riwayatpendidikan = ''; tahun_masuk = '2026'; keterampilan_khusus = '';
     kutipan_kenangan = ''; music = ''; hobi = ''; kesan = ''; pesan = '';
-    nis = ''; nama_ayah = ''; kategori_mazeeda = 'alumni'; daerah_santri = '';
+    nis = ''; nama_ayah = ''; kategori_mazeeda = activeSection === 'asatidzah' ? 'pengajar' : 'alumni'; daerah_santri = '';
     tiktok_akun = ''; facebook_akun = ''; xtwitter_akun = ''; rute_lengkap = '';
     kamar_santri = ''; tahfidz_santri = '';
   }
@@ -259,17 +260,22 @@
     const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || 
                   cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
     }
     return cleaned;
+  }
+
+  $: if (activeSection === 'members' || activeSection === 'asatidzah') {
+    if (typeof window !== 'undefined') fetchSquad();
   }
 
   // Fetch squad from database
   async function fetchSquad() {
     try {
       isLoadingSquad = true;
+      const tableName = activeSection === 'asatidzah' ? 'asatidzah' : 'allowed_alumni';
       const { data, error } = await supabase
-        .from('allowed_alumni')
+        .from(tableName)
         .select('*')
         .order('id', { ascending: false });
         
@@ -331,9 +337,10 @@
     };
 
     try {
+      const tableName = activeSection === 'asatidzah' ? 'asatidzah' : 'allowed_alumni';
       if (editingMemberId) {
         const { error } = await supabase
-          .from('allowed_alumni')
+          .from(tableName)
           .update(memberPayload)
           .eq('id', editingMemberId);
 
@@ -341,11 +348,11 @@
         triggerAlert('Data anggota berhasil diperbarui!');
       } else {
         const { error } = await supabase
-          .from('allowed_alumni')
+          .from(tableName)
           .insert([memberPayload]);
 
         if (error) throw error;
-        triggerAlert('Anggota baru berhasil dimasukkan ke tabel allowed_alumni!');
+        triggerAlert('Anggota baru berhasil dimasukkan ke database!');
       }
 
       // Reset form states
@@ -519,7 +526,7 @@
             finalCategory = csvKategori;
           }
           if (!finalCategory) {
-            finalCategory = "alumni";
+            finalCategory = activeSection === 'asatidzah' ? 'pengajar' : 'alumni';
           }
 
           list.push({
@@ -582,13 +589,14 @@
     csvImportError = "";
 
     try {
-      const { data, error } = await supabase
-        .from('allowed_alumni')
+      const tableName = activeSection === 'asatidzah' ? 'asatidzah' : 'allowed_alumni';
+      const { error } = await supabase
+        .from(tableName)
         .upsert(parsedCSVData, { onConflict: 'nama_lengkap' });
 
       if (error) throw error;
 
-      triggerAlert(`Berhasil mengimpor ${parsedCSVData.length} data alumni dari CSV ke database!`);
+      triggerAlert(`Berhasil mengimpor ${parsedCSVData.length} data ke database!`);
       parsedCSVData = [];
       csvFile = null;
       csvImportStatus = "";
@@ -608,8 +616,9 @@
       'Apakah Anda yakin ingin menghapus anggota ini?',
       async () => {
         try {
+          const tableName = activeSection === 'asatidzah' ? 'asatidzah' : 'allowed_alumni';
           const { error } = await supabase
-            .from('allowed_alumni')
+            .from(tableName)
             .delete()
             .eq('id', id);
 
@@ -630,7 +639,8 @@
       'Apakah Anda yakin ingin menghapus semua anggota Squad dari database? Tindakan ini tidak dapat dibatalkan.',
       async () => {
         try {
-          const { error } = await supabase.from('allowed_alumni').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          const tableName = activeSection === 'asatidzah' ? 'asatidzah' : 'allowed_alumni';
+          const { error } = await supabase.from(tableName).delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
           triggerAlert('Semua anggota Squad berhasil dihapus.');
           await fetchSquad();
@@ -1149,6 +1159,30 @@
   let selectedFile: File | null = null;
   let uploadProgressStatus = '';
   let fileInputRef: HTMLInputElement;
+  let editingPhotoId: any = null;
+
+  function startEditPhoto(item: any) {
+    editingPhotoId = item.id;
+    photoTitle = item.title || '';
+    photoLoc = item.location || '';
+    photoDate = item.date || new Date().toISOString().split('T')[0];
+    photoCategory = item.category || 'Kegiatan';
+    photoDesc = item.description || '';
+    selectedFile = null;
+    if (fileInputRef) fileInputRef.value = '';
+  }
+
+  function cancelEditPhoto() {
+    editingPhotoId = null;
+    photoTitle = '';
+    photoLoc = '';
+    photoDate = new Date().toISOString().split('T')[0];
+    photoCategory = 'Kegiatan';
+    photoDesc = '';
+    selectedFile = null;
+    if (fileInputRef) fileInputRef.value = '';
+    uploadProgressStatus = '';
+  }
 
   async function fetchPhotos() {
     try {
@@ -1176,46 +1210,61 @@
   }
 
   async function addPhoto() {
-    if (!photoTitle || !photoLoc || !selectedFile) {
-      alert('Judul, lokasi, dan berkas foto wajib diisi/dipilih!');
+    if (!photoTitle || !photoLoc || (!selectedFile && !editingPhotoId)) {
+      alert('Judul, lokasi, dan berkas foto wajib diisi/dipilih (kecuali saat edit)!');
       return;
     }
     
     isSubmitting = true;
-    uploadProgressStatus = 'Mengunggah berkas foto...';
+    uploadProgressStatus = selectedFile ? 'Mengunggah berkas foto...' : 'Menyimpan pembaruan...';
     
     try {
-      // 1. Upload to Supabase Storage
-      const publicUrl = await uploadMemoryPhoto(selectedFile, 'timeline');
+      let finalImageUrl = undefined;
+      
+      // 1. Upload to Supabase Storage if a new file is selected
+      if (selectedFile) {
+        finalImageUrl = await uploadMemoryPhoto(selectedFile, 'timeline');
+      }
       
       // 2. Save metadata to memories table
-      const { data, error } = await supabase
-        .from('memories')
-        .insert([{
+      if (editingPhotoId) {
+        const updatePayload: any = {
           title: photoTitle,
           location: photoLoc,
           date: photoDate,
           category: photoCategory,
           description: photoDesc,
-          image_url: publicUrl
-        }])
-        .select();
+        };
+        if (finalImageUrl) updatePayload.image_url = finalImageUrl;
         
-      if (error) throw error;
+        const { error } = await supabase
+          .from('memories')
+          .update(updatePayload)
+          .eq('id', editingPhotoId);
+          
+        if (error) throw error;
+        triggerAlert('Data memori berhasil diperbarui!');
+      } else {
+        const { error } = await supabase
+          .from('memories')
+          .insert([{
+            title: photoTitle,
+            location: photoLoc,
+            date: photoDate,
+            category: photoCategory,
+            description: photoDesc,
+            image_url: finalImageUrl
+          }]);
+          
+        if (error) throw error;
+        triggerAlert('Foto memori berhasil diunggah dan disimpan!');
+      }
       
-      photoTitle = '';
-      photoLoc = '';
-      photoCategory = 'Kegiatan';
-      photoDesc = '';
-      selectedFile = null;
-      if (fileInputRef) fileInputRef.value = '';
-      uploadProgressStatus = '';
-      
-      triggerAlert('Foto memori berhasil diunggah dan disimpan!');
+      cancelEditPhoto();
       await fetchPhotos();
     } catch (err: any) {
       console.error('Error uploading memory:', err);
-      alert('Gagal mengunggah foto memori: ' + err.message);
+      alert('Gagal menyimpan foto memori: ' + err.message);
       uploadProgressStatus = '';
     } finally {
       isSubmitting = false;
@@ -1697,8 +1746,8 @@
   <Tabs items={sections} bind:activeTab={activeSection} class="w-full" />
 
   <!-- Tab Content Grid -->
-  {#if activeSection === 'members'}
-    <!-- ==================== TAB: MEMBERS ==================== -->
+  {#if activeSection === 'members' || activeSection === 'asatidzah'}
+    <!-- ==================== TAB: MEMBERS & ASATIDZAH ==================== -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200" transition:fade={{ duration: 150 }}>
       <!-- LEFT SIDE: INPUT FORM -->
       <div class="lg:col-span-6 space-y-4">
@@ -1842,10 +1891,17 @@
                   <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-500" for="kategori_mazeeda">Kategori Mazeeda *</label>
                     <select id="kategori_mazeeda" class="flex h-12 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-700 focus:outline-none focus:border-primary" bind:value={kategori_mazeeda}>
-                      <option value="alumni">Alumni</option>
-                      <option value="alumnus">Alumnus</option>
-                      <option value="mustahiq">Mustahiq</option>
-                      <option value="mustahiqoh">Mustahiqoh</option>
+                      {#if activeSection === 'asatidzah'}
+                        <option value="pengajar">Pengajar</option>
+                        <option value="musyrif">Musyrif</option>
+                        <option value="musyrifah">Musyrifah</option>
+                        <option value="staf">Staf / Karyawan</option>
+                      {:else}
+                        <option value="alumni">Alumni</option>
+                        <option value="alumnus">Alumnus</option>
+                        <option value="mustahiq">Mustahiq</option>
+                        <option value="mustahiqoh">Mustahiqoh</option>
+                      {/if}
                     </select>
                   </div>
                   <div class="space-y-1">
@@ -1999,7 +2055,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
             <FileText class="h-5 w-5 text-blue-600" />
-            <span>Database Squad ({squad.length})</span>
+            <span>Database {activeSection === 'asatidzah' ? 'Asatidzah' : 'Squad'} ({filteredSquad.length})</span>
           </h2>
           <Button on:click={handleDeleteAllMembers} variant="destructive" size="sm" class="font-bold flex items-center space-x-1">
             <Trash2 class="h-3.5 w-3.5" />
@@ -2069,7 +2125,7 @@
                     <!-- Avatar with accent ring + dot -->
                     <div class="relative shrink-0">
                       {#if item.foto_url && !failedImages.has(item.id)}
-                        <img 
+                        <img referrerpolicy="no-referrer" 
                           src={convertDriveUrl(item.foto_url)} 
                           alt={item.nama_lengkap}
                           class="h-10 w-10 rounded-full object-cover shadow-soft-sm ring-2 {accent.ring}"
@@ -2632,7 +2688,7 @@
       <div class="lg:col-span-5 space-y-4">
         <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
           <Plus class="h-5 w-5 text-indigo-600" />
-          <span>Unggah Foto Memori Baru</span>
+          <span>{editingPhotoId ? 'Edit Foto Memori' : 'Unggah Foto Memori Baru'}</span>
         </h2>
 
         <Card class="p-5">
@@ -2687,14 +2743,13 @@
                   on:change={handlePhotoFileSelect} 
                   accept="image/*" 
                   class="hidden" 
-                  required
                 />
                 <UploadCloud class="h-8 w-8 text-slate-400 mx-auto mb-2" />
                 {#if selectedFile}
                   <p class="text-xs font-bold text-slate-700 truncate max-w-xs mx-auto">{selectedFile.name}</p>
                   <p class="text-[10px] text-slate-400 mt-1">{(selectedFile.size / 1024).toFixed(1)} KB</p>
                 {:else}
-                  <p class="text-xs font-bold text-slate-600">Klik untuk memilih berkas foto</p>
+                  <p class="text-xs font-bold text-slate-600">{editingPhotoId ? 'Klik jika ingin mengganti foto (opsional)' : 'Klik untuk memilih berkas foto'}</p>
                   <p class="text-[10px] text-slate-400 mt-1">Format PNG, JPG atau WebP hingga 5MB</p>
                 {/if}
               </div>
@@ -2704,10 +2759,22 @@
               <p class="text-xs font-semibold text-indigo-600 animate-pulse">{uploadProgressStatus}</p>
             {/if}
 
-            <Button type="submit" disabled={isSubmitting} class="w-full flex items-center justify-center space-x-2 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11">
-              <Image class="h-4.5 w-4.5" />
-              <span>Unggah Ke Galeri</span>
-            </Button>
+            <div class="flex flex-col space-y-2 mt-2">
+              <Button type="submit" disabled={isSubmitting} class="w-full flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11">
+                {#if editingPhotoId}
+                  <Edit class="h-4.5 w-4.5" />
+                  <span>Simpan Perubahan</span>
+                {:else}
+                  <Image class="h-4.5 w-4.5" />
+                  <span>Unggah Ke Galeri</span>
+                {/if}
+              </Button>
+              {#if editingPhotoId}
+                <Button type="button" variant="outline" on:click={cancelEditPhoto} class="w-full h-11 border-slate-200 text-slate-600 hover:bg-slate-50 font-bold">
+                  Batal Edit
+                </Button>
+              {/if}
+            </div>
           </form>
         </Card>
       </div>
@@ -2750,12 +2817,12 @@
 
             {#if filteredPhotos.length > 0}
               {#each filteredPhotos as item}
-                <Card class="p-4 flex items-center justify-between border-slate-100 hover:border-indigo-100 hover:shadow-soft-sm transition-all duration-200">
-                  <div class="flex items-center space-x-3 min-w-0 flex-1">
+                <Card class="p-4 relative border-slate-100 hover:border-indigo-100 hover:shadow-soft-sm transition-all duration-200 block">
+                  <div class="flex items-center space-x-3 min-w-0 pr-16">
                     {#if item.image_url}
-                      <img src={item.image_url} alt={item.title} class="h-12 w-12 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200" />
+                      <img referrerpolicy="no-referrer" src={convertDriveUrl(item.image_url)} alt={item.title} class="h-12 w-12 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200" />
                     {/if}
-                    <div class="leading-tight min-w-0 pr-2">
+                    <div class="leading-tight min-w-0">
                       <h4 class="font-extrabold text-slate-800 text-sm truncate">{item.title}</h4>
                       <p class="text-[9px] text-slate-400 font-bold uppercase mt-1">
                         <span class="px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-100 text-indigo-700">{item.category}</span>
@@ -2763,13 +2830,24 @@
                       </p>
                     </div>
                   </div>
-                  <button 
-                    on:click={() => deletePhoto(item.id)}
-                    class="h-10 w-10 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl flex items-center justify-center border border-transparent hover:border-rose-100 shrink-0 transition-colors"
-                    title="Hapus Foto"
-                  >
-                    <Trash2 class="h-4.5 w-4.5" />
-                  </button>
+                  <div class="absolute top-2 right-2 flex items-center space-x-0.5">
+                    <button 
+                      type="button"
+                      on:click={() => startEditPhoto(item)}
+                      class="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center justify-center border border-transparent hover:border-indigo-100 transition-colors"
+                      title="Edit Foto"
+                    >
+                      <Edit class="h-4 w-4" />
+                    </button>
+                    <button 
+                      type="button"
+                      on:click={() => deletePhoto(item.id)}
+                      class="h-8 w-8 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg flex items-center justify-center border border-transparent hover:border-rose-100 transition-colors"
+                      title="Hapus Foto"
+                    >
+                      <Trash2 class="h-4 w-4" />
+                    </button>
+                  </div>
                 </Card>
               {/each}
             {:else}
@@ -3043,7 +3121,7 @@
             {#if carouselSlides.length > 0}
               {#each carouselSlides as slide (slide.id)}
                 <Card class="flex gap-4 p-4 items-start relative hover:shadow-soft-md transition-shadow">
-                  <img 
+                  <img referrerpolicy="no-referrer" 
                     src={convertDriveUrl(slide.image_url)} 
                     alt={slide.title} 
                     class="h-16 w-24 rounded-lg object-cover border border-slate-200/60 bg-slate-50 shrink-0" 
@@ -3327,7 +3405,7 @@
                   <div class="p-3.5 flex items-center justify-between gap-4">
                     <div class="flex items-center space-x-3.5 min-w-0">
                       {#if profilePhoto}
-                        <img 
+                        <img referrerpolicy="no-referrer" 
                           src={convertDriveUrl(profilePhoto)} 
                           alt={item.nama_lengkap} 
                           class="h-11 w-11 rounded-full object-cover shadow-soft-sm border border-slate-100 shrink-0"

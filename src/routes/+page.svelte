@@ -3,6 +3,8 @@
   import Card from "$lib/components/ui/card.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import BirthdayWidget from "$lib/components/BirthdayWidget.svelte";
+  import CoverflowCarousel from "$lib/components/CoverflowCarousel.svelte";
+  import AvatarMarquee from "$lib/components/AvatarMarquee.svelte";
   import { supabase } from "$lib/supabase";
   import { authStore } from "$lib/auth";
   import { deferredPrompt, showInstallBtn } from "$lib/pwaStore";
@@ -91,7 +93,8 @@
 
   // --- Dynamic Stats & Highlights State ---
   let membersCount = "184 Anggota";
-  let madingCount = "12 Pengumuman";
+  let asatidzahCount = "20 Pengajar";
+  let madingCount = "12 Momen";
   let sanguCount = "15 Berkas";
   let quranProgress = "QS. Al-Kahf";
   let quranDescription = "Surah Terakhir";
@@ -922,7 +925,7 @@
       cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
       cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
     }
     return cleaned;
   }
@@ -1006,6 +1009,14 @@
         membersCount = `${squadCount} Anggota`;
       }
 
+      // 1b. Fetch asatidzah count
+      const { count: asatidzahCountRaw } = await supabase
+        .from("asatidzah")
+        .select("*", { count: "exact", head: true });
+      if (asatidzahCountRaw !== null) {
+        asatidzahCount = `${asatidzahCountRaw} Pengajar`;
+      }
+
       // 2. Fetch mading counts (announcements + notes)
       const { count: annCount } = await supabase
         .from("mading_announcements")
@@ -1014,7 +1025,7 @@
         .from("mading_notes")
         .select("*", { count: "exact", head: true });
       const totalMading = (annCount || 0) + (notesCount || 0);
-      madingCount = `${totalMading} Pengumuman`;
+      madingCount = `${totalMading} Momen`;
 
       // 3. Fetch bacaan count
       const { count: bacaanCount } = await supabase
@@ -1095,6 +1106,22 @@
     }
   }
 
+  let greeting = "";
+
+  // Placeholder images for Coverflow
+  const coverflowImages = [
+    "https://picsum.photos/seed/mazeeda1/400/600",
+    "https://picsum.photos/seed/mazeeda2/400/600",
+    "https://picsum.photos/seed/mazeeda3/400/600",
+    "https://picsum.photos/seed/mazeeda4/400/600",
+    "https://picsum.photos/seed/mazeeda5/400/600",
+    "https://picsum.photos/seed/mazeeda6/400/600",
+    "https://picsum.photos/seed/mazeeda7/400/600"
+  ];
+
+  // Placeholder avatars for Infinite Marquee
+  const marqueeImages = Array.from({ length: 20 }, (_, i) => `https://i.pravatar.cc/150?img=${i + 1}`);
+
   onMount(() => {
     // Auto detect user location / timezone offset to select city default
     if (typeof window !== "undefined") {
@@ -1145,29 +1172,39 @@
   // Stats Grid Definition
   $: stats = [
     {
+      name: "Guruku",
+      value: asatidzahCount,
+      description: "Mustahiq | Mustahiqoh | Munawwib | Munawibah",
+      icon: Users,
+      image: "/images/asatidzah_icon_v3.png",
+      color: "text-purple-600 bg-purple-50/50 border-purple-100",
+      gradient: "from-purple-100/80 to-purple-50/20",
+      href: "/asatidzah",
+    },
+    {
       name: "Mazeeda Squad",
       value: membersCount,
-      description: "Alumni, Alumnus & Mustahiq",
+      description: "Alumni | Alumnus",
       icon: Users,
-      image: "/images/squad_icon.png",
+      image: "/images/squad_icon_v3.png",
       color: "text-blue-600 bg-blue-50/50 border-blue-100",
       gradient: "from-blue-100/80 to-blue-50/20",
       href: "/squad",
     },
     {
-      name: "Mading Board",
+      name: "Time Line",
       value: madingCount,
-      description: "Update terkini & sticky notes",
-      icon: Megaphone,
-      image: "/images/mading_icon.png",
+      description: "Foto kenangan | album memori",
+      icon: ImageIcon,
+      image: "/images/timeline_icon.png",
       color: "text-amber-600 bg-amber-50/50 border-amber-100",
       gradient: "from-amber-100/80 to-amber-50/20",
       href: "/mading",
     },
     {
-      name: "Sangu & Wirid",
+      name: "Sangu | Wirid",
       value: sanguCount,
-      description: "Koleksi doa, sholawat & nadzom",
+      description: "Koleksi doa | sholawat | nadzom",
       icon: Wallet,
       image: "/images/sangu_icon.png",
       color: "text-emerald-600 bg-emerald-50/50 border-emerald-100",
@@ -1930,6 +1967,44 @@
           </div>
         </div>
       </a>
+      <!-- Card 5: Tasbih Digital -->
+      <a
+        href="/tasbih"
+        class="group block transition-all hover:-translate-y-1.5 duration-300"
+      >
+        <div
+          class="relative overflow-hidden rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50/40 via-white to-white hover:border-teal-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+        >
+          <!-- Dekorasi AI -->
+          <div
+            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
+            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+          >
+            <img
+              src="/images/tasbih_icon.png"
+              alt="Tasbih Digital"
+              class="w-full h-full object-contain scale-110 translate-x-2 translate-y-2"
+            />
+          </div>
+          <div class="space-y-1.5 z-10">
+            <span
+              class="inline-flex items-center space-x-1.5 bg-teal-50 border border-teal-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-teal-600 leading-none"
+            >
+              📿 Zikir Pintar
+            </span>
+            <h3
+              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800"
+            >
+              Tasbih Digital
+            </h3>
+            <p
+              class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
+            >
+              Hitung dan simpan zikir harianmu secara otomatis.
+            </p>
+          </div>
+        </div>
+      </a>
     </div>
   </section>
 
@@ -1981,7 +2056,7 @@
     <h2 class="text-lg font-bold text-slate-800 tracking-tight">
       Ikhtisar MAZEEDA
     </h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       {#each stats as stat}
         <a
           href={stat.href}
@@ -2109,13 +2184,13 @@
             class="h-8 w-8 text-slate-350 mb-2 text-primary/40 animate-bounce"
           />
           <h3 class="text-xs font-extrabold text-slate-700">
-            Belum Ada Pengumuman
+            Belum Ada Momen
           </h3>
           <p
             class="text-[10px] text-slate-400 mt-1 max-w-[250px] leading-relaxed"
           >
             Tidak ada mading terbaru saat ini. Silakan masuk ke Panel Admin
-            untuk membuat pengumuman pertama!
+            untuk membuat kenangan pertama!
           </p>
           <a href="/admin?tab=mading" class="mt-3">
             <Button size="sm" class="text-[10px] font-bold h-8 px-4"
@@ -2231,6 +2306,27 @@
       {/if}
     </section>
   </div>
+
+  <!-- ==================== COVERFLOW CAROUSEL (ALBUM MEMORI) ==================== -->
+  <section class="mt-8 pt-8 border-t border-slate-200/50 w-full overflow-hidden">
+    <div class="flex items-center justify-center mb-2">
+      <h2 class="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+        <ImageIcon class="h-6 w-6 text-primary" /> Galeri Kenangan
+      </h2>
+    </div>
+    <p class="text-xs text-slate-500 text-center font-medium max-w-sm mx-auto mb-6">
+      Geser ke kiri atau kanan untuk melihat jejak kebersamaan kita.
+    </p>
+    <CoverflowCarousel images={coverflowImages} />
+    
+    <!-- Infinite Avatar Marquee -->
+    <div class="mt-8 border-t border-slate-100 pt-6">
+      <div class="flex items-center justify-center mb-4">
+        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Wajah-wajah MAZEEDA Squad</h3>
+      </div>
+      <AvatarMarquee images={marqueeImages} />
+    </div>
+  </section>
 
   <!-- ==================== PREMIUM FOOTER SECTION ==================== -->
   <footer

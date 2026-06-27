@@ -943,16 +943,16 @@
 
     <div class="text-center mb-8">
       <div
-        class="inline-flex items-center justify-center p-3 bg-gradient-to-br from-indigo-100 to-sky-50 rounded-2xl mb-4 shadow-sm border border-indigo-100/50"
+        class="inline-flex items-center justify-center p-3 bg-gradient-to-br from-green-100 to-emerald-50 rounded-2xl mb-4 shadow-sm border border-green-100/50"
       >
-        <Info class="h-7 w-7 text-indigo-600" />
+        <Info class="h-7 w-7 text-green-600" />
       </div>
       <h2
         class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight mb-3"
       >
-        Astrologi Lahir & <span
-          class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-sky-500"
-          >Weton</span
+        Astrologi <span
+          class="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500"
+          >Lahir & Weton</span
         >
       </h2>
       <p class="text-sm font-medium text-slate-500 max-w-lg mx-auto">
@@ -1059,15 +1059,16 @@
           </div>
 
           <!-- Kolom 2 -->
-          <div class="space-y-5 relative">
+          <div class="relative h-full">
             <div
               class="hidden md:block absolute left-[-20px] top-0 bottom-0 w-[1px] bg-slate-100"
             ></div>
 
-            <div class="flex items-start gap-4">
-              <div class="p-2.5 bg-green-50 rounded-xl text-green-600 shrink-0">
-                <MoonStar class="w-5 h-5" />
-              </div>
+            <div class="space-y-5">
+              <div class="flex items-start gap-4">
+                <div class="p-2.5 bg-green-50 rounded-xl text-green-600 shrink-0">
+                  <MoonStar class="w-5 h-5" />
+                </div>
               <div>
                 <p
                   class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1"
@@ -1122,6 +1123,7 @@
                   {birthResult.shio.nama}
                 </p>
               </div>
+            </div>
             </div>
           </div>
         </div>

@@ -39,13 +39,28 @@
         message = { type: 'success', content: 'Login admin berhasil!' };
         window.location.href = '/';
       } else {
-        // Santri / Alumni Login
-        const { data, error } = await supabase
+        // Santri / Alumni Login - check allowed_alumni first
+        let { data, error } = await supabase
           .from('allowed_alumni')
           .select('*')
           .eq('nis', inputNIS);
 
+        let tableName = 'allowed_alumni';
+
         if (error) throw error;
+        
+        // If not found in squad, check asatidzah
+        if (!data || data.length === 0) {
+          const asatidzahRes = await supabase
+            .from('asatidzah')
+            .select('*')
+            .eq('nis', inputNIS);
+            
+          if (asatidzahRes.error) throw asatidzahRes.error;
+          data = asatidzahRes.data;
+          tableName = 'asatidzah';
+        }
+
         if (!data || data.length === 0) {
           throw new Error('Nomor Induk Santri (NIS) tidak ditemukan!');
         }
@@ -61,7 +76,7 @@
         // Update login status
         try {
           await supabase
-            .from('allowed_alumni')
+            .from(tableName)
             .update({
               has_logged_in: true,
               last_login: new Date().toISOString()
