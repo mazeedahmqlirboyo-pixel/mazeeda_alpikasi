@@ -1,9 +1,18 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
+
+  const dispatch = createEventDispatcher();
 
   export let images: string[] = [];
   
-  let currentIndex = Math.floor(images.length / 2); // Start in the middle
+  let currentIndex = 0;
+  let isInitialized = false;
+
+  // Reactively set the default view to the middle item once images are loaded
+  $: if (images.length > 0 && !isInitialized) {
+    currentIndex = Math.floor(images.length / 2);
+    isInitialized = true;
+  }
   
   // Drag state
   let isDragging = false;
@@ -39,7 +48,11 @@
 
   function goToIndex(index: number) {
     if (!isDragging) {
-      currentIndex = index;
+      if (currentIndex === index) {
+        dispatch('imageClick', images[index]);
+      } else {
+        currentIndex = index;
+      }
     }
   }
 
@@ -84,10 +97,10 @@
   }
 </script>
 
-<div class="relative w-full max-w-5xl mx-auto py-10 overflow-hidden select-none">
+<div class="relative w-full max-w-5xl mx-auto pt-2 pb-8 overflow-hidden select-none">
   <!-- Draggable Container -->
   <div 
-    class="relative h-[300px] sm:h-[400px] md:h-[500px] w-full flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
+    class="relative h-[260px] sm:h-[320px] md:h-[400px] w-full flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
     on:pointerdown={handlePointerDown}
     on:pointermove={handlePointerMove}
     on:pointerup={handlePointerUp}

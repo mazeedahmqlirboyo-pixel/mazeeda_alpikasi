@@ -4,10 +4,13 @@
   import Button from "$lib/components/ui/button.svelte";
   import BirthdayWidget from "$lib/components/BirthdayWidget.svelte";
   import CoverflowCarousel from "$lib/components/CoverflowCarousel.svelte";
+  import LandscapeCarousel from "$lib/components/LandscapeCarousel.svelte";
   import AvatarMarquee from "$lib/components/AvatarMarquee.svelte";
+  import ImageLightbox from "$lib/components/ImageLightbox.svelte";
   import { supabase } from "$lib/supabase";
   import { authStore } from "$lib/auth";
   import { deferredPrompt, showInstallBtn } from "$lib/pwaStore";
+  import { Geolocation } from '@capacitor/geolocation';
   import {
     Users,
     Megaphone,
@@ -37,6 +40,15 @@
     Sunset,
     Moon,
   } from "lucide-svelte";
+
+  // --- Lightbox State ---
+  let showLightbox = false;
+  let lightboxImageUrl = "";
+
+  function openLightbox(e: CustomEvent<string>) {
+    lightboxImageUrl = e.detail;
+    showLightbox = true;
+  }
 
   // --- Reactive PWA State ---
   let showPWAInstall = false;
@@ -527,98 +539,99 @@
 
   async function requestGeolocation() {
     isCityDropdownOpen = false;
-    if (typeof navigator !== "undefined" && navigator.geolocation) {
-      isLoadingPrayers = true;
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          gpsLatitude = position.coords.latitude;
-          gpsLongitude = position.coords.longitude;
-          hasGPSCoords = true;
-          selectedCity = "Mendeteksi lokasi...";
+    isLoadingPrayers = true;
+    try {
+      const permission = await Geolocation.checkPermissions();
+      if (permission.location !== 'granted') {
+        const req = await Geolocation.requestPermissions();
+        if (req.location !== 'granted') {
+           throw new Error("Permission denied");
+        }
+      }
+      
+      const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
+      gpsLatitude = position.coords.latitude;
+      gpsLongitude = position.coords.longitude;
+      hasGPSCoords = true;
+      selectedCity = "Mendeteksi lokasi...";
 
-          // Determine timezone based on longitude mapping:
-          if (gpsLongitude >= 135) {
-            cityTimezone = "WIT";
-            timezoneOffset = 9;
-          } else if (gpsLongitude >= 120) {
-            cityTimezone = "WITA";
-            timezoneOffset = 8;
-          } else {
-            cityTimezone = "WIB";
-            timezoneOffset = 7;
+      // Determine timezone based on longitude mapping:
+      if (gpsLongitude >= 135) {
+        cityTimezone = "WIT";
+        timezoneOffset = 9;
+      } else if (gpsLongitude >= 120) {
+        cityTimezone = "WITA";
+        timezoneOffset = 8;
+      } else {
+        cityTimezone = "WIB";
+        timezoneOffset = 7;
+      }
+
+      // Reverse Geocoding using Nominatim (OpenStreetMap)
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${gpsLatitude}&lon=${gpsLongitude}&format=json&accept-language=id`,
+        );
+        const data = await res.json();
+        if (data && data.address) {
+          const addr = data.address;
+
+          const road = addr.road || addr.pedestrian || "";
+
+          let village =
+            addr.village || addr.neighbourhood || addr.hamlet || "";
+          if (
+            village &&
+            !village.toLowerCase().includes("kelurahan") &&
+            !village.toLowerCase().includes("desa") &&
+            !village.toLowerCase().includes("kel.")
+          ) {
+            village = "Kel. " + village;
           }
 
-          // Reverse Geocoding using Nominatim (OpenStreetMap)
-          try {
-            const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?lat=${gpsLatitude}&lon=${gpsLongitude}&format=json&accept-language=id`,
-            );
-            const data = await res.json();
-            if (data && data.address) {
-              const addr = data.address;
+          let district =
+            addr.city_district ||
+            addr.district ||
+            addr.suburb ||
+            addr.town ||
+            addr.municipality ||
+            "";
+          if (
+            district &&
+            !district.toLowerCase().includes("kecamatan") &&
+            !district.toLowerCase().includes("kec.")
+          ) {
+            district = "Kec. " + district;
+          }
 
-              const road = addr.road || addr.pedestrian || "";
+          let city = addr.city || addr.county || addr.state_district || "";
 
-              let village =
-                addr.village || addr.neighbourhood || addr.hamlet || "";
-              if (
-                village &&
-                !village.toLowerCase().includes("kelurahan") &&
-                !village.toLowerCase().includes("desa") &&
-                !village.toLowerCase().includes("kel.")
-              ) {
-                village = "Kel. " + village;
-              }
+          // Gabungkan nama lokasi selengkap mungkin
+          const rawParts = [road, village, district, city].filter(
+            (p) => p && p.trim() !== "" && p !== "Kel. " && p !== "Kec. ",
+          );
 
-              let district =
-                addr.city_district ||
-                addr.district ||
-                addr.suburb ||
-                addr.town ||
-                addr.municipality ||
-                "";
-              if (
-                district &&
-                !district.toLowerCase().includes("kecamatan") &&
-                !district.toLowerCase().includes("kec.")
-              ) {
-                district = "Kec. " + district;
-              }
+          // Hapus duplikat nama berurutan atau nama yang mirip
+          const uniqueParts = [...new Set(rawParts)];
 
-              let city = addr.city || addr.county || addr.state_district || "";
-
-              // Gabungkan nama lokasi selengkap mungkin
-              const rawParts = [road, village, district, city].filter(
-                (p) => p && p.trim() !== "" && p !== "Kel. " && p !== "Kec. ",
-              );
-
-              // Hapus duplikat nama berurutan atau nama yang mirip
-              const uniqueParts = [...new Set(rawParts)];
-
-              if (uniqueParts.length > 0) {
-                selectedCity = uniqueParts.join(", ");
-              } else {
-                selectedCity = "Lokasi Saat Ini";
-              }
-            } else {
-              selectedCity = "Lokasi Saat Ini";
-            }
-          } catch (e) {
-            console.error("Reverse geocoding error:", e);
+          if (uniqueParts.length > 0) {
+            selectedCity = uniqueParts.join(", ");
+          } else {
             selectedCity = "Lokasi Saat Ini";
           }
+        } else {
+          selectedCity = "Lokasi Saat Ini";
+        }
+      } catch (e) {
+        console.error("Reverse geocoding error:", e);
+        selectedCity = "Lokasi Saat Ini";
+      }
 
-          await fetchPrayerTimes();
-        },
-        (error) => {
-          console.error("Geolocation error:", error);
-          isLoadingPrayers = false;
-          alert("Gagal mengakses lokasi GPS Anda. Pastikan izin lokasi aktif.");
-        },
-        { enableHighAccuracy: true, timeout: 10000 },
-      );
-    } else {
-      alert("Browser Anda tidak mendukung layanan Geolocation.");
+      await fetchPrayerTimes();
+    } catch (error) {
+      console.error("Geolocation error:", error);
+      isLoadingPrayers = false;
+      alert("Gagal mengakses lokasi GPS Anda. Pastikan izin lokasi aktif.");
     }
   }
 
@@ -1099,6 +1112,17 @@
       } else {
         hasMemory = false;
       }
+
+      // Fetch Galleries (No limit as requested)
+      const { data: coverflowData } = await supabase.from("gallery_coverflow").select("image_url").order("created_at", { ascending: true });
+      if (coverflowData) coverflowImages = coverflowData.map(d => d.image_url);
+
+      const { data: landscapeData } = await supabase.from("gallery_landscape").select("image_url").order("created_at", { ascending: true });
+      if (landscapeData) landscapeImages = landscapeData.map(d => d.image_url);
+
+      const { data: marqueeData } = await supabase.from("gallery_marquee").select("image_url").order("created_at", { ascending: true });
+      if (marqueeData) marqueeImages = marqueeData.map(d => d.image_url);
+
     } catch (e) {
       console.warn("Failed to fetch stats and highlights:", e);
     } finally {
@@ -1107,20 +1131,10 @@
   }
 
   let greeting = "";
-
-  // Placeholder images for Coverflow
-  const coverflowImages = [
-    "https://picsum.photos/seed/mazeeda1/400/600",
-    "https://picsum.photos/seed/mazeeda2/400/600",
-    "https://picsum.photos/seed/mazeeda3/400/600",
-    "https://picsum.photos/seed/mazeeda4/400/600",
-    "https://picsum.photos/seed/mazeeda5/400/600",
-    "https://picsum.photos/seed/mazeeda6/400/600",
-    "https://picsum.photos/seed/mazeeda7/400/600"
-  ];
-
-  // Placeholder avatars for Infinite Marquee
-  const marqueeImages = Array.from({ length: 20 }, (_, i) => `https://i.pravatar.cc/150?img=${i + 1}`);
+  // Dynamic Galleries State
+  let coverflowImages: string[] = [];
+  let landscapeImages: string[] = [];
+  let marqueeImages: string[] = [];
 
   onMount(() => {
     // Auto detect user location / timezone offset to select city default
@@ -1199,7 +1213,7 @@
       image: "/images/timeline_icon.png",
       color: "text-amber-600 bg-amber-50/50 border-amber-100",
       gradient: "from-amber-100/80 to-amber-50/20",
-      href: "/mading",
+      href: "/timeline",
     },
     {
       name: "Sangu | Wirid",
@@ -1372,6 +1386,33 @@
         {/each}
       </div>
     {/if}
+  </section>
+
+  <!-- ==================== PARTNERS MARQUEE ==================== -->
+  <section class="border-y border-slate-200/60 bg-white py-2 overflow-hidden relative">
+    <!-- Optional gradient masks -->
+    <div class="absolute left-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-r from-white to-transparent pointer-events-none"></div>
+    <div class="absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
+
+    <div class="flex w-max animate-marquee-right items-center opacity-85 hover:opacity-100 transition-opacity duration-300">
+      <!-- Duplicate the items for seamless loop -->
+      {#each [1, 2, 3, 4] as _}
+        <div class="flex items-center space-x-10 sm:space-x-16 px-5 sm:px-8">
+          <div class="flex items-center justify-center h-10 w-24 sm:h-12 sm:w-36 grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer relative">
+            <img src="/images/logo_emabror.png" alt="emabror" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply scale-[1.8] hover:scale-[2]" />
+          </div>
+          <div class="flex items-center justify-center h-10 w-24 sm:h-12 sm:w-36 grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer relative">
+            <img src="/images/logo_alimaf.png" alt="Alimaf" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply scale-[1.8] hover:scale-[2]" />
+          </div>
+          <div class="flex items-center justify-center h-10 w-24 sm:h-12 sm:w-36 grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer relative">
+            <img src="/images/logo_rayhar.png" alt="Rayhar" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply scale-[1.8] hover:scale-[2]" />
+          </div>
+          <div class="flex items-center justify-center h-10 w-24 sm:h-12 sm:w-36 grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer relative">
+            <img src="/images/logo_wepose.png" alt="WEPOSE" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply scale-[1.8] hover:scale-[2]" />
+          </div>
+        </div>
+      {/each}
+    </div>
   </section>
 
   <!-- ==================== INDONESIAN TIME & PRAYER WIDGET ==================== -->
@@ -1791,7 +1832,7 @@
               Isya
             </p>
             <p class="text-xs font-black text-slate-800 font-mono mt-0.5">
-              {prayerTimes.Isya}
+              {prayerTimes.Isha}
             </p>
           </div>
         {:else}
@@ -2106,6 +2147,34 @@
         </a>
       {/each}
     </div>
+
+    <!-- Tombol Perjalanan Kami (Style Card) -->
+    <div class="mt-4">
+      <a
+        href="/perjalanan"
+        class="block transition-transform hover:-translate-y-1 duration-200"
+      >
+        <Card class="h-full relative overflow-hidden group border border-indigo-100 hover:border-indigo-300 hover:shadow-xl transition-all">
+          <div class="flex items-start justify-between relative z-10">
+            <div class="space-y-2">
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Jejak MAZEEDA
+              </p>
+              <h3 class="text-2xl font-black text-slate-800 tracking-tight leading-none mt-1 transition-colors">
+                Perjalanan Kami
+              </h3>
+              <p class="text-xs text-slate-500 font-medium">
+                2023 — 2032 · Eksplorasi Kenangan
+              </p>
+            </div>
+
+            <div class="h-20 w-20 sm:h-24 sm:w-24 rounded-[1.25rem] bg-gradient-to-br from-indigo-50 to-white border border-slate-100 shadow-inner overflow-hidden flex items-center justify-center p-2 shrink-0 group-hover:scale-110 group-hover:-rotate-2 transition-transform duration-300 relative">
+              <img src="/images/journey_compass.png" alt="Jejak MAZEEDA" class="w-full h-full object-contain mix-blend-multiply drop-shadow-sm scale-110 relative z-10" />
+            </div>
+          </div>
+        </Card>
+      </a>
+    </div>
   </section>
 
   <!-- ==================== HIGHLIGHTS LAYOUT GRID ==================== -->
@@ -2310,21 +2379,24 @@
   <!-- ==================== COVERFLOW CAROUSEL (ALBUM MEMORI) ==================== -->
   <section class="mt-8 pt-8 border-t border-slate-200/50 w-full overflow-hidden">
     <div class="flex items-center justify-center mb-2">
-      <h2 class="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-        <ImageIcon class="h-6 w-6 text-primary" /> Galeri Kenangan
-      </h2>
+      <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Galeri Kenangan</h2>
     </div>
-    <p class="text-xs text-slate-500 text-center font-medium max-w-sm mx-auto mb-6">
-      Geser ke kiri atau kanan untuk melihat jejak kebersamaan kita.
-    </p>
-    <CoverflowCarousel images={coverflowImages} />
+    <CoverflowCarousel images={coverflowImages} on:imageClick={openLightbox} />
     
+    <!-- Landscape Image Carousel -->
+    <div class="mt-2 border-t border-slate-100 pt-4">
+      <div class="flex items-center justify-center mb-0">
+        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Momen Spesial</h3>
+      </div>
+      <LandscapeCarousel images={landscapeImages} on:imageClick={openLightbox} />
+    </div>
+
     <!-- Infinite Avatar Marquee -->
-    <div class="mt-8 border-t border-slate-100 pt-6">
-      <div class="flex items-center justify-center mb-4">
+    <div class="mt-2 border-t border-slate-100 pt-4">
+      <div class="flex items-center justify-center mb-2">
         <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Wajah-wajah MAZEEDA Squad</h3>
       </div>
-      <AvatarMarquee images={marqueeImages} />
+      <AvatarMarquee images={marqueeImages} on:imageClick={openLightbox} />
     </div>
   </section>
 
@@ -2451,3 +2523,20 @@
     </div>
   </footer>
 </div>
+
+<ImageLightbox bind:show={showLightbox} imageUrl={lightboxImageUrl} on:close={() => showLightbox = false} />
+
+<style>
+  @keyframes marqueeRight {
+    0% {
+      transform: translateX(-50%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  .animate-marquee-right {
+    animation: marqueeRight 35s linear infinite;
+  }
+</style>

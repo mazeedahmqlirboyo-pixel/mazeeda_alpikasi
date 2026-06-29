@@ -6,7 +6,7 @@
   import { supabase } from '$lib/supabase';
   import { authStore, activeProfileStore } from '$lib/auth';
   import { 
-    Image as ImageIcon, MapPin, Calendar, Heart, MessageCircle, CloudUpload, Sparkles, X, Trash2, Pencil 
+    Image as ImageIcon, MapPin, Calendar, Heart, MessageCircle, CloudUpload, Sparkles, X, Trash2, Pencil, AlertCircle, CheckCircle 
   } from 'lucide-svelte';
 
   interface MemoryItem {
@@ -44,6 +44,25 @@
   // Edit comment state (admin)
   let editingCommentId: string | null = null;
   let editingCommentText = '';
+  
+  // UI States for Toast & Modal
+  let alertMessage = "";
+  let alertType: 'success' | 'error' = 'success';
+  let showConfirmModal = false;
+  let confirmConfig = { title: '', message: '', onConfirm: () => {} };
+
+  function triggerAlert(msg: string, type: 'success' | 'error' = 'success') {
+    alertMessage = msg;
+    alertType = type;
+    setTimeout(() => {
+      alertMessage = "";
+    }, 3500);
+  }
+
+  function runWithConfirmation(title: string, message: string, onConfirm: () => Promise<void> | void) {
+    confirmConfig = { title, message, onConfirm };
+    showConfirmModal = true;
+  }
 
   let adminName = 'ADMIN MAZEEDA';
   let adminFotoUrl = 'https://drive.google.com/file/d/1f332yzKnUHuix7YeAvCgMZm4y2v30CwF/view?usp=drive_link';
@@ -265,34 +284,39 @@
   }
 
   async function deleteComment(commentId: string, memoryId: string) {
-    if (!confirm('Apakah Anda yakin ingin menghapus komentar ini?')) return;
-    
-    try {
-      const { error } = await supabase
-        .from('memory_comments')
-        .delete()
-        .eq('id', commentId);
+    runWithConfirmation('Hapus Komentar', 'Apakah Anda yakin ingin menghapus komentar ini? Tindakan ini tidak dapat dibatalkan.', async () => {
+      try {
+        const { error, count } = await supabase
+          .from('memory_comments')
+          .delete({ count: 'exact' })
+          .eq('id', commentId);
+          
+        if (error) throw error;
+        if (count === 0) throw new Error('Akses ditolak oleh database (RLS). Silakan izinkan akses Hapus di dashboard Supabase Anda.');
         
-      if (error) throw error;
-      
-      await loadComments(memoryId);
-      
-      memories = memories.map(m => {
-        if (m.id === memoryId) {
-          return { ...m, comments_count: Math.max(0, m.comments_count - 1) };
-        }
-        return m;
-      });
+        await loadComments(memoryId);
+        
+        memories = memories.map(m => {
+          if (m.id === memoryId) {
+            return { ...m, comments_count: Math.max(0, m.comments_count - 1) };
+          }
+          return m;
+        });
 
-      if (selectedMemory) {
-        selectedMemory = {
-          ...selectedMemory,
-          comments_count: Math.max(0, selectedMemory.comments_count - 1)
-        };
+        if (selectedMemory) {
+          selectedMemory = {
+            ...selectedMemory,
+            comments_count: Math.max(0, selectedMemory.comments_count - 1)
+          };
+        }
+        triggerAlert('Komentar berhasil dihapus.');
+      } catch (err: any) {
+        console.error('Error deleting comment:', err);
+        triggerAlert(err.message || 'Terjadi kesalahan sistem.', 'error');
+      } finally {
+        showConfirmModal = false;
       }
-    } catch (err) {
-      console.error('Error deleting comment:', err);
-    }
+    });
   }
 
   // ─── Edit Comment (Admin) ────────────────────────────────────────────────
@@ -300,19 +324,22 @@
     if (!editingCommentText.trim() || !editingCommentId) return;
     const newText = editingCommentText.trim();
     try {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('memory_comments')
-        .update({ comment_text: newText })
+        .update({ comment_text: newText }, { count: 'exact' })
         .eq('id', editingCommentId);
       if (error) throw error;
+      if (count === 0) throw new Error('Akses ditolak oleh database (RLS). Silakan izinkan akses Edit di dashboard Supabase Anda.');
 
       activeComments = activeComments.map(c =>
         c.id === editingCommentId ? { ...c, comment_text: newText } : c
       );
       editingCommentId = null;
       editingCommentText = '';
-    } catch (err) {
+      triggerAlert('Komentar berhasil diperbarui.');
+    } catch (err: any) {
       console.error('Error editing comment:', err);
+      triggerAlert(err.message || 'Terjadi kesalahan sistem.', 'error');
     }
   }
   // Helper: convert Google Drive share URL → direct embeddable link
@@ -357,6 +384,22 @@
 </script>
 
 <div class="space-y-6 pb-12">
+  <!-- Alert / Toast Banner (Floating Toast) -->
+  {#if alertMessage}
+    <div
+      transition:fade={{ duration: 150 }}
+      class="fixed top-20 right-4 flex items-center p-4 rounded-xl border text-xs font-semibold shadow-xl space-x-2.5 animate-in slide-in-from-top-4 duration-300 max-w-sm
+        {alertType === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}"
+      style="z-index: 999999;"
+    >
+      {#if alertType === 'error'}
+        <AlertCircle class="h-4 w-4 shrink-0 text-rose-600" />
+      {:else}
+        <CheckCircle class="h-4 w-4 shrink-0 text-emerald-600" />
+      {/if}
+      <span class="leading-relaxed">{alertMessage}</span>
+    </div>
+  {/if}
 
   <!-- Main Timeline Grid / Loading State -->
   {#if isLoading}
@@ -590,17 +633,19 @@
                         <span class="text-[9px] text-slate-400 font-bold">
                           {new Date(comment.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}
                         </span>
-                        <!-- Admin Action Buttons -->
-                        {#if isAdmin}
+                        <!-- Admin/Author Action Buttons -->
+                        {#if isAdmin || comment.user_name === $authStore.user?.name}
                           <button
-                            on:click={() => { editingCommentId = comment.id; editingCommentText = comment.comment_text; }}
-                            class="p-1 rounded-md text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-all opacity-0 group-hover/tc:opacity-100"
+                            type="button"
+                            on:click|preventDefault|stopPropagation={() => { editingCommentId = comment.id; editingCommentText = comment.comment_text; }}
+                            class="p-1.5 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all cursor-pointer"
                             title="Edit komentar">
-                            <Pencil class="h-3 w-3" />
+                            <Pencil class="h-3.5 w-3.5" />
                           </button>
                           <button 
-                            on:click={() => deleteComment(comment.id, selectedMemory.id)}
-                            class="p-1 rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover/tc:opacity-100"
+                            type="button"
+                            on:click|preventDefault|stopPropagation={() => deleteComment(comment.id, selectedMemory.id)}
+                            class="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
                             title="Hapus Komentar">
                             <Trash2 class="h-3.5 w-3.5" />
                           </button>
@@ -684,6 +729,31 @@
             </div>
           </form>
         </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- ==================== CONFIRMATION MODAL ==================== -->
+{#if showConfirmModal}
+  <div class="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" style="z-index: 999999;">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+      <div class="p-5 border-b border-slate-100 flex items-center gap-3">
+        <div class="h-10 w-10 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
+          <AlertCircle class="h-5 w-5 text-rose-500" />
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-800">{confirmConfig.title}</h3>
+          <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">{confirmConfig.message}</p>
+        </div>
+      </div>
+      <div class="p-4 bg-slate-50/50 flex gap-3">
+        <button type="button" class="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold h-10 transition-colors" on:click={() => showConfirmModal = false}>
+          Batal
+        </button>
+        <button type="button" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold h-10 shadow-soft-sm transition-colors" on:click={confirmConfig.onConfirm}>
+          Ya, Hapus
+        </button>
       </div>
     </div>
   </div>

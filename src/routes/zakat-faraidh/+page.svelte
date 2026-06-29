@@ -64,13 +64,15 @@
     }
   }
 
+  import { CapacitorHttp } from '@capacitor/core';
+
   // Helper formatting numbers to Indonesian Rupiah currency
   function formatRupiah(num: number): string {
     return "Rp " + Math.round(num).toLocaleString("id-ID");
   }
 
   // Common State
-  let hargaEmas = 1400000; // Harga emas per gram default (Rp 1.400.000)
+  let hargaEmas = 2710000; // Harga emas per gram default (Update 2026)
 
   // Real-time gold API state
   let isLoadingGold = false;
@@ -88,20 +90,30 @@
   async function fetchGoldPrice() {
     try {
       isLoadingGold = true;
-      const res = await fetch("/api/gold-price");
-      if (!res.ok) throw new Error("API failed");
-      const json = await res.json();
-      if (json.success && json.data && json.data.length > 0) {
-        // Prioritize the featured homepage price (typically the first item in API, e.g. Certicard gramasi 100 gram)
-        // because that matches what users see on the Aneka Logam homepage.
-        // Fallback to other items if not available.
+      let json;
+      
+      try {
+        // Try internal proxy first (works on Web Preview)
+        const res = await fetch("/api/gold-price");
+        json = await res.json();
+      } catch (err) {
+        // Fallback to direct fetch via CapacitorHttp (works on Android APK)
+        const options = { url: "https://logam-mulia-api.iamutaki.workers.dev/api/prices/anekalogam" };
+        const response = await CapacitorHttp.get(options);
+        if (response.status === 200) {
+          json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+        }
+      }
+      
+      if (json && json.success && json.data && json.data.length > 0) {
         const oneGramGold =
-          json.data[0] ||
           json.data.find(
             (item: any) =>
-              item.weight === 1 && item.materialType.includes("LM Antam"),
+              item.weight === 1 && item.materialType.includes("LM Antam produksi tahun 2026"),
           ) ||
+          json.data[0] ||
           json.data.find((item: any) => item.weight === 1);
+          
         if (oneGramGold && oneGramGold.sellPrice) {
           hargaEmas = oneGramGold.sellPrice;
           goldLastUpdated =
@@ -110,7 +122,11 @@
           goldMaterialType = oneGramGold.materialType || "Emas Batangan";
           goldUrlHomepage =
             oneGramGold.urlHomepage || "https://www.anekalogam.co.id";
+        } else {
+          throw new Error("Invalid gold API response structure");
         }
+      } else {
+        throw new Error("Failed to fetch gold price");
       }
     } catch (e) {
       console.warn("Failed to fetch gold price:", e);
@@ -123,15 +139,44 @@
   async function fetchSilverPrice() {
     try {
       isLoadingSilver = true;
-      const res = await fetch("/api/silver-price");
-      if (!res.ok) throw new Error("API failed");
-      const json = await res.json();
-      if (json.success && json.price) {
-        hargaPerak = json.price;
-        hargaPerakDisp = json.price.toLocaleString("id-ID");
-        silverLastUpdated =
-          json.recordedDate || new Date().toISOString().split("T")[0];
-        silverDataSource = "Harga Emas (API Realtime)";
+      let price = 0;
+      
+      try {
+        // Try internal proxy first (works on Web Preview)
+        const res = await fetch("/api/silver-price");
+        const json = await res.json();
+        if (json && json.success && json.price) price = json.price;
+      } catch (err) {
+        // Fallback to direct fetch via CapacitorHttp (works on Android APK)
+        const options = {
+          url: "https://harga-emas.org/perak",
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        };
+        const response = await CapacitorHttp.get(options);
+        if (response.status === 200) {
+          const html = response.data;
+          const match = html.match(/"price"\s*:\s*(\d+)\s*,\s*"priceCurrency"\s*:\s*"IDR"/);
+          if (match && match[1]) {
+            price = parseInt(match[1], 10);
+          } else {
+            const fallbackMatch = html.match(/"price"\s*:\s*(\d+)/);
+            if (fallbackMatch && fallbackMatch[1]) {
+              const p = parseInt(fallbackMatch[1], 10);
+              if (p > 10000 && p < 100000) price = p;
+            }
+          }
+        }
+      }
+
+      if (price > 0) {
+        hargaPerak = price;
+        hargaPerakDisp = price.toLocaleString("id-ID");
+        silverLastUpdated = new Date().toISOString().split("T")[0];
+        silverDataSource = "Harga Perak (API Realtime)";
+      } else {
+        throw new Error("Could not parse silver price");
       }
     } catch (e) {
       console.warn("Failed to fetch silver price:", e);
@@ -318,8 +363,8 @@
 
   // ==================== ZAKAT EMAS STATE & LOGIC ====================
   let showEmasInfo = false;
-  let beratEmasSimpan = undefined;
-  let beratEmasPakai = undefined;
+  let beratEmasSimpan: number | undefined = undefined;
+  let beratEmasPakai: number | undefined = undefined;
   let beratEmasSimpanDisp = "";
   let beratEmasPakaiDisp = "";
   $: wajibZakatEmas = (beratEmasSimpan || 0) >= 85;
@@ -329,10 +374,10 @@
 
   // ==================== ZAKAT PERAK STATE & LOGIC ====================
   let showPerakInfo = false;
-  let beratPerak = undefined;
-  let hargaPerak = 16000;
+  let beratPerak: number | undefined = undefined;
+  let hargaPerak = 45000;
   let beratPerakDisp = "";
-  let hargaPerakDisp = "16.000";
+  let hargaPerakDisp = "45.000";
   $: wajibZakatPerak = (beratPerak || 0) >= 595;
   $: jumlahZakatPerak = wajibZakatPerak
     ? Math.round((beratPerak || 0) * (hargaPerak || 0) * 0.025)
@@ -340,7 +385,7 @@
 
   // ==================== ZAKAT PERTANIAN STATE & LOGIC ====================
   let showPertanianInfo = false;
-  let hasilPanen = undefined;
+  let hasilPanen: number | undefined = undefined;
   let hargaPanen = 0;
   let jenisPengairan = "pompa"; // 'pompa' or 'alami'
   let hasilPanenDisp = "";
@@ -415,7 +460,7 @@
   // ==================== ZAKAT PETERNAKAN STATE & LOGIC ====================
   let showPeternakanInfo = false;
   let jenisTernak = "kambing"; // 'kambing', 'domba', 'sapi', 'kerbau'
-  let jumlahTernak = undefined;
+  let jumlahTernak: number | undefined = undefined;
   let hargaTernak = 3000000;
   let jumlahTernakDisp = "";
   let hargaTernakDisp = "3.000.000";

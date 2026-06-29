@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { fade, slide } from 'svelte/transition';
-  import { supabase, uploadMemoryPhoto } from '$lib/supabase';
+  import { supabase, uploadMemoryPhoto, uploadProfilePhoto } from '$lib/supabase';
   import Card from '$lib/components/ui/card.svelte';
   import Button from '$lib/components/ui/button.svelte';
   import Input from '$lib/components/ui/input.svelte';
@@ -26,7 +26,10 @@
     { label: '📌 Dinding Aspirasi', value: 'stickynotes' },
     { label: '📸 Kelola Timeline', value: 'timeline' },
     { label: '🔔 Notifikasi', value: 'notifikasi' },
-    { label: '🎪 Banner Slide', value: 'carousel' }
+    { label: '🎪 Banner Slide', value: 'carousel' },
+    { label: '🖼️ Galeri Kenangan', value: 'gallery_coverflow' },
+    { label: '🖼️ Momen Spesial', value: 'gallery_landscape' },
+    { label: '🖼️ Wajah MAZEEDA', value: 'gallery_marquee' }
   ];
 
   // Custom confirmation modal states
@@ -210,6 +213,144 @@
   let parsedCSVData: any[] = [];
   let csvImportStatus = '';
   let csvImportError = '';
+
+  // Batch Photo Upload States
+  let isDraggingPhoto = false;
+  let batchPhotoFiles: File[] = [];
+  let batchPhotoStatus = '';
+  let batchPhotoError = '';
+  let batchPhotoProgress = { current: 0, total: 0, success: 0, failed: 0, skipped: 0 };
+
+  async function compressImage(file: File, maxWidth = 800, quality = 0.8): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new window.Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve(file);
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(file);
+            }
+          }, 'image/jpeg', quality);
+        };
+        img.onerror = (e) => reject(e);
+      };
+      reader.onerror = (e) => reject(e);
+    });
+  }
+
+  async function handleBatchPhotoUpload() {
+    if (batchPhotoFiles.length === 0) return;
+    
+    isSubmitting = true;
+    batchPhotoStatus = "Memproses dan mengompres foto...";
+    batchPhotoError = "";
+    batchPhotoProgress = { current: 0, total: batchPhotoFiles.length, success: 0, failed: 0, skipped: 0 };
+
+    const tableName = activeSection === 'asatidzah' ? 'asatidzah' : 'allowed_alumni';
+    
+    for (const rawFile of batchPhotoFiles) {
+      batchPhotoProgress.current++;
+      const nameWithoutExt = rawFile.name.substring(0, rawFile.name.lastIndexOf('.')).toLowerCase().trim();
+      
+      try {
+        // Compress image before processing
+        const file = await compressImage(rawFile);
+        
+        // Find user by NIS or Nama Lengkap (case-insensitive)
+        let query = supabase.from(tableName).select('id, nama_lengkap, nis');
+        
+        // If it's all digits, assume it's NIS, else name
+        if (/^\d+$/.test(nameWithoutExt)) {
+           query = query.eq('nis', nameWithoutExt);
+        } else {
+           query = query.ilike('nama_lengkap', nameWithoutExt);
+        }
+
+        const { data, error } = await query.maybeSingle();
+        
+        if (error || !data) {
+          batchPhotoProgress.skipped++;
+          continue; // No matching user found
+        }
+        
+        // Match found, upload image
+        const publicUrl = await uploadProfilePhoto(file);
+        
+        // Update user
+        const { error: updateError } = await supabase
+          .from(tableName)
+          .update({ foto_url: publicUrl })
+          .eq('id', data.id);
+          
+        if (updateError) throw updateError;
+        
+        batchPhotoProgress.success++;
+      } catch (err) {
+        console.error(`Failed to upload photo for ${file.name}:`, err);
+        batchPhotoProgress.failed++;
+      }
+    }
+    
+    batchPhotoStatus = `Selesai: ${batchPhotoProgress.success} Berhasil, ${batchPhotoProgress.skipped} Dilewati (Nama tidak cocok), ${batchPhotoProgress.failed} Gagal.`;
+    isSubmitting = false;
+    
+    // Refresh list
+    if (activeSection === 'asatidzah') {
+      await fetchAsatidzah();
+    } else {
+      await fetchSquad();
+    }
+  }
+
+  function photo_handleDragOver(e: DragEvent) {
+    e.preventDefault();
+    isDraggingPhoto = true;
+  }
+  function photo_handleDragLeave() {
+    isDraggingPhoto = false;
+  }
+  function photo_handleDrop(e: DragEvent) {
+    e.preventDefault();
+    isDraggingPhoto = false;
+    if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+      batchPhotoFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+      batchPhotoError = "";
+      batchPhotoStatus = `${batchPhotoFiles.length} foto dipilih. Klik "Mulai Upload Foto" untuk melanjutkan.`;
+    }
+  }
+  function photo_handleFileSelect(e: Event) {
+    const target = e.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      batchPhotoFiles = Array.from(target.files).filter(f => f.type.startsWith('image/'));
+      batchPhotoError = "";
+      batchPhotoStatus = `${batchPhotoFiles.length} foto dipilih. Klik "Mulai Upload Foto" untuk melanjutkan.`;
+    }
+  }
 
   // Form step navigation for the member creation form
   let activeFormStep = 'personal'; // 'personal' | 'academic' | 'social' | 'messages'
@@ -1457,6 +1598,20 @@
   let kep_fotoCustomUrl = '';
   let editingKepId: any = null;
   let kepengurusanYearFilter = 'all';
+  
+  // Custom dropdown states
+  let showKepDropdown = false;
+  let kepSearchQuery = '';
+
+  let showDivisiDropdown = false;
+  let divisiSearchQuery = '';
+
+  // Get all unique divisions ever created across all years
+  $: availableDivisions = [...new Set(
+    kepengurusanList
+      .filter(k => k.divisi)
+      .map(k => k.divisi.trim())
+  )].sort();
 
   $: squadMap = squad.reduce((map: Record<string, any>, item) => {
     map[item.nama_lengkap.trim().toLowerCase()] = item;
@@ -1727,6 +1882,97 @@
     fetchCarouselSlides();
     fetchKepengurusan();
   });
+  // --- 8. GALLERIES CRUD ---
+  let galleryItems: any[] = [];
+  let isLoadingGallery = false;
+  let galleryImageUrl = '';
+  let gallerySelectedFile: File | null = null;
+  let editingGalleryId: any = null;
+
+  $: if (activeSection === 'gallery_coverflow' || activeSection === 'gallery_landscape' || activeSection === 'gallery_marquee') {
+    if (typeof window !== 'undefined') fetchGallery();
+  }
+
+  async function fetchGallery() {
+    try {
+      isLoadingGallery = true;
+      const { data, error } = await supabase
+        .from(activeSection)
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        galleryItems = data;
+      } else {
+        galleryItems = [];
+      }
+    } catch (err) {
+      console.error('Failed to load gallery:', err);
+    } finally {
+      isLoadingGallery = false;
+    }
+  }
+
+  async function addGalleryImage() {
+    if (!galleryImageUrl && !gallerySelectedFile) {
+      alert('Gambar wajib diisi melalui URL atau unggah file!');
+      return;
+    }
+    isSubmitting = true;
+    try {
+      let finalImageUrl = galleryImageUrl;
+      if (gallerySelectedFile) {
+        const publicUrl = await uploadMemoryPhoto(gallerySelectedFile, 'galleries');
+        finalImageUrl = publicUrl;
+      }
+
+      if (editingGalleryId) {
+        const { error } = await supabase.from(activeSection).update({ image_url: convertDriveUrl(finalImageUrl) }).eq('id', editingGalleryId);
+        if (error) throw error;
+        triggerAlert('Gambar berhasil diperbarui!');
+      } else {
+        const { error } = await supabase.from(activeSection).insert([{ image_url: convertDriveUrl(finalImageUrl) }]);
+        if (error) throw error;
+        triggerAlert('Gambar baru berhasil ditambahkan!');
+      }
+      galleryImageUrl = '';
+      gallerySelectedFile = null;
+      editingGalleryId = null;
+      await fetchGallery();
+    } catch (err: any) {
+      alert('Gagal menyimpan gambar: ' + err.message);
+    } finally {
+      isSubmitting = false;
+    }
+  }
+
+  function handleGalleryFileSelect(e: any) {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      gallerySelectedFile = files[0];
+      galleryImageUrl = ''; // clear url if file is selected
+    }
+  }
+
+  function startEditGallery(item: any) {
+    editingGalleryId = item.id;
+    galleryImageUrl = item.image_url;
+  }
+
+  function deleteGalleryImage(id: string) {
+    runWithConfirmation(
+      'Hapus Gambar',
+      'Yakin ingin menghapus gambar ini?',
+      async () => {
+        const { error } = await supabase.from(activeSection).delete().eq('id', id);
+        if (error) alert(error.message);
+        else {
+          triggerAlert('Gambar dihapus');
+          await fetchGallery();
+        }
+      }
+    );
+  }
 </script>
 
 <div class="space-y-6 pb-16 pt-4">
@@ -1823,6 +2069,77 @@
               <Button variant="secondary" on:click={() => { parsedCSVData = []; csvFile = null; csvImportStatus = ''; }} size="sm">Batal</Button>
               <Button on:click={handleUploadCSVData} disabled={isSubmitting} size="sm">
                 <span>Unggah {parsedCSVData.length} Alumni</span>
+              </Button>
+            </div>
+          {/if}
+        </Card>
+
+        <!-- Batch Photo Upload Widget -->
+        <Card class="p-5 space-y-3 border-dashed border-2 border-emerald-200 bg-emerald-50/20 mb-4">
+          <div class="flex items-center justify-between pb-2 border-b border-emerald-100">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center space-x-2">
+              <Image class="h-4.5 w-4.5 text-emerald-600" />
+              <span>Upload Foto Profil Massal</span>
+            </h3>
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Batch Upload</span>
+          </div>
+
+          <div class="bg-emerald-50/60 rounded-xl p-3 text-[11px] leading-relaxed text-emerald-900 border border-emerald-100/50">
+            <p class="font-bold text-emerald-950 mb-1 flex items-center gap-1">
+              <Info class="h-3.5 w-3.5" /> Aturan Nama File Foto:
+            </p>
+            <ul class="list-disc pl-4 space-y-0.5">
+              <li>Nama file <strong>wajib</strong> sama persis dengan <code class="font-mono bg-emerald-100 px-1 rounded">Nama Lengkap</code> atau <code class="font-mono bg-emerald-100 px-1 rounded">NIS</code>.</li>
+              <li>Contoh: <code class="font-mono bg-emerald-100 px-1 rounded">Ahmad Fulan.jpg</code> atau <code class="font-mono bg-emerald-100 px-1 rounded">12345.png</code>.</li>
+              <li>Gambar yang kebesaran akan <strong>di-resize otomatis</strong> oleh sistem.</li>
+            </ul>
+          </div>
+
+          <!-- Drag and Drop Zone -->
+          <div 
+            on:dragover={photo_handleDragOver}
+            on:dragleave={photo_handleDragLeave}
+            on:drop={photo_handleDrop}
+            class="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors
+              {isDraggingPhoto ? 'border-emerald-400 bg-emerald-100/50' : 'border-emerald-200 bg-white hover:border-emerald-400/40'}"
+            on:click={() => document.getElementById('photo-batch-input')?.click()}
+          >
+            <input 
+              type="file" 
+              id="photo-batch-input" 
+              accept="image/*" 
+              multiple
+              class="hidden" 
+              on:change={photo_handleFileSelect}
+            />
+            <Image class="h-8 w-8 text-emerald-400 mx-auto mb-2" />
+            {#if batchPhotoFiles.length > 0}
+              <p class="text-xs font-bold text-emerald-700 truncate max-w-xs mx-auto">{batchPhotoFiles.length} File Terpilih</p>
+            {:else}
+              <p class="text-xs font-bold text-emerald-600">Seret & taruh banyak foto di sini, atau klik untuk memilih</p>
+            {/if}
+          </div>
+
+          <!-- Alert / Status messages -->
+          {#if batchPhotoError}
+            <p class="text-xs font-semibold text-rose-600 bg-rose-50/50 p-2.5 rounded-lg border border-rose-100">{batchPhotoError}</p>
+          {/if}
+          {#if batchPhotoStatus}
+            <p class="text-xs font-semibold text-emerald-700 bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-100">{batchPhotoStatus}</p>
+          {/if}
+          {#if isSubmitting && batchPhotoProgress.total > 0}
+             <div class="w-full bg-slate-200 rounded-full h-1.5 mt-2">
+               <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width: {(batchPhotoProgress.current / batchPhotoProgress.total) * 100}%"></div>
+             </div>
+             <p class="text-[10px] text-slate-500 text-center">Proses {batchPhotoProgress.current} dari {batchPhotoProgress.total}</p>
+          {/if}
+
+          <!-- Upload triggers -->
+          {#if batchPhotoFiles.length > 0}
+            <div class="flex gap-2 justify-end pt-2">
+              <Button variant="secondary" on:click={() => { batchPhotoFiles = []; batchPhotoStatus = ''; batchPhotoError = ''; }} size="sm">Batal</Button>
+              <Button on:click={handleBatchPhotoUpload} disabled={isSubmitting} size="sm" class="bg-emerald-600 hover:bg-emerald-700 text-white">
+                <span>Mulai Upload Foto</span>
               </Button>
             </div>
           {/if}
@@ -3269,14 +3586,46 @@
               </div>
 
               <!-- Nama Lengkap -->
-              <div class="space-y-1">
+              <div class="space-y-1 relative">
                 <label class="text-xs font-bold text-slate-500" for="kep_name">Nama Pengurus *</label>
-                <select id="kep_name" class="flex h-11 w-full rounded-xl border border-slate-200/80 bg-white px-3 text-xs font-semibold text-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" bind:value={kep_namaLengkap}>
-                  <option value="">-- Pilih Anggota --</option>
-                  {#each squad.sort((a, b) => a.nama_lengkap.localeCompare(b.nama_lengkap)) as item}
-                    <option value={item.nama_lengkap}>{item.nama_lengkap} ({item.nama_panggilan || '-'})</option>
-                  {/each}
-                </select>
+                <div class="relative">
+                  <input 
+                    id="kep_name" 
+                    type="text"
+                    placeholder="Ketik untuk mencari nama..." 
+                    class="flex h-11 w-full rounded-xl border border-slate-200/80 bg-white px-3 text-xs font-semibold text-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
+                    bind:value={kep_namaLengkap} 
+                    on:focus={() => { showKepDropdown = true; kepSearchQuery = kep_namaLengkap; }}
+                    on:blur={() => setTimeout(() => showKepDropdown = false, 200)}
+                    on:input={(e) => { kepSearchQuery = e.currentTarget.value; showKepDropdown = true; }}
+                    required
+                  />
+                  <!-- Custom Dropdown -->
+                  {#if showKepDropdown}
+                    <ul class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                      {#each squad.filter(s => (s.nama_lengkap || '').toLowerCase().includes((kepSearchQuery || '').toLowerCase())).sort((a, b) => a.nama_lengkap.localeCompare(b.nama_lengkap)).slice(0, 15) as item}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+                        <li 
+                          class="px-4 py-2.5 text-xs text-slate-700 hover:bg-primary/10 hover:text-primary cursor-pointer border-b border-slate-50 last:border-0"
+                          on:mousedown={() => {
+                            kep_namaLengkap = item.nama_lengkap;
+                            kepSearchQuery = item.nama_lengkap;
+                            showKepDropdown = false;
+                          }}
+                        >
+                          <span class="font-bold">{item.nama_lengkap}</span>
+                          {#if item.nama_panggilan}
+                            <span class="text-slate-400 ml-1">({item.nama_panggilan})</span>
+                          {/if}
+                        </li>
+                      {/each}
+                      {#if squad.filter(s => (s.nama_lengkap || '').toLowerCase().includes((kepSearchQuery || '').toLowerCase())).length === 0}
+                        <li class="px-4 py-3 text-xs text-slate-400 text-center italic">Nama tidak ditemukan</li>
+                      {/if}
+                    </ul>
+                  {/if}
+                </div>
               </div>
             </div>
 
@@ -3288,9 +3637,43 @@
               </div>
 
               <!-- Divisi / Bagian -->
-              <div class="space-y-1">
+              <div class="space-y-1 relative">
                 <label class="text-xs font-bold text-slate-500" for="kep_division">Divisi / Bagian *</label>
-                <Input id="kep_division" placeholder="e.g. Pengurus Harian" class="h-11 rounded-xl text-xs" bind:value={kep_divisi} required />
+                <div class="relative">
+                  <input 
+                    id="kep_division" 
+                    type="text"
+                    placeholder="Ketik divisi atau pilih..." 
+                    class="flex h-11 w-full rounded-xl border border-slate-200/80 bg-white px-3 text-xs font-semibold text-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
+                    bind:value={kep_divisi} 
+                    on:focus={() => { showDivisiDropdown = true; divisiSearchQuery = kep_divisi; }}
+                    on:blur={() => setTimeout(() => showDivisiDropdown = false, 200)}
+                    on:input={(e) => { divisiSearchQuery = e.currentTarget.value; showDivisiDropdown = true; }}
+                    required
+                  />
+                  <!-- Custom Dropdown -->
+                  {#if showDivisiDropdown && availableDivisions.length > 0}
+                    <ul class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                      {#each availableDivisions.filter(d => d.toLowerCase().includes((divisiSearchQuery || '').toLowerCase())).slice(0, 15) as divName}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+                        <li 
+                          class="px-4 py-2.5 text-xs text-slate-700 hover:bg-primary/10 hover:text-primary cursor-pointer border-b border-slate-50 last:border-0"
+                          on:mousedown={() => {
+                            kep_divisi = divName;
+                            divisiSearchQuery = divName;
+                            showDivisiDropdown = false;
+                          }}
+                        >
+                          <span class="font-bold">{divName}</span>
+                        </li>
+                      {/each}
+                      {#if availableDivisions.filter(d => d.toLowerCase().includes((divisiSearchQuery || '').toLowerCase())).length === 0}
+                        <li class="px-4 py-3 text-xs text-slate-400 text-center italic">Belum ada divisi serupa</li>
+                      {/if}
+                    </ul>
+                  {/if}
+                </div>
               </div>
             </div>
 
@@ -3450,6 +3833,79 @@
             {:else}
               <div class="py-12 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Tidak ada pengurus ditemukan.</div>
             {/if}
+          {/if}
+        </div>
+      </div>
+    </div>
+  {:else if activeSection === 'gallery_coverflow' || activeSection === 'gallery_landscape' || activeSection === 'gallery_marquee'}
+    <!-- DYNAMIC GALLERIES MANAGEMENT -->
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start" in:fade={{ duration: 250, delay: 50 }}>
+      <!-- Form Panel -->
+      <div class="xl:col-span-4 space-y-6">
+        <Card class="border-slate-100 shadow-soft-xl bg-white relative overflow-hidden">
+          <div class="p-6">
+            <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
+              <Image class="h-5 w-5 text-indigo-500" />
+              {editingGalleryId ? 'Edit Gambar' : 'Tambah Gambar'}
+            </h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Pilih File Foto</label>
+                <div class="relative w-full h-11 border border-slate-200 border-dashed rounded-xl bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors">
+                  <input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" on:change={handleGalleryFileSelect} />
+                  <span class="text-xs font-semibold text-slate-500 flex items-center gap-2">
+                    <UploadCloud class="h-4 w-4 text-indigo-500" />
+                    {gallerySelectedFile ? gallerySelectedFile.name : 'Klik untuk Unggah File (Opsional)'}
+                  </span>
+                </div>
+              </div>
+              <div class="text-center relative">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+                <span class="relative bg-white px-2 text-[10px] font-bold text-slate-400">ATAU</span>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">URL Gambar Eksternal</label>
+                <Input type="url" bind:value={galleryImageUrl} on:input={() => gallerySelectedFile = null} placeholder="https://..." class="w-full text-sm font-medium" />
+              </div>
+              {#if galleryImageUrl || gallerySelectedFile}
+                <div class="rounded-xl overflow-hidden border border-slate-200 h-32 w-full bg-slate-50 flex items-center justify-center">
+                  {#if gallerySelectedFile}
+                    <span class="text-xs font-semibold text-indigo-600 px-4 text-center">Berkas terpilih akan diunggah saat disimpan</span>
+                  {:else}
+                    <img src={convertDriveUrl(galleryImageUrl)} alt="Preview" class="h-full w-full object-cover" />
+                  {/if}
+                </div>
+              {/if}
+              <div class="flex gap-3 pt-2">
+                {#if editingGalleryId}
+                  <Button type="button" variant="outline" class="flex-1 font-bold text-xs" on:click={() => { editingGalleryId = null; galleryImageUrl = ''; gallerySelectedFile = null; }}>Batal</Button>
+                {/if}
+                <Button type="button" class="flex-1 font-bold text-xs bg-indigo-600 hover:bg-indigo-700" on:click={addGalleryImage} disabled={isSubmitting}>
+                  {isSubmitting ? 'Menyimpan...' : (editingGalleryId ? 'Simpan' : 'Tambah')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <!-- List Panel -->
+      <div class="xl:col-span-8 space-y-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {#if isLoadingGallery}
+            <div class="col-span-full py-12 text-center text-xs font-semibold text-slate-400">Memuat galeri...</div>
+          {:else if galleryItems.length > 0}
+            {#each galleryItems as item}
+              <Card class="group overflow-hidden border-slate-100 relative h-32 hover:shadow-soft-md transition-all p-0">
+                <img src={item.image_url} alt="Gallery item" class="w-full h-full object-cover" />
+                <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-sm">
+                  <button on:click={() => startEditGallery(item)} class="p-2 bg-white/20 hover:bg-white text-white hover:text-indigo-600 rounded-lg transition-colors"><Edit class="h-4 w-4" /></button>
+                  <button on:click={() => deleteGalleryImage(item.id)} class="p-2 bg-white/20 hover:bg-white text-white hover:text-rose-600 rounded-lg transition-colors"><Trash2 class="h-4 w-4" /></button>
+                </div>
+              </Card>
+            {/each}
+          {:else}
+            <div class="col-span-full py-12 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Belum ada gambar di galeri ini.</div>
           {/if}
         </div>
       </div>

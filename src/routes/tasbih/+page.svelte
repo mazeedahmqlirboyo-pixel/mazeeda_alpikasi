@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { ArrowLeft, RotateCcw, Volume2, VolumeX, Vibrate, Target, X, Check } from 'lucide-svelte';
+  import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
   // State
   let count = 0;
@@ -97,7 +98,7 @@
   }
 
   // Tapping Logic
-  function handleTap() {
+  async function handleTap() {
     if (showResetModal || showTargetModal) return; // Disable tap when modal is open
 
     isTapped = true;
@@ -110,12 +111,14 @@
     const isTargetHit = mode === 'target' && count === customTarget;
 
     // Haptic feedback
-    if (isHapticEnabled && typeof navigator !== 'undefined' && navigator.vibrate) {
-      if (isTargetHit) {
-        navigator.vibrate([100, 50, 200]); // Distinct vibration pattern for target
-      } else {
-        navigator.vibrate(15); // Light tap
-      }
+    if (isHapticEnabled) {
+      try {
+        if (isTargetHit) {
+          await Haptics.vibrate({ duration: 150 });
+        } else {
+          await Haptics.vibrate({ duration: 40 });
+        }
+      } catch (e) {}
     }
 
     // Sound feedback
@@ -181,12 +184,12 @@
   }
 
   // Resets
-  function confirmReset() {
+  async function confirmReset() {
     count = 0;
     totalCount = 0;
     showResetModal = false;
-    if (isHapticEnabled && typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(50);
+    if (isHapticEnabled) {
+      try { await Haptics.vibrate({ duration: 80 }); } catch (e) {}
     }
   }
 

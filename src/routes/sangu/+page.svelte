@@ -734,18 +734,20 @@
         </Card>
 
         <!-- Unified Paper-like Reader Canvas -->
-        <Card noPadding class="border-slate-200/60 shadow-soft-sm bg-[#FCFBF7] text-slate-800 relative select-text">
+        <Card noPadding class="border-slate-200/60 shadow-soft-sm bg-[#FCFBF7] text-slate-800 relative select-none">
           <!-- Spiritual backdrop pattern -->
           <div class="absolute inset-0 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.02] pointer-events-none"></div>
           
           <!-- Traditional double border frame -->
           <div class="border-4 border-double border-teal-800/10 p-3.5 sm:p-8 md:p-10 m-2 sm:m-4 md:m-6 rounded-2xl relative">
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div 
               bind:this={readerContainer} 
-              class="sangu-reader-content select-text font-sans leading-relaxed" 
+              class="sangu-reader-content select-none font-sans leading-relaxed" 
               class:hide-latin={!showLatin}
               class:hide-translation={!showTranslation}
-              style="font-size: {arabicFontSize}px;"
+              style="font-size: {arabicFontSize}px; -webkit-touch-callout: none; -webkit-user-select: none;"
+              on:contextmenu|preventDefault
             >
               {@html selectedItem.content}
             </div>
@@ -939,11 +941,13 @@
     transform: translateY(-1px);
   }
 
-  .sangu-reader-content.hide-latin :global(.sangu-latin) {
+  .sangu-reader-content.hide-latin :global(.sangu-latin),
+  .sangu-reader-content.hide-latin :global(.sangu-latin):not(h1):not(h2):not(.sangu-heading) {
     display: none !important;
   }
 
-  .sangu-reader-content.hide-translation :global(.sangu-translation) {
+  .sangu-reader-content.hide-translation :global(.sangu-translation),
+  .sangu-reader-content.hide-translation :global(.sangu-translation):not(h1):not(h2):not(.sangu-heading) {
     display: none !important;
   }
   

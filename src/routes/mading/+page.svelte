@@ -24,6 +24,7 @@
     CheckCircle,
     Pencil,
     X as XIcon,
+    AlertCircle,
   } from "lucide-svelte";
 
   // Navigation / Tabs
@@ -111,8 +112,8 @@
   let selectedColor = "yellow"; // 'yellow' | 'pink' | 'cyan' | 'emerald'
   let isPostingNote = false;
   let alertMessage = "";
-
-  // Sticky Note Comments Modal State
+  let alertType: 'success' | 'error' = 'success';
+  let isEditing = false;
   let selectedNoteForComments: any = null;
   let noteCommentsList: any[] = [];
   let newNoteCommentText = "";
@@ -431,6 +432,19 @@
       document.documentElement.classList.remove("hide-mobile-nav");
     }
   });
+
+  // Custom Confirmation Modal State
+  let showConfirmModal = false;
+  let confirmConfig = {
+    title: '',
+    message: '',
+    onConfirm: async () => {},
+  };
+
+  function runWithConfirmation(title: string, message: string, onConfirm: () => Promise<void> | void) {
+    confirmConfig = { title, message, onConfirm };
+    showConfirmModal = true;
+  }
 
   // Fetch announcements & comments from database
   async function fetchAnnouncements() {
@@ -781,29 +795,34 @@
     }
   }
 
-  // ─── Delete Announcement Comment (Admin) ──────────────────────────────────
+  // ─── Delete Announcement Comment (Admin/Author) ─────────────────────────
   async function deleteAnnouncementComment(commentId: number | string) {
-    if (!confirm('Hapus komentar ini?')) return;
-    try {
-      const { error } = await supabase
-        .from('mading_comments')
-        .delete()
-        .eq('id', commentId);
-      if (error) throw error;
+    runWithConfirmation('Hapus Komentar', 'Apakah Anda yakin ingin menghapus komentar ini? Tindakan ini tidak dapat dibatalkan.', async () => {
+      try {
+        const { error, count } = await supabase
+          .from('mading_comments')
+          .delete({ count: 'exact' })
+          .eq('id', commentId);
+        if (error) throw error;
+        if (count === 0) throw new Error('Akses ditolak oleh database (RLS). Silakan izinkan akses Hapus di dashboard Supabase Anda.');
 
-      // Remove from local state
-      announcements = announcements.map(post => {
-        if (post.id === selectedAnnouncementForComments?.id) {
-          const updated = { ...post, comments: post.comments.filter((c: any) => c.id !== commentId) };
-          selectedAnnouncementForComments = updated;
-          return updated;
-        }
-        return post;
-      });
-      triggerAlert('Komentar berhasil dihapus.');
-    } catch (e) {
-      console.error('Delete announcement comment failed:', e);
-    }
+        // Remove from local state
+        announcements = announcements.map(post => {
+          if (post.id === selectedAnnouncementForComments?.id) {
+            const updated = { ...post, comments: post.comments.filter((c: any) => c.id !== commentId) };
+            selectedAnnouncementForComments = updated;
+            return updated;
+          }
+          return post;
+        });
+        triggerAlert('Komentar berhasil dihapus.');
+      } catch (e) {
+        console.error('Action failed:', e);
+      triggerAlert(e.message || 'Terjadi kesalahan sistem.', 'error');
+      } finally {
+        showConfirmModal = false;
+      }
+    });
   }
 
   // ─── Edit Announcement Comment (Admin) ────────────────────────────────────
@@ -811,11 +830,12 @@
     if (!editingAnnouncementCommentText.trim() || editingAnnouncementCommentId === null) return;
     const newText = editingAnnouncementCommentText.trim();
     try {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('mading_comments')
-        .update({ text: newText })
+        .update({ text: newText }, { count: 'exact' })
         .eq('id', editingAnnouncementCommentId);
       if (error) throw error;
+      if (count === 0) throw new Error('Akses ditolak oleh database (RLS). Silakan izinkan akses Edit di dashboard Supabase Anda.');
 
       announcements = announcements.map(post => {
         if (post.id === selectedAnnouncementForComments?.id) {
@@ -831,31 +851,37 @@
       editingAnnouncementCommentText = '';
       triggerAlert('Komentar berhasil diperbarui.');
     } catch (e) {
-      console.error('Edit announcement comment failed:', e);
+      console.error('Action failed:', e);
+      triggerAlert(e.message || 'Terjadi kesalahan sistem.', 'error');
     }
   }
 
-  // ─── Delete Note Comment (Admin) ──────────────────────────────────────────
+  // ─── Delete Note Comment (Admin/Author) ─────────────────────────────────
   async function deleteNoteComment(commentId: string | number) {
-    if (!confirm('Hapus komentar ini?')) return;
-    try {
-      const { error } = await supabase
-        .from('mading_note_comments')
-        .delete()
-        .eq('id', commentId);
-      if (error) throw error;
+    runWithConfirmation('Hapus Komentar', 'Apakah Anda yakin ingin menghapus komentar ini? Tindakan ini tidak dapat dibatalkan.', async () => {
+      try {
+        const { error, count } = await supabase
+          .from('mading_note_comments')
+          .delete({ count: 'exact' })
+          .eq('id', commentId);
+        if (error) throw error;
+        if (count === 0) throw new Error('Akses ditolak oleh database (RLS). Silakan izinkan akses Hapus di dashboard Supabase Anda.');
 
-      noteCommentsList = noteCommentsList.filter(c => c.id !== commentId);
-      // Decrement count on sticky note
-      stickyNotes = stickyNotes.map(n =>
-        n.id === selectedNoteForComments?.id
-          ? { ...n, comments_count: Math.max(0, (n.comments_count || 1) - 1) }
-          : n
-      );
-      triggerAlert('Komentar berhasil dihapus.');
-    } catch (e) {
-      console.error('Delete note comment failed:', e);
-    }
+        noteCommentsList = noteCommentsList.filter(c => c.id !== commentId);
+        // Decrement count on sticky note
+        stickyNotes = stickyNotes.map(n =>
+          n.id === selectedNoteForComments?.id
+            ? { ...n, comments_count: Math.max(0, (n.comments_count || 1) - 1) }
+            : n
+        );
+        triggerAlert('Komentar berhasil dihapus.');
+      } catch (e) {
+      console.error('Action failed:', e);
+      triggerAlert(e.message || 'Terjadi kesalahan sistem.', 'error');
+      } finally {
+        showConfirmModal = false;
+      }
+    });
   }
 
   // ─── Edit Note Comment (Admin) ────────────────────────────────────────────
@@ -863,11 +889,12 @@
     if (!editingNoteCommentText.trim() || editingNoteCommentId === null) return;
     const newText = editingNoteCommentText.trim();
     try {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('mading_note_comments')
-        .update({ text: newText })
+        .update({ text: newText }, { count: 'exact' })
         .eq('id', editingNoteCommentId);
       if (error) throw error;
+      if (count === 0) throw new Error('Akses ditolak oleh database (RLS). Silakan izinkan akses Edit di dashboard Supabase Anda.');
 
       noteCommentsList = noteCommentsList.map(c =>
         c.id === editingNoteCommentId ? { ...c, text: newText } : c
@@ -876,7 +903,8 @@
       editingNoteCommentText = '';
       triggerAlert('Komentar berhasil diperbarui.');
     } catch (e) {
-      console.error('Edit note comment failed:', e);
+      console.error('Action failed:', e);
+      triggerAlert(e.message || 'Terjadi kesalahan sistem.', 'error');
     }
   }
 
@@ -1026,11 +1054,12 @@
   }
 
   // Trigger temporary notification
-  function triggerAlert(msg: string) {
+  function triggerAlert(msg: string, type: 'success' | 'error' = 'success') {
     alertMessage = msg;
+    alertType = type;
     setTimeout(() => {
       alertMessage = "";
-    }, 3000);
+    }, 3500);
   }
 
   // Format category badge styles
@@ -1063,10 +1092,16 @@
   {#if alertMessage}
     <div
       transition:fade={{ duration: 150 }}
-      class="fixed top-20 right-4 z-50 flex items-center p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-semibold shadow-xl space-x-2.5 animate-in slide-in-from-top-4 duration-300"
+      class="fixed top-20 right-4 flex items-center p-4 rounded-xl border text-xs font-semibold shadow-xl space-x-2.5 animate-in slide-in-from-top-4 duration-300 max-w-sm
+        {alertType === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}"
+      style="z-index: 999999;"
     >
-      <CheckCircle class="h-4 w-4 text-emerald-600" />
-      <span>{alertMessage}</span>
+      {#if alertType === 'error'}
+        <AlertCircle class="h-4 w-4 shrink-0 text-rose-600" />
+      {:else}
+        <CheckCircle class="h-4 w-4 shrink-0 text-emerald-600" />
+      {/if}
+      <span class="leading-relaxed">{alertMessage}</span>
     </div>
   {/if}
 
@@ -1673,10 +1708,10 @@
               {#each noteCommentsList as comment}
                 {@const avatarUrl = convertDriveUrl(authorAvatarMap[comment.author] || '')}
                 {@const isAdminComment = comment.author && (comment.author.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.author.toUpperCase() === 'ADMIN MAZEEDA' || comment.author.toUpperCase() === 'ADMIN')}
-                {@const isEditing = editingNoteCommentId === comment.id}
+                {@const isEditing = editingNoteCommentId == comment.id}
                 <div class="bg-white border rounded-2xl p-3.5 shadow-soft-sm transition-all
                   {isAdminComment ? 'border-indigo-100' : 'border-slate-100'}
-                  {isAdmin ? 'group/nc' : ''}">
+                  {isAdmin || comment.author === $authStore.user?.name ? 'group/nc' : ''}">
                   <div class="flex items-start gap-3">
                     <!-- Avatar -->
                     <button
@@ -1708,17 +1743,17 @@
                         </div>
                         <div class="flex items-center gap-1 shrink-0">
                           <span class="text-[9px] text-slate-400 font-bold">{new Date(comment.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                          <!-- Admin Actions -->
-                          {#if isAdmin}
-                            <button on:click={() => { editingNoteCommentId = comment.id; editingNoteCommentText = comment.text; }}
-                              class="p-1 rounded-md text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-all opacity-0 group-hover/nc:opacity-100"
+                          <!-- Actions -->
+                          {#if isAdmin || comment.author === $authStore.user?.name}
+                            <button type="button" on:click|preventDefault|stopPropagation={() => { editingNoteCommentId = comment.id; editingNoteCommentText = comment.text; }}
+                              class="p-1.5 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all cursor-pointer"
                               title="Edit komentar">
-                              <Pencil class="h-3 w-3" />
+                              <Pencil class="h-3.5 w-3.5" />
                             </button>
-                            <button on:click={() => deleteNoteComment(comment.id)}
-                              class="p-1 rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover/nc:opacity-100"
+                            <button type="button" on:click|preventDefault|stopPropagation={() => deleteNoteComment(comment.id)}
+                              class="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
                               title="Hapus komentar">
-                              <Trash2 class="h-3 w-3" />
+                              <Trash2 class="h-3.5 w-3.5" />
                             </button>
                           {/if}
                         </div>
@@ -1883,10 +1918,10 @@
               {#each selectedAnnouncementForComments.comments as comment}
                 {@const avatarUrl = convertDriveUrl(authorAvatarMap[comment.author] || '')}
                 {@const isAdminComment = comment.author && (comment.author.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.author.toUpperCase() === 'ADMIN MAZEEDA' || comment.author.toUpperCase() === 'ADMIN')}
-                {@const isEditing = editingAnnouncementCommentId === comment.id}
+                {@const isEditing = editingAnnouncementCommentId == comment.id}
                 <div class="bg-white border rounded-2xl p-3.5 shadow-soft-sm transition-all
                   {isAdminComment ? 'border-indigo-100' : 'border-slate-100'}
-                  {isAdmin ? 'group/ac' : ''}">
+                  {isAdmin || comment.author === $authStore.user?.name ? 'group/ac' : ''}">
                   <div class="flex items-start gap-3">
                     <!-- Avatar -->
                     <button
@@ -1918,17 +1953,17 @@
                         </div>
                         <div class="flex items-center gap-1 shrink-0">
                           <span class="text-[9px] text-slate-400 font-bold">{comment.date}</span>
-                          <!-- Admin Actions -->
-                          {#if isAdmin}
-                            <button on:click={() => { editingAnnouncementCommentId = comment.id; editingAnnouncementCommentText = comment.text; }}
-                              class="p-1 rounded-md text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-all opacity-0 group-hover/ac:opacity-100"
+                          <!-- Actions -->
+                          {#if isAdmin || comment.author === $authStore.user?.name}
+                            <button type="button" on:click|preventDefault|stopPropagation={() => { editingAnnouncementCommentId = comment.id; editingAnnouncementCommentText = comment.text; }}
+                              class="p-1.5 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all cursor-pointer"
                               title="Edit komentar">
-                              <Pencil class="h-3 w-3" />
+                              <Pencil class="h-3.5 w-3.5" />
                             </button>
-                            <button on:click={() => deleteAnnouncementComment(comment.id)}
-                              class="p-1 rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover/ac:opacity-100"
+                            <button type="button" on:click|preventDefault|stopPropagation={() => deleteAnnouncementComment(comment.id)}
+                              class="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
                               title="Hapus komentar">
-                              <Trash2 class="h-3 w-3" />
+                              <Trash2 class="h-3.5 w-3.5" />
                             </button>
                           {/if}
                         </div>
@@ -2000,6 +2035,31 @@
             <Send class="h-4.5 w-4.5" />
           </button>
         </form>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- ==================== CONFIRMATION MODAL ==================== -->
+{#if showConfirmModal}
+  <div class="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" style="z-index: 9999;">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+      <div class="p-5 border-b border-slate-100 flex items-center gap-3">
+        <div class="h-10 w-10 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
+          <AlertCircle class="h-5 w-5 text-rose-500" />
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-800">{confirmConfig.title}</h3>
+          <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">{confirmConfig.message}</p>
+        </div>
+      </div>
+      <div class="p-4 bg-slate-50/50 flex gap-3">
+        <button type="button" class="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold h-10 transition-colors" on:click={() => showConfirmModal = false}>
+          Batal
+        </button>
+        <button type="button" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold h-10 shadow-soft-sm transition-colors" on:click={confirmConfig.onConfirm}>
+          Ya, Hapus
+        </button>
       </div>
     </div>
   </div>

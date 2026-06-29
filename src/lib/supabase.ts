@@ -38,3 +38,23 @@ export const uploadMemoryPhoto = async (file: File, folderName: string = 'timeli
     
   return urlData.publicUrl;
 };
+
+// Storage helper for Profile photos (Batch Upload)
+export const uploadProfilePhoto = async (file: File) => {
+  const fileExt = file.name.split('.').pop();
+  const randomName = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  const fileName = `${randomName}.${fileExt}`;
+  const filePath = `profiles/${fileName}`;
+  
+  const { data, error } = await supabase.storage
+    .from('memories')
+    .upload(filePath, file);
+    
+  if (error) throw error;
+  
+  const { data: urlData } = supabase.storage
+    .from('memories')
+    .getPublicUrl(filePath);
+    
+  return urlData.publicUrl;
+};

@@ -49,6 +49,7 @@
 
   // Do not show full layouts (sidebar / bottom-nav) on the Auth page
   $: isAuthPage = currentPath === '/auth';
+  $: isFullscreenPage = currentPath.startsWith('/perjalanan');
   
   import { onMount, onDestroy, tick } from 'svelte';
   import { browser } from '$app/environment';
@@ -420,6 +421,22 @@
       window.addEventListener('touchmove', onTouchMove, { passive: true });
       window.addEventListener('touchend', onTouchEnd);
 
+      // Capacitor Native Back Button Handling
+      import('@capacitor/app').then(({ App }) => {
+        App.addListener('backButton', ({ canGoBack }) => {
+          const path = window.location.pathname;
+          // Return to previous page if not on home or auth
+          if (path !== '/' && path !== '/auth') {
+            window.history.back();
+          } else {
+            // Exit app only if on root/home or auth page
+            App.exitApp();
+          }
+        });
+      }).catch(() => {
+        // Ignore if not running in Capacitor environment
+      });
+
       // Register Service Worker with Auto-Update logic
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
@@ -753,22 +770,14 @@
 
 <!-- ===== PHOTO LIGHTBOX MODAL ===== -->
 {#if showLightbox}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div 
     class="fixed inset-0 z-[99999] flex items-center justify-center p-4"
     style="background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);"
     on:click={closeLightbox}
     transition:fade={{ duration: 200 }}
   >
-    <!-- Close Button -->
-    <button
-      type="button"
-      on:click|stopPropagation={closeLightbox}
-      class="absolute top-4 right-4 z-10 h-10 w-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors"
-      title="Tutup (Esc)"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
-    </button>
-
     <!-- Foto Besar -->
     <div 
       class="max-w-sm w-full mx-auto"
@@ -782,7 +791,6 @@
         style="max-height: 80vh; object-fit: contain;"
         on:error={(e) => { closeLightbox(); }}
       />
-      <p class="text-center text-white/60 text-xs font-semibold mt-3">Tekan Esc atau klik di luar untuk menutup</p>
     </div>
   </div>
 {/if}
@@ -829,7 +837,7 @@
   {/if}
 {/if}
 
-<div class="min-h-screen flex flex-col bg-white text-slate-800">
+<div class="min-h-screen flex flex-col bg-white text-slate-800 w-full overflow-x-hidden">
   {#if $authStore.loading}
     <!-- Loading Screen while verifying session -->
     <main class="flex-1 flex flex-col items-center justify-center p-4 bg-slate-50 min-h-screen">
@@ -843,6 +851,15 @@
     <main class="flex-1 flex items-center justify-center p-4 bg-slate-50">
       {#key currentPath}
         <div in:fade={{ duration: 250, delay: 100 }} out:fade={{ duration: 150 }} class="w-full max-w-md">
+          <slot />
+        </div>
+      {/key}
+    </main>
+  {:else if isFullscreenPage}
+    <!-- Full-screen layout without standard navigation bars -->
+    <main class="w-full min-h-screen p-0 m-0 bg-[#060a12] overflow-x-hidden">
+      {#key currentPath}
+        <div in:fade={{ duration: 250, delay: 100 }} out:fade={{ duration: 150 }} class="w-full h-full">
           <slot />
         </div>
       {/key}
@@ -1067,7 +1084,7 @@
         {/if}
       </aside>
 
-      <main class="flex-1 bg-white p-2 sm:p-4 md:p-8 {$page.url.searchParams.has('detail') ? 'pb-8' : 'pb-24'} md:pb-8 overflow-y-auto relative">
+      <main class="flex-1 bg-white p-2 sm:p-4 md:p-8 {$page.url.searchParams.has('detail') ? 'pb-8' : 'pb-24'} md:pb-8 overflow-y-auto overflow-x-hidden relative">
         {#if showMyProfile}
           {#if isLoadingProfile}
           <div class="py-24 text-center space-y-4">
@@ -1547,7 +1564,7 @@
                       style="min-height: 48px;"
                     >
                       <LogOut class="h-5 w-5" />
-                      <span>Keluar dari Akun (Log Out)</span>
+                      <span>Logout</span>
                     </button>
                   </div>
                 {/if}
@@ -1574,7 +1591,7 @@
 
                       <!-- Text -->
                       <div class="text-center space-y-1.5">
-                        <h3 class="text-lg font-black text-slate-800">Keluar dari Akun?</h3>
+                        <h3 class="text-lg font-black text-slate-800">Logout?</h3>
                         <p class="text-sm text-slate-500 leading-relaxed">Apakah Anda yakin ingin keluar dari sesi ini?</p>
                       </div>
 

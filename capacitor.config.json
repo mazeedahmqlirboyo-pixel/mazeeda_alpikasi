@@ -1,0 +1,11 @@
+{
+  "appId": "mazeedahmqlirboyo.pixel",
+  "appName": "MAZEEDA",
+  "webDir": "build",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}
