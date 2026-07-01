@@ -11,6 +11,7 @@
   import { authStore } from "$lib/auth";
   import { deferredPrompt, showInstallBtn } from "$lib/pwaStore";
   import { Geolocation } from '@capacitor/geolocation';
+  import { createSWRStore } from "$lib/swrStore";
   import {
     Users,
     Megaphone,
@@ -1009,26 +1010,19 @@
     }
   }
 
-  // --- Dynamic Stats & Highlights fetching ---
-  async function fetchStatsAndHighlights() {
-    try {
-      isLoadingStats = true;
-
+  // --- Dynamic Stats & Highlights SWR Store ---
+  const dashboardDataStore = createSWRStore(
+    "dashboardStats",
+    async () => {
       // 1. Fetch allowed_alumni count
       const { count: squadCount } = await supabase
         .from("allowed_alumni")
         .select("*", { count: "exact", head: true });
-      if (squadCount !== null) {
-        membersCount = `${squadCount} Anggota`;
-      }
 
       // 1b. Fetch asatidzah count
       const { count: asatidzahCountRaw } = await supabase
         .from("asatidzah")
         .select("*", { count: "exact", head: true });
-      if (asatidzahCountRaw !== null) {
-        asatidzahCount = `${asatidzahCountRaw} Pengajar`;
-      }
 
       // 2. Fetch mading counts (announcements + notes)
       const { count: annCount } = await supabase
@@ -1037,29 +1031,11 @@
       const { count: notesCount } = await supabase
         .from("mading_notes")
         .select("*", { count: "exact", head: true });
-      const totalMading = (annCount || 0) + (notesCount || 0);
-      madingCount = `${totalMading} Momen`;
 
       // 3. Fetch bacaan count
       const { count: bacaanCount } = await supabase
         .from("bacaan")
         .select("*", { count: "exact", head: true });
-      if (bacaanCount !== null) {
-        sanguCount = `${bacaanCount} Berkas`;
-      }
-
-      // 4. Quran progress from localStorage
-      if (typeof localStorage !== "undefined") {
-        const storedName = localStorage.getItem("quran_selectedSurahName");
-        const storedAyats = localStorage.getItem("quran_selectedSurahAyats");
-        if (storedName) {
-          quranProgress = storedName;
-          quranDescription = `${storedAyats || "0"} Ayat - Terakhir Dibaca`;
-        } else {
-          quranProgress = "QS. Al-Fatihah";
-          quranDescription = "Surah Pertama";
-        }
-      }
 
       // 5. Fetch recent announcement
       const { data: annData } = await supabase
@@ -1067,27 +1043,6 @@
         .select("*")
         .order("created_at", { ascending: false })
         .limit(1);
-      if (annData && annData.length > 0) {
-        const item = annData[0];
-        recentAnnouncement = {
-          id: item.id,
-          title: item.title,
-          category: item.category,
-          date: new Date(item.created_at).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          }),
-          excerpt:
-            item.content.length > 150
-              ? item.content.substring(0, 150) + "..."
-              : item.content,
-          author: item.author,
-        };
-        hasAnnouncement = true;
-      } else {
-        hasAnnouncement = false;
-      }
 
       // 6. Fetch recent memory
       const { data: memData } = await supabase
@@ -1095,39 +1050,93 @@
         .select("*, memory_likes(user_name)")
         .order("date", { ascending: false })
         .limit(1);
-      if (memData && memData.length > 0) {
-        const item = memData[0];
-        recentMemory = {
-          title: item.title,
-          date: new Date(item.date).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          }),
-          location: item.location,
-          likes: (item.memory_likes || []).length,
-          image_url: item.image_url,
-        };
-        hasMemory = true;
-      } else {
-        hasMemory = false;
-      }
 
-      // Fetch Galleries (No limit as requested)
+      // Fetch Galleries
       const { data: coverflowData } = await supabase.from("gallery_coverflow").select("image_url").order("created_at", { ascending: true });
-      if (coverflowData) coverflowImages = coverflowData.map(d => d.image_url);
-
       const { data: landscapeData } = await supabase.from("gallery_landscape").select("image_url").order("created_at", { ascending: true });
-      if (landscapeData) landscapeImages = landscapeData.map(d => d.image_url);
-
       const { data: marqueeData } = await supabase.from("gallery_marquee").select("image_url").order("created_at", { ascending: true });
-      if (marqueeData) marqueeImages = marqueeData.map(d => d.image_url);
 
-    } catch (e) {
-      console.warn("Failed to fetch stats and highlights:", e);
-    } finally {
-      isLoadingStats = false;
+      return {
+        squadCount,
+        asatidzahCountRaw,
+        annCount,
+        notesCount,
+        bacaanCount,
+        annData,
+        memData,
+        coverflowData,
+        landscapeData,
+        marqueeData
+      };
+    },
+    null
+  );
+
+  // Sync state variables with SWR Store
+  $: if ($dashboardDataStore) {
+    isLoadingStats = false;
+    const d = $dashboardDataStore;
+
+    if (d.squadCount !== null) membersCount = `${d.squadCount} Anggota`;
+    if (d.asatidzahCountRaw !== null) asatidzahCount = `${d.asatidzahCountRaw} Pengajar`;
+    
+    const totalMading = (d.annCount || 0) + (d.notesCount || 0);
+    madingCount = `${totalMading} Momen`;
+    
+    if (d.bacaanCount !== null) sanguCount = `${d.bacaanCount} Berkas`;
+
+    if (d.annData && d.annData.length > 0) {
+      const item = d.annData[0];
+      recentAnnouncement = {
+        id: item.id,
+        title: item.title,
+        category: item.category,
+        date: new Date(item.created_at).toLocaleDateString("id-ID", {
+          day: "numeric", month: "long", year: "numeric",
+        }),
+        excerpt: item.content.length > 150 ? item.content.substring(0, 150) + "..." : item.content,
+        author: item.author,
+      };
+      hasAnnouncement = true;
+    } else {
+      hasAnnouncement = false;
     }
+
+    if (d.memData && d.memData.length > 0) {
+      const item = d.memData[0];
+      recentMemory = {
+        title: item.title,
+        date: new Date(item.date).toLocaleDateString("id-ID", {
+          day: "numeric", month: "long", year: "numeric",
+        }),
+        location: item.location,
+        likes: (item.memory_likes || []).length,
+        image_url: item.image_url,
+      };
+      hasMemory = true;
+    } else {
+      hasMemory = false;
+    }
+
+    if (d.coverflowData) coverflowImages = d.coverflowData.map((x: any) => x.image_url);
+    if (d.landscapeData) landscapeImages = d.landscapeData.map((x: any) => x.image_url);
+    if (d.marqueeData) marqueeImages = d.marqueeData.map((x: any) => x.image_url);
+  }
+
+  function fetchStatsAndHighlights() {
+    // 4. Quran progress from localStorage
+    if (typeof localStorage !== "undefined") {
+      const storedName = localStorage.getItem("quran_selectedSurahName");
+      const storedAyats = localStorage.getItem("quran_selectedSurahAyats");
+      if (storedName) {
+        quranProgress = storedName;
+        quranDescription = `${storedAyats || "0"} Ayat - Terakhir Dibaca`;
+      } else {
+        quranProgress = "QS. Al-Fatihah";
+        quranDescription = "Surah Pertama";
+      }
+    }
+    dashboardDataStore.revalidate();
   }
 
   let greeting = "";

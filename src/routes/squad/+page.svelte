@@ -261,8 +261,10 @@
         <div class="absolute inset-0 opacity-20 overflow-hidden">
           <div class="absolute -top-10 -left-10 w-44 h-44 rounded-full bg-white blur-xl"></div>
           <div class="absolute -bottom-20 -right-20 w-64 h-64 rounded-full bg-white blur-2xl"></div>
-          <div class="absolute top-1/2 left-1/3 w-32 h-32 rounded-full bg-pink-300 blur-xl animate-pulse" style="animation-duration: 6s;"></div>
+          <div class="absolute top-1/2 left-1/3 w-32 h-32 rounded-full bg-white blur-xl animate-pulse" style="animation-duration: 6s;"></div>
         </div>
+        <!-- Soft Gradient Fade to White -->
+        <div class="absolute bottom-[-1px] left-0 right-0 h-16 sm:h-24 bg-gradient-to-t from-white to-transparent z-0"></div>
       </div>
 
       <!-- Content wrapper with negative margin to overlap avatar with banner -->
@@ -337,11 +339,11 @@
               </div>
               <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Tempat Tinggal</span>
-                <strong class="text-slate-800 font-medium leading-relaxed">{capitalizeEachWord(selectedMember.alamat_ktp)}</strong>
+                <strong class="text-slate-800 font-medium leading-relaxed text-justify">{capitalizeEachWord(selectedMember.alamat_ktp)}</strong>
               </div>
               <div class="flex flex-col gap-1 py-1.5">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Rute Lengkap Perjalanan</span>
-                <strong class="text-slate-800 font-medium leading-relaxed">{selectedMember.rute_lengkap || '-'}</strong>
+                <strong class="text-slate-800 font-medium leading-relaxed text-justify">{selectedMember.rute_lengkap || '-'}</strong>
               </div>
             </div>
           </div>
@@ -378,7 +380,7 @@
               </div>
               <div class="flex flex-col gap-1 py-1.5">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Alamat Pendidikan</span>
-                <strong class="text-slate-800 font-medium leading-relaxed">{capitalizeEachWord(selectedMember.alamat_riwayatpendidikan)}</strong>
+                <strong class="text-slate-800 font-medium leading-relaxed text-justify">{capitalizeEachWord(selectedMember.alamat_riwayatpendidikan)}</strong>
               </div>
             </div>
           </div>
@@ -463,11 +465,11 @@
             <div class="bg-slate-50/50 rounded-2xl p-4 border border-slate-200/60 space-y-3 text-xs font-semibold text-slate-600">
               <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Hobi</span>
-                <strong class="text-slate-800 font-medium leading-relaxed">{selectedMember.hobi || '-'}</strong>
+                <strong class="text-slate-800 font-medium leading-relaxed text-justify">{selectedMember.hobi || '-'}</strong>
               </div>
               <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Keterampilan Khusus</span>
-                <strong class="text-slate-800 font-medium leading-relaxed">{selectedMember.keterampilan_khusus || '-'}</strong>
+                <strong class="text-slate-800 font-medium leading-relaxed text-justify">{selectedMember.keterampilan_khusus || '-'}</strong>
               </div>
               <div class="flex flex-col gap-1 py-1.5">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Musik Kesukaan</span>
@@ -512,7 +514,7 @@
             {#if selectedMember.kutipan_kenangan}
               <div class="text-center italic py-4 border-b border-slate-200/40 relative z-10">
                 <p class="text-base sm:text-lg font-extrabold text-primary tracking-tight leading-relaxed">"{selectedMember.kutipan_kenangan}"</p>
-                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mt-2">— Kutipan Memori</span>
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mt-2">— Kutipan Memori —</span>
               </div>
             {/if}
             
@@ -636,9 +638,38 @@
 
     <!-- Directory Grid -->
     {#if isLoading}
-      <div class="py-24 text-center space-y-4">
-        <div class="animate-spin h-8 w-8 border-3 border-primary border-t-transparent rounded-full mx-auto"></div>
-        <p class="text-xs font-semibold text-slate-500">Menyinkronkan data alumni...</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {#each [
+          { name: 'w-1/2', loc: 'w-[40%]', meta: 'w-[60%]', delay: '0ms' },
+          { name: 'w-2/3', loc: 'w-[30%]', meta: 'w-[75%]', delay: '150ms' },
+          { name: 'w-3/4', loc: 'w-[50%]', meta: 'w-[40%]', delay: '300ms' },
+          { name: 'w-1/2', loc: 'w-[65%]', meta: 'w-[35%]', delay: '450ms' },
+          { name: 'w-5/6', loc: 'w-[45%]', meta: 'w-[55%]', delay: '600ms' },
+          { name: 'w-2/3', loc: 'w-[35%]', meta: 'w-[70%]', delay: '750ms' },
+          { name: 'w-3/4', loc: 'w-[55%]', meta: 'w-[45%]', delay: '900ms' },
+          { name: 'w-1/2', loc: 'w-[70%]', meta: 'w-[50%]', delay: '1050ms' }
+        ] as skeleton}
+          <div class="bg-white border border-slate-200/60 rounded-2xl p-4 sm:p-5 h-[90px] animate-pulse flex flex-col justify-center" style="animation-delay: {skeleton.delay};">
+            <div class="flex items-center space-x-3 min-w-0">
+              <div class="h-10 w-10 rounded-full bg-slate-200 shrink-0 relative overflow-hidden">
+                <div class="absolute inset-0 bg-blue-500/20 rounded-full w-full h-full"></div>
+              </div>
+              <div class="flex-1 min-w-0 space-y-2.5">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="h-4 bg-slate-200 rounded-full w-full overflow-hidden">
+                    <div class="h-full bg-blue-500 rounded-full {skeleton.name}"></div>
+                  </div>
+                  <div class="h-4 bg-slate-200 rounded-full w-full overflow-hidden">
+                    <div class="h-full bg-blue-400 rounded-full {skeleton.meta}"></div>
+                  </div>
+                </div>
+                <div class="h-3 bg-slate-200 rounded-full w-full overflow-hidden">
+                  <div class="h-full bg-blue-300 rounded-full {skeleton.loc}"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {/each}
       </div>
     {:else}
       {#if filteredMembers.length > 0}

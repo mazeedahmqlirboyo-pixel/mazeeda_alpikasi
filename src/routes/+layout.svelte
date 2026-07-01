@@ -1,7 +1,7 @@
 <script lang="ts">
   import '../app.postcss';
   import { page } from '$app/stores';
-  import { fade, slide } from 'svelte/transition';
+  import { fade, slide, fly, scale } from 'svelte/transition';
   import { 
     LayoutDashboard, 
     Users, 
@@ -146,6 +146,11 @@
     }
     return cleaned;
   }
+
+  // Splash Screen State
+  let showSplash = true;
+  let splashMounted = false;
+  let splashProgress = 0;
 
   // Profile Overlay State & Helpers
   let showMyProfile = false;
@@ -401,6 +406,18 @@
   }
 
   onMount(() => {
+    splashMounted = true;
+    
+    // Simulate randomized loading progress
+    setTimeout(() => { splashProgress = Math.floor(Math.random() * 15) + 15; }, 2100);
+    setTimeout(() => { splashProgress = Math.floor(Math.random() * 20) + 40; }, 3200);
+    setTimeout(() => { splashProgress = Math.floor(Math.random() * 15) + 70; }, 4500);
+    setTimeout(() => { splashProgress = 100; }, 5500);
+
+    setTimeout(() => {
+      showSplash = false;
+    }, 6000);
+
     initAuth();
     if (browser) {
       // Validate if logged-in member still exists in the database
@@ -764,9 +781,92 @@
       isLoadingProfile = false;
     }
   }
+  let windowScrollY = 0;
+  let mainScrollY = 0;
+  $: scrollY = windowScrollY || mainScrollY;
+  $: isScrolled = scrollY > 20;
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window on:keydown={handleKeydown} bind:scrollY={windowScrollY} />
+
+{#if showSplash}
+  <!-- Premium White Splash Screen -->
+  <div class="fixed inset-0 z-[999999] bg-slate-50 flex flex-col items-center justify-center overflow-hidden" out:fade={{ duration: 800 }}>
+    {#if splashMounted}
+      <!-- Background Decorative Elements -->
+      <div class="absolute inset-0 z-0 opacity-40">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3" in:fade={{ duration: 1500 }}></div>
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl -translate-x-1/3 translate-y-1/3" in:fade={{ duration: 1500 }}></div>
+      </div>
+
+      <!-- Animated Splash Mascot -->
+      <div class="relative z-10 flex flex-col items-center">
+        
+        <!-- The Peacock (Splash Version) -->
+        <div class="relative w-40 h-40 mb-8" in:fly={{ y: 50, duration: 1000, delay: 300 }}>
+          <!-- Tail Feathers -->
+          <div class="absolute inset-x-0 bottom-4 h-40 flex justify-center items-end z-0">
+            <div in:fly={{ y: 80, duration: 800, delay: 1000 }} class="absolute bottom-0"><div class="w-10 h-24 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg" style="transform: rotate(-75deg); transform-origin: bottom center;"><div class="w-4 h-5 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"></div></div></div>
+            
+            <div in:fly={{ y: 80, duration: 800, delay: 850 }} class="absolute bottom-0"><div class="w-10 h-32 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg" style="transform: rotate(-45deg); transform-origin: bottom center;"><div class="w-5 h-6 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"></div></div></div>
+            
+            <div in:fly={{ y: 80, duration: 800, delay: 700 }} class="absolute bottom-0"><div class="w-10 h-40 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg" style="transform: rotate(-15deg); transform-origin: bottom center;"><div class="w-5 h-6 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"></div></div></div>
+            
+            <div in:fly={{ y: 80, duration: 800, delay: 700 }} class="absolute bottom-0"><div class="w-10 h-40 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg" style="transform: rotate(15deg); transform-origin: bottom center;"><div class="w-5 h-6 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"></div></div></div>
+            
+            <div in:fly={{ y: 80, duration: 800, delay: 850 }} class="absolute bottom-0"><div class="w-10 h-32 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg" style="transform: rotate(45deg); transform-origin: bottom center;"><div class="w-5 h-6 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"></div></div></div>
+            
+            <div in:fly={{ y: 80, duration: 800, delay: 1000 }} class="absolute bottom-0"><div class="w-10 h-24 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg" style="transform: rotate(75deg); transform-origin: bottom center;"><div class="w-4 h-5 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"></div></div></div>
+          </div>
+
+          <!-- Body -->
+          <div class="absolute bottom-0 left-1/2 -ml-9 w-18 h-32 bg-blue-600 rounded-t-full rounded-b-[30px] shadow-[inset_0_-10px_0_rgba(0,0,0,0.2)] z-10" style="width: 72px;">
+            
+            <!-- Crest -->
+            <div class="absolute -top-6 left-1/2 -translate-x-1/2 flex space-x-1.5" in:scale={{ duration: 500, delay: 1200, start: 0 }}>
+              <div class="w-1 h-5 bg-slate-800 rotate-[-25deg] origin-bottom relative"><div class="absolute -top-2 -left-1 w-3 h-3 bg-blue-400 rounded-full shadow-sm"></div></div>
+              <div class="w-1 h-6 bg-slate-800 relative"><div class="absolute -top-2 -left-1 w-3 h-3 bg-blue-400 rounded-full shadow-sm"></div></div>
+              <div class="w-1 h-5 bg-slate-800 rotate-[25deg] origin-bottom relative"><div class="absolute -top-2 -left-1 w-3 h-3 bg-blue-400 rounded-full shadow-sm"></div></div>
+            </div>
+
+            <!-- Eyes -->
+            <div class="absolute top-6 left-1/2 -translate-x-1/2 w-12 h-5 flex justify-between px-1 z-10">
+              <!-- Normal Open Eyes -->
+              <div class="relative w-4 h-5 bg-white rounded-full overflow-hidden shadow-inner" in:scale={{ duration: 400, delay: 1300 }}>
+                <div class="absolute top-1 left-1 w-2.5 h-2.5 bg-slate-900 rounded-full"></div>
+              </div>
+              <div class="relative w-4 h-5 bg-white rounded-full overflow-hidden shadow-inner" in:scale={{ duration: 400, delay: 1300 }}>
+                <div class="absolute top-1 right-1 w-2.5 h-2.5 bg-slate-900 rounded-full"></div>
+              </div>
+            </div>
+
+            <!-- Smiling Cheeks -->
+            <div class="absolute top-9 left-2 w-3 h-1.5 bg-rose-400 rounded-full opacity-60 z-10" in:scale={{ duration: 300, delay: 1400 }}></div>
+            <div class="absolute top-9 right-2 w-3 h-1.5 bg-rose-400 rounded-full opacity-60 z-10" in:scale={{ duration: 300, delay: 1400 }}></div>
+
+            <!-- Beak -->
+            <div class="absolute top-12 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[10px] border-t-yellow-400 z-20" in:scale={{ duration: 400, delay: 1400 }}></div>
+
+            <!-- Wings -->
+            <div class="absolute bottom-4 -left-3 w-8 h-14 bg-blue-500 rounded-full origin-top rotate-[20deg] shadow-[inset_-2px_0_10px_rgba(0,0,0,0.1)] z-20 animate-wave-left" in:fly={{ x: 20, duration: 600, delay: 1000 }}></div>
+            <div class="absolute bottom-4 -right-3 w-8 h-14 bg-blue-500 rounded-full origin-top rotate-[-20deg] shadow-[inset_2px_0_10px_rgba(0,0,0,0.1)] z-20 animate-wave-right" in:fly={{ x: -20, duration: 600, delay: 1000 }}></div>
+          </div>
+        </div>
+        
+        <!-- Typography -->
+        <div class="mt-4 flex flex-col items-center">
+          <h1 class="text-4xl font-extrabold tracking-[0.3em] text-slate-800" in:fly={{ y: 20, duration: 800, delay: 1500 }}>MAZEEDA</h1>
+          <p class="text-slate-500 font-medium tracking-widest text-xs mt-2 uppercase" in:fade={{ duration: 800, delay: 1700 }}>Portal Alumni & Santri</p>
+        </div>
+      </div>
+      
+      <!-- Modern Progress Bar -->
+      <div class="absolute bottom-20 w-48 h-1 bg-slate-200 rounded-full overflow-hidden" in:fade={{ delay: 2000 }}>
+        <div class="h-full bg-primary rounded-full transition-all duration-700 ease-out" style="width: {splashProgress}%;"></div>
+      </div>
+    {/if}
+  </div>
+{/if}
 
 <!-- ===== PHOTO LIGHTBOX MODAL ===== -->
 {#if showLightbox}
@@ -799,6 +899,34 @@
   @keyframes lightboxZoomIn {
     from { opacity: 0; transform: scale(0.7); }
     to   { opacity: 1; transform: scale(1); }
+  }
+
+  /* Animasi Progress Bar Splash Screen */
+  @keyframes progress {
+    0% { width: 0%; opacity: 1; }
+    50% { width: 70%; opacity: 1; }
+    100% { width: 100%; opacity: 0; }
+  }
+  .animate-progress {
+    animation: progress 3.8s ease-in-out 2s both;
+  }
+
+  /* Animasi Sayap Dadah Dadah */
+  @keyframes wave-left {
+    0%, 100% { transform: rotate(20deg); }
+    50% { transform: rotate(70deg); }
+  }
+  @keyframes wave-right {
+    0%, 100% { transform: rotate(-20deg); }
+    50% { transform: rotate(-70deg); }
+  }
+  .animate-wave-left {
+    animation: wave-left 0.8s ease-in-out infinite;
+    animation-delay: 1.6s;
+  }
+  .animate-wave-right {
+    animation: wave-right 0.8s ease-in-out infinite;
+    animation-delay: 1.6s;
   }
 </style>
 
@@ -867,9 +995,10 @@
   {:else}
     <!-- App layout for general modules -->
     
-    <!-- Top Header for Branding & Mobile Settings -->
-    <header class="sticky top-0 z-40 w-full bg-white/85 backdrop-blur-md border-b border-border/50 h-16 px-4 flex items-center justify-between md:px-8">
-      <a href="/" class="flex items-center space-x-3 group" on:click={handleNavClick}>
+    <!-- Top Header for Branding & Mobile Settings (Static, non-floating) -->
+    <div class="relative z-[100] w-full shrink-0 bg-white border-b border-slate-200/50">
+      <header class="w-full mx-auto flex items-center justify-between h-[68px] px-4 md:px-8">
+        <a href="/" class="flex items-center space-x-3 group" on:click={handleNavClick}>
         <img referrerpolicy="no-referrer" 
           src="/logo.png" 
           alt="MAZEEDA Logo" 
@@ -895,84 +1024,19 @@
           <div class="flex items-center space-x-2">
             <!-- 🔔 Notification Bell Button -->
             <div class="relative">
-              <button
-                on:click={openNotifPanel}
-                class="relative h-9 w-9 rounded-full flex items-center justify-center border transition-all duration-200
-                  {showNotifPanel ? 'bg-primary text-white border-primary' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-primary'}
-                  shadow-soft-sm cursor-pointer"
-                title="Notifikasi"
+              <a
+                href="/notifikasi"
+                class="relative h-9 w-9 rounded-full flex items-center justify-center border transition-all duration-200 shadow-soft-sm hover:scale-105 {currentPath === '/notifikasi' ? 'bg-primary text-white border-primary' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-primary'}"
+                title="Pusat Notifikasi"
                 style="min-height: 36px; min-width: 36px;"
               >
                 <Bell class="h-4.5 w-4.5" />
                 {#if unreadCount > 0}
-                  <span class="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow">
+                  <span class="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-sm">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 {/if}
-              </button>
-
-              <!-- Notification Dropdown Panel -->
-              {#if showNotifPanel}
-                <!-- Backdrop -->
-                <button
-                  type="button"
-                  class="fixed inset-0 z-40 cursor-default bg-transparent"
-                  on:click={() => showNotifPanel = false}
-                  aria-label="Tutup notifikasi"
-                ></button>
-
-                <div
-                  class="absolute right-0 top-[calc(100%+10px)] z-50 w-80 bg-white border border-slate-200/80 rounded-2xl shadow-xl overflow-hidden"
-                  transition:fade={{ duration: 150 }}
-                >
-                  <!-- Header -->
-                  <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                      <Bell class="h-4 w-4 text-primary" />
-                      <span class="text-sm font-black text-slate-800">Notifikasi</span>
-                    </div>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{notifications.length} pesan</span>
-                  </div>
-
-                  <!-- List -->
-                  <div class="max-h-80 overflow-y-auto divide-y divide-slate-50">
-                    {#if notifications.length === 0}
-                      <div class="py-10 text-center">
-                        <Bell class="h-8 w-8 text-slate-200 mx-auto mb-2" />
-                        <p class="text-xs text-slate-400 font-semibold">Belum ada notifikasi</p>
-                      </div>
-                    {:else}
-                      {#each notifications as notif (notif.id)}
-                        {@const style = getNotifStyle(notif.type)}
-                        <div class="px-4 py-3 hover:bg-slate-50/80 transition-colors {style.bg} border-l-4">
-                          <div class="flex items-start gap-2.5">
-                            <span class="mt-1.5 h-2 w-2 rounded-full shrink-0 {style.dot}"></span>
-                            <div class="flex-1 min-w-0">
-                              <p class="text-xs font-black text-slate-800 leading-snug">{notif.title}</p>
-                              {#if notif.message}
-                                <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{notif.message}</p>
-                              {/if}
-                              <p class="text-[10px] {style.text} font-bold mt-1 uppercase tracking-wide">{notif.type}</p>
-                            </div>
-                          </div>
-                        </div>
-                      {/each}
-                    {/if}
-                  </div>
-
-                  <!-- Footer -->
-                  <div class="px-4 py-2.5 border-t border-slate-100 bg-slate-50/50">
-                    <p class="text-[10px] text-slate-400 font-semibold text-center">
-                      Notifikasi dari 
-                      <button 
-                        type="button"
-                        on:click={() => { showNotifPanel = false; openAdminPublicProfile(); }}
-                        class="font-black text-primary hover:text-primary-hover transition-colors underline underline-offset-2 cursor-pointer"
-                      >ADMIN MAZEEDA</button>
-                    </p>
-                  </div>
-                </div>
-              {/if}
+              </a>
             </div>
 
             <!-- Profile Avatar Button -->
@@ -1012,6 +1076,7 @@
         {/if}
       </div>
     </header>
+  </div>
 
     <div class="flex-1 flex">
       <!-- Desktop Sidebar Layout (Hidden on Mobile) -->
@@ -1084,7 +1149,7 @@
         {/if}
       </aside>
 
-      <main class="flex-1 bg-white p-2 sm:p-4 md:p-8 {$page.url.searchParams.has('detail') ? 'pb-8' : 'pb-24'} md:pb-8 overflow-y-auto overflow-x-hidden relative">
+      <main on:scroll={(e) => mainScrollY = e.currentTarget.scrollTop} class="flex-1 bg-white p-2 sm:p-4 md:p-8 {$page.url.searchParams.has('detail') ? 'pb-8' : 'pb-24'} md:pb-8 overflow-y-auto overflow-x-hidden relative z-10" id="main-scroll-container">
         {#if showMyProfile}
           {#if isLoadingProfile}
           <div class="py-24 text-center space-y-4">
@@ -1327,232 +1392,282 @@
               {/if}
 
               <!-- Details Card Container -->
-              <Card noPadding class="p-3 sm:p-6 md:p-8 space-y-6">
-                
-                <!-- Top Section: Avatar & Primary Info -->
-                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-5 pb-6 border-b border-slate-100">
-                  <!-- Foto profil: klik untuk perbesar -->
-                  <div class="relative group shrink-0">
+              <Card noPadding class="overflow-hidden border-slate-200/80 shadow-soft-sm">
+                <!-- Profile Header Banner -->
+                <div class="h-32 sm:h-40 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative overflow-hidden">
+                  <!-- Decorative subtle background shapes -->
+                  <div class="absolute inset-0 opacity-20 overflow-hidden">
+                    <div class="absolute -top-10 -left-10 w-44 h-44 rounded-full bg-white blur-xl"></div>
+                    <div class="absolute -bottom-20 -right-20 w-64 h-64 rounded-full bg-white blur-2xl"></div>
+                    <div class="absolute top-1/2 left-1/3 w-32 h-32 rounded-full bg-white blur-xl animate-pulse" style="animation-duration: 6s;"></div>
+                  </div>
+                  <!-- Soft Gradient Fade to White -->
+                  <div class="absolute bottom-[-1px] left-0 right-0 h-16 sm:h-24 bg-gradient-to-t from-white to-transparent z-0"></div>
+                </div>
+
+                <!-- Content wrapper with negative margin to overlap avatar with banner -->
+                <div class="p-4 sm:p-6 md:p-8 space-y-8 -mt-16 sm:-mt-20 relative z-10">
+                  
+                  <!-- Top Section: Avatar & Primary Info -->
+                  <div class="flex flex-col sm:flex-row items-center sm:items-end gap-5 pb-6 border-b border-slate-100">
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div 
-                      class="h-24 w-24 rounded-3xl bg-blue-50 border border-blue-100 flex items-center justify-center text-primary font-bold text-3xl overflow-hidden shadow-soft-sm {myProfileData.foto_url ? 'cursor-zoom-in hover:scale-105 transition-transform duration-200' : ''}"
+                      class="relative group/avatar h-28 w-28 rounded-3xl bg-white p-0.5 border-2 border-white flex items-center justify-center text-primary font-bold text-3xl shrink-0 overflow-hidden shadow-md transition-all duration-300 {myProfileData.foto_url ? 'cursor-zoom-in hover:scale-105 hover:shadow-lg' : ''}"
                       on:click={() => myProfileData.foto_url && openLightbox(convertDriveUrl(myProfileData.foto_url))}
-                      title={myProfileData.foto_url ? 'Klik untuk perbesar foto' : ''}
                     >
-                      {#if myProfileData.foto_url}
-                        <img referrerpolicy="no-referrer" 
-                          src={convertDriveUrl(myProfileData.foto_url)} 
-                          alt={myProfileData.nama_lengkap} 
-                          class="h-full w-full object-cover" 
-                          on:error={(e) => { e.currentTarget.style.display = 'none'; myProfileData.foto_url = null; }} 
-                        />
-                      {:else}
-                        {getInitials(myProfileData.nama_lengkap)}
+                      <div class="w-full h-full rounded-2xl overflow-hidden bg-indigo-50/50 border border-indigo-100 flex items-center justify-center relative">
+                        {#if myProfileData.foto_url}
+                          <img referrerpolicy="no-referrer" 
+                            src={convertDriveUrl(myProfileData.foto_url)} 
+                            alt={myProfileData.nama_lengkap} 
+                            class="h-full w-full object-cover" 
+                            on:error={(e) => { e.currentTarget.style.display = 'none'; myProfileData.foto_url = null; }} 
+                          />
+                          <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity duration-300 pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+                          </div>
+                        {:else}
+                          {getInitials(myProfileData.nama_lengkap)}
+                        {/if}
+                      </div>
+                    </div>
+                    
+                    <div class="text-center sm:text-left space-y-2 min-w-0 flex-1 pb-1">
+                      <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-tight py-1 truncate">{myProfileData.nama_lengkap}</h2>
+                      {#if myProfileData.nama_panggilan}
+                        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs font-bold">
+                          <span class="px-2.5 py-1 bg-slate-100 rounded-full text-slate-600 border border-slate-200/50">{myProfileData.nama_panggilan}</span>
+                        </div>
                       {/if}
                     </div>
-                    {#if myProfileData.foto_url}
-                      <div class="absolute inset-0 rounded-3xl bg-black/0 group-hover:bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
-                      </div>
-                    {/if}
                   </div>
-                  
-                  <div class="text-center sm:text-left space-y-2 min-w-0">
-                    <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-none truncate">{myProfileData.nama_lengkap}</h2>
-                    {#if myProfileData.nama_panggilan}
-                      <p class="text-sm text-slate-500 font-semibold">{myProfileData.nama_panggilan}{myProfileData.daerah_santri ? ' | ' + capitalizeEachWord(myProfileData.daerah_santri) : ''}</p>
-                    {/if}
-                  </div>
-                </div>
 
-                <!-- Details Segmented Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
-                  <!-- Section 1: Data Pribadi -->
-                  <div class="space-y-4">
-                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <User class="h-4 w-4 text-slate-400" />
-                      <span>Data Pribadi</span>
-                    </h4>
+                  <!-- Details Segmented Grid -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
-                    <div class="bg-slate-50 rounded-2xl p-3 sm:p-4 border border-slate-100 space-y-2.5 text-xs font-semibold text-slate-600">
-                      <p class="flex justify-between"><span>Tempat Lahir:</span> <strong class="text-slate-800">{capitalizeEachWord(myProfileData.tempat_lahir)}</strong></p>
-                      <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2"><span>Tahun/Tanggal Lahir:</span> <strong class="text-slate-800">{myProfileData.tahun_lahir || '-'}</strong></p>
-                      <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2"><span>Golongan Darah:</span> <strong class="text-slate-800">{myProfileData.golongan_darah || '-'}</strong></p>
-                      <p class="flex flex-col gap-1 border-t border-slate-200/50 pt-2 mt-2">
-                        <span>Tempat Tinggal:</span> 
-                        <strong class="text-slate-800 font-normal leading-relaxed">{capitalizeEachWord(myProfileData.alamat_ktp)}</strong>
-                      </p>
-                      <p class="flex flex-col gap-1 border-t border-slate-200/50 pt-2 mt-2">
-                        <span>Rute Lengkap Pulang/Perjalanan:</span> 
-                        <strong class="text-slate-800 font-normal leading-relaxed">{myProfileData.rute_lengkap || '-'}</strong>
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- Section 2: Pondok & Kependidikan -->
-                  <div class="space-y-4">
-                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <Award class="h-4 w-4 text-slate-400" />
-                      <span>Pondok & Kependidikan</span>
-                    </h4>
-                    
-                    <div class="bg-slate-50 rounded-2xl p-3 sm:p-4 border border-slate-100 space-y-2.5 text-xs font-semibold text-slate-600">
-                      <p class="flex justify-between items-start gap-4">
-                        <span>Alamat Domisili:</span> 
-                        <strong class="text-slate-800 text-right">{myProfileData.alamat_domisili || '-'}</strong>
-                      </p>
-                      <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2"><span>Tahun Masuk:</span> <strong class="text-slate-800">{myProfileData.tahun_masuk || '-'}</strong></p>
-                      <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2"><span>Kamar:</span> <strong class="text-slate-800">{myProfileData.kamar_santri || '-'}</strong></p>
-                      <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2"><span>Status Tahfidz:</span> <strong class="text-slate-800 text-emerald-600">{capitalizeEachWord(myProfileData.tahfidz_santri)}</strong></p>
-                      <p class="flex justify-between items-start gap-4 border-t border-slate-200/50 pt-2 mt-2">
-                        <span>Riwayat Pendidikan:</span> 
-                        <strong class="text-slate-800 text-right">{myProfileData.riwayat_pendidikan || '-'}</strong>
-                      </p>
-                      <p class="flex justify-between items-start gap-4 border-t border-slate-200/50 pt-2 mt-2">
-                        <span>Alamat Pendidikan:</span> 
-                        <strong class="text-slate-800 text-right">{capitalizeEachWord(myProfileData.alamat_riwayatpendidikan)}</strong>
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- Section 3: Kontak & Media Sosial -->
-                  <div class="space-y-4">
-                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <Globe class="h-4 w-4 text-slate-400" />
-                      <span>Kontak & Sosial Media</span>
-                    </h4>
-                    
-                    <div class="bg-slate-50 rounded-2xl p-3 sm:p-4 border border-slate-100 space-y-2.5 text-xs font-semibold text-slate-600">
-                      <p class="flex justify-between">
-                        <span>WhatsApp:</span>
-                        {#if myProfileData.no_whatsapp}
-                          <a href={getWhatsAppLink(myProfileData.no_whatsapp)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
-                            <span>{formatWhatsApp(myProfileData.no_whatsapp)}</span>
-                            <ExternalLink class="h-3 w-3" />
-                          </a>
-                        {:else}
-                          <strong class="text-slate-800 font-bold">-</strong>
-                        {/if}
-                      </p>
-                      <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2">
-                        <span>Email:</span>
-                        {#if myProfileData.email}
-                          <a href="https://mail.google.com/mail/?view=cm&fs=1&to={myProfileData.email}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 max-w-[180px]">
-                            <span class="truncate">{myProfileData.email}</span>
-                            <ExternalLink class="h-3 w-3 shrink-0" />
-                          </a>
-                        {:else}
-                          <strong class="text-slate-800 font-bold">-</strong>
-                        {/if}
-                      </p>
-                      <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2">
-                        <span>Instagram:</span>
-                        {#if myProfileData.media_social}
-                          <a href={getInstagramLink(myProfileData.media_social)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
-                            <span>{myProfileData.media_social.toLowerCase()}</span>
-                            <ExternalLink class="h-3 w-3" />
-                          </a>
-                        {:else}
-                          <strong class="text-slate-800 font-bold">-</strong>
-                        {/if}
-                      </p>
-                      <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2">
-                        <span>Tiktok:</span>
-                        {#if myProfileData.tiktok_akun}
-                          <a href={getTiktokLink(myProfileData.tiktok_akun)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
-                            <span>{myProfileData.tiktok_akun}</span>
-                            <ExternalLink class="h-3 w-3" />
-                          </a>
-                        {:else}
-                          <strong class="text-slate-800 font-bold">-</strong>
-                        {/if}
-                      </p>
-                      <p class="flex justify-between border-t border-slate-200/50 pt-2 mt-2">
-                        <span>X / Twitter:</span>
-                        {#if myProfileData.xtwitter_akun}
-                          <a href={getXTwitterLink(myProfileData.xtwitter_akun)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
-                            <span>{myProfileData.xtwitter_akun}</span>
-                            <ExternalLink class="h-3 w-3" />
-                          </a>
-                        {:else}
-                          <strong class="text-slate-800 font-bold">-</strong>
-                        {/if}
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- Section 4: Minat & Bakat -->
-                  <div class="space-y-4">
-                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <Music class="h-4 w-4 text-slate-400" />
-                      <span>Minat & Keterampilan</span>
-                    </h4>
-                    
-                    <div class="bg-slate-50 rounded-2xl p-3 sm:p-4 border border-slate-100 space-y-2.5 text-xs font-semibold text-slate-600">
-                      <p class="flex flex-col gap-1">
-                        <span>Hobi:</span> 
-                        <strong class="text-slate-800 font-normal leading-relaxed">{myProfileData.hobi || '-'}</strong>
-                      </p>
-                      <p class="flex flex-col gap-1 border-t border-slate-200/50 pt-2 mt-2">
-                        <span>Keterampilan Khusus:</span> 
-                        <strong class="text-slate-800 font-normal leading-relaxed">{myProfileData.keterampilan_khusus || '-'}</strong>
-                      </p>
-                      <p class="flex flex-col gap-1 border-t border-slate-200/50 pt-2 mt-2">
-                        <span>Musik Kesukaan:</span> 
-                        {#if myProfileData.music && myProfileData.music.startsWith('http')}
-                          <a href={myProfileData.music} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold break-all">Klik Disini!</a>
-                        {:else}
-                          <strong class="text-slate-800 font-normal leading-relaxed">{myProfileData.music || '-'}</strong>
-                        {/if}
-                        
-                        {#if getYouTubeId(myProfileData.music)}
-                          <div class="mt-2 rounded-xl overflow-hidden aspect-video border border-slate-200 shadow-soft-sm">
-                            <iframe 
-                              class="w-full h-full"
-                              src="https://www.youtube-nocookie.com/embed/{getYouTubeId(myProfileData.music)}" 
-                              title="YouTube video player" 
-                              frameborder="0" 
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                              allowfullscreen
-                            ></iframe>
-                          </div>
-                        {/if}
-                      </p>
-                    </div>
-                  </div>
-
-                </div>
-
-                <!-- Kesan & Pesan -->
-                <div class="space-y-4 pt-2">
-                  <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <Heart class="h-4 w-4 text-slate-400" />
-                    <span>Kesan, Pesan & Kutipan Kenangan</span>
-                  </h4>
-                  
-                  <Card noPadding class="bg-blue-50/20 border-blue-100 p-3 sm:p-5 space-y-4">
-                    {#if myProfileData.kutipan_kenangan}
-                      <div class="text-center italic py-2 border-b border-slate-100/50">
-                        <p class="text-sm font-semibold text-primary">"{myProfileData.kutipan_kenangan}"</p>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mt-1.5">— Kutipan Memori</span>
-                      </div>
-                    {/if}
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold">
-                      <div class="space-y-1">
-                        <span class="text-slate-400">Kesan:</span>
-                        <p class="text-slate-700 font-normal leading-relaxed bg-white border border-slate-200/50 p-3 rounded-xl min-h-[60px]">
-                          {myProfileData.kesan || '-'}
-                        </p>
-                      </div>
-                      <div class="space-y-1">
-                        <span class="text-slate-400">Pesan:</span>
-                        <p class="text-slate-700 font-normal leading-relaxed bg-white border border-slate-200/50 p-3 rounded-xl min-h-[60px]">
-                          {myProfileData.pesan || '-'}
-                        </p>
+                    <!-- Section 1: Data Pribadi -->
+                    <div class="space-y-4">
+                      <h4 class="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2.5">
+                        <div class="p-1.5 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
+                          <User class="h-4 w-4" />
+                        </div>
+                        <span>Data Pribadi</span>
+                      </h4>
+                      
+                      <div class="bg-slate-50/50 rounded-2xl p-4 border border-slate-200/60 space-y-3 text-xs font-semibold text-slate-600">
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Tempat Lahir</span>
+                          <strong class="text-slate-800">{capitalizeEachWord(myProfileData.tempat_lahir)}</strong>
+                        </div>
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Tanggal Lahir</span>
+                          <strong class="text-slate-800">{myProfileData.tahun_lahir || '-'}</strong>
+                        </div>
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Golongan Darah</span>
+                          <strong class="text-slate-800">{myProfileData.golongan_darah || '-'}</strong>
+                        </div>
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Daerah</span>
+                          <strong class="text-slate-800 font-bold">{capitalizeEachWord(myProfileData.daerah_santri) || '-'}</strong>
+                        </div>
+                        <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Tempat Tinggal</span>
+                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{capitalizeEachWord(myProfileData.alamat_ktp)}</strong>
+                        </div>
+                        <div class="flex flex-col gap-1 py-1.5">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Rute Lengkap Perjalanan</span>
+                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{myProfileData.rute_lengkap || '-'}</strong>
+                        </div>
                       </div>
                     </div>
-                  </Card>
+
+                    <!-- Section 2: Pondok & Kependidikan -->
+                    <div class="space-y-4">
+                      <h4 class="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2.5">
+                        <div class="p-1.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
+                          <Award class="h-4 w-4" />
+                        </div>
+                        <span>Pondok & Kependidikan</span>
+                      </h4>
+                      
+                      <div class="bg-slate-50/50 rounded-2xl p-4 border border-slate-200/60 space-y-3 text-xs font-semibold text-slate-600">
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Alamat Domisili</span>
+                          <strong class="text-slate-800">{myProfileData.alamat_domisili || '-'}</strong>
+                        </div>
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Tahun Masuk</span>
+                          <strong class="text-slate-800">{myProfileData.tahun_masuk || '-'}</strong>
+                        </div>
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Kamar</span>
+                          <strong class="text-slate-800">{myProfileData.kamar_santri || '-'}</strong>
+                        </div>
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Status Tahfidz</span>
+                          <strong class="text-slate-800 font-bold">{capitalizeEachWord(myProfileData.tahfidz_santri) || '-'}</strong>
+                        </div>
+                        <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Riwayat Pendidikan</span>
+                          <strong class="text-slate-800 font-medium">{myProfileData.riwayat_pendidikan || '-'}</strong>
+                        </div>
+                        <div class="flex flex-col gap-1 py-1.5">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Alamat Pendidikan</span>
+                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{capitalizeEachWord(myProfileData.alamat_riwayatpendidikan)}</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Section 3: Kontak & Media Sosial -->
+                    <div class="space-y-4">
+                      <h4 class="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2.5">
+                        <div class="p-1.5 bg-sky-50 text-sky-600 rounded-xl border border-sky-100">
+                          <Globe class="h-4 w-4" />
+                        </div>
+                        <span>Kontak & Sosial Media</span>
+                      </h4>
+                      
+                      <div class="bg-slate-50/50 rounded-2xl p-4 border border-slate-200/60 space-y-3 text-xs font-semibold text-slate-600">
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">WhatsApp</span>
+                          {#if myProfileData.no_whatsapp}
+                            <a href={getWhatsAppLink(myProfileData.no_whatsapp)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                              <span>{formatWhatsApp(myProfileData.no_whatsapp)}</span>
+                              <ExternalLink class="h-3 w-3" />
+                            </a>
+                          {:else}
+                            <strong class="text-slate-400 font-bold">-</strong>
+                          {/if}
+                        </div>
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Email</span>
+                          {#if myProfileData.email}
+                            <a href="https://mail.google.com/mail/?view=cm&fs=1&to={myProfileData.email}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold truncate max-w-[180px] inline-flex items-center gap-1" title={myProfileData.email}>
+                              <span class="truncate">{myProfileData.email}</span>
+                              <ExternalLink class="h-3 w-3 shrink-0" />
+                            </a>
+                          {:else}
+                            <strong class="text-slate-400 font-bold">-</strong>
+                          {/if}
+                        </div>
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Instagram</span>
+                          {#if myProfileData.media_social}
+                            <a href={getInstagramLink(myProfileData.media_social)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                              <span>{myProfileData.media_social.toLowerCase()}</span>
+                              <ExternalLink class="h-3 w-3" />
+                            </a>
+                          {:else}
+                            <strong class="text-slate-400 font-bold">-</strong>
+                          {/if}
+                        </div>
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Tiktok</span>
+                          {#if myProfileData.tiktok_akun}
+                            <a href={getTiktokLink(myProfileData.tiktok_akun)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                              <span>{myProfileData.tiktok_akun}</span>
+                              <ExternalLink class="h-3 w-3" />
+                            </a>
+                          {:else}
+                            <strong class="text-slate-400 font-bold">-</strong>
+                          {/if}
+                        </div>
+                        <div class="flex justify-between items-center py-1.5">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">X / Twitter</span>
+                          {#if myProfileData.xtwitter_akun}
+                            <a href={getXTwitterLink(myProfileData.xtwitter_akun)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                              <span>{myProfileData.xtwitter_akun}</span>
+                              <ExternalLink class="h-3 w-3" />
+                            </a>
+                          {:else}
+                            <strong class="text-slate-400 font-bold">-</strong>
+                          {/if}
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Section 4: Minat & Keterampilan -->
+                    <div class="space-y-4">
+                      <h4 class="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2.5">
+                        <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100">
+                          <Music class="h-4 w-4" />
+                        </div>
+                        <span>Minat & Keterampilan</span>
+                      </h4>
+                      
+                      <div class="bg-slate-50/50 rounded-2xl p-4 border border-slate-200/60 space-y-3 text-xs font-semibold text-slate-600">
+                        <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Hobi</span>
+                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{myProfileData.hobi || '-'}</strong>
+                        </div>
+                        <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Keterampilan Khusus</span>
+                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{myProfileData.keterampilan_khusus || '-'}</strong>
+                        </div>
+                        <div class="flex flex-col gap-1 py-1.5">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Musik Kesukaan</span>
+                          {#if myProfileData.music && myProfileData.music.startsWith('http')}
+                            <a href={myProfileData.music} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold break-all inline-block mt-0.5">Klik Disini!</a>
+                          {:else}
+                            <strong class="text-slate-800 font-medium leading-relaxed">{myProfileData.music || '-'}</strong>
+                          {/if}
+                          
+                          {#if getYouTubeId(myProfileData.music)}
+                            <div class="mt-3 rounded-2xl overflow-hidden aspect-video border border-slate-200/80 shadow-soft-sm hover:shadow-soft-md transition-all duration-300">
+                              <iframe 
+                                class="w-full h-full animate-in fade-in"
+                                src="https://www.youtube-nocookie.com/embed/{getYouTubeId(myProfileData.music)}" 
+                                title="YouTube video player" 
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                allowfullscreen
+                              ></iframe>
+                            </div>
+                          {/if}
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- Full width quotes and memories section -->
+                  <div class="space-y-4 pt-2">
+                    <h4 class="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2.5">
+                      <div class="p-1.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-100">
+                        <Heart class="h-4 w-4" />
+                      </div>
+                      <span>Kesan, Pesan & Kutipan Kenangan</span>
+                    </h4>
+                    
+                    <div class="bg-blue-50/20 border border-blue-100/60 rounded-3xl p-4 sm:p-6 space-y-6 relative overflow-hidden">
+                      <div class="absolute -top-3 -left-1 text-[120px] font-serif font-black text-blue-500/10 select-none pointer-events-none leading-none">“</div>
+                      <div class="absolute -bottom-16 -right-1 text-[120px] font-serif font-black text-blue-500/10 select-none pointer-events-none leading-none">”</div>
+
+                      {#if myProfileData.kutipan_kenangan}
+                        <div class="text-center italic py-4 border-b border-slate-200/40 relative z-10">
+                          <p class="text-base sm:text-lg font-extrabold text-primary tracking-tight leading-relaxed">"{myProfileData.kutipan_kenangan}"</p>
+                          <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mt-2">— Kutipan Memori —</span>
+                        </div>
+                      {/if}
+                      
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold relative z-10">
+                        <div class="space-y-2">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Kesan</span>
+                          <p class="text-slate-700 font-normal leading-relaxed bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
+                            {myProfileData.kesan || '-'}
+                          </p>
+                        </div>
+                        <div class="space-y-2">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Pesan</span>
+                          <p class="text-slate-700 font-normal leading-relaxed bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
+                            {myProfileData.pesan || '-'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- LOGOUT BUTTON AT THE VERY BOTTOM -->

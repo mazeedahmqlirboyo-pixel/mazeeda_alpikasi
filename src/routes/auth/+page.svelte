@@ -14,13 +14,21 @@
   let message = { type: '', content: '' }; // { type: 'success' | 'error', content: string }
   let focusedInput = '';
   let showPassword = false;
-  let showSplash = true;
 
-  onMount(() => {
-    setTimeout(() => {
-      showSplash = false;
-    }, 2000); // Tampilkan splash screen selama 2 detik
-  });
+  // Mascot Interactive State
+  let peacockState = 'idle'; // 'idle', 'angry', 'laughing'
+  let mouseX = 0;
+  let mouseY = 0;
+
+  function handleMouseMove(event: MouseEvent | TouchEvent) {
+    if (peacockState !== 'idle' || focusedInput) return;
+    const clientX = 'touches' in event ? event.touches[0].clientX : (event as MouseEvent).clientX;
+    const clientY = 'touches' in event ? event.touches[0].clientY : (event as MouseEvent).clientY;
+    
+    // Normalize to -1 to 1 based on screen size
+    mouseX = (clientX / window.innerWidth) * 2 - 1;
+    mouseY = (clientY / window.innerHeight) * 2 - 1;
+  }
 
   // Form methods
   async function handleAuthSubmit() {
@@ -32,6 +40,8 @@
       const inputNamaAyah = namaAyah.trim();
 
       if (!inputNIS || !inputNamaAyah) {
+        peacockState = 'angry';
+        setTimeout(() => peacockState = 'idle', 3000);
         throw new Error('Semua kolom wajib diisi dengan benar!');
       }
 
@@ -83,6 +93,8 @@
         );
 
         if (!match) {
+          peacockState = 'angry';
+          setTimeout(() => peacockState = 'idle', 3000);
           throw new Error('Nama ayah kandung tidak sesuai!');
         }
 
@@ -108,6 +120,7 @@
           tahun_lahir: match.tahun_lahir
         });
 
+        peacockState = 'laughing';
         message = { type: 'success', content: `Selamat datang kembali, ${match.nama_lengkap}!` };
         window.location.href = '/';
       }
@@ -129,36 +142,8 @@
   }
 </script>
 
-{#if showSplash}
-  <!-- Splash Screen -->
-  <div class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center" out:fade={{ duration: 600 }}>
-    <!-- Beautiful Glowing Logo -->
-    <div class="relative flex items-center justify-center w-32 h-32 mb-6" in:scale={{ duration: 800, start: 0.5, delay: 100 }}>
-      <!-- Glow effect -->
-      <div class="absolute inset-0 bg-primary/40 rounded-[2rem] blur-2xl animate-pulse"></div>
-      <!-- Logo box -->
-      <div class="relative w-full h-full bg-gradient-to-br from-indigo-500 via-primary to-purple-600 rounded-[2rem] flex items-center justify-center shadow-2xl border border-white/20 overflow-hidden">
-        <!-- Inner glass shine -->
-        <div class="absolute top-0 left-0 w-full h-1/2 bg-white/20 rounded-t-[2rem]"></div>
-        <span class="text-6xl font-black text-white drop-shadow-lg tracking-tighter">M</span>
-      </div>
-    </div>
-    
-    <!-- Brand Text -->
-    <div in:fly={{ y: 20, duration: 600, delay: 400 }}>
-      <h1 class="text-4xl font-extrabold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-indigo-100 drop-shadow-lg">MAZEEDA</h1>
-    </div>
-    
-    <!-- Loading Dots -->
-    <div class="absolute bottom-16 flex space-x-2" in:fade={{ delay: 700 }}>
-      <div class="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce"></div>
-      <div class="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.15s"></div>
-      <div class="w-2.5 h-2.5 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
-    </div>
-  </div>
-{:else}
 <!-- Menggunakan fixed inset-0 untuk menutupi seluruh layar tanpa terpengaruh padding dari +layout.svelte -->
-<div class="fixed inset-0 z-50 flex bg-white font-sans text-slate-800 overflow-y-auto lg:overflow-hidden hide-scrollbar" in:fade={{ duration: 500 }}>
+<div class="fixed inset-0 z-50 flex bg-white font-sans text-slate-800 overflow-y-auto lg:overflow-hidden hide-scrollbar" in:fade={{ duration: 500 }} on:mousemove={handleMouseMove} on:touchmove={handleMouseMove}>
   
   <!-- Sisi Kiri: Visual / Branding (Desktop Only) -->
   <div class="hidden lg:flex lg:w-1/2 relative bg-slate-900 items-center justify-center overflow-hidden">
@@ -257,16 +242,40 @@
                 <!-- Eyes Container -->
                 <div class="absolute top-5 left-1/2 -translate-x-1/2 w-10 h-4 flex justify-between px-0.5 z-10">
                   <!-- Left Eye -->
-                  <div class="relative w-3.5 h-4 bg-white rounded-full overflow-hidden shadow-inner">
-                    <div class="absolute w-2 h-2 bg-slate-900 rounded-full transition-all duration-300 
-                      {focusedInput === 'nis' ? 'top-2 left-1' : (focusedInput === 'namaAyah' ? 'top-0.5 left-1' : 'top-1 left-1')}"></div>
+                  <div class="relative w-3.5 h-4 shadow-inner transition-all duration-300 {peacockState === 'angry' ? 'bg-yellow-300 scale-125 rounded-full overflow-hidden' : (peacockState === 'laughing' ? 'bg-transparent h-2 mt-1.5 border-t-[3px] border-slate-900 rounded-t-full shadow-none' : 'bg-white rounded-full overflow-hidden')}">
+                    {#if peacockState !== 'laughing'}
+                      <div class="absolute w-2 h-2 rounded-full transition-all duration-100 {peacockState === 'angry' ? 'bg-rose-600 top-1 left-0.5 w-2.5 h-2.5' : 'bg-slate-900'} 
+                        {focusedInput === 'nis' ? 'top-2 left-1' : (focusedInput === 'namaAyah' ? 'top-0.5 left-1' : 'top-1 left-1')}"
+                        style={peacockState === 'idle' && !focusedInput ? `transform: translate(${mouseX * 6}px, ${mouseY * 4}px)` : ''}>
+                      </div>
+                    {/if}
+                    <!-- Angry Eyebrow -->
+                    {#if peacockState === 'angry'}
+                      <div class="absolute -top-1 left-0 w-full h-2 bg-slate-900 rotate-[25deg] scale-150"></div>
+                    {/if}
                   </div>
                   <!-- Right Eye -->
-                  <div class="relative w-3.5 h-4 bg-white rounded-full overflow-hidden shadow-inner">
-                    <div class="absolute w-2 h-2 bg-slate-900 rounded-full transition-all duration-300 
-                      {focusedInput === 'nis' ? 'top-2 right-1' : (focusedInput === 'namaAyah' ? 'top-0.5 right-1' : 'top-1 right-1')}"></div>
+                  <div class="relative w-3.5 h-4 shadow-inner transition-all duration-300 {peacockState === 'angry' ? 'bg-yellow-300 scale-125 rounded-full overflow-hidden' : (peacockState === 'laughing' ? 'bg-transparent h-2 mt-1.5 border-t-[3px] border-slate-900 rounded-t-full shadow-none' : 'bg-white rounded-full overflow-hidden')}">
+                    {#if peacockState !== 'laughing'}
+                      <div class="absolute w-2 h-2 rounded-full transition-all duration-100 {peacockState === 'angry' ? 'bg-rose-600 top-1 right-0.5 w-2.5 h-2.5' : 'bg-slate-900'} 
+                        {focusedInput === 'nis' ? 'top-2 right-1' : (focusedInput === 'namaAyah' ? 'top-0.5 right-1' : 'top-1 right-1')}"
+                        style={peacockState === 'idle' && !focusedInput ? `transform: translate(${mouseX * 6}px, ${mouseY * 4}px)` : ''}>
+                      </div>
+                    {/if}
+                    <!-- Angry Eyebrow -->
+                    {#if peacockState === 'angry'}
+                      <div class="absolute -top-1 right-0 w-full h-2 bg-slate-900 rotate-[-25deg] scale-150"></div>
+                    {/if}
                   </div>
                 </div>
+                
+                <!-- Laughing Tears -->
+                {#if peacockState === 'laughing'}
+                  <div class="absolute top-8 left-1 w-2 h-2.5 bg-blue-300 animate-bounce" style="border-radius: 0 50% 50% 50%; transform: rotate(45deg);"></div>
+                  <div class="absolute top-8 right-1 w-2 h-2.5 bg-blue-300 animate-bounce" style="animation-delay: 0.1s; border-radius: 0 50% 50% 50%; transform: rotate(45deg);"></div>
+                  <div class="absolute top-5 left-0 w-1.5 h-1.5 bg-sky-200 rounded-full animate-ping"></div>
+                  <div class="absolute top-5 right-0 w-1.5 h-1.5 bg-sky-200 rounded-full animate-ping" style="animation-delay: 0.2s"></div>
+                {/if}
               </div>
 
               <!-- Wings (Covering Eyes) -->
@@ -274,14 +283,14 @@
               <div class="absolute bottom-0 left-1/2 w-7 h-12 bg-blue-500 rounded-full shadow-[inset_-2px_0_10px_rgba(0,0,0,0.1)] transition-all duration-500 z-20 origin-bottom 
                 {focusedInput === 'namaAyah' 
                   ? (showPassword ? 'ml-[-40px] mb-8 rotate-[-70deg]' : 'ml-[-15px] mb-14 rotate-[45deg]') 
-                  : 'ml-[-35px] mb-2 -rotate-12'}">
+                  : 'ml-[-35px] mb-2 -rotate-12'} {peacockState === 'laughing' ? 'ml-[-40px] mb-4 -rotate-[30deg] animate-pulse' : ''} {peacockState === 'angry' ? 'bg-rose-700 ml-[-45px] mb-6 -rotate-45 scale-110' : ''}">
               </div>
               
               <!-- Right Wing -->
               <div class="absolute bottom-0 right-1/2 w-7 h-12 bg-blue-500 rounded-full shadow-[inset_2px_0_10px_rgba(0,0,0,0.1)] transition-all duration-500 z-20 origin-bottom 
                 {focusedInput === 'namaAyah' 
                   ? 'mr-[-15px] mb-14 rotate-[-45deg]' 
-                  : 'mr-[-35px] mb-2 rotate-12'}">
+                  : 'mr-[-35px] mb-2 rotate-12'} {peacockState === 'laughing' ? 'mr-[-40px] mb-4 rotate-[30deg] animate-pulse' : ''} {peacockState === 'angry' ? 'bg-rose-700 mr-[-45px] mb-6 rotate-45 scale-110' : ''}">
               </div>
             </div>
 
@@ -435,7 +444,6 @@
     </div>
   </div>
 </div>
-{/if}
 
 <style>
   /* Menyembunyikan scrollbar tapi tetap bisa discroll */
