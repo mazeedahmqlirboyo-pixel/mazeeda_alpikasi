@@ -495,6 +495,12 @@
       try {
         const saved = localStorage.getItem('mazeeda_read_notifs');
         if (saved) readNotifIds = JSON.parse(saved);
+        
+        // Listen for updates from the notifikasi page
+        window.addEventListener('mazeeda_read_notifs_updated', () => {
+          const updated = localStorage.getItem('mazeeda_read_notifs');
+          if (updated) readNotifIds = JSON.parse(updated);
+        });
       } catch (_) {}
 
       // Fetch and cache the admin profile from Supabase so it's available globally on mount
@@ -855,8 +861,8 @@
         
         <!-- Typography -->
         <div class="mt-4 flex flex-col items-center">
-          <h1 class="text-4xl font-extrabold tracking-[0.3em] text-slate-800" in:fly={{ y: 20, duration: 800, delay: 1500 }}>MAZEEDA</h1>
-          <p class="text-slate-500 font-medium tracking-widest text-xs mt-2 uppercase" in:fade={{ duration: 800, delay: 1700 }}>Portal Alumni & Santri</p>
+          <h1 class="text-4xl font-extrabold tracking-[0.3em] text-slate-800 ml-[0.3em]" in:fly={{ y: 20, duration: 800, delay: 1500 }}>MAZEEDA</h1>
+          <p class="text-slate-500 font-medium tracking-widest text-xs mt-2 uppercase ml-[0.1em]" in:fade={{ duration: 800, delay: 1700 }}>Portal Alumni & Santri</p>
         </div>
       </div>
       

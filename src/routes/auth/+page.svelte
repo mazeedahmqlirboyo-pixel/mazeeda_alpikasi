@@ -40,8 +40,6 @@
       const inputNamaAyah = namaAyah.trim();
 
       if (!inputNIS || !inputNamaAyah) {
-        peacockState = 'angry';
-        setTimeout(() => peacockState = 'idle', 3000);
         throw new Error('Semua kolom wajib diisi dengan benar!');
       }
 
@@ -93,8 +91,6 @@
         );
 
         if (!match) {
-          peacockState = 'angry';
-          setTimeout(() => peacockState = 'idle', 3000);
           throw new Error('Nama ayah kandung tidak sesuai!');
         }
 
@@ -125,6 +121,8 @@
         window.location.href = '/';
       }
     } catch (err: any) {
+      peacockState = 'laughing';
+      setTimeout(() => peacockState = 'idle', 3000);
       message = { type: 'error', content: err.message || 'Terjadi kesalahan sistem' };
     } finally {
       loading = false;
@@ -172,7 +170,7 @@
   </div>
 
   <!-- Sisi Kanan: Form Login (Full Putih di Mobile, Solid di Desktop) -->
-  <div class="w-full lg:w-1/2 relative flex items-center justify-center p-6 sm:p-12 min-h-[700px] lg:min-h-full overflow-y-auto lg:overflow-visible bg-white hide-scrollbar">
+  <div class="w-full lg:w-1/2 relative flex items-center justify-center p-6 sm:p-12 min-h-[700px] lg:min-h-0 lg:h-full overflow-y-auto bg-white hide-scrollbar">
     
     <div class="relative z-10 w-full max-w-md my-auto py-8">
       {#if $authStore.user}
@@ -209,7 +207,9 @@
           <div class="flex flex-col items-center text-center mb-8 lg:mb-10">
             
             <!-- CSS Animated Peacock Mascot (Interactive) -->
-            <div class="relative w-32 h-32 mb-6">
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div class="relative w-32 h-32 mb-6 cursor-pointer" on:click={() => { peacockState = 'angry'; setTimeout(() => peacockState = 'idle', 2000); }}>
               <!-- Tail Fan Background -->
               <div class="absolute inset-x-0 bottom-2 h-32 flex justify-center items-end z-0 transition-transform duration-700 {focusedInput === 'namaAyah' && !showPassword ? 'scale-110' : 'scale-100'}">
                 <!-- Far Left -->
@@ -294,8 +294,12 @@
               </div>
             </div>
 
-            <h2 class="text-2xl lg:text-3xl font-extrabold text-slate-800 tracking-tight">Masuk Akun</h2>
-            <p class="text-sm lg:text-base text-slate-500 font-medium mt-1 lg:mt-2">Silakan isi data login Anda untuk melanjutkan.</p>
+            <div class="mt-4 mb-6 flex flex-col items-center">
+              <h1 class="text-3xl lg:text-4xl font-extrabold tracking-[0.3em] text-slate-800 ml-[0.3em]">MAZEEDA</h1>
+            </div>
+
+            <h2 class="text-xl lg:text-2xl font-bold text-slate-800 tracking-tight">Masuk Akun</h2>
+            <p class="text-sm text-slate-500 font-medium mt-1">Silakan isi data login Anda untuk melanjutkan.</p>
           </div>
 
           <!-- Alert Pesan -->
@@ -414,28 +418,28 @@
             <!-- Social Icons -->
             <div class="flex items-center justify-center gap-3">
               <!-- WhatsApp -->
-              <a href="https://wa.me/6281234567890" target="_blank" class="w-10 h-10 flex items-center justify-center hover:scale-110 transition-transform">
-                <img src="/whatsapp.png" alt="WhatsApp" class="w-full h-full object-contain" />
+              <a href="https://wa.me/6281234567890" target="_blank" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition-transform rounded-[10px] overflow-hidden shadow-sm">
+                <img src="/whatsapp.png" alt="WhatsApp" class="w-full h-full object-cover scale-[1.12]" />
               </a>
               <!-- Instagram -->
-              <a href="https://instagram.com/mazeeda" target="_blank" class="w-10 h-10 flex items-center justify-center hover:scale-110 transition-transform">
-                <img src="/instagram.png" alt="Instagram" class="w-full h-full object-contain" />
+              <a href="https://instagram.com/mazeeda" target="_blank" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition-transform rounded-[10px] overflow-hidden shadow-sm">
+                <img src="/instagram.png" alt="Instagram" class="w-full h-full object-cover scale-[1.12]" />
               </a>
               <!-- X / Twitter -->
-              <a href="https://twitter.com/mazeeda" target="_blank" class="w-10 h-10 flex items-center justify-center hover:scale-110 transition-transform">
-                <img src="/twitter.png" alt="Twitter" class="w-full h-full object-contain" />
+              <a href="https://twitter.com/mazeeda" target="_blank" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition-transform rounded-[10px] overflow-hidden shadow-sm">
+                <img src="/twitter.png" alt="Twitter" class="w-full h-full object-cover scale-[1.12]" />
               </a>
               <!-- TikTok -->
-              <a href="https://tiktok.com/@mazeeda" target="_blank" class="w-10 h-10 flex items-center justify-center hover:scale-110 transition-transform">
-                <img src="/tiktok.png" alt="TikTok" class="w-full h-full object-contain" />
+              <a href="https://tiktok.com/@mazeeda" target="_blank" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition-transform rounded-[10px] overflow-hidden shadow-sm">
+                <img src="/tiktok.png" alt="TikTok" class="w-full h-full object-cover scale-[1.12]" />
               </a>
               <!-- YouTube -->
-              <a href="https://youtube.com/c/mazeeda" target="_blank" class="w-10 h-10 flex items-center justify-center hover:scale-110 transition-transform">
-                <img src="/youtube.png" alt="YouTube" class="w-full h-full object-contain" />
+              <a href="https://youtube.com/c/mazeeda" target="_blank" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition-transform rounded-[10px] overflow-hidden shadow-sm">
+                <img src="/youtube.png" alt="YouTube" class="w-full h-full object-cover scale-[1.12]" />
               </a>
               <!-- RSS/Website -->
-              <a href="https://mazeeda.com" target="_blank" class="w-10 h-10 flex items-center justify-center hover:scale-110 transition-transform">
-                <img src="/rss.png" alt="Website" class="w-full h-full object-contain" />
+              <a href="https://mazeeda.com" target="_blank" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition-transform rounded-[10px] overflow-hidden shadow-sm">
+                <img src="/rss.png" alt="Website" class="w-full h-full object-cover scale-[1.12]" />
               </a>
             </div>
           </div>
