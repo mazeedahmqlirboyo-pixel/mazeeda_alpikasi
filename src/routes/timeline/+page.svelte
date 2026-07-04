@@ -159,7 +159,7 @@
     const memId = $page.url.searchParams.get('memory');
     const mem = memories.find(m => m.id == memId);
     if (mem) {
-      openComments(mem);
+      openLightbox(mem);
     }
   }
   let showMentionDropdown = false;
