@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { page } from '$app/stores';
   import { fade } from 'svelte/transition';
   import Card from '$lib/components/ui/card.svelte';
   import Button from '$lib/components/ui/button.svelte';
@@ -36,6 +37,37 @@
   // Lightbox Modal States
   let selectedMemory: MemoryItem | null = null;
   let activeComments: any[] = [];
+
+  $: sortedActiveComments = (() => {
+    const isMe = (name) => name === $authStore.user?.name;
+    const topLevel = [];
+    const replies = {};
+    for (const c of activeComments) {
+      if (c.parent_id) {
+        if (!replies[c.parent_id]) replies[c.parent_id] = [];
+        replies[c.parent_id].push(c);
+      } else {
+        topLevel.push(c);
+      }
+    }
+    topLevel.sort((a, b) => {
+      const meA = isMe(a.user_name);
+      const meB = isMe(b.user_name);
+      if (meA && !meB) return -1;
+      if (!meA && meB) return 1;
+      return 0;
+    });
+    const result = [];
+    for (const parent of topLevel) {
+      result.push(parent);
+      if (replies[parent.id]) result.push(...replies[parent.id]);
+    }
+    const allInResult = new Set(result.map(c => c.id));
+    for (const c of activeComments) {
+      if (!allInResult.has(c.id)) result.push(c);
+    }
+    return result;
+  })();
   let isLoadingComments = false;
   let newCommentText = '';
   let guestName = '';
@@ -122,6 +154,14 @@
   // Mention system
   let allUsers: { name: string, avatar: string }[] = [];
   let allUserNames: string[] = [];
+
+  $: if ($page.url.searchParams.get('memory') && memories.length > 0 && !selectedMemory) {
+    const memId = $page.url.searchParams.get('memory');
+    const mem = memories.find(m => m.id == memId);
+    if (mem) {
+      openComments(mem);
+    }
+  }
   let showMentionDropdown = false;
   let mentionSearchTerm = '';
   let filteredUsers: { name: string, avatar: string }[] = [];
@@ -214,7 +254,7 @@
         if (name !== sender) {
           const { error } = await supabase.from('app_notifications').insert([{
             title: title,
-            message: `${sender} menyebut Anda di komentar Timeline: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+            message: `${sender} menyebut anda di sebuah komentar: @${name} "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"|LINK:${path}`,
             type: 'info',
             is_active: true,
             target_user: name
@@ -413,20 +453,20 @@
       }
       
       // Notify mentions
-      await notifyMentions(newCommentText.trim(), "Ada yang Mention Anda di Timeline!", `/timeline`);
+      await notifyMentions(newCommentText.trim(), "Ada yang Mention Anda di Timeline!", `/timeline?memory=${memoryId}`);
       
       // Kirim notifikasi jika ini balasan ke orang lain
       if (parentId && targetAuthor && targetAuthor !== commenterName) {
         try {
           await supabase.from("app_notifications").insert([{
             title: `Balasan Baru dari ${commenterName}`,
-            message: `${commenterName} membalas komentar Anda di foto/timeline: "${newCommentText.substring(0, 50)}${newCommentText.length > 50 ? '...' : ''}"`,
+            message: `${commenterName} membalas komentar anda: @${targetAuthor} "${newCommentText.substring(0, 50)}${newCommentText.length > 50 ? '...' : ''}"|LINK:/timeline?memory=${memoryId}`,
             type: 'info',
             target_user: targetAuthor,
             is_active: true
           }]);
-        } catch (notifErr) {
-          console.warn("Gagal mengirim notifikasi balasan", notifErr);
+        } catch (err) {
+          console.error("Gagal kirim notif:", err);
         }
       }
       
@@ -762,8 +802,8 @@
                 <div class="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
                 <p class="text-[10px] text-slate-400 font-semibold mt-2">Memuat komentar...</p>
               </div>
-            {:else if activeComments.length > 0}
-              {#each activeComments as comment}
+            {:else if sortedActiveComments.length > 0}
+              {#each sortedActiveComments as comment}
                 {@const isAdminComment = comment.user_name && (comment.user_name.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.user_name.toUpperCase() === 'ADMIN MAZEEDA' || comment.user_name.toUpperCase() === 'ADMIN')}
                 {@const avatarUrl = resolveCommentAvatar(comment)}
                 {@const isEditing = editingCommentId === comment.id}

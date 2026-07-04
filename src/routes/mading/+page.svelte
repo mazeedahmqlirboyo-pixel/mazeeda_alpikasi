@@ -124,6 +124,70 @@
 
   // Announcement Comments Modal State
   let selectedAnnouncementForComments: any = null;
+
+  $: sortedNoteCommentsList = (() => {
+    const isMe = (name) => name === $authStore.user?.name;
+    const topLevel = [];
+    const replies = {};
+    for (const c of noteCommentsList) {
+      if (c.parent_id) {
+        if (!replies[c.parent_id]) replies[c.parent_id] = [];
+        replies[c.parent_id].push(c);
+      } else {
+        topLevel.push(c);
+      }
+    }
+    topLevel.sort((a, b) => {
+      const meA = isMe(a.author);
+      const meB = isMe(b.author);
+      if (meA && !meB) return -1;
+      if (!meA && meB) return 1;
+      return 0;
+    });
+    const result = [];
+    for (const parent of topLevel) {
+      result.push(parent);
+      if (replies[parent.id]) result.push(...replies[parent.id]);
+    }
+    const allInResult = new Set(result.map(c => c.id));
+    for (const c of noteCommentsList) {
+      if (!allInResult.has(c.id)) result.push(c);
+    }
+    return result;
+  })();
+
+  $: sortedAnnouncementComments = (() => {
+    if (!selectedAnnouncementForComments) return [];
+    const comments = selectedAnnouncementForComments.comments || [];
+    const isMe = (name) => name === $authStore.user?.name;
+    const topLevel = [];
+    const replies = {};
+    for (const c of comments) {
+      if (c.parent_id) {
+        if (!replies[c.parent_id]) replies[c.parent_id] = [];
+        replies[c.parent_id].push(c);
+      } else {
+        topLevel.push(c);
+      }
+    }
+    topLevel.sort((a, b) => {
+      const meA = isMe(a.author);
+      const meB = isMe(b.author);
+      if (meA && !meB) return -1;
+      if (!meA && meB) return 1;
+      return 0;
+    });
+    const result = [];
+    for (const parent of topLevel) {
+      result.push(parent);
+      if (replies[parent.id]) result.push(...replies[parent.id]);
+    }
+    const allInResult = new Set(result.map(c => c.id));
+    for (const c of comments) {
+      if (!allInResult.has(c.id)) result.push(c);
+    }
+    return result;
+  })();
   let newAnnouncementCommentText = "";
 
   // Edit state — announcement comments
@@ -314,7 +378,7 @@
         if (name !== sender) {
           const { error } = await supabase.from('app_notifications').insert([{
             title: title,
-            message: `${sender} menyebut Anda di komentar Mading: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+            message: `${sender} menyebut anda di sebuah komentar: @${name} "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"|LINK:${path}`,
             type: 'info',
             is_active: true,
             target_user: name
@@ -875,7 +939,7 @@
         try {
           await supabase.from("app_notifications").insert([{
             title: `Balasan Baru dari ${userName}`,
-            message: `${userName} membalas komentar Anda: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+            message: `${userName} membalas komentar anda: @${targetAuthor} "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"|LINK:/mading`,
             type: 'info',
             target_user: targetAuthor,
             is_active: true
@@ -1135,7 +1199,7 @@
         try {
           await supabase.from("app_notifications").insert([{
             title: `Balasan Aspirasi dari ${sender}`,
-            message: `${sender} membalas komentar Anda di kertas tempel: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+            message: `${sender} membalas komentar anda: @${targetAuthor} "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"|LINK:/mading`,
             type: 'info',
             target_user: targetAuthor,
             is_active: true
@@ -1898,9 +1962,9 @@
             Komentar
           </h4>
 
-          {#if noteCommentsList.length > 0}
+          {#if sortedNoteCommentsList.length > 0}
             <div class="space-y-2.5">
-              {#each noteCommentsList as comment}
+              {#each sortedNoteCommentsList as comment}
                 {@const avatarUrl = convertDriveUrl(authorAvatarMap[comment.author] || '')}
                 {@const isAdminComment = comment.author && (comment.author.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.author.toUpperCase() === 'ADMIN MAZEEDA' || comment.author.toUpperCase() === 'ADMIN')}
                 {@const isEditing = editingNoteCommentId == comment.id}
@@ -2138,9 +2202,9 @@
             Tanggapan & Diskusi ({selectedAnnouncementForComments.comments.length})
           </h4>
 
-          {#if selectedAnnouncementForComments.comments.length > 0}
+          {#if sortedAnnouncementComments.length > 0}
             <div class="space-y-2.5">
-              {#each selectedAnnouncementForComments.comments as comment}
+              {#each sortedAnnouncementComments as comment}
                 {@const avatarUrl = convertDriveUrl(authorAvatarMap[comment.author] || '')}
                 {@const isAdminComment = comment.author && (comment.author.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.author.toUpperCase() === 'ADMIN MAZEEDA' || comment.author.toUpperCase() === 'ADMIN')}
                 {@const isEditing = editingAnnouncementCommentId == comment.id}

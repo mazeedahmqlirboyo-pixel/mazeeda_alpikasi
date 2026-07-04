@@ -92,7 +92,7 @@
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const title = n.title?.toLowerCase() || '';
-      const message = n.message?.toLowerCase() || '';
+      const message = (n.message || '').split('|LINK:')[0].toLowerCase();
       if (!title.includes(q) && !message.includes(q)) return false;
     }
     return true;
@@ -166,11 +166,15 @@
         {#each filteredNotifications as notif, i (notif.id)}
           {@const style = getNotifStyle(notif.type)}
           {@const isRead = readNotifIds.includes(String(notif.id))}
+          {@const parts = notif.message ? notif.message.split('|LINK:') : []}
+          {@const msgText = parts[0] || notif.message}
+          {@const linkUrl = parts.length > 1 ? parts[1].trim() : null}
           <!-- svelte-ignore a11y-click-events-have-key-events -->
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div 
             in:fly={{ y: 10, duration: 200, delay: i * 30 }} 
-            class="p-4 sm:p-5 flex gap-3.5 bg-white hover:bg-slate-50/50 transition-colors"
+            class="p-4 sm:p-5 flex gap-3.5 bg-white hover:bg-slate-50/50 transition-colors {linkUrl ? 'cursor-pointer' : ''}"
+            on:click={() => { if (linkUrl) window.location.href = linkUrl; }}
           >
             <!-- Content -->
             <div class="flex-1 min-w-0">
@@ -183,8 +187,16 @@
               
               {#if notif.message}
                 <p class="text-[13px] {isRead ? 'text-slate-400 font-medium' : 'text-slate-600 font-semibold'} leading-relaxed text-justify mt-1">
-                  {notif.message}
+                  {msgText}
                 </p>
+                {#if linkUrl}
+                  <div class="inline-flex items-center gap-1.5 mt-2 text-[11px] font-bold text-primary hover:text-indigo-600 hover:underline">
+                    Lihat Konten
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                {/if}
               {/if}
 
               <!-- Status Action -->
