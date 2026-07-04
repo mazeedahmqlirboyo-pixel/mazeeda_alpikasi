@@ -318,7 +318,16 @@
   let readNotifIds: string[] = [];
   let notifChannel: any;
 
-  $: unreadCount = notifications.filter(n => n.is_active && !readNotifIds.includes(String(n.id))).length;
+  $: unreadCount = notifications.filter(n => {
+    if (!n.is_active) return false;
+    if (readNotifIds.includes(String(n.id))) return false;
+    if (n.target_user) {
+      const targetUser = n.target_user.trim().toLowerCase();
+      const myName = ($authStore.user?.name || '').trim().toLowerCase();
+      if (targetUser !== myName) return false;
+    }
+    return true;
+  }).length;
 
   // Update App Icon Badge whenever unreadCount changes
   $: if (browser && typeof unreadCount !== 'undefined') {
