@@ -201,8 +201,62 @@
   }
 
   // Realtime Subscriptions
-  let realtimeStatus = "connecting"; // 'connecting' | 'connected' | 'error'
+  let realtimeStatus: "connecting" | "connected" | "error" = "connecting";
   let notesChannel: any;
+
+  // Mention system
+  let allUserNames: string[] = [];
+
+  // Data fetching functions
+  async function fetchAllUsers() {
+    try {
+      const { data: alumni } = await supabase.from('allowed_alumni').select('nama_lengkap');
+      const { data: asatidzah } = await supabase.from('asatidzah').select('nama_lengkap');
+      const names = new Set<string>();
+      if (alumni) alumni.forEach(u => u.nama_lengkap && names.add(u.nama_lengkap));
+      if (asatidzah) asatidzah.forEach(u => u.nama_lengkap && names.add(u.nama_lengkap));
+      allUserNames = Array.from(names);
+    } catch (e) {
+      console.error('Failed to fetch user names:', e);
+    }
+  }
+
+  // Formatting text to highlight @Mentions
+  function formatMentions(text: string): string {
+    if (!text) return '';
+    // Escape HTML tags first to prevent XSS
+    let formattedText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    
+    allUserNames.forEach(name => {
+      // Create a regex to match @Name exactly (case-insensitive) but only if preceded by space or start of string
+      const regex = new RegExp(`(^|\\s)@(${name})(?=\\s|[.,!?]|$)`, 'gi');
+      formattedText = formattedText.replace(regex, `$1<span class="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">@$2</span>`);
+    });
+    return formattedText;
+  }
+
+  // Parse mentions from text and notify targets
+  async function notifyMentions(text: string, title: string, path: string) {
+    if (!text) return;
+    for (const name of allUserNames) {
+      const regex = new RegExp(`(^|\\s)@(${name})(?=\\s|[.,!?]|$)`, 'i');
+      if (regex.test(text)) {
+        // Send notification to the mentioned user
+        const sender = $authStore.user?.role === 'admin' ? (adminName || 'ADMIN MAZEEDA') : ($authStore.user?.name || 'Seseorang');
+        // Prevent sending notification to oneself if they mention themselves
+        if (name !== sender) {
+          await supabase.from('app_notifications').insert([{
+            title: title,
+            message: `${sender} menyebut Anda dalam komentarnya: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+            type: 'info',
+            is_active: true,
+            action_url: path,
+            target_user: name
+          }]);
+        }
+      }
+    }
+  }
 
   // ─── Avatar Map: author name → foto_url ───────────────────────────────────
   // Stores a mapping of commenter names to their profile photo URLs.
@@ -314,6 +368,7 @@
     await fetchAnnouncements();
     await fetchStickyNotes();
     await fetchAuthorAvatars();
+    await fetchAllUsers();
 
     // 2. Setup Realtime subscription channel (Unified and using unique name to prevent cache collisions)
     try {
@@ -394,6 +449,18 @@
               }
               return post;
             });
+            // Update modal if open
+            if (selectedAnnouncementForComments && selectedAnnouncementForComments.id === payload.new.announcement_id) {
+                if (!selectedAnnouncementForComments.comments.some((c: any) => c.id === payload.new.id)) {
+                  selectedAnnouncementForComments.comments = [...selectedAnnouncementForComments.comments, {
+                    id: payload.new.id,
+                    author: payload.new.author,
+                    text: payload.new.text,
+                    date: "Baru saja",
+                    parent_id: payload.new.parent_id
+                  }];
+                }
+            }
           },
         )
         .on(
@@ -687,7 +754,6 @@
     const postId = selectedAnnouncementForComments.id;
     const text = newAnnouncementCommentText.trim();
     const userName = $authStore.user?.name || "Anonim";
-    const userNis = $authStore.user?.nis || null;
     const parentId = replyingToAnnouncementCommentId;
     const targetAuthor = replyingToAnnouncementCommentAuthor;
 
@@ -731,6 +797,9 @@
 
       if (error) throw error;
       
+      // Notify mentions
+      await notifyMentions(text, "Ada yang Mention Anda di Pengumuman Mading!", `/mading`);
+
       // Jika ini adalah balasan ke orang lain, kirim notifikasi
       if (parentId && targetAuthor && targetAuthor !== userName) {
         try {
@@ -987,6 +1056,9 @@
         .select();
 
       if (error) throw error;
+
+      // Notify mentions
+      await notifyMentions(text, "Ada yang Mention Anda di Kertas Tempel Mading!", `/mading`);
       
       // Kirim notifikasi jika ini balasan ke orang lain
       if (parentId && targetAuthor && targetAuthor !== sender) {
@@ -1835,7 +1907,7 @@
                           </button>
                         </div>
                       {:else}
-                        <p class="text-xs font-medium text-slate-600 leading-relaxed">{comment.text}</p>
+                        <p class="text-xs font-medium text-slate-600 leading-relaxed">{@html formatMentions(comment.text)}</p>
                       {/if}
                     </div>
                   </div>
@@ -2057,7 +2129,7 @@
                           </button>
                         </div>
                       {:else}
-                        <p class="text-xs font-medium text-slate-600 leading-relaxed">{comment.text}</p>
+                        <p class="text-xs font-medium text-slate-600 leading-relaxed">{@html formatMentions(comment.text)}</p>
                       {/if}
                     </div>
                   </div>

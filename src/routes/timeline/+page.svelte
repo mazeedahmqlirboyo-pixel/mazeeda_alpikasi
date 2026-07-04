@@ -117,6 +117,56 @@
     }
   }
 
+  let realtimeChannel: any;
+
+  // Mention system
+  let allUserNames: string[] = [];
+
+  async function fetchAllUsers() {
+    try {
+      const { data: alumni } = await supabase.from('allowed_alumni').select('nama_lengkap');
+      const { data: asatidzah } = await supabase.from('asatidzah').select('nama_lengkap');
+      const names = new Set<string>();
+      if (alumni) alumni.forEach(u => u.nama_lengkap && names.add(u.nama_lengkap));
+      if (asatidzah) asatidzah.forEach(u => u.nama_lengkap && names.add(u.nama_lengkap));
+      allUserNames = Array.from(names);
+    } catch (e) {
+      console.error('Failed to fetch user names:', e);
+    }
+  }
+
+  function formatMentions(text: string): string {
+    if (!text) return '';
+    // Escape HTML tags first to prevent XSS
+    let formattedText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    
+    allUserNames.forEach(name => {
+      const regex = new RegExp(`(^|\\s)@(${name})(?=\\s|[.,!?]|$)`, 'gi');
+      formattedText = formattedText.replace(regex, `$1<span class="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">@$2</span>`);
+    });
+    return formattedText;
+  }
+
+  async function notifyMentions(text: string, title: string, path: string) {
+    if (!text) return;
+    for (const name of allUserNames) {
+      const regex = new RegExp(`(^|\\s)@(${name})(?=\\s|[.,!?]|$)`, 'i');
+      if (regex.test(text)) {
+        const sender = $authStore.user?.role === 'admin' ? (adminName || 'ADMIN MAZEEDA') : ($authStore.user?.name || guestName || 'Seseorang');
+        if (name !== sender) {
+          await supabase.from('app_notifications').insert([{
+            title: title,
+            message: `${sender} menyebut Anda di komentar Timeline: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+            type: 'info',
+            is_active: true,
+            action_url: path,
+            target_user: name
+          }]);
+        }
+      }
+    }
+  }
+
   onMount(() => {
     // Initialize guest identity
     if (typeof window !== 'undefined') {
@@ -130,6 +180,35 @@
 
     loadMemories();
     fetchAdminPhoto();
+    fetchAllUsers();
+
+    // Setup Realtime Comments
+    const uniqueSuffix = Date.now();
+    realtimeChannel = supabase
+      .channel(`timeline_comments_${uniqueSuffix}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "memory_comments" },
+        (payload) => {
+          if (selectedMemory && selectedMemory.id === payload.new.memory_id) {
+            if (!activeComments.some(c => c.id === payload.new.id)) {
+              activeComments = [...activeComments, payload.new];
+            }
+          }
+          // Update count in memories list
+          memories = memories.map(m => {
+            if (m.id === payload.new.memory_id) {
+              return { ...m, comments_count: (m.comments_count || 0) + 1 };
+            }
+            return m;
+          });
+        }
+      )
+      .subscribe();
+  });
+
+  onDestroy(() => {
+    if (realtimeChannel) supabase.removeChannel(realtimeChannel);
   });
 
   // Handle Liking / Unliking
@@ -267,6 +346,9 @@
 
       if (error) throw error;
       
+      // Notify mentions
+      await notifyMentions(newCommentText.trim(), "Ada yang Mention Anda di Timeline!", `/timeline`);
+      
       // Kirim notifikasi jika ini balasan ke orang lain
       if (parentId && targetAuthor && targetAuthor !== commenterName) {
         try {
@@ -285,8 +367,6 @@
       newCommentText = '';
       replyingToCommentId = null;
       replyingToCommentAuthor = "";
-
-      await loadComments(memoryId);
       
       // Update comment count locally
       memories = memories.map(m => {
@@ -703,7 +783,7 @@
                         </button>
                       </div>
                     {:else}
-                      <p class="text-xs text-slate-500 font-normal mt-1 leading-relaxed break-words">{comment.comment_text}</p>
+                      <p class="text-xs text-slate-500 font-normal mt-1 leading-relaxed break-words">{@html formatMentions(comment.comment_text)}</p>
                     {/if}
                   </div>
                 </div>
