@@ -76,8 +76,12 @@
   }
 
   $: filteredNotifications = notifications.filter(n => {
-    // Filter by target_user
-    if (n.target_user && n.target_user !== $authStore.user?.name) return false;
+    // Filter by target_user (case-insensitive and trimmed)
+    if (n.target_user) {
+      const targetUser = n.target_user.trim().toLowerCase();
+      const myName = ($authStore.user?.name || '').trim().toLowerCase();
+      if (targetUser !== myName) return false;
+    }
 
     // Filter by type
     if (activeFilter === 'Info' && n.type !== 'info') return false;

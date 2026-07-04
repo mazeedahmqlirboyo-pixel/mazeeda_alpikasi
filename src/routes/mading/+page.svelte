@@ -295,8 +295,8 @@
     let formattedText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     
     allUserNames.forEach(name => {
-      // Create a regex to match @Name exactly (case-insensitive) but only if preceded by space or start of string
-      const regex = new RegExp(`(^|\\s)@(${name})(?=\\s|[.,!?]|$)`, 'gi');
+      const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(^|\\s)@(${escapedName})(?=\\s|[.,!?]|$)`, 'gi');
       formattedText = formattedText.replace(regex, `$1<span class="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">@$2</span>`);
     });
     return formattedText;
@@ -306,20 +306,20 @@
   async function notifyMentions(text: string, title: string, path: string) {
     if (!text) return;
     for (const name of allUserNames) {
-      const regex = new RegExp(`(^|\\s)@(${name})(?=\\s|[.,!?]|$)`, 'i');
+      const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(^|\\s)@(${escapedName})(?=\\s|[.,!?]|$)`, 'i');
       if (regex.test(text)) {
-        // Send notification to the mentioned user
         const sender = $authStore.user?.role === 'admin' ? (adminName || 'ADMIN MAZEEDA') : ($authStore.user?.name || 'Seseorang');
         // Prevent sending notification to oneself if they mention themselves
         if (name !== sender) {
-          await supabase.from('app_notifications').insert([{
+          const { error } = await supabase.from('app_notifications').insert([{
             title: title,
-            message: `${sender} menyebut Anda dalam komentarnya: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+            message: `${sender} menyebut Anda di komentar Mading: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
             type: 'info',
             is_active: true,
-            action_url: path,
             target_user: name
           }]);
+          if (error) console.error('Gagal mengirim notif mention mading:', error);
         }
       }
     }

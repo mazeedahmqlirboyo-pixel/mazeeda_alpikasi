@@ -197,7 +197,8 @@
     let formattedText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     
     allUserNames.forEach(name => {
-      const regex = new RegExp(`(^|\\s)@(${name})(?=\\s|[.,!?]|$)`, 'gi');
+      const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(^|\\s)@(${escapedName})(?=\\s|[.,!?]|$)`, 'gi');
       formattedText = formattedText.replace(regex, `$1<span class="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">@$2</span>`);
     });
     return formattedText;
@@ -206,18 +207,19 @@
   async function notifyMentions(text: string, title: string, path: string) {
     if (!text) return;
     for (const name of allUserNames) {
-      const regex = new RegExp(`(^|\\s)@(${name})(?=\\s|[.,!?]|$)`, 'i');
+      const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(^|\\s)@(${escapedName})(?=\\s|[.,!?]|$)`, 'i');
       if (regex.test(text)) {
         const sender = $authStore.user?.role === 'admin' ? (adminName || 'ADMIN MAZEEDA') : ($authStore.user?.name || guestName || 'Seseorang');
         if (name !== sender) {
-          await supabase.from('app_notifications').insert([{
+          const { error } = await supabase.from('app_notifications').insert([{
             title: title,
             message: `${sender} menyebut Anda di komentar Timeline: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
             type: 'info',
             is_active: true,
-            action_url: path,
             target_user: name
           }]);
+          if (error) console.error('Gagal mengirim notif mention timeline:', error);
         }
       }
     }
