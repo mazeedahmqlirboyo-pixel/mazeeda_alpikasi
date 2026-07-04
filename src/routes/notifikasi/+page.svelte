@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { supabase } from '$lib/supabase';
-  import { authStore } from '$lib/stores/authStore';
+  import { authStore } from '$lib/auth';
   import { fade, fly, slide } from 'svelte/transition';
   import { Bell, Search, Filter, ShieldCheck, CheckCircle2, AlertCircle, Info, CalendarClock, ChevronLeft } from 'lucide-svelte';
   import Card from '$lib/components/ui/card.svelte';
