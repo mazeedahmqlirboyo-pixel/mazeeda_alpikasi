@@ -120,18 +120,74 @@
   let realtimeChannel: any;
 
   // Mention system
+  let allUsers: { name: string, avatar: string }[] = [];
   let allUserNames: string[] = [];
+  let showMentionDropdown = false;
+  let mentionSearchTerm = '';
+  let filteredUsers: { name: string, avatar: string }[] = [];
+  let inputElement: HTMLInputElement;
 
   async function fetchAllUsers() {
     try {
-      const { data: alumni } = await supabase.from('allowed_alumni').select('nama_lengkap');
-      const { data: asatidzah } = await supabase.from('asatidzah').select('nama_lengkap');
-      const names = new Set<string>();
-      if (alumni) alumni.forEach(u => u.nama_lengkap && names.add(u.nama_lengkap));
-      if (asatidzah) asatidzah.forEach(u => u.nama_lengkap && names.add(u.nama_lengkap));
-      allUserNames = Array.from(names);
+      const { data: alumni } = await supabase.from('allowed_alumni').select('nama_lengkap, foto_url');
+      const { data: asatidzah } = await supabase.from('asatidzah').select('nama_lengkap, foto_url');
+      const usersMap = new Map<string, string>();
+      const defaultAvatar = 'https://drive.google.com/file/d/1f332yzKnUHuix7YeAvCgMZm4y2v30CwF/view?usp=drive_link';
+      
+      if (alumni) alumni.forEach(u => {
+        if (u.nama_lengkap) usersMap.set(u.nama_lengkap, u.foto_url || defaultAvatar);
+      });
+      if (asatidzah) asatidzah.forEach(u => {
+        if (u.nama_lengkap) usersMap.set(u.nama_lengkap, u.foto_url || defaultAvatar);
+      });
+      
+      allUsers = Array.from(usersMap, ([name, avatar]) => ({ name, avatar }));
+      allUserNames = Array.from(usersMap.keys());
     } catch (e) {
       console.error('Failed to fetch user names:', e);
+    }
+  }
+
+  function handleCommentInput(e: any) {
+    const val = e.target.value;
+    const cursorPosition = e.target.selectionStart;
+    const textBeforeCursor = val.slice(0, cursorPosition);
+    
+    // Check if typing @something (allow spaces up to 50 chars)
+    const match = textBeforeCursor.match(/(?:^|\s)@([^@]{0,50})$/);
+    if (match) {
+      showMentionDropdown = true;
+      mentionSearchTerm = match[1].toLowerCase();
+      filteredUsers = allUsers.filter(u => u.name.toLowerCase().includes(mentionSearchTerm)).slice(0, 5); // Max 5 suggestions
+    } else {
+      showMentionDropdown = false;
+    }
+  }
+
+  function insertMention(name: string) {
+    if (!inputElement) return;
+    const val = newCommentText;
+    const cursorPosition = inputElement.selectionStart || 0;
+    const textBeforeCursor = val.slice(0, cursorPosition);
+    
+    const match = textBeforeCursor.match(/(?:^|\s)@([^@]{0,50})$/);
+    if (match) {
+      const replaceLen = match[1].length + 1; // +1 for the '@'
+      const prefix = textBeforeCursor.slice(0, -replaceLen);
+      // Determine if prefix needs space
+      const space = prefix.length > 0 && !prefix.endsWith(' ') ? ' ' : '';
+      newCommentText = prefix + space + '@' + name + ' ' + val.slice(cursorPosition);
+      
+      showMentionDropdown = false;
+      
+      // Keep focus (needs small delay to apply value first)
+      setTimeout(() => {
+        if (inputElement) {
+          inputElement.focus();
+          const newPos = (prefix + space + '@' + name + ' ').length;
+          inputElement.setSelectionRange(newPos, newPos);
+        }
+      }, 10);
     }
   }
 
@@ -835,13 +891,31 @@
                   {/if}
                 </div>
               {/if}
-              <input 
-                type="text" 
-                placeholder={replyingToCommentId ? `Balas komentar...` : "Tulis komentar berharga Anda..."} 
-                class="flex-1 h-10 border border-slate-200 rounded-xl text-xs px-3 bg-slate-50 text-slate-700 outline-none focus:border-primary focus:bg-white"
-                bind:value={newCommentText}
-                required
-              />
+              <div class="flex-1 relative">
+                {#if showMentionDropdown && filteredUsers.length > 0}
+                  <div class="absolute bottom-full left-0 mb-2 w-full max-h-48 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-xl z-[1000] py-1">
+                    {#each filteredUsers as user}
+                      <button 
+                        type="button" 
+                        class="flex w-full items-center gap-2 px-3 py-2 hover:bg-indigo-50 border-b border-slate-100 last:border-b-0 transition-colors cursor-pointer"
+                        on:click={() => insertMention(user.name)}
+                      >
+                        <img src={convertDriveUrl(user.avatar)} alt={user.name} class="w-6 h-6 rounded-full object-cover shrink-0" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                        <span class="text-[11px] font-bold text-slate-700 truncate">{user.name}</span>
+                      </button>
+                    {/each}
+                  </div>
+                {/if}
+                <input 
+                  type="text" 
+                  placeholder={replyingToCommentId ? `Balas komentar...` : "Tulis komentar berharga Anda..."} 
+                  class="w-full h-10 border border-slate-200 rounded-xl text-xs px-3 bg-slate-50 text-slate-700 outline-none focus:border-primary focus:bg-white"
+                  bind:value={newCommentText}
+                  bind:this={inputElement}
+                  on:input={handleCommentInput}
+                  required
+                />
+              </div>
               <Button type="submit" disabled={isSubmittingComment} class="h-10 px-4 font-bold text-xs shrink-0">
                 Kirim
               </Button>

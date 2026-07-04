@@ -205,19 +205,86 @@
   let notesChannel: any;
 
   // Mention system
+  let allUsers: { name: string, avatar: string }[] = [];
+  let showMentionDropdown = false;
+  let mentionSearchTerm = '';
+  let filteredUsers: { name: string, avatar: string }[] = [];
+  let activeMentionInput: 'announcement' | 'note' | null = null;
+  let announcementInputElement: HTMLInputElement;
+  let noteInputElement: HTMLInputElement;
   let allUserNames: string[] = [];
 
   // Data fetching functions
   async function fetchAllUsers() {
     try {
-      const { data: alumni } = await supabase.from('allowed_alumni').select('nama_lengkap');
-      const { data: asatidzah } = await supabase.from('asatidzah').select('nama_lengkap');
-      const names = new Set<string>();
-      if (alumni) alumni.forEach(u => u.nama_lengkap && names.add(u.nama_lengkap));
-      if (asatidzah) asatidzah.forEach(u => u.nama_lengkap && names.add(u.nama_lengkap));
-      allUserNames = Array.from(names);
+      const { data: alumni } = await supabase.from('allowed_alumni').select('nama_lengkap, foto_url');
+      const { data: asatidzah } = await supabase.from('asatidzah').select('nama_lengkap, foto_url');
+      const usersMap = new Map<string, string>();
+      const defaultAvatar = 'https://drive.google.com/file/d/1f332yzKnUHuix7YeAvCgMZm4y2v30CwF/view?usp=drive_link';
+      
+      if (alumni) alumni.forEach(u => {
+        if (u.nama_lengkap) usersMap.set(u.nama_lengkap, u.foto_url || defaultAvatar);
+      });
+      if (asatidzah) asatidzah.forEach(u => {
+        if (u.nama_lengkap) usersMap.set(u.nama_lengkap, u.foto_url || defaultAvatar);
+      });
+      
+      allUsers = Array.from(usersMap, ([name, avatar]) => ({ name, avatar }));
+      allUserNames = Array.from(usersMap.keys());
     } catch (e) {
       console.error('Failed to fetch user names:', e);
+    }
+  }
+
+  function handleCommentInput(e: any, type: 'announcement' | 'note') {
+    const val = e.target.value;
+    const cursorPosition = e.target.selectionStart;
+    const textBeforeCursor = val.slice(0, cursorPosition);
+    
+    const match = textBeforeCursor.match(/(?:^|\s)@([^@]{0,50})$/);
+    if (match) {
+      showMentionDropdown = true;
+      activeMentionInput = type;
+      mentionSearchTerm = match[1].toLowerCase();
+      filteredUsers = allUsers.filter(u => u.name.toLowerCase().includes(mentionSearchTerm)).slice(0, 5);
+    } else {
+      showMentionDropdown = false;
+      activeMentionInput = null;
+    }
+  }
+
+  function insertMention(name: string) {
+    const isAnn = activeMentionInput === 'announcement';
+    const inputElement = isAnn ? announcementInputElement : noteInputElement;
+    if (!inputElement) return;
+    
+    const val = isAnn ? newAnnouncementCommentText : newNoteCommentText;
+    const cursorPosition = inputElement.selectionStart || 0;
+    const textBeforeCursor = val.slice(0, cursorPosition);
+    
+    const match = textBeforeCursor.match(/(?:^|\s)@([^@]{0,50})$/);
+    if (match) {
+      const replaceLen = match[1].length + 1;
+      const prefix = textBeforeCursor.slice(0, -replaceLen);
+      const space = prefix.length > 0 && !prefix.endsWith(' ') ? ' ' : '';
+      const newText = prefix + space + '@' + name + ' ' + val.slice(cursorPosition);
+      
+      if (isAnn) {
+        newAnnouncementCommentText = newText;
+      } else {
+        newNoteCommentText = newText;
+      }
+      
+      showMentionDropdown = false;
+      activeMentionInput = null;
+      
+      setTimeout(() => {
+        if (inputElement) {
+          inputElement.focus();
+          const newPos = (prefix + space + '@' + name + ' ').length;
+          inputElement.setSelectionRange(newPos, newPos);
+        }
+      }, 10);
     }
   }
 
@@ -1950,13 +2017,31 @@
               {/if}
             </div>
           {/if}
-          <Input
-            type="text"
-            placeholder={replyingToNoteCommentId ? `Balas komentar...` : "Tulis komentar Anda..."}
-            class="flex-1 text-xs bg-slate-50/50 hover:bg-slate-50 focus:bg-white rounded-xl"
-            bind:value={newNoteCommentText}
-            required
-          />
+          <div class="flex-1 relative">
+            {#if showMentionDropdown && activeMentionInput === 'note' && filteredUsers.length > 0}
+              <div class="absolute bottom-full left-0 mb-2 w-full max-h-48 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-xl z-[1000] py-1">
+                {#each filteredUsers as user}
+                  <button 
+                    type="button" 
+                    class="flex w-full items-center gap-2 px-3 py-2 hover:bg-indigo-50 border-b border-slate-100 last:border-b-0 transition-colors cursor-pointer"
+                    on:click={() => insertMention(user.name)}
+                  >
+                    <img src={convertDriveUrl(user.avatar)} alt={user.name} class="w-6 h-6 rounded-full object-cover shrink-0" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                    <span class="text-[11px] font-bold text-slate-700 truncate">{user.name}</span>
+                  </button>
+                {/each}
+              </div>
+            {/if}
+            <input
+              type="text"
+              placeholder={replyingToNoteCommentId ? `Balas komentar...` : "Tulis komentar Anda..."}
+              class="w-full h-10 border border-slate-200 text-xs px-3 bg-slate-50/50 hover:bg-slate-50 focus:bg-white rounded-xl outline-none focus:border-primary"
+              bind:value={newNoteCommentText}
+              bind:this={noteInputElement}
+              on:input={(e) => handleCommentInput(e, 'note')}
+              required
+            />
+          </div>
           <button
             type="submit"
             class="h-10 w-10 shrink-0 bg-primary hover:bg-primary/95 text-white flex items-center justify-center rounded-xl shadow-soft-sm transition-transform active:scale-95 cursor-pointer"
@@ -2170,13 +2255,31 @@
               {/if}
             </div>
           {/if}
-          <Input
-            type="text"
-            placeholder={replyingToAnnouncementCommentId ? `Balas komentar...` : "Tulis tanggapan Anda..."}
-            class="flex-1 text-xs bg-slate-50/50 hover:bg-slate-50 focus:bg-white rounded-xl"
-            bind:value={newAnnouncementCommentText}
-            required
-          />
+          <div class="flex-1 relative">
+            {#if showMentionDropdown && activeMentionInput === 'announcement' && filteredUsers.length > 0}
+              <div class="absolute bottom-full left-0 mb-2 w-full max-h-48 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-xl z-[1000] py-1">
+                {#each filteredUsers as user}
+                  <button 
+                    type="button" 
+                    class="flex w-full items-center gap-2 px-3 py-2 hover:bg-indigo-50 border-b border-slate-100 last:border-b-0 transition-colors cursor-pointer"
+                    on:click={() => insertMention(user.name)}
+                  >
+                    <img src={convertDriveUrl(user.avatar)} alt={user.name} class="w-6 h-6 rounded-full object-cover shrink-0" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                    <span class="text-[11px] font-bold text-slate-700 truncate">{user.name}</span>
+                  </button>
+                {/each}
+              </div>
+            {/if}
+            <input
+              type="text"
+              placeholder={replyingToAnnouncementCommentId ? `Balas komentar...` : "Tulis tanggapan Anda..."}
+              class="w-full h-10 border border-slate-200 text-xs px-3 bg-slate-50/50 hover:bg-slate-50 focus:bg-white rounded-xl outline-none focus:border-primary"
+              bind:value={newAnnouncementCommentText}
+              bind:this={announcementInputElement}
+              on:input={(e) => handleCommentInput(e, 'announcement')}
+              required
+            />
+          </div>
           <button
             type="submit"
             class="h-10 w-10 shrink-0 bg-primary hover:bg-primary/95 text-white flex items-center justify-center rounded-xl shadow-soft-sm transition-transform active:scale-95 cursor-pointer"
