@@ -629,10 +629,27 @@
       }
 
       await fetchPrayerTimes();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Geolocation error:", error);
       isLoadingPrayers = false;
-      alert("Gagal mengakses lokasi GPS Anda. Pastikan izin lokasi aktif.");
+      
+      let errorMessage = "Gagal mengakses lokasi Anda. ";
+      if (error && error.message) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes('permission denied')) {
+          errorMessage += "Pastikan Anda telah memberikan Izin Lokasi untuk aplikasi ini.";
+        } else if (msg.includes('location unavailable') || msg.includes('position unavailable')) {
+          errorMessage += "Pastikan GPS/Lokasi di HP Anda sudah dinyalakan.";
+        } else if (msg.includes('timeout')) {
+          errorMessage += "Waktu pencarian lokasi habis. Pastikan GPS menyala dan sinyal stabil.";
+        } else {
+          errorMessage += "Pastikan GPS menyala dan Izin Lokasi aktif.";
+        }
+      } else {
+        errorMessage += "Pastikan GPS menyala dan Izin Lokasi aktif.";
+      }
+      
+      alert(errorMessage);
     }
   }
 

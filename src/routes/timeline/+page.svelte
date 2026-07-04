@@ -44,6 +44,10 @@
   // Edit comment state (admin)
   let editingCommentId: string | null = null;
   let editingCommentText = '';
+
+  // Reply state
+  let replyingToCommentId: string | null = null;
+  let replyingToCommentAuthor: string = "";
   
   // UI States for Toast & Modal
   let alertMessage = "";
@@ -246,6 +250,9 @@
     const commenterName = currentUserName || guestName.trim() || 'Tamu';
     if (!newCommentText.trim()) return;
 
+    const parentId = replyingToCommentId;
+    const targetAuthor = replyingToCommentAuthor;
+
     try {
       isSubmittingComment = true;
       const { error } = await supabase
@@ -254,12 +261,31 @@
           memory_id: memoryId,
           user_name: commenterName,
           comment_text: newCommentText.trim(),
-          user_foto: $authStore.user?.foto_url || ''
+          user_foto: $authStore.user?.foto_url || '',
+          parent_id: parentId || null
         }]);
 
       if (error) throw error;
       
+      // Kirim notifikasi jika ini balasan ke orang lain
+      if (parentId && targetAuthor && targetAuthor !== commenterName) {
+        try {
+          await supabase.from("app_notifications").insert([{
+            title: `Balasan Baru dari ${commenterName}`,
+            message: `${commenterName} membalas komentar Anda di foto/timeline: "${newCommentText.substring(0, 50)}${newCommentText.length > 50 ? '...' : ''}"`,
+            type: 'info',
+            target_user: targetAuthor,
+            is_active: true
+          }]);
+        } catch (notifErr) {
+          console.warn("Gagal mengirim notifikasi balasan", notifErr);
+        }
+      }
+      
       newCommentText = '';
+      replyingToCommentId = null;
+      replyingToCommentAuthor = "";
+
       await loadComments(memoryId);
       
       // Update comment count locally
@@ -522,7 +548,7 @@
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div 
     transition:fade={{ duration: 150 }} 
-    class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-50 flex items-center justify-center p-0 md:p-4 overflow-hidden"
+    class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[99999] flex items-center justify-center p-0 md:p-4 overflow-hidden"
     on:click={closeLightbox}
   >
     <!-- Modal container -->
@@ -595,7 +621,7 @@
                 {@const isAdminComment = comment.user_name && (comment.user_name.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.user_name.toUpperCase() === 'ADMIN MAZEEDA' || comment.user_name.toUpperCase() === 'ADMIN')}
                 {@const avatarUrl = resolveCommentAvatar(comment)}
                 {@const isEditing = editingCommentId === comment.id}
-                <div class="flex items-start space-x-3 bg-white p-3 rounded-xl border border-slate-200/40 shadow-soft-sm relative
+                <div class="flex items-start space-x-3 bg-white p-3 rounded-xl border border-slate-200/40 shadow-soft-sm relative {comment.parent_id ? 'ml-8 border-l-4 border-l-indigo-300' : ''}
                   {isAdmin ? 'group/tc' : ''}
                   {isAdminComment ? 'border-indigo-100/50 bg-gradient-to-r from-indigo-50/30 to-white' : ''}">
                   <!-- User Avatar -->
@@ -633,6 +659,11 @@
                         <span class="text-[9px] text-slate-400 font-bold">
                           {new Date(comment.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}
                         </span>
+                        <!-- Actions -->
+                        <button type="button" on:click|preventDefault|stopPropagation={() => { replyingToCommentId = comment.id; replyingToCommentAuthor = comment.user_name; }}
+                          class="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors ml-2 cursor-pointer">
+                          Balas
+                        </button>
                         <!-- Admin/Author Action Buttons -->
                         {#if isAdmin || comment.user_name === $authStore.user?.name}
                           <button
@@ -689,7 +720,15 @@
 
         <!-- Add Comment Input Form (Pinned at bottom, accounting for phone home indicator) -->
         <div class="p-4 bg-white border-t border-slate-200/60 shrink-0" style="padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));">
-          <form on:submit|preventDefault={() => submitComment(selectedMemory.id)} class="space-y-2.5">
+          {#if replyingToCommentId}
+            <div class="flex items-center justify-between bg-indigo-50/50 px-3 py-2 rounded-t-xl border border-indigo-100 border-b-0 -mb-2 relative z-0">
+              <span class="text-[10px] font-bold text-indigo-700">Membalas @{replyingToCommentAuthor}</span>
+              <button on:click={() => { replyingToCommentId = null; replyingToCommentAuthor = ''; }} class="text-indigo-400 hover:text-rose-500 cursor-pointer">
+                <X class="h-3.5 w-3.5" />
+              </button>
+            </div>
+          {/if}
+          <form on:submit|preventDefault={() => submitComment(selectedMemory.id)} class="space-y-2.5 relative z-10 bg-white {replyingToCommentId ? 'pt-2' : ''}">
             <!-- Guest Name Input if not logged in -->
             {#if !$authStore.user}
               <div class="flex items-center space-x-2">
@@ -718,7 +757,7 @@
               {/if}
               <input 
                 type="text" 
-                placeholder="Tulis komentar berharga Anda..." 
+                placeholder={replyingToCommentId ? `Balas komentar...` : "Tulis komentar berharga Anda..."} 
                 class="flex-1 h-10 border border-slate-200 rounded-xl text-xs px-3 bg-slate-50 text-slate-700 outline-none focus:border-primary focus:bg-white"
                 bind:value={newCommentText}
                 required

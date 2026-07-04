@@ -310,6 +310,8 @@
     isLoadingProfile = false;
   }
 
+  import { setBadgeCount, clearBadge } from '$lib/badge';
+
   // ── Notifikasi (App Notifications) ──
   let notifications: any[] = [];
   let showNotifPanel = false;
@@ -317,6 +319,15 @@
   let notifChannel: any;
 
   $: unreadCount = notifications.filter(n => n.is_active && !readNotifIds.includes(String(n.id))).length;
+
+  // Update App Icon Badge whenever unreadCount changes
+  $: if (browser && typeof unreadCount !== 'undefined') {
+    if (unreadCount > 0) {
+      setBadgeCount(unreadCount);
+    } else {
+      clearBadge();
+    }
+  }
 
   async function fetchNotifications() {
     try {
@@ -1002,7 +1013,7 @@
     <!-- App layout for general modules -->
     
     <!-- Top Header for Branding & Mobile Settings (Static, non-floating) -->
-    <div class="relative z-[100] w-full shrink-0 bg-white border-b border-slate-200/50">
+    <div class="relative w-full shrink-0 bg-white border-b border-slate-200/50">
       <header class="w-full mx-auto flex items-center justify-between h-[68px] px-4 md:px-8">
         <a href="/" class="flex items-center space-x-3 group" on:click={handleNavClick}>
         <img referrerpolicy="no-referrer" 
@@ -1155,7 +1166,7 @@
         {/if}
       </aside>
 
-      <main on:scroll={(e) => mainScrollY = e.currentTarget.scrollTop} class="flex-1 bg-white p-2 sm:p-4 md:p-8 {$page.url.searchParams.has('detail') ? 'pb-8' : 'pb-24'} md:pb-8 overflow-y-auto overflow-x-hidden relative z-10" id="main-scroll-container">
+      <main on:scroll={(e) => mainScrollY = e.currentTarget.scrollTop} class="flex-1 bg-white p-2 sm:p-4 md:p-8 {$page.url.searchParams.has('detail') ? 'pb-8' : 'pb-24'} md:pb-8 overflow-y-auto overflow-x-hidden relative" id="main-scroll-container">
         {#if showMyProfile}
           {#if isLoadingProfile}
           <div class="py-24 text-center space-y-4">

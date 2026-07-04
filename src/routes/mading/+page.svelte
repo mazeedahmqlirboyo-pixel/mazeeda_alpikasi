@@ -134,6 +134,14 @@
   let editingNoteCommentId: string | null = null;
   let editingNoteCommentText = "";
 
+  // Reply state — announcement comments
+  let replyingToAnnouncementCommentId: number | null = null;
+  let replyingToAnnouncementCommentAuthor: string = "";
+
+  // Reply state — note comments
+  let replyingToNoteCommentId: number | null = null;
+  let replyingToNoteCommentAuthor: string = "";
+
   $: if (browser) {
     if (
       selectedNoteForComments ||
@@ -464,13 +472,14 @@
 
       if (dbAnnouncements) {
         announcements = dbAnnouncements.map((item: any) => {
-          const matchingComments = dbComments
+              const matchingComments = dbComments
             ? dbComments
                 .filter((c: any) => c.announcement_id === item.id)
                 .map((c: any) => ({
                   id: c.id,
                   author: c.author,
                   text: c.text,
+                  parent_id: c.parent_id || null,
                   date: new Date(c.created_at).toLocaleDateString("id-ID", {
                     day: "numeric",
                     month: "short",
@@ -678,12 +687,16 @@
     const postId = selectedAnnouncementForComments.id;
     const text = newAnnouncementCommentText.trim();
     const userName = $authStore.user?.name || "Anonim";
+    const userNis = $authStore.user?.nis || null;
+    const parentId = replyingToAnnouncementCommentId;
+    const targetAuthor = replyingToAnnouncementCommentAuthor;
 
     const tempComment = {
       id: Date.now(),
       author: userName,
       text: text,
       date: "Baru saja",
+      parent_id: parentId
     };
 
     // Append locally immediately
@@ -700,6 +713,8 @@
     });
 
     newAnnouncementCommentText = "";
+    replyingToAnnouncementCommentId = null;
+    replyingToAnnouncementCommentAuthor = "";
 
     try {
       const { data, error } = await supabase
@@ -709,11 +724,27 @@
             announcement_id: postId,
             author: userName,
             text: text,
+            parent_id: parentId || null
           },
         ])
         .select();
 
       if (error) throw error;
+      
+      // Jika ini adalah balasan ke orang lain, kirim notifikasi
+      if (parentId && targetAuthor && targetAuthor !== userName) {
+        try {
+          await supabase.from("app_notifications").insert([{
+            title: `Balasan Baru dari ${userName}`,
+            message: `${userName} membalas komentar Anda: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+            type: 'info',
+            target_user: targetAuthor,
+            is_active: true
+          }]);
+        } catch (notifErr) {
+          console.warn("Gagal mengirim notifikasi balasan", notifErr);
+        }
+      }
 
       triggerAlert("Tanggapan Anda berhasil disimpan!");
 
@@ -723,6 +754,7 @@
           author: data[0].author,
           text: data[0].text,
           date: "Hari ini",
+          parent_id: data[0].parent_id
         };
         announcements = announcements.map((post) => {
           if (post.id === postId) {
@@ -914,6 +946,8 @@
 
     const sender = $authStore.user?.name || "Anonim";
     const text = newNoteCommentText.trim();
+    const parentId = replyingToNoteCommentId;
+    const targetAuthor = replyingToNoteCommentAuthor;
 
     const tempComment = {
       id: Date.now(),
@@ -921,6 +955,7 @@
       author: sender,
       text: text,
       created_at: new Date().toISOString(),
+      parent_id: parentId
     };
 
     // Append locally immediately
@@ -935,6 +970,8 @@
     });
 
     newNoteCommentText = "";
+    replyingToNoteCommentId = null;
+    replyingToNoteCommentAuthor = "";
 
     try {
       const { data, error } = await supabase
@@ -944,11 +981,27 @@
             note_id: selectedNoteForComments.id,
             author: sender,
             text: text,
+            parent_id: parentId || null
           },
         ])
         .select();
 
       if (error) throw error;
+      
+      // Kirim notifikasi jika ini balasan ke orang lain
+      if (parentId && targetAuthor && targetAuthor !== sender) {
+        try {
+          await supabase.from("app_notifications").insert([{
+            title: `Balasan Aspirasi dari ${sender}`,
+            message: `${sender} membalas komentar Anda di kertas tempel: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+            type: 'info',
+            target_user: targetAuthor,
+            is_active: true
+          }]);
+        } catch (notifErr) {
+          console.warn("Gagal mengirim notifikasi balasan note", notifErr);
+        }
+      }
 
       if (data && data.length > 0) {
         noteCommentsList = noteCommentsList.map((c) =>
@@ -1521,7 +1574,7 @@
         <!-- MODAL FOR STICKY NOTE CREATION -->
         <div
           transition:fade
-          class="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4 bg-slate-900/60 backdrop-blur-sm"
+          class="fixed inset-0 z-[99999] flex items-end justify-center p-0 sm:items-center sm:p-4 bg-slate-900/60 backdrop-blur-sm"
         >
           <!-- svelte-ignore a11y-click-events-have-key-events -->
           <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -1621,7 +1674,7 @@
   <!-- MODAL FOR STICKY NOTE COMMENTS -->
   <div
     transition:fade
-    class="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4 bg-slate-900/60 backdrop-blur-sm"
+    class="fixed inset-0 z-[99999] flex items-end justify-center p-0 sm:items-center sm:p-4 bg-slate-900/60 backdrop-blur-sm"
   >
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -1709,7 +1762,7 @@
                 {@const avatarUrl = convertDriveUrl(authorAvatarMap[comment.author] || '')}
                 {@const isAdminComment = comment.author && (comment.author.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.author.toUpperCase() === 'ADMIN MAZEEDA' || comment.author.toUpperCase() === 'ADMIN')}
                 {@const isEditing = editingNoteCommentId == comment.id}
-                <div class="bg-white border rounded-2xl p-3.5 shadow-soft-sm transition-all
+                <div class="bg-white border rounded-2xl p-3.5 shadow-soft-sm transition-all {comment.parent_id ? 'ml-8 border-l-4 border-l-indigo-300' : ''}
                   {isAdminComment ? 'border-indigo-100' : 'border-slate-100'}
                   {isAdmin || comment.author === $authStore.user?.name ? 'group/nc' : ''}">
                   <div class="flex items-start gap-3">
@@ -1744,6 +1797,10 @@
                         <div class="flex items-center gap-1 shrink-0">
                           <span class="text-[9px] text-slate-400 font-bold">{new Date(comment.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                           <!-- Actions -->
+                          <button type="button" on:click|preventDefault|stopPropagation={() => { replyingToNoteCommentId = comment.id; replyingToNoteCommentAuthor = comment.author; }}
+                            class="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors ml-2 cursor-pointer">
+                            Balas
+                          </button>
                           {#if isAdmin || comment.author === $authStore.user?.name}
                             <button type="button" on:click|preventDefault|stopPropagation={() => { editingNoteCommentId = comment.id; editingNoteCommentText = comment.text; }}
                               class="p-1.5 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all cursor-pointer"
@@ -1797,9 +1854,17 @@
 
       <!-- Modal Footer: Comment Form (Sticky Note) -->
       <div class="p-4 border-t border-slate-100 bg-white">
+        {#if replyingToNoteCommentId}
+          <div class="flex items-center justify-between bg-indigo-50/50 px-3 py-2 rounded-t-xl border border-indigo-100 border-b-0 -mb-2 relative z-0">
+            <span class="text-[10px] font-bold text-indigo-700">Membalas @{replyingToNoteCommentAuthor}</span>
+            <button on:click={() => { replyingToNoteCommentId = null; replyingToNoteCommentAuthor = ''; }} class="text-indigo-400 hover:text-rose-500 cursor-pointer">
+              <XIcon class="h-3.5 w-3.5" />
+            </button>
+          </div>
+        {/if}
         <form
           on:submit|preventDefault={handleAddNoteComment}
-          class="flex gap-2 items-center"
+          class="flex gap-2 items-center relative z-10 bg-white {replyingToNoteCommentId ? 'pt-2' : ''}"
         >
           <!-- Current user avatar -->
           {#if $authStore.user}
@@ -1815,7 +1880,7 @@
           {/if}
           <Input
             type="text"
-            placeholder="Tulis komentar Anda..."
+            placeholder={replyingToNoteCommentId ? `Balas komentar...` : "Tulis komentar Anda..."}
             class="flex-1 text-xs bg-slate-50/50 hover:bg-slate-50 focus:bg-white rounded-xl"
             bind:value={newNoteCommentText}
             required
@@ -1835,7 +1900,7 @@
 {#if selectedAnnouncementForComments}
   <div
     transition:fade
-    class="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4 bg-slate-900/60 backdrop-blur-sm"
+    class="fixed inset-0 z-[99999] flex items-end justify-center p-0 sm:items-center sm:p-4 bg-slate-900/60 backdrop-blur-sm"
   >
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -1919,7 +1984,7 @@
                 {@const avatarUrl = convertDriveUrl(authorAvatarMap[comment.author] || '')}
                 {@const isAdminComment = comment.author && (comment.author.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.author.toUpperCase() === 'ADMIN MAZEEDA' || comment.author.toUpperCase() === 'ADMIN')}
                 {@const isEditing = editingAnnouncementCommentId == comment.id}
-                <div class="bg-white border rounded-2xl p-3.5 shadow-soft-sm transition-all
+                <div class="bg-white border rounded-2xl p-3.5 shadow-soft-sm transition-all {comment.parent_id ? 'ml-8 border-l-4 border-l-indigo-300' : ''}
                   {isAdminComment ? 'border-indigo-100' : 'border-slate-100'}
                   {isAdmin || comment.author === $authStore.user?.name ? 'group/ac' : ''}">
                   <div class="flex items-start gap-3">
@@ -1954,6 +2019,10 @@
                         <div class="flex items-center gap-1 shrink-0">
                           <span class="text-[9px] text-slate-400 font-bold">{comment.date}</span>
                           <!-- Actions -->
+                          <button type="button" on:click|preventDefault|stopPropagation={() => { replyingToAnnouncementCommentId = comment.id; replyingToAnnouncementCommentAuthor = comment.author; }}
+                            class="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors ml-2 cursor-pointer">
+                            Balas
+                          </button>
                           {#if isAdmin || comment.author === $authStore.user?.name}
                             <button type="button" on:click|preventDefault|stopPropagation={() => { editingAnnouncementCommentId = comment.id; editingAnnouncementCommentText = comment.text; }}
                               class="p-1.5 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all cursor-pointer"
@@ -2005,9 +2074,17 @@
 
       <!-- Modal Footer: Add Comment Form (Announcement) -->
       <div class="p-4 border-t border-slate-100 bg-white">
+        {#if replyingToAnnouncementCommentId}
+          <div class="flex items-center justify-between bg-indigo-50/50 px-3 py-2 rounded-t-xl border border-indigo-100 border-b-0 -mb-2 relative z-0">
+            <span class="text-[10px] font-bold text-indigo-700">Membalas @{replyingToAnnouncementCommentAuthor}</span>
+            <button on:click={() => { replyingToAnnouncementCommentId = null; replyingToAnnouncementCommentAuthor = ''; }} class="text-indigo-400 hover:text-rose-500 cursor-pointer">
+              <XIcon class="h-3.5 w-3.5" />
+            </button>
+          </div>
+        {/if}
         <form
           on:submit|preventDefault={handleAddAnnouncementComment}
-          class="flex gap-2 items-center"
+          class="flex gap-2 items-center relative z-10 bg-white {replyingToAnnouncementCommentId ? 'pt-2' : ''}"
         >
           <!-- Current user avatar -->
           {#if $authStore.user}
@@ -2023,7 +2100,7 @@
           {/if}
           <Input
             type="text"
-            placeholder="Tulis tanggapan Anda..."
+            placeholder={replyingToAnnouncementCommentId ? `Balas komentar...` : "Tulis tanggapan Anda..."}
             class="flex-1 text-xs bg-slate-50/50 hover:bg-slate-50 focus:bg-white rounded-xl"
             bind:value={newAnnouncementCommentText}
             required

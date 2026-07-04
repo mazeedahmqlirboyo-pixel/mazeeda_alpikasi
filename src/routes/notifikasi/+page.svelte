@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { supabase } from '$lib/supabase';
+  import { authStore } from '$lib/stores/authStore';
   import { fade, fly, slide } from 'svelte/transition';
   import { Bell, Search, Filter, ShieldCheck, CheckCircle2, AlertCircle, Info, CalendarClock, ChevronLeft } from 'lucide-svelte';
   import Card from '$lib/components/ui/card.svelte';
@@ -75,6 +76,9 @@
   }
 
   $: filteredNotifications = notifications.filter(n => {
+    // Filter by target_user
+    if (n.target_user && n.target_user !== $authStore.user?.name) return false;
+
     // Filter by type
     if (activeFilter === 'Info' && n.type !== 'info') return false;
     if (activeFilter === 'Penting' && n.type !== 'urgent' && n.type !== 'warning') return false;
