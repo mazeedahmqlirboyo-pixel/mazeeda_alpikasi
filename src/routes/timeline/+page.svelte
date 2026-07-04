@@ -392,7 +392,7 @@
 
     try {
       isSubmittingComment = true;
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('memory_comments')
         .insert([{
           memory_id: memoryId,
@@ -400,9 +400,17 @@
           comment_text: newCommentText.trim(),
           user_foto: $authStore.user?.foto_url || '',
           parent_id: parentId || null
-        }]);
+        }])
+        .select();
 
       if (error) throw error;
+      
+      // Update local comments immediately
+      if (data && data.length > 0) {
+        if (!activeComments.some(c => c.id === data[0].id)) {
+          activeComments = [...activeComments, data[0]];
+        }
+      }
       
       // Notify mentions
       await notifyMentions(newCommentText.trim(), "Ada yang Mention Anda di Timeline!", `/timeline`);

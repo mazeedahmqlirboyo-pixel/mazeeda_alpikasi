@@ -519,13 +519,16 @@
             // Update modal if open
             if (selectedAnnouncementForComments && selectedAnnouncementForComments.id === payload.new.announcement_id) {
                 if (!selectedAnnouncementForComments.comments.some((c: any) => c.id === payload.new.id)) {
-                  selectedAnnouncementForComments.comments = [...selectedAnnouncementForComments.comments, {
-                    id: payload.new.id,
-                    author: payload.new.author,
-                    text: payload.new.text,
-                    date: "Baru saja",
-                    parent_id: payload.new.parent_id
-                  }];
+                  selectedAnnouncementForComments = {
+                    ...selectedAnnouncementForComments,
+                    comments: [...selectedAnnouncementForComments.comments, {
+                      id: payload.new.id,
+                      author: payload.new.author,
+                      text: payload.new.text,
+                      date: "Baru saja",
+                      parent_id: payload.new.parent_id
+                    }]
+                  };
                 }
             }
           },
