@@ -203,13 +203,13 @@
       </div>
     {:else}
       <!-- Balance Card -->
-      <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-6 text-white shadow-lg shadow-blue-500/30 relative overflow-hidden">
+      <div class="bg-primary rounded-3xl p-6 text-white shadow-lg shadow-primary/30 relative overflow-hidden">
         <!-- Decoration -->
         <div class="absolute -right-4 -top-4 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="absolute -left-4 -bottom-4 w-24 h-24 bg-blue-400/20 rounded-full blur-xl pointer-events-none"></div>
+        <div class="absolute -left-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none"></div>
         
         <div class="relative z-10 space-y-1">
-          <p class="text-blue-100 text-sm font-medium">Sisa Saldo Anda</p>
+          <p class="text-white/80 text-sm font-medium">Sisa Saldo Anda</p>
           <h2 class="text-3xl sm:text-4xl font-black tracking-tight">{formatIDR(currentBalance)}</h2>
         </div>
 
@@ -219,7 +219,7 @@
               <div class="p-1 rounded-full bg-emerald-400/20 text-emerald-300">
                 <ArrowDownRight class="w-3 h-3" />
               </div>
-              <p class="text-blue-100 text-xs font-semibold">Pemasukan</p>
+              <p class="text-white/80 text-xs font-semibold">Pemasukan</p>
             </div>
             <p class="font-bold text-emerald-300 text-sm">{formatIDR(totalIncome)}</p>
           </div>
@@ -228,7 +228,7 @@
               <div class="p-1 rounded-full bg-rose-400/20 text-rose-300">
                 <ArrowUpRight class="w-3 h-3" />
               </div>
-              <p class="text-blue-100 text-xs font-semibold">Pengeluaran</p>
+              <p class="text-white/80 text-xs font-semibold">Pengeluaran</p>
             </div>
             <p class="font-bold text-rose-300 text-sm">{formatIDR(totalExpense)}</p>
           </div>
