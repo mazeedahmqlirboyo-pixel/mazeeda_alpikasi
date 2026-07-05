@@ -4,7 +4,7 @@
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import { Send, Bot, User, Loader2, Sparkles, AlertCircle, Trash2, StopCircle } from 'lucide-svelte';
   import { authStore } from '$lib/auth';
-  import { PUBLIC_GEMINI_API_KEY } from '$env/static/public';
+  import { env } from '$env/dynamic/public';
   import { GoogleGenerativeAI } from '@google/generative-ai';
 
   interface Message {
@@ -131,10 +131,10 @@
     messages = [...messages, modelMsg];
 
     try {
-      if (!PUBLIC_GEMINI_API_KEY) {
+      if (!env.PUBLIC_GEMINI_API_KEY) {
         throw new Error('Kunci API Gemini belum dikonfigurasi (PUBLIC_GEMINI_API_KEY).');
       }
-      const genAI = new GoogleGenerativeAI(PUBLIC_GEMINI_API_KEY);
+      const genAI = new GoogleGenerativeAI(env.PUBLIC_GEMINI_API_KEY);
       
       const latestMessage = userMsg.content;
       let history = messages.slice(0, -2).map(msg => ({
