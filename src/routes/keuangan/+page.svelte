@@ -181,7 +181,7 @@
           <ArrowLeft class="w-5 h-5" />
         </a>
         <h1 class="font-bold text-slate-800 flex items-center gap-2">
-          <span class="p-1.5 rounded-lg bg-violet-100 text-violet-600">
+          <span class="p-1.5 rounded-lg bg-blue-100 text-blue-600">
             <Wallet class="w-4 h-4" />
           </span>
           Buku Kas Pribadi
@@ -199,17 +199,17 @@
   <main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
     {#if !isLoaded}
       <div class="flex justify-center py-20">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     {:else}
       <!-- Balance Card -->
-      <div class="bg-gradient-to-br from-violet-600 to-indigo-700 rounded-3xl p-6 text-white shadow-lg shadow-violet-500/30 relative overflow-hidden">
+      <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-6 text-white shadow-lg shadow-blue-500/30 relative overflow-hidden">
         <!-- Decoration -->
         <div class="absolute -right-4 -top-4 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="absolute -left-4 -bottom-4 w-24 h-24 bg-indigo-400/20 rounded-full blur-xl pointer-events-none"></div>
+        <div class="absolute -left-4 -bottom-4 w-24 h-24 bg-blue-400/20 rounded-full blur-xl pointer-events-none"></div>
         
         <div class="relative z-10 space-y-1">
-          <p class="text-violet-100 text-sm font-medium">Sisa Saldo Anda</p>
+          <p class="text-blue-100 text-sm font-medium">Sisa Saldo Anda</p>
           <h2 class="text-3xl sm:text-4xl font-black tracking-tight">{formatIDR(currentBalance)}</h2>
         </div>
 
@@ -219,7 +219,7 @@
               <div class="p-1 rounded-full bg-emerald-400/20 text-emerald-300">
                 <ArrowDownRight class="w-3 h-3" />
               </div>
-              <p class="text-violet-100 text-xs font-semibold">Pemasukan</p>
+              <p class="text-blue-100 text-xs font-semibold">Pemasukan</p>
             </div>
             <p class="font-bold text-emerald-300 text-sm">{formatIDR(totalIncome)}</p>
           </div>
@@ -228,7 +228,7 @@
               <div class="p-1 rounded-full bg-rose-400/20 text-rose-300">
                 <ArrowUpRight class="w-3 h-3" />
               </div>
-              <p class="text-violet-100 text-xs font-semibold">Pengeluaran</p>
+              <p class="text-blue-100 text-xs font-semibold">Pengeluaran</p>
             </div>
             <p class="font-bold text-rose-300 text-sm">{formatIDR(totalExpense)}</p>
           </div>
@@ -244,7 +244,7 @@
           </h3>
           <button 
             on:click={() => openModal()}
-            class="bg-violet-100 text-violet-700 hover:bg-violet-200 transition-colors px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm"
+            class="bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm"
           >
             <Plus class="w-3.5 h-3.5" /> Tambah Data
           </button>
@@ -258,7 +258,7 @@
             <p class="text-slate-500 text-sm font-medium">Belum ada catatan keuangan.</p>
             <button 
               on:click={() => openModal()}
-              class="text-violet-600 font-bold text-sm hover:underline"
+              class="text-blue-600 font-bold text-sm hover:underline"
             >
               Mulai catat sekarang
             </button>
@@ -359,7 +359,7 @@
                 bind:value={formData.amount} 
                 placeholder="0"
                 required
-                class="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 text-lg focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all"
+                class="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 text-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
               />
             </div>
           </div>
@@ -370,7 +370,7 @@
             <select 
               id="category"
               bind:value={formData.category}
-              class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all appearance-none"
+              class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all appearance-none"
             >
               {#each categories[formData.type] as cat}
                 <option value={cat}>{cat}</option>
@@ -386,7 +386,7 @@
               type="date" 
               bind:value={formData.date}
               required
-              class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all"
+              class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
             />
           </div>
 
@@ -398,7 +398,7 @@
               type="text" 
               bind:value={formData.note}
               placeholder="Contoh: Beli nasi goreng"
-              class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all"
+              class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
             />
           </div>
         </div>
@@ -406,7 +406,7 @@
         <div class="pt-4 border-t border-slate-100">
           <button 
             type="submit" 
-            class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-violet-500/20 flex items-center justify-center gap-2"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
           >
             <Save class="w-4 h-4" />
             {isEditing ? 'Simpan Perubahan' : 'Simpan Transaksi'}
