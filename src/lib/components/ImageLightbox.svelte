@@ -31,7 +31,7 @@
   >
     <!-- Close button -->
     <button 
-      class="absolute top-4 right-4 p-1.5 text-white/50 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-colors z-20 cursor-pointer backdrop-blur-sm border border-white/10"
+      class="absolute top-4 right-4 p-1.5 text-white/50 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-colors z-20 cursor-pointer backdrop-blur-sm border border-white/10 flex items-center justify-center"
       on:click|stopPropagation={close}
     >
       <X class="h-4 w-4" />

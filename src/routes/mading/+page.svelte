@@ -361,9 +361,20 @@
     allUserNames.forEach(name => {
       const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`(^|\\s)@(${escapedName})(?=\\s|[.,!?]|$)`, 'gi');
-      formattedText = formattedText.replace(regex, `$1<span class="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">@$2</span>`);
+      formattedText = formattedText.replace(regex, `$1<button type="button" class="mention-btn text-indigo-600 font-bold bg-indigo-50 px-1 rounded hover:underline cursor-pointer" data-name="$2">@$2</button>`);
     });
     return formattedText;
+  }
+
+  function handleDelegatedMentionClick(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    const btn = target.closest('.mention-btn') as HTMLElement;
+    if (btn && btn.dataset.name) {
+      const name = btn.dataset.name;
+      const currentAdminName = (adminName || 'ADMIN MAZEEDA').toUpperCase();
+      const role = (name.toUpperCase() === currentAdminName || name.toUpperCase() === 'ADMIN MAZEEDA' || name.toUpperCase() === 'ADMIN') ? 'admin' : 'member';
+      handleOpenProfile(role, name);
+    }
   }
 
   // Parse mentions from text and notify targets
@@ -2041,7 +2052,9 @@
                           </button>
                         </div>
                       {:else}
-                        <p class="text-xs font-medium text-slate-600 leading-relaxed">{@html formatMentions(comment.text)}</p>
+                        <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <p class="text-xs font-medium text-slate-600 leading-relaxed" on:click={handleDelegatedMentionClick}>{@html formatMentions(comment.text)}</p>
                       {/if}
                     </div>
                   </div>
@@ -2281,7 +2294,9 @@
                           </button>
                         </div>
                       {:else}
-                        <p class="text-xs font-medium text-slate-600 leading-relaxed">{@html formatMentions(comment.text)}</p>
+                        <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <p class="text-xs font-medium text-slate-600 leading-relaxed" on:click={handleDelegatedMentionClick}>{@html formatMentions(comment.text)}</p>
                       {/if}
                     </div>
                   </div>
