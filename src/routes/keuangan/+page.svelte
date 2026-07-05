@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
   import { authStore } from '$lib/auth';
   import { 
-    Wallet, ArrowUpRight, ArrowDownRight, Plus, 
+    Wallet, ArrowUpCircle, ArrowDownCircle, Plus, 
     Trash2, Pencil, ArrowLeft, History, Search, 
     X, AlertCircle, Save, ChevronDown
   } from 'lucide-svelte';
@@ -202,12 +202,6 @@
           Cash Flow
         </h1>
       </div>
-      <!-- User Profile Initials for identity -->
-      {#if $authStore.user}
-        <div class="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
-          {$authStore.user.nama?.substring(0, 2).toUpperCase() || 'US'}
-        </div>
-      {/if}
     </div>
   </header>
 
@@ -229,23 +223,23 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4 mt-8 relative z-10">
-          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100/50">
             <div class="flex items-center gap-2 mb-1">
-              <div class="p-1 rounded-full bg-emerald-400/20 text-emerald-300">
-                <ArrowDownRight class="w-3 h-3" />
+              <div class="p-1 rounded-full bg-emerald-50 text-emerald-500">
+                <ArrowDownCircle class="w-4 h-4" />
               </div>
-              <p class="text-white/80 text-xs font-semibold">Pemasukan</p>
+              <p class="text-slate-500 text-xs font-bold">Pemasukan</p>
             </div>
-            <p class="font-bold text-emerald-300 text-sm">{formatIDR(totalIncome)}</p>
+            <p class="font-black text-emerald-600 text-base">{formatIDR(totalIncome)}</p>
           </div>
-          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100/50">
             <div class="flex items-center gap-2 mb-1">
-              <div class="p-1 rounded-full bg-rose-400/20 text-rose-300">
-                <ArrowUpRight class="w-3 h-3" />
+              <div class="p-1 rounded-full bg-rose-50 text-rose-500">
+                <ArrowUpCircle class="w-4 h-4" />
               </div>
-              <p class="text-white/80 text-xs font-semibold">Pengeluaran</p>
+              <p class="text-slate-500 text-xs font-bold">Pengeluaran</p>
             </div>
-            <p class="font-bold text-rose-300 text-sm">{formatIDR(totalExpense)}</p>
+            <p class="font-black text-rose-600 text-base">{formatIDR(totalExpense)}</p>
           </div>
         </div>
       </div>
@@ -291,9 +285,9 @@
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 {t.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}">
                     {#if t.type === 'income'}
-                      <ArrowDownRight class="w-5 h-5" />
+                      <ArrowDownCircle class="w-5 h-5" />
                     {:else}
-                      <ArrowUpRight class="w-5 h-5" />
+                      <ArrowUpCircle class="w-5 h-5" />
                     {/if}
                   </div>
                   <div>
