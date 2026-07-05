@@ -6,6 +6,7 @@
   import { Bell, Search, Filter, ShieldCheck, CheckCircle2, AlertCircle, Info, CalendarClock, ChevronLeft } from 'lucide-svelte';
   import Card from '$lib/components/ui/card.svelte';
   import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
   
   let notifications: any[] = [];
   let loading = true;
@@ -174,7 +175,7 @@
           <div 
             in:fly={{ y: 10, duration: 200, delay: i * 30 }} 
             class="p-4 sm:p-5 flex gap-3.5 bg-white hover:bg-slate-50/50 transition-colors {linkUrl ? 'cursor-pointer' : ''}"
-            on:click={() => { if (linkUrl) window.location.href = linkUrl; }}
+            on:click={() => { if (linkUrl) goto(linkUrl); }}
           >
             <!-- Content -->
             <div class="flex-1 min-w-0">
@@ -204,8 +205,8 @@
                 <div>
                   {#if !isRead}
                     <button 
-                      on:click={() => markAsRead(notif.id)}
-                      class="text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md transition-colors border border-blue-100/50 flex items-center gap-1.5"
+                      on:click|stopPropagation={() => markAsRead(notif.id)}
+                      class="text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md transition-colors border border-blue-100/50 flex items-center gap-1.5 cursor-pointer"
                     >
                       Tandai dibaca
                     </button>

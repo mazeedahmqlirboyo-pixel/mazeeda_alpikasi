@@ -756,8 +756,8 @@
     >
       <!-- Close button -->
       <button 
-        on:click={closeLightbox}
-        class="absolute top-4 right-4 bg-slate-900/60 hover:bg-slate-900 text-white rounded-full p-2 z-30 transition-colors shadow-soft-md flex items-center justify-center"
+        on:click|stopPropagation={closeLightbox}
+        class="absolute top-4 right-4 bg-slate-900/60 hover:bg-slate-900 text-white rounded-full p-2 z-50 transition-colors shadow-soft-md flex items-center justify-center cursor-pointer"
         style="min-height: 40px; min-width: 40px; margin-top: env(safe-area-inset-top, 0px);"
       >
         <X class="h-5 w-5" />
