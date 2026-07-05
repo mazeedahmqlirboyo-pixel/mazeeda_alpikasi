@@ -4,6 +4,8 @@
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import { Send, Bot, User, Loader2, Sparkles, AlertCircle, Trash2, StopCircle } from 'lucide-svelte';
   import { authStore } from '$lib/auth';
+  import { PUBLIC_GEMINI_API_KEY } from '$env/static/public';
+  import { GoogleGenerativeAI } from '@google/generative-ai';
 
   interface Message {
     id: string;
@@ -129,37 +131,38 @@
     messages = [...messages, modelMsg];
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: messages.slice(0, -1) }), // kirim tanpa modelMsg kosong
-        signal: abortController.signal
-      });
+      if (!PUBLIC_GEMINI_API_KEY) {
+        throw new Error('Kunci API Gemini belum dikonfigurasi (PUBLIC_GEMINI_API_KEY).');
+      }
+      const genAI = new GoogleGenerativeAI(PUBLIC_GEMINI_API_KEY);
+      
+      const latestMessage = userMsg.content;
+      let history = messages.slice(0, -2).map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }]
+      }));
 
-      if (!response.ok) {
-        let errMsg = 'Terjadi kesalahan jaringan.';
-        try { const errObj = await response.json(); errMsg = errObj.error || errMsg; } catch(e) {}
-        throw new Error(errMsg);
+      while (history.length > 0 && history[0].role === 'model') {
+        history.shift();
       }
 
-      if (!response.body) throw new Error("No response body");
-      
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash",
+        systemInstruction: `Kamu adalah MAZEEDA AI, asisten virtual super cerdas, ramah, Islami, dan gaul untuk pengguna aplikasi MAZEEDA. MAZEEDA adalah aplikasi santri kekinian yang memiliki fitur Quran, Wirid/Sangu, Timeline (Galeri), Mading, dan database Squad. Kamu harus selalu menjawab menggunakan bahasa Indonesia yang santai, sopan, kadang diselingi salam atau kalimat thoyyibah yang pas, namun tetap terlihat keren dan modern (satset). Panggil pengguna dengan sebutan akrab seperti "Sobat", "Kak", atau "Abang". Jangan pernah bilang kamu hanya AI buatan OpenAI, karena kamu adalah MAZEEDA AI.`
+      });
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value, { stream: true });
-        // Update pesan terakhir (pesan model) dengan chunk baru
+      const chat = model.startChat({ history: history });
+      const result = await chat.sendMessageStream(latestMessage);
+
+      for await (const chunk of result.stream) {
+        if (abortController?.signal.aborted) break;
+        const chunkText = chunk.text();
         messages = messages.map(msg => {
           if (msg.id === modelMsgId) {
-            return { ...msg, content: msg.content + chunk };
+            return { ...msg, content: msg.content + chunkText };
           }
           return msg;
         });
-        
         scrollToBottom();
       }
       
