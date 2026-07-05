@@ -35,14 +35,14 @@
   let formData = {
     type: 'expense' as 'income' | 'expense',
     amount: '',
-    category: 'Jajan',
+    category: 'Transfer Rekening (Transfer)',
     note: '',
     date: new Date().toISOString().split('T')[0]
   };
 
   const categories = {
-    expense: ['Jajan', 'Makan', 'SPP', 'Transportasi', 'Kebutuhan Pondok', 'Lainnya'],
-    income: ['Uang Saku', 'Hadiah', 'Tabungan', 'Lainnya']
+    expense: ['Transfer Rekening (Transfer)', 'Belanja (Shopping)', 'Tagihan (Bills)', 'Top Up e-Wallet', 'Investasi (Investment)'],
+    income: ['Tabungan (Savings)', 'Gaji (Salary)', 'Pengembalian Dana (Refund)']
   };
 
   // Lifecycle
@@ -98,7 +98,7 @@
       formData = {
         type: 'expense',
         amount: '',
-        category: 'Jajan',
+        category: 'Transfer Rekening (Transfer)',
         note: '',
         date: new Date().toISOString().split('T')[0]
       };
@@ -169,7 +169,7 @@
 </script>
 
 <svelte:head>
-  <title>Buku Kas Pribadi | MAZEEDA</title>
+  <title>Cash Flow | MAZEEDA</title>
 </svelte:head>
 
 <div class="min-h-screen bg-slate-50 pb-20">
@@ -184,7 +184,7 @@
           <span class="p-1.5 rounded-lg bg-blue-100 text-blue-600">
             <Wallet class="w-4 h-4" />
           </span>
-          Buku Kas Pribadi
+          Cash Flow
         </h1>
       </div>
       <!-- User Profile Initials for identity -->

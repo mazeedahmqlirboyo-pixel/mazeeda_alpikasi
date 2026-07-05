@@ -2095,17 +2095,17 @@
             <span
               class="inline-flex items-center space-x-1.5 bg-violet-50 border border-violet-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-violet-600 leading-none"
             >
-              💳 Buku Kas Pribadi
+              💳 Manajemen Uang
             </span>
             <h3
               class="text-lg font-extrabold tracking-tight mt-1 text-slate-800"
             >
-              Catatan Keuangan
+              Cash Flow
             </h3>
             <p
               class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
             >
-              Catat pemasukan dan pengeluaran harianmu dengan mudah dan aman.
+              Catat Cash Flow harianmu dengan mudah dan aman.
             </p>
           </div>
         </div>
