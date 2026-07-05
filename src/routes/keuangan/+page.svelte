@@ -6,7 +6,9 @@
   import { 
     Wallet, ArrowUpCircle, ArrowDownCircle, Plus, 
     Trash2, Pencil, ArrowLeft, History, Search, 
-    X, AlertCircle, Save, ChevronDown, Calendar
+    X, AlertCircle, Save, ChevronDown, Calendar,
+    ArrowRightLeft, ShoppingCart, Receipt, Smartphone, TrendingUp,
+    PiggyBank, Briefcase, Undo, FileText
   } from 'lucide-svelte';
   import flatpickr from 'flatpickr';
   import 'flatpickr/dist/flatpickr.css';
@@ -59,7 +61,22 @@
 
   const categories = {
     expense: ['Transfer Rekening (Transfer)', 'Belanja (Shopping)', 'Tagihan (Bills)', 'Top Up e-Wallet', 'Investasi (Investment)'],
-    income: ['Tabungan (Savings)', 'Gaji (Salary)', 'Pengembalian Dana (Refund)']
+    income: [
+      'Tabungan (Savings)',
+      'Gaji (Salary)',
+      'Pengembalian Dana (Refund)'
+    ]
+  };
+
+  const categoryIcons: Record<string, any> = {
+    'Transfer Rekening (Transfer)': ArrowRightLeft,
+    'Belanja (Shopping)': ShoppingCart,
+    'Tagihan (Bills)': Receipt,
+    'Top Up e-Wallet': Smartphone,
+    'Investasi (Investment)': TrendingUp,
+    'Tabungan (Savings)': PiggyBank,
+    'Gaji (Salary)': Briefcase,
+    'Pengembalian Dana (Refund)': Undo
   };
 
   // Lifecycle
@@ -299,12 +316,8 @@
                 transition:slide|local
               >
                 <div class="flex-1 min-w-0 flex items-center gap-4 px-2 sm:px-0">
-                  <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-[#298EEA] text-white">
-                    {#if t.type === 'income'}
-                      <ArrowDownCircle class="w-6 h-6" />
-                    {:else}
-                      <ArrowUpCircle class="w-6 h-6" />
-                    {/if}
+                  <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-white {t.type === 'income' ? 'bg-[#298EEA]' : 'bg-rose-500'}">
+                    <svelte:component this={categoryIcons[t.category] || FileText} class="w-6 h-6" />
                   </div>
                   <div class="flex-1 min-w-0">
                     <h4 class="font-bold text-slate-800 text-[15px] truncate mb-0.5">{t.note || t.category}</h4>
