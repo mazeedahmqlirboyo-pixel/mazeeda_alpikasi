@@ -2105,7 +2105,7 @@
             <p
               class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
             >
-              Catat Cash Flow harianmu dengan mudah dan aman.
+              Catat Cash Flow harianmu dengan mudah dan aman sebagaimana isyarat QS. Al-Baqarah: 282.
             </p>
           </div>
         </div>
