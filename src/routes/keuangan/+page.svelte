@@ -31,6 +31,7 @@
   let showModal = false;
   let isEditing = false;
   let editingId: string | null = null;
+  let displayAmount = '';
   
   let formData = {
     type: 'expense' as 'income' | 'expense',
@@ -92,6 +93,7 @@
         note: transaction.note,
         date: transaction.date
       };
+      displayAmount = formatInputNumber(transaction.amount.toString());
     } else {
       isEditing = false;
       editingId = null;
@@ -102,6 +104,7 @@
         note: '',
         date: new Date().toISOString().split('T')[0]
       };
+      displayAmount = '';
     }
     showModal = true;
   }
@@ -113,6 +116,18 @@
   function handleTypeChange(newType: 'income' | 'expense') {
     formData.type = newType;
     formData.category = categories[newType][0];
+  }
+
+  function formatInputNumber(value: string) {
+    if (!value) return '';
+    return Number(value).toLocaleString('id-ID');
+  }
+
+  function handleAmountInput(e: Event) {
+    const input = (e.target as HTMLInputElement).value;
+    const rawValue = input.replace(/\D/g, '');
+    formData.amount = rawValue;
+    displayAmount = formatInputNumber(rawValue);
   }
 
   function handleSave(e: Event) {
@@ -354,9 +369,11 @@
               <span class="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">Rp</span>
               <input 
                 id="amount"
-                type="number" 
-                min="0"
-                bind:value={formData.amount} 
+                type="text" 
+                inputmode="numeric"
+                pattern="[0-9]*"
+                value={displayAmount} 
+                on:input={handleAmountInput}
                 placeholder="0"
                 required
                 class="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 text-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
