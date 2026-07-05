@@ -6,8 +6,24 @@
   import { 
     Wallet, ArrowUpCircle, ArrowDownCircle, Plus, 
     Trash2, Pencil, ArrowLeft, History, Search, 
-    X, AlertCircle, Save, ChevronDown
+    X, AlertCircle, Save, ChevronDown, Calendar
   } from 'lucide-svelte';
+  import flatpickr from 'flatpickr';
+  import 'flatpickr/dist/flatpickr.css';
+
+  function datepicker(node: HTMLElement) {
+    const fp = flatpickr(node, {
+      dateFormat: "Y-m-d",
+      altInput: true,
+      altFormat: "d/m/Y",
+      disableMobile: true
+    });
+    return {
+      destroy() {
+        fp.destroy();
+      }
+    };
+  }
 
   // State Management
   interface Transaction {
@@ -397,13 +413,19 @@
           <!-- Tanggal -->
           <div class="space-y-1.5">
             <label class="text-xs font-bold text-slate-500 uppercase tracking-wider" for="date">Tanggal</label>
-            <input 
-              id="date"
-              type="date" 
-              bind:value={formData.date}
-              required
-              class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-            />
+            <div class="relative">
+              <input 
+                id="date"
+                type="text" 
+                use:datepicker
+                bind:value={formData.date}
+                required
+                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+              />
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <Calendar class="w-5 h-5" />
+              </div>
+            </div>
           </div>
 
           <!-- Keterangan -->
