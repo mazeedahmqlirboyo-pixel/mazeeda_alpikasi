@@ -26,6 +26,7 @@
     X as XIcon,
     AlertCircle,
   } from "lucide-svelte";
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
 
   // Navigation / Tabs
   let activeTab = "pengumuman"; // 'pengumuman' | 'aspirasi'
@@ -1357,7 +1358,13 @@
   }
 </script>
 
-<div class="space-y-6">
+<svelte:head>
+  <title>Mading MAZEEDA</title>
+</svelte:head>
+
+<div class="space-y-6 pb-24">
+  <PageHeader title="Mading MAZEEDA" backTo="/" />
+
   <!-- Alert / Toast Banner (Floating Toast) -->
   {#if alertMessage}
     <div

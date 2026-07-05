@@ -11,9 +11,10 @@
   import { authStore } from '$lib/auth';
   import { 
     Sparkles, Search, Copy, Check, ChevronLeft, Plus, Trash2, 
-    ArrowLeft, AlertCircle, Settings, BookOpen, Layers, Book, Edit, Loader2,
-    Filter
-  } from 'lucide-svelte';
+    ArrowLeft, AlertCircle, Settings, BookOpen, Layers, Book, Edit, Loader2, Filter,
+    Save, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX
+  } from "lucide-svelte";
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
 
   interface BacaanItem {
     id: string;
@@ -468,10 +469,11 @@
 
   {#if activeTab === 'baca'}
     {#if !selectedItem}
-      <!-- Search, Filter & Grid List -->
-      <div class="space-y-4">
-        
-        <!-- Search & Filter Row -->
+  <!-- DIRECTORY GRID LIST VIEW -->
+  <div class="space-y-6">
+    <PageHeader title="Sangu | Wirid" backTo="/" />
+
+    <!-- Search and Categories Header -->
         <div class="flex items-center space-x-2 relative">
           <!-- Search bar -->
           <div class="relative flex-1">
@@ -668,13 +670,11 @@
         <Card noPadding class="p-3 sm:p-4 border-slate-200/50 shadow-soft-sm bg-white/95 backdrop-blur-md sticky top-0 z-20 flex flex-col gap-3">
           <!-- Top Row: Back button + Title & Category -->
           <div class="flex items-center justify-between border-b border-slate-100/70 pb-2">
-            <button
-              on:click={closeDetail}
-              class="inline-flex items-center space-x-1.5 text-slate-500 hover:text-teal-600 transition-colors text-xs font-black"
-              style="min-height: 32px;"
+            <button 
+              on:click={() => { selectedDoa = null; showDoaDetail = false; isPlayingContent = false; }}
+              class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 hover:text-primary transition-colors -ml-2"
             >
-              <ArrowLeft class="h-4.5 w-4.5" />
-              <span>Kembali</span>
+              <ArrowLeft class="w-5 h-5" />
             </button>
 
             <div class="text-right leading-tight ml-4 min-w-0 flex-1">

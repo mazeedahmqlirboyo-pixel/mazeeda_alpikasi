@@ -255,9 +255,9 @@
 <!-- Back Button -->
 <a
   href="/"
-  class="fixed top-5 left-5 z-50 flex items-center gap-2 px-4 py-2 rounded-full text-white/70 hover:text-white transition-all duration-300 text-xs font-semibold border border-white/10 hover:border-white/30 hover:bg-white/10 backdrop-blur-md"
+  class="fixed top-5 left-5 z-50 flex items-center justify-center w-10 h-10 rounded-full text-white/70 hover:text-white transition-all duration-300 border border-white/10 hover:border-white/30 hover:bg-white/10 backdrop-blur-md"
 >
-  <ArrowLeft class="w-3.5 h-3.5" /> Kembali
+  <ArrowLeft class="w-4 h-4" />
 </a>
 
 <!-- Side Year Progress (desktop only) -->

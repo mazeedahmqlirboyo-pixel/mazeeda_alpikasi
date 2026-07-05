@@ -8,6 +8,7 @@
     Square, ChevronLeft, ChevronRight, Eye, EyeOff, Volume2, 
     VolumeX, Info, Copy, Check, List, HelpCircle, Repeat
   } from 'lucide-svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import { isAudioPlayingGlobal } from '$lib/audioStore';
 
   // API Endpoints (EQuran.id v2.0)
@@ -404,8 +405,10 @@
   }
 </script>
 
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-0 pb-20 lg:pb-8 relative -mt-3 lg:mt-0">
-  
+<div class="space-y-6 pb-20 lg:pb-8">
+  <PageHeader title="Al-Qur'an" backTo="/" />
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 relative">
   <!-- Mobile Surah Selector Bar -->
   <div class="lg:hidden col-span-1 sticky top-0 z-20 bg-white/95 backdrop-blur-md p-3 border border-slate-200/60 rounded-xl shadow-soft-sm flex items-center justify-between">
     <div class="flex items-center space-x-2">
@@ -964,7 +967,7 @@
       {/if}
     </div>
   </main>
-
+</div>
   <!-- Sticky Drawer Detail Ayat on Mushaf Mode -->
   {#if readingMode === 'mushaf' && activeMushafVerse}
     <div 

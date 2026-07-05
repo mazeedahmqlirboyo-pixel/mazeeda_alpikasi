@@ -40,6 +40,10 @@
     Sunrise,
     Sunset,
     Moon,
+    CloudRain,
+    Wind,
+    Bot,
+    Info
   } from "lucide-svelte";
 
   // --- Lightbox State ---
@@ -1260,6 +1264,16 @@
       color: "text-indigo-600 bg-indigo-50/50 border-indigo-100",
       gradient: "from-indigo-100/80 to-indigo-50/20",
       href: "/quran",
+    },
+    {
+      name: "MAZEEDA AI",
+      value: "Tanya AI",
+      description: "Teman curhat & asisten cerdas",
+      icon: Bot,
+      image: "/merak.png",
+      color: "text-rose-600 bg-rose-50/50 border-rose-100",
+      gradient: "from-rose-100/80 to-rose-50/20",
+      href: "/ai-chat",
     },
   ];
 </script>
@@ -2582,6 +2596,14 @@
             alt="Website / RSS"
             class="h-full w-full object-contain scale-[0.88] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]"
           />
+        </a>
+      </div>
+      
+      <!-- Tentang Aplikasi Link -->
+      <div class="mt-5 mb-2">
+        <a href="/tentang" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors text-xs font-bold text-slate-600">
+          <Info class="w-4 h-4" />
+          Tentang Aplikasi MAZEEDA
         </a>
       </div>
     </div>

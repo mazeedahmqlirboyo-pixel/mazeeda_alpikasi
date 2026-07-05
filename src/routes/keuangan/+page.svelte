@@ -12,6 +12,7 @@
   } from 'lucide-svelte';
   import flatpickr from 'flatpickr';
   import 'flatpickr/dist/flatpickr.css';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
 
   function datepicker(node: HTMLElement) {
     const fp = flatpickr(node, {
@@ -211,6 +212,15 @@
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
   }
 
+  function formatCompactIDR(amount: number) {
+    return new Intl.NumberFormat('id-ID', { 
+      style: 'currency', 
+      currency: 'IDR', 
+      notation: 'compact', 
+      maximumFractionDigits: 1 
+    }).format(amount);
+  }
+
   function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
   }
@@ -222,21 +232,7 @@
 
 <div class="min-h-screen bg-slate-50 pb-20">
   <!-- Header -->
-  <header class="bg-white sticky top-0 z-30 shadow-sm">
-    <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <a href="/" class="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors">
-          <ArrowLeft class="w-5 h-5" />
-        </a>
-        <h1 class="font-bold text-slate-800 flex items-center gap-2">
-          <span class="p-1.5 rounded-lg bg-blue-100 text-blue-600">
-            <Wallet class="w-4 h-4" />
-          </span>
-          Cash Flow
-        </h1>
-      </div>
-    </div>
-  </header>
+  <PageHeader title="Manajemen Uang" backText="Dashboard" />
 
   <main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
     {#if !isLoaded}
@@ -252,7 +248,7 @@
         
         <div class="relative z-10 space-y-1">
           <p class="text-white/80 text-sm font-medium">Sisa Saldo Anda</p>
-          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">{formatIDR(currentBalance)}</h2>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight truncate" title={formatIDR(currentBalance)}>{formatCompactIDR(currentBalance)}</h2>
         </div>
 
         <div class="grid grid-cols-2 gap-4 mt-8 relative z-10">
@@ -263,7 +259,7 @@
               </div>
               <p class="text-slate-500 text-xs font-bold">Pemasukan</p>
             </div>
-            <p class="font-black text-emerald-600 text-base">{formatIDR(totalIncome)}</p>
+            <p class="font-black text-emerald-600 text-base truncate" title={formatIDR(totalIncome)}>{formatCompactIDR(totalIncome)}</p>
           </div>
           <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100/50">
             <div class="flex items-center gap-2 mb-1">
@@ -272,7 +268,7 @@
               </div>
               <p class="text-slate-500 text-xs font-bold">Pengeluaran</p>
             </div>
-            <p class="font-black text-rose-600 text-base">{formatIDR(totalExpense)}</p>
+            <p class="font-black text-rose-600 text-base truncate" title={formatIDR(totalExpense)}>{formatCompactIDR(totalExpense)}</p>
           </div>
         </div>
       </div>
@@ -325,8 +321,8 @@
                   </div>
                 </div>
                 <div class="flex items-center gap-2 pl-3 shrink-0 pr-2 sm:pr-0">
-                  <span class="font-bold text-[15px] whitespace-nowrap {t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}">
-                    {t.type === 'income' ? '+ ' : '- '}{formatIDR(t.amount).replace('Rp', '').trim()}
+                  <span class="font-bold text-[15px] whitespace-nowrap truncate max-w-[100px] sm:max-w-none text-right {t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}" title={formatIDR(t.amount)}>
+                    {t.type === 'income' ? '+ ' : '- '}{formatCompactIDR(t.amount).replace('Rp', '').trim()}
                   </span>
                 </div>
               </div>

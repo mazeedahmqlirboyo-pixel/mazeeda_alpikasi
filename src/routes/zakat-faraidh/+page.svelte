@@ -5,6 +5,7 @@
   import Card from "$lib/components/ui/card.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import Tabs from "$lib/components/ui/tabs.svelte";
+  import PageHeader from "$lib/components/ui/PageHeader.svelte";
   import {
     ArrowLeft,
     HelpCircle,
@@ -921,21 +922,9 @@
   }
 </script>
 
-<div class="space-y-6 pb-12 max-w-xl mx-auto">
-  <!-- Header Bar -->
-  <div class="flex items-center justify-between">
-    <a
-      href="/"
-      class="inline-flex items-center space-x-2 text-slate-500 hover:text-primary transition-colors text-sm font-semibold"
-    >
-      <ArrowLeft class="h-4.5 w-4.5" />
-      <span>Kembali</span>
-    </a>
-    <h1 class="text-base font-bold text-slate-800 uppercase tracking-wider">
-      {calculatorType === 'zakat' ? 'Kalkulator Zakat' : 'Waris (Faraidh)'}
-    </h1>
-    <div class="w-10"></div>
-  </div>
+<PageHeader title={calculatorType === 'zakat' ? 'Kalkulator Zakat' : 'Waris (Faraidh)'} backText="Kembali" />
+
+<div class="space-y-6 pt-4 pb-12 max-w-xl mx-auto px-4">
 
 
   {#if calculatorType === "zakat"}

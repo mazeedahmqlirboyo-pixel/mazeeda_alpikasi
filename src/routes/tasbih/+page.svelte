@@ -216,7 +216,7 @@
 
   <!-- Header Section -->
   <div class="relative z-10 flex items-center justify-between p-4 sm:p-6 pointer-events-auto">
-    <a href="/" class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors">
+    <a href="/" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors">
       <ArrowLeft class="h-5 w-5 text-white" />
     </a>
     

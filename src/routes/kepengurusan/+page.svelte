@@ -8,6 +8,7 @@
     Search, Award, Shield, ArrowRight, UserCheck, Calendar,
     BookOpen, Heart, CalendarRange, Filter
   } from 'lucide-svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
 
   // State
   let searchQuery = '';
@@ -181,7 +182,9 @@
 
 <svelte:window on:click={closeDropdown} />
 
-<div class="space-y-8 animate-in fade-in duration-300">
+<PageHeader title="Kepengurusan" backText="Dashboard" />
+
+<div class="space-y-8 animate-in fade-in duration-300 pt-4 pb-8 px-4">
 
   <!-- Search & Year Picker -->
   <div class="relative w-full" bind:this={dropdownContainer}>

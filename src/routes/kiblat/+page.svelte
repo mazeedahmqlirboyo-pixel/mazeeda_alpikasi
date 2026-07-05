@@ -3,6 +3,7 @@
   import { fade, fly } from 'svelte/transition';
   import Card from '$lib/components/ui/card.svelte';
   import Button from '$lib/components/ui/button.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import { 
     ArrowLeft, 
     Compass, 
@@ -301,22 +302,12 @@
   });
 </script>
 
-<div class="space-y-6 pb-12 max-w-xl mx-auto relative px-2">
+<PageHeader title="Arah Kiblat" backText="Dashboard" transparent={true} />
+
+<div class="space-y-6 pt-4 pb-12 max-w-xl mx-auto relative px-2">
   <!-- Subtle premium ambient glow background -->
   <div class="absolute -z-10 w-80 h-80 bg-indigo-500/10 blur-[120px] rounded-full top-[25%] left-1/2 -translate-x-1/2 pointer-events-none"></div>
   <div class="absolute -z-10 w-80 h-80 bg-emerald-500/5 blur-[120px] rounded-full top-[45%] left-1/2 -translate-x-1/2 pointer-events-none"></div>
-
-  <!-- Header Bar -->
-  <div class="relative flex items-center justify-between border-b border-slate-100 pb-3 h-10">
-    <a href="/" class="inline-flex items-center space-x-2 text-slate-500 hover:text-primary transition-colors text-sm font-semibold z-10">
-      <ArrowLeft class="h-4 w-4" />
-      <span>Dashboard</span>
-    </a>
-    <h1 class="absolute left-1/2 -translate-x-1/2 text-sm font-black text-slate-800 uppercase tracking-widest text-center whitespace-nowrap">
-      Arah Kiblat
-    </h1>
-    <div class="w-10 z-10"></div> <!-- spacing balance -->
-  </div>
 
   <!-- Redesigned Info Card (Glassmorphic Dark Emerald-Indigo Gradient) -->
   <Card class="bg-gradient-to-br from-indigo-950 via-slate-900 to-emerald-950 text-white border-slate-800/80 relative overflow-hidden shadow-xl p-5">

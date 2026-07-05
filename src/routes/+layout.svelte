@@ -23,7 +23,8 @@
     Bell,
     Edit,
     Save,
-    ExternalLink
+    ExternalLink,
+    Info
   } from 'lucide-svelte';
   import Card from '$lib/components/ui/card.svelte';
   import { isAudioPlayingGlobal } from '$lib/audioStore';
@@ -1189,11 +1190,9 @@
               <div class="flex items-center justify-between pb-2 border-b border-slate-100">
                 <button 
                   on:click={() => { showMyProfile = false; isEditingAdminProfile = false; }}
-                  class="inline-flex items-center space-x-2 text-slate-500 hover:text-primary transition-colors text-sm font-bold py-2"
-                  style="min-height: 48px;"
+                  class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 hover:text-primary transition-colors -ml-2"
                 >
-                  <ArrowLeft class="h-4.5 w-4.5" />
-                  <span>Kembali ke Halaman Sebelumnya</span>
+                  <ArrowLeft class="w-5 h-5" />
                 </button>
                 
                 <div class="flex items-center gap-2">

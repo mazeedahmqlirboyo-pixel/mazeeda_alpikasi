@@ -18,6 +18,7 @@
   import { authStore } from "$lib/auth";
   import { watakWetonMap, watakZodiakMap, getShio } from "$lib/dataKepribadian";
   import AstrologyIcon from "$lib/components/ui/AstrologyIcon.svelte";
+  import PageHeader from "$lib/components/ui/PageHeader.svelte";
 
   // --- State & Logika Cek Kelahiran ---
   let showBirthResult = false;
@@ -561,7 +562,9 @@
   <title>Kalender Interaktif | MAZEEDA</title>
 </svelte:head>
 
-<div class="space-y-6 animate-in fade-in duration-500 pb-10">
+<PageHeader title="Kalender" backText="Dashboard" />
+
+<div class="space-y-6 animate-in fade-in duration-500 pb-10 pt-4 px-4">
   <!-- Header / Nav -->
   <div
     class="bg-gradient-to-r from-green-50/50 via-teal-50/20 to-white border border-green-100/50 shadow-sm relative rounded-2xl"

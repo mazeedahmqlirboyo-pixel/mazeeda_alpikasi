@@ -10,6 +10,7 @@
     BookOpen, Heart, Music, Award, User, Globe, Route, Home, ChevronRight,
     ExternalLink
   } from 'lucide-svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
 
   // State
   let searchQuery = '';
@@ -245,11 +246,9 @@
     <div class="flex items-center justify-between pb-2 border-b border-slate-100">
       <button 
         on:click={() => { selectedMember = null; isImageLarge = false; }}
-        class="inline-flex items-center space-x-2 text-slate-500 hover:text-primary transition-colors text-sm font-bold py-2"
-        style="min-height: 48px;"
+        class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 hover:text-primary transition-colors -ml-2"
       >
-        <ArrowLeft class="h-4.5 w-4.5" />
-        <span>Kembali ke Direktori</span>
+        <ArrowLeft class="w-5 h-5" />
       </button>
       
       <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">PROFIL ASATIDZAH</span>
@@ -541,8 +540,7 @@
 {:else}
   <!-- SQUAD DIRECTORY GRID LIST VIEW -->
   <div class="space-y-6">
-
-
+    <PageHeader title="Guruku" backTo="/" />
 
     <!-- Search and Filter Row -->
     <div class="space-y-0">

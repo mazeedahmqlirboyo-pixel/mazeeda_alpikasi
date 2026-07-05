@@ -10,6 +10,7 @@
   import { 
     Image as ImageIcon, MapPin, Calendar, Heart, MessageCircle, CloudUpload, Sparkles, X, Trash2, Pencil, AlertCircle, CheckCircle 
   } from 'lucide-svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
 
   interface MemoryItem {
     id: string;
@@ -621,6 +622,8 @@
 </script>
 
 <div class="space-y-6 pb-12">
+  <PageHeader title="Timeline" backTo="/" />
+
   <!-- Alert / Toast Banner (Floating Toast) -->
   {#if alertMessage}
     <div
