@@ -980,11 +980,12 @@
 
       <!-- Close button -->
       <button 
-        on:click|stopPropagation={closeLightbox}
-        class="absolute top-4 right-4 bg-slate-900/60 hover:bg-slate-900 text-white rounded-full p-2 z-[999] transition-colors shadow-soft-md flex items-center justify-center cursor-pointer"
+        type="button"
+        on:click={(e) => { e.stopPropagation(); closeLightbox(); }}
+        class="absolute top-4 right-4 bg-slate-900/60 hover:bg-slate-900 text-white rounded-full p-2 z-[9999] transition-colors shadow-soft-md flex items-center justify-center cursor-pointer pointer-events-auto"
         style="min-height: 40px; min-width: 40px; margin-top: env(safe-area-inset-top, 0px);"
       >
-        <X class="h-5 w-5" />
+        <X class="h-5 w-5 pointer-events-none" />
       </button>
     </div>
   </div>
