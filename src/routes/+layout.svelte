@@ -475,11 +475,19 @@
         // Ignore if not running in Capacitor environment
       });
 
-      // Register Service Worker with Auto-Update logic
+      // Register Service Worker with Auto-Update logic (ONLY IN PRODUCTION)
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-          .then((reg) => {
-            console.log('Service Worker Registered with scope:', reg.scope);
+        // @ts-ignore
+        if (import.meta.env.DEV) {
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            for (let registration of registrations) {
+              registration.unregister();
+            }
+          });
+        } else {
+          navigator.serviceWorker.register('/sw.js')
+            .then((reg) => {
+              console.log('Service Worker Registered with scope:', reg.scope);
             
             // Listen for updates to the Service Worker
             reg.addEventListener('updatefound', () => {
@@ -495,6 +503,7 @@
             });
           })
           .catch((err) => console.error('Service worker registration failed:', err));
+        }
       }
 
       // Listen for PWA installation prompt
@@ -1029,7 +1038,7 @@
         <img referrerpolicy="no-referrer" 
           src="/logo.png" 
           alt="MAZEEDA Logo" 
-          class="h-9 w-9 object-contain rounded-xl shadow-soft-sm group-hover:scale-105 transition-transform" 
+          class="h-9 w-9 object-cover rounded-xl shadow-soft-sm group-hover:scale-105 transition-transform" 
           on:error={(e) => { e.currentTarget.style.display = 'none'; }} 
         />
         <span class="font-bold text-xl tracking-tight text-slate-800">MAZEEDA</span>

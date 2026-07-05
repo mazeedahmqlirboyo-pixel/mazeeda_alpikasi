@@ -156,8 +156,8 @@
     <div class="absolute bottom-10 right-10 w-72 h-72 bg-indigo-400/20 rounded-full blur-2xl"></div>
 
     <div class="relative z-10 text-center text-white px-12" in:fade={{ delay: 200, duration: 800 }}>
-      <div class="inline-flex items-center justify-center w-24 h-24 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 shadow-2xl mb-8">
-        <span class="text-5xl font-black bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70">M</span>
+      <div class="inline-flex items-center justify-center w-24 h-24 rounded-2xl shadow-xl shadow-indigo-900/20 mb-8 overflow-hidden bg-white border border-white/20">
+        <img src="/logo.png" alt="MAZEEDA Logo" class="w-full h-full object-cover" />
       </div>
       <h1 class="text-4xl xl:text-5xl font-extrabold tracking-tight mb-6 leading-tight">
         Selamat Datang di <br/> 

@@ -25,9 +25,8 @@
       
       <!-- App Header -->
       <div class="text-center space-y-4">
-        <div class="mx-auto w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center shadow-xl shadow-blue-500/30 mb-6 relative overflow-hidden">
-          <div class="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_3s_infinite]"></div>
-          <span class="text-4xl font-black text-white drop-shadow-md">M</span>
+        <div class="mx-auto w-24 h-24 bg-white rounded-2xl shadow-xl shadow-blue-500/20 mb-6 flex items-center justify-center overflow-hidden border border-slate-100">
+          <img src="/logo.png" alt="MAZEEDA Logo" class="w-full h-full object-cover" />
         </div>
         <h1 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">MAZEEDA</h1>
         <p class="text-slate-500 font-medium text-sm md:text-base max-w-lg mx-auto leading-relaxed">

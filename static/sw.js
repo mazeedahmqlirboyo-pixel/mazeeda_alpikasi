@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mazeeda-cache-v1.5';
+const CACHE_NAME = 'mazeeda-cache-v1.6';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',
@@ -32,6 +32,20 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  // Ignore Vite dev server files, APIs, and non-http protocols
+  if (
+    !url.protocol.startsWith('http') ||
+    url.pathname.includes('@vite') ||
+    url.pathname.includes('@fs') ||
+    url.pathname.includes('node_modules') ||
+    url.pathname.includes('.svelte-kit') ||
+    url.pathname.startsWith('/api') ||
+    url.search.includes('v=') // Ignore vite cache busting queries
+  ) {
+    return;
+  }
 
   const isHtml = event.request.mode === 'navigate' || 
                  (event.request.headers.get('accept') && 
