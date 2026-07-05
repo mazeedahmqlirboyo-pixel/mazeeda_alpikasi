@@ -2072,6 +2072,44 @@
           </div>
         </div>
       </a>
+
+      <!-- Card 5: Catatan Keuangan -->
+      <a
+        href="/keuangan"
+        class="group block transition-all hover:-translate-y-1.5 duration-300"
+      >
+        <div
+          class="relative overflow-hidden rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50/40 via-white to-white hover:border-violet-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+        >
+          <!-- Dekorasi AI -->
+          <div
+            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply flex items-center justify-center text-violet-100"
+            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+          >
+            <!-- Using an inline icon or image as background. Let's use an icon placeholder since we don't have a specific image yet. -->
+            <div class="text-8xl scale-125 translate-x-2 translate-y-2 opacity-30 drop-shadow-md">
+              💰
+            </div>
+          </div>
+          <div class="space-y-1.5 z-10">
+            <span
+              class="inline-flex items-center space-x-1.5 bg-violet-50 border border-violet-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-violet-600 leading-none"
+            >
+              💳 Buku Kas Pribadi
+            </span>
+            <h3
+              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800"
+            >
+              Catatan Keuangan
+            </h3>
+            <p
+              class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
+            >
+              Catat pemasukan dan pengeluaran harianmu dengan mudah dan aman.
+            </p>
+          </div>
+        </div>
+      </a>
     </div>
   </section>
 
