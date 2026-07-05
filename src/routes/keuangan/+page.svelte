@@ -298,7 +298,7 @@
                 on:click={() => openModal(t)}
                 transition:slide|local
               >
-                <div class="flex items-center gap-3">
+                <div class="flex-1 min-w-0 flex items-center gap-3">
                   <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 {t.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}">
                     {#if t.type === 'income'}
                       <ArrowDownCircle class="w-5 h-5" />
@@ -306,13 +306,13 @@
                       <ArrowUpCircle class="w-5 h-5" />
                     {/if}
                   </div>
-                  <div>
-                    <h4 class="font-bold text-slate-800 text-sm truncate max-w-[180px] sm:max-w-xs">{t.note || t.category}</h4>
-                    <p class="text-[11px] text-slate-500 font-medium">{t.category} • {formatDate(t.date)}</p>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-bold text-slate-800 text-sm truncate">{t.note || t.category}</h4>
+                    <p class="text-[11px] text-slate-500 font-medium truncate">{t.category} • {formatDate(t.date)}</p>
                   </div>
                 </div>
-                <div class="flex items-center gap-3">
-                  <span class="font-bold text-sm {t.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}">
+                <div class="flex items-center gap-2 pl-2 shrink-0">
+                  <span class="font-bold text-sm whitespace-nowrap {t.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}">
                     {t.type === 'income' ? '+' : '-'}{formatIDR(t.amount)}
                   </span>
                   <button 
