@@ -6,7 +6,7 @@
   import { 
     Wallet, ArrowUpRight, ArrowDownRight, Plus, 
     Trash2, Pencil, ArrowLeft, History, Search, 
-    X, AlertCircle, Save 
+    X, AlertCircle, Save, ChevronDown
   } from 'lucide-svelte';
 
   // State Management
@@ -371,7 +371,7 @@
                 id="amount"
                 type="text" 
                 inputmode="numeric"
-                pattern="[0-9]*"
+                pattern="[0-9.]*"
                 value={displayAmount} 
                 on:input={handleAmountInput}
                 placeholder="0"
@@ -384,15 +384,20 @@
           <!-- Kategori -->
           <div class="space-y-1.5">
             <label class="text-xs font-bold text-slate-500 uppercase tracking-wider" for="category">Kategori</label>
-            <select 
-              id="category"
-              bind:value={formData.category}
-              class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all appearance-none"
-            >
-              {#each categories[formData.type] as cat}
-                <option value={cat}>{cat}</option>
-              {/each}
-            </select>
+            <div class="relative">
+              <select 
+                id="category"
+                bind:value={formData.category}
+                class="w-full px-4 py-3 pr-10 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all appearance-none"
+              >
+                {#each categories[formData.type] as cat}
+                  <option value={cat}>{cat}</option>
+                {/each}
+              </select>
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <ChevronDown class="w-5 h-5" />
+              </div>
+            </div>
           </div>
 
           <!-- Tanggal -->
