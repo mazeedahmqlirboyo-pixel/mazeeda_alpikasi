@@ -8,7 +8,7 @@
     Trash2, Pencil, ArrowLeft, History, Search, 
     X, AlertCircle, Save, ChevronDown, Calendar,
     ArrowRightLeft, ShoppingCart, Receipt, Smartphone, TrendingUp,
-    PiggyBank, Briefcase, Undo, FileText
+    Landmark, Briefcase, Undo, FileText
   } from 'lucide-svelte';
   import flatpickr from 'flatpickr';
   import 'flatpickr/dist/flatpickr.css';
@@ -74,7 +74,7 @@
     'Tagihan (Bills)': Receipt,
     'Top Up e-Wallet': Smartphone,
     'Investasi (Investment)': TrendingUp,
-    'Tabungan (Savings)': PiggyBank,
+    'Tabungan (Savings)': Landmark,
     'Gaji (Salary)': Briefcase,
     'Pengembalian Dana (Refund)': Undo
   };
@@ -366,7 +366,7 @@
         </div>
       </div>
       
-      <form on:submit={handleSave} class="flex-1 overflow-y-auto p-5 space-y-5">
+      <form on:submit={handleSave} class="flex-1 overflow-y-auto p-5 pb-24 space-y-5">
         <!-- Type Selector -->
         <div class="flex bg-slate-100 p-1 rounded-xl">
           <button 
