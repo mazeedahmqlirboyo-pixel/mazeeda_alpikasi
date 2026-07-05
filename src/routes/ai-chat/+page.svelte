@@ -6,6 +6,7 @@
   import { authStore } from '$lib/auth';
   import { env } from '$env/dynamic/public';
   import { GoogleGenerativeAI } from '@google/generative-ai';
+  import { supabase } from '$lib/supabase';
 
   interface Message {
     id: string;
@@ -21,6 +22,7 @@
   let abortController: AbortController | null = null;
   let isStreaming = false;
   let showClearModal = false;
+  let squadContext = 'Data Squad belum dimuat.';
 
   onMount(() => {
     // Muat riwayat chat dari localStorage jika ada
@@ -44,6 +46,21 @@
         }];
       }
     }
+
+    // Load squad context
+    const loadSquadContext = async () => {
+      try {
+        const { data } = await supabase.from('allowed_alumni').select('nama_lengkap, nama_panggilan, daerah_santri, kamar_santri, kategori_mazeeda');
+        if (data && data.length > 0) {
+          squadContext = data.map(d => `- ${d.nama_lengkap} (Panggilan: ${d.nama_panggilan || '-'}, Daerah: ${d.daerah_santri || '-'}, Kategori: ${d.kategori_mazeeda || '-'}, Kamar: ${d.kamar_santri || '-'})`).join('\n');
+        } else {
+          squadContext = 'Saat ini belum ada data Squad yang terdaftar.';
+        }
+      } catch (e) {
+        console.error('Failed to load squad context:', e);
+      }
+    };
+    loadSquadContext();
   });
 
   // Simpan ke localstorage setiap kali messages berubah
@@ -146,9 +163,12 @@
         history.shift();
       }
 
+      const userName = $authStore.user?.name || 'Anonim';
+      const userRole = $authStore.user?.role === 'admin' ? 'Admin' : 'Santri/Alumni';
+
       const model = genAI.getGenerativeModel({ 
         model: "gemini-2.5-flash",
-        systemInstruction: `Kamu adalah MAZEEDA AI, asisten virtual super cerdas, ramah, Islami, dan gaul untuk pengguna aplikasi MAZEEDA. MAZEEDA adalah aplikasi santri kekinian yang memiliki fitur Quran, Wirid/Sangu, Timeline (Galeri), Mading, dan database Squad. Kamu harus selalu menjawab menggunakan bahasa Indonesia yang santai, sopan, kadang diselingi salam atau kalimat thoyyibah yang pas, namun tetap terlihat keren dan modern (satset). Panggil pengguna dengan sebutan akrab seperti "Sobat", "Kak", atau "Abang". Jangan pernah bilang kamu hanya AI buatan OpenAI, karena kamu adalah MAZEEDA AI.`
+        systemInstruction: `Kamu adalah MAZEEDA AI, asisten virtual super cerdas, ramah, Islami, dan gaul untuk pengguna aplikasi MAZEEDA. MAZEEDA adalah aplikasi santri kekinian yang memiliki fitur Quran, Wirid/Sangu, Timeline (Galeri), Mading, dan database Squad. Kamu harus selalu menjawab menggunakan bahasa Indonesia yang santai, sopan, kadang diselingi salam atau kalimat thoyyibah yang pas, namun tetap terlihat keren dan modern (satset). Panggil pengguna dengan sebutan akrab seperti "Sobat", "Kak", atau "Abang". Jangan pernah bilang kamu hanya AI buatan OpenAI, karena kamu adalah MAZEEDA AI.\n\nINFO PENGGUNA SAAT INI:\nNama pengguna yang sedang bicara denganmu adalah: ${userName}. (Peran/Status: ${userRole}).\n\nINFO DATA SQUAD MAZEEDA:\nBerikut adalah daftar anggota Squad yang terdaftar di aplikasi (Gunakan data ini jika pengguna bertanya siapa saja anggotanya atau mencari nama seseorang):\n${squadContext}`
       });
 
       const chat = model.startChat({ history: history });
