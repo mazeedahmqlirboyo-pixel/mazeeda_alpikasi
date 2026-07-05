@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
   import { fade } from 'svelte/transition';
   import Card from '$lib/components/ui/card.svelte';
   import Button from '$lib/components/ui/button.svelte';
@@ -407,6 +408,15 @@
     activeComments = [];
     if (typeof document !== 'undefined') {
       document.documentElement.classList.remove('hide-mobile-nav');
+    }
+    
+    // Remove query param so Svelte's reactivity doesn't instantly reopen it
+    if ($page && $page.url) {
+      const url = new URL($page.url);
+      if (url.searchParams.has('memory')) {
+        url.searchParams.delete('memory');
+        goto(url.pathname + url.search, { replaceState: true, noScroll: true, keepFocus: true });
+      }
     }
   }
 
