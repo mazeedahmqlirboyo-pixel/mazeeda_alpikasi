@@ -294,33 +294,27 @@
               <!-- svelte-ignore a11y-click-events-have-key-events -->
               <!-- svelte-ignore a11y-no-static-element-interactions -->
               <div 
-                class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
+                class="py-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between group"
                 on:click={() => openModal(t)}
                 transition:slide|local
               >
-                <div class="flex-1 min-w-0 flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 {t.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}">
+                <div class="flex-1 min-w-0 flex items-center gap-4 px-2 sm:px-0">
+                  <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-[#298EEA] text-white">
                     {#if t.type === 'income'}
-                      <ArrowDownCircle class="w-5 h-5" />
+                      <ArrowDownCircle class="w-6 h-6" />
                     {:else}
-                      <ArrowUpCircle class="w-5 h-5" />
+                      <ArrowUpCircle class="w-6 h-6" />
                     {/if}
                   </div>
                   <div class="flex-1 min-w-0">
-                    <h4 class="font-bold text-slate-800 text-sm truncate">{t.note || t.category}</h4>
-                    <p class="text-[11px] text-slate-500 font-medium truncate">{t.category} • {formatDate(t.date)}</p>
+                    <h4 class="font-bold text-slate-800 text-[15px] truncate mb-0.5">{t.note || t.category}</h4>
+                    <p class="text-[11px] text-slate-400 font-medium truncate">{formatDate(t.date)}</p>
                   </div>
                 </div>
-                <div class="flex items-center gap-2 pl-2 shrink-0">
-                  <span class="font-bold text-sm whitespace-nowrap {t.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}">
-                    {t.type === 'income' ? '+' : '-'}{formatIDR(t.amount)}
+                <div class="flex items-center gap-2 pl-3 shrink-0 pr-2 sm:pr-0">
+                  <span class="font-bold text-[15px] whitespace-nowrap {t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}">
+                    {t.type === 'income' ? '+ ' : '- '}{formatIDR(t.amount).replace('Rp', '').trim()}
                   </span>
-                  <button 
-                    class="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                    on:click={(e) => handleDelete(t.id, e)}
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </button>
                 </div>
               </div>
             {/each}
@@ -347,9 +341,16 @@
     >
       <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50">
         <h3 class="font-bold text-slate-800">{isEditing ? 'Edit Transaksi' : 'Tambah Transaksi'}</h3>
-        <button on:click={closeModal} class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-          <X class="w-5 h-5" />
-        </button>
+        <div class="flex items-center gap-2">
+          {#if isEditing && editingId}
+            <button on:click={(e) => handleDelete(editingId, e)} class="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors" aria-label="Hapus">
+              <Trash2 class="w-5 h-5" />
+            </button>
+          {/if}
+          <button on:click={closeModal} class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors" aria-label="Tutup">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
       </div>
       
       <form on:submit={handleSave} class="flex-1 overflow-y-auto p-5 space-y-5">
