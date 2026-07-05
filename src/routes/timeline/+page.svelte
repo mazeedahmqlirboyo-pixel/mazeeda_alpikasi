@@ -155,8 +155,9 @@
   // Mention system
   let allUsers: { name: string, avatar: string }[] = [];
   let allUserNames: string[] = [];
+  let isClosingLightbox = false;
 
-  $: if ($page.url.searchParams.get('memory') && memories.length > 0 && !selectedMemory) {
+  $: if (!isClosingLightbox && $page.url.searchParams.get('memory') && memories.length > 0 && !selectedMemory) {
     const memId = $page.url.searchParams.get('memory');
     const mem = memories.find(m => m.id == memId);
     if (mem) {
@@ -403,7 +404,8 @@
     await loadComments(memory.id);
   }
 
-  function closeLightbox() {
+  async function closeLightbox() {
+    isClosingLightbox = true;
     selectedMemory = null;
     activeComments = [];
     if (typeof document !== 'undefined') {
@@ -415,9 +417,11 @@
       const url = new URL($page.url);
       if (url.searchParams.has('memory')) {
         url.searchParams.delete('memory');
-        goto(url.pathname + url.search, { replaceState: true, noScroll: true, keepFocus: true });
+        await goto(url.pathname + url.search, { replaceState: true, noScroll: true, keepFocus: true });
       }
     }
+    
+    isClosingLightbox = false;
   }
 
   onDestroy(() => {
