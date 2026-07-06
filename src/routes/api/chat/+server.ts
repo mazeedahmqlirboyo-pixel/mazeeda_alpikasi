@@ -6,7 +6,7 @@ export async function POST({ request }) {
   try {
     const { messages, systemInstruction } = await request.json();
 
-    const apiKey = env.GEMINI_API_KEY;
+    const apiKey = env.GEMINI_API_KEY || env.PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
       return json({ error: 'Kunci API Gemini belum dikonfigurasi.' }, { status: 500 });
     }
