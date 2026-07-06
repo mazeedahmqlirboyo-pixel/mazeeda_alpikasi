@@ -401,14 +401,14 @@
           <div class="mt-8 pt-6 border-t border-slate-100/80 text-center" in:fly|global={{ y: 10, duration: 400, delay: 450 }}>
             <p class="text-xs text-slate-400 font-medium">
               Mengalami masalah login? <br class="lg:hidden" />
-              <a href="https://wa.me/6281234567890" target="_blank" class="text-primary font-bold hover:underline">Hubungi ADMIN MAZEEDA</a>
+              <a href="https://wa.me/6289507436989" target="_blank" class="text-primary font-bold hover:underline">Hubungi ADMIN MAZEEDA</a>
             </p>
           </div>
 
           <!-- Footer (Play Store & Social Media) -->
           <div class="mt-8 pt-8 border-t border-slate-100/80 text-center space-y-6" in:fly|global={{ y: 10, duration: 400, delay: 550 }}>
             <!-- Google Play -->
-            <a href="https://play.google.com/store/apps/details?id=com.mazeeda.app" target="_blank" class="inline-block transition-transform hover:scale-105">
+            <a href="https://play.google.com/store/apps/details?id=mazeedahmqlirboyo-pixel" target="_blank" class="inline-block transition-transform hover:scale-105">
               <img src="/google-play-badge.png" alt="Get it on Google Play" class="h-11 w-auto mx-auto" />
             </a>
             
@@ -418,28 +418,28 @@
             <!-- Social Icons -->
             <div class="flex items-center justify-center gap-3">
               <!-- WhatsApp -->
-              <a href="https://wa.me/6281234567890" target="_blank" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition-transform rounded-[10px] overflow-hidden shadow-sm">
-                <img src="/whatsapp.png" alt="WhatsApp" class="w-full h-full object-cover scale-[1.12]" />
+              <a href="https://wa.me/6289507436989" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="WhatsApp MAZEEDA">
+                <img src="/whatsapp.png" alt="WhatsApp" class="h-full w-full object-contain scale-[0.88] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- Instagram -->
-              <a href="https://instagram.com/mazeeda" target="_blank" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition-transform rounded-[10px] overflow-hidden shadow-sm">
-                <img src="/instagram.png" alt="Instagram" class="w-full h-full object-cover scale-[1.12]" />
+              <a href="https://instagram.com/mazeedahmqlirboyo" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="Instagram MAZEEDA">
+                <img src="/instagram.png" alt="Instagram" class="h-full w-full object-contain scale-[0.98] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- X / Twitter -->
-              <a href="https://twitter.com/mazeeda" target="_blank" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition-transform rounded-[10px] overflow-hidden shadow-sm">
-                <img src="/twitter.png" alt="Twitter" class="w-full h-full object-cover scale-[1.12]" />
+              <a href="https://x.com/mazeedahmqlirboyo" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="Twitter MAZEEDA">
+                <img src="/twitter.png" alt="Twitter" class="h-full w-full object-contain scale-[0.87] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- TikTok -->
-              <a href="https://tiktok.com/@mazeeda" target="_blank" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition-transform rounded-[10px] overflow-hidden shadow-sm">
-                <img src="/tiktok.png" alt="TikTok" class="w-full h-full object-cover scale-[1.12]" />
+              <a href="https://tiktok.com/@mazeedahmqlirboyo" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="TikTok MAZEEDA">
+                <img src="/tiktok.png" alt="TikTok" class="h-full w-full object-contain scale-[0.87] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- YouTube -->
-              <a href="https://youtube.com/c/mazeeda" target="_blank" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition-transform rounded-[10px] overflow-hidden shadow-sm">
-                <img src="/youtube.png" alt="YouTube" class="w-full h-full object-cover scale-[1.12]" />
+              <a href="https://youtube.com/mazeedahmqlirboyo" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="YouTube MAZEEDA">
+                <img src="/youtube.png" alt="YouTube" class="h-full w-full object-contain scale-[0.90] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- RSS/Website -->
-              <a href="https://mazeeda.com" target="_blank" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition-transform rounded-[10px] overflow-hidden shadow-sm">
-                <img src="/rss.png" alt="Website" class="w-full h-full object-cover scale-[1.12]" />
+              <a href="https://mazeedahmqlirboyo.com" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="Website MAZEEDA">
+                <img src="/rss.png" alt="Website / RSS" class="h-full w-full object-contain scale-[0.88] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
             </div>
           </div>

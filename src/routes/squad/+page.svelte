@@ -675,54 +675,42 @@
           {#each filteredMembers as member (member.id || member.nama_lengkap)}
             {@const accent = getAccent(member.nama_lengkap)}
             <Card 
-              class="group relative flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer h-full overflow-hidden border-slate-200/60 hover:border-blue-200/60" 
+              class="group flex flex-col justify-between hover:scale-[1.01] hover:shadow-soft-md transition-all duration-300 cursor-pointer h-full" 
               on:click={() => openDetails(member)}
             >
-              <!-- Background Decorations -->
-              <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-gradient-to-br {accent.gradient} opacity-0 group-hover:opacity-[0.08] rounded-full blur-2xl transition-all duration-500"></div>
-              
-              <svg class="absolute bottom-0 right-0 w-32 h-16 text-slate-50 opacity-0 group-hover:opacity-100 group-hover:text-blue-50/50 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0 pointer-events-none" viewBox="0 0 100 50" preserveAspectRatio="none">
-                <path d="M0,50 C30,40 50,20 70,30 C90,40 100,10 100,10 L100,50 Z" fill="currentColor" />
-              </svg>
-
-              <div class="flex items-center space-x-3 min-w-0 relative z-10">
+              <div class="flex items-center space-x-3 min-w-0">
                 <!-- Avatar with accent ring + dot -->
                 <div class="relative shrink-0">
                   {#if member.foto_url && !failedImages.has(member.id)}
                     <img referrerpolicy="no-referrer" 
                       src={convertDriveUrl(member.foto_url)} 
                       alt={member.nama_lengkap}
-                      class="h-10 w-10 rounded-full object-cover shadow-soft-sm ring-2 {accent.ring} group-hover:ring-4 transition-all duration-300"
+                      class="h-10 w-10 rounded-full object-cover shadow-soft-sm ring-2 {accent.ring}"
                       on:error={() => { failedImages.add(member.id); failedImages = failedImages; }}
                     />
                   {:else}
-                    <div class="h-10 w-10 rounded-full flex items-center justify-center font-bold text-xs shadow-soft-sm ring-2 {accent.avatar} {accent.ring} group-hover:ring-4 transition-all duration-300">
+                    <div class="h-10 w-10 rounded-full flex items-center justify-center font-bold text-xs shadow-soft-sm ring-2 {accent.avatar} {accent.ring}">
                       {getInitials(member.nama_lengkap)}
                     </div>
                   {/if}
                   <!-- Accent dot -->
-                  <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white {accent.dot} group-hover:scale-110 transition-transform"></span>
+                  <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white {accent.dot}"></span>
                 </div>
                 
-                <div class="flex-1 min-w-0 leading-tight py-0.5">
+                <div class="flex-1 min-w-0 leading-tight">
                   <div class="flex items-center justify-between gap-2">
                     <h3 class="font-extrabold text-slate-800 text-sm md:text-base truncate group-hover:text-primary transition-colors">
                       {member.nama_lengkap}
                     </h3>
-                    <span class="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-200/50 px-2.5 py-0.5 rounded-full truncate max-w-[120px] group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors duration-300" title={member.alamat_domisili}>
+                    <span class="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-200/50 px-2.5 py-0.5 rounded-full truncate max-w-[120px]" title={member.alamat_domisili}>
                       {member.alamat_domisili || '-'}
                     </span>
                   </div>
                   
                   <!-- Display nickname | region -->
-                  <div class="flex items-center justify-between mt-1">
-                    <p class="text-xs text-slate-400 font-medium truncate flex-1 group-hover:text-slate-500 transition-colors">
-                      {member.nama_panggilan || '-'}{member.daerah_santri ? ' | ' + capitalizeEachWord(member.daerah_santri) : ''}
-                    </p>
-                    <div class="shrink-0 flex items-center justify-center opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-primary bg-blue-50 rounded-full p-0.5">
-                      <ChevronRight class="w-3.5 h-3.5" />
-                    </div>
-                  </div>
+                  <p class="text-xs text-slate-400 font-medium truncate mt-1">
+                    {member.nama_panggilan || '-'}{member.daerah_santri ? ' | ' + capitalizeEachWord(member.daerah_santri) : ''}
+                  </p>
                 </div>
               </div>
             </Card>

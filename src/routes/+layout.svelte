@@ -892,7 +892,7 @@
         <!-- Typography -->
         <div class="mt-4 flex flex-col items-center">
           <h1 class="text-4xl font-extrabold tracking-[0.3em] text-slate-800 ml-[0.3em]" in:fly={{ y: 20, duration: 800, delay: 1500 }}>MAZEEDA</h1>
-          <p class="text-slate-500 font-medium tracking-widest text-xs mt-2 uppercase ml-[0.1em]" in:fade={{ duration: 800, delay: 1700 }}>Portal Alumni & Santri</p>
+          <p class="text-slate-500 font-medium tracking-widest text-xs mt-2 ml-[0.1em]" in:fade={{ duration: 800, delay: 1700 }}>Eratkan Sanad, Sebarkan Manfaat!</p>
         </div>
       </div>
       
@@ -1578,8 +1578,8 @@
                         <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
                           <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Email</span>
                           {#if myProfileData.email}
-                            <a href="https://mail.google.com/mail/?view=cm&fs=1&to={myProfileData.email}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold truncate max-w-[180px] inline-flex items-center gap-1" title={myProfileData.email}>
-                              <span class="truncate">{myProfileData.email}</span>
+                            <a href="https://mail.google.com/mail/?view=cm&fs=1&to={myProfileData.email}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 text-right" style="max-width: 70%;" title={myProfileData.email}>
+                              <span class="break-all">{myProfileData.email}</span>
                               <ExternalLink class="h-3 w-3 shrink-0" />
                             </a>
                           {:else}

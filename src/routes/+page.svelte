@@ -2600,11 +2600,12 @@
       </div>
       
       <!-- Tentang Aplikasi Link -->
-      <div class="mt-5 mb-2">
-        <a href="/tentang" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors text-xs font-bold text-slate-600">
-          <Info class="w-4 h-4" />
-          Tentang Aplikasi MAZEEDA
-        </a>
+      <div class="mt-5 mb-2 flex items-center justify-center flex-wrap gap-3 text-[11px] font-semibold text-slate-400">
+        <a href="/tentang" class="hover:text-indigo-600 transition-colors">Tentang Aplikasi</a>
+        <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+        <a href="/kebijakan-privasi" class="hover:text-indigo-600 transition-colors">Kebijakan Privasi</a>
+        <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+        <a href="/syarat-ketentuan" class="hover:text-indigo-600 transition-colors">Syarat & Ketentuan</a>
       </div>
     </div>
   </footer>

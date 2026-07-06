@@ -2,7 +2,7 @@
   import { onMount, tick, onDestroy } from 'svelte';
   import { fade, slide, fly } from 'svelte/transition';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import { Send, Bot, User, Loader2, Sparkles, AlertCircle, Trash2, StopCircle } from 'lucide-svelte';
+  import { Send, Bot, User, Loader2, Sparkles, AlertCircle, Trash2, StopCircle, MoreVertical, History, Plus, MessageSquare } from 'lucide-svelte';
   import { authStore } from '$lib/auth';
   import { env } from '$env/dynamic/public';
   import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -13,6 +13,19 @@
     role: 'user' | 'model';
     content: string;
   }
+
+  interface ChatSession {
+    id: string;
+    title: string;
+    updatedAt: number;
+    messages: Message[];
+  }
+
+  let chatSessions: ChatSession[] = [];
+  let currentChatId: string | null = null;
+  let showDropdown = false;
+  let showHistoryModal = false;
+  let selectedImage: string | null = null;
 
   let messages: Message[] = [];
   let currentMessage = '';
@@ -27,23 +40,33 @@
   onMount(() => {
     // Muat riwayat chat dari localStorage jika ada
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('mazeeda_ai_history');
-      if (stored) {
-        try {
-          messages = JSON.parse(stored);
-          scrollToBottom();
-        } catch (e) {
-          console.error('Failed to parse chat history');
-        }
-      }
+      const storedChats = localStorage.getItem('mazeeda_ai_chats');
+      const oldStored = localStorage.getItem('mazeeda_ai_history');
       
-      // Pesan pembuka jika kosong
-      if (messages.length === 0) {
-        messages = [{
-          id: Date.now().toString(),
-          role: 'model',
-          content: `Assalamu'alaikum Kak! 👋 Saya **MAZEEDA AI**, asisten cerdas yang siap menemani hari-harimu.\n\nMau nanya seputar aplikasi, ngobrol santai, atau butuh teman curhat? Ketik aja di bawah ya! Satset saya jawab. 😊`
-        }];
+      if (storedChats) {
+        try {
+          chatSessions = JSON.parse(storedChats);
+        } catch (e) {
+          console.error('Failed to parse chat sessions');
+        }
+      } else if (oldStored) {
+        try {
+          const oldMessages = JSON.parse(oldStored);
+          chatSessions = [{
+            id: Date.now().toString(),
+            title: 'Obrolan Sebelumnya',
+            updatedAt: Date.now(),
+            messages: oldMessages
+          }];
+          localStorage.removeItem('mazeeda_ai_history');
+        } catch (e) {}
+      }
+
+      if (chatSessions.length > 0) {
+        chatSessions.sort((a, b) => b.updatedAt - a.updatedAt);
+        loadChat(chatSessions[0].id);
+      } else {
+        startNewChat();
       }
     }
 
@@ -63,9 +86,71 @@
     loadSquadContext();
   });
 
-  // Simpan ke localstorage setiap kali messages berubah
-  $: if (typeof window !== 'undefined' && messages.length > 0) {
-    localStorage.setItem('mazeeda_ai_history', JSON.stringify(messages));
+  $: if (typeof window !== 'undefined' && messages.length > 0 && currentChatId) {
+    saveCurrentChat();
+  }
+
+  function startNewChat() {
+    currentChatId = Date.now().toString();
+    messages = [{
+      id: Date.now().toString(),
+      role: 'model',
+      content: `Assalamu'alaikum ${$authStore.user?.name ? 'Kak **' + $authStore.user.name + '**' : 'Kak'}! 👋 Saya **MAZEEDA AI**, asisten cerdas yang siap menemani hari-harimu.\n\nMau nanya seputar aplikasi, ngobrol santai, curhat, atau minta **buatkan gambar**? Ketik aja di bawah ya! Satset saya jawab. 😊`
+    }];
+    saveCurrentChat();
+    showDropdown = false;
+    scrollToBottom();
+  }
+
+  function loadChat(id: string) {
+    const session = chatSessions.find(c => c.id === id);
+    if (session) {
+      currentChatId = session.id;
+      messages = [...session.messages];
+      showHistoryModal = false;
+      showDropdown = false;
+      scrollToBottom();
+    }
+  }
+
+  function saveCurrentChat() {
+    if (!currentChatId || typeof window === 'undefined') return;
+    
+    let title = 'Obrolan Baru';
+    const firstUserMsg = messages.find(m => m.role === 'user');
+    if (firstUserMsg) {
+      title = firstUserMsg.content.slice(0, 30) + (firstUserMsg.content.length > 30 ? '...' : '');
+    }
+
+    const existingIndex = chatSessions.findIndex(c => c.id === currentChatId);
+    const updatedSession = {
+      id: currentChatId,
+      title,
+      updatedAt: Date.now(),
+      messages: [...messages]
+    };
+
+    if (existingIndex >= 0) {
+      chatSessions[existingIndex] = updatedSession;
+    } else {
+      chatSessions = [updatedSession, ...chatSessions];
+    }
+    
+    chatSessions.sort((a, b) => b.updatedAt - a.updatedAt);
+    localStorage.setItem('mazeeda_ai_chats', JSON.stringify(chatSessions));
+  }
+
+  function deleteChat(id: string) {
+    chatSessions = chatSessions.filter(c => c.id !== id);
+    localStorage.setItem('mazeeda_ai_chats', JSON.stringify(chatSessions));
+    
+    if (currentChatId === id) {
+      if (chatSessions.length > 0) {
+        loadChat(chatSessions[0].id);
+      } else {
+        startNewChat();
+      }
+    }
   }
 
   async function scrollToBottom(smooth = false) {
@@ -95,21 +180,63 @@
   }
 
   function clearHistory() {
-    messages = [{
-      id: Date.now().toString(),
-      role: 'model',
-      content: `Assalamu'alaikum Kak! 👋 Saya MAZEEDA AI. Riwayat obrolan kita sudah dibersihkan ya.`
-    }];
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('mazeeda_ai_history');
+    if (currentChatId) {
+      deleteChat(currentChatId);
     }
     showClearModal = false;
+    showDropdown = false;
+  }
+
+  function handleImageClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'IMG' && target.classList.contains('downloadable-image')) {
+      const img = target as HTMLImageElement;
+      selectedImage = img.src;
+    }
+  }
+
+  async function downloadImage(url: string | null) {
+    if (!url) return;
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = `MAZEEDA_AI_GAMBAR_${Date.now()}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      console.error('Failed to download image:', error);
+      window.open(url, '_blank');
+    }
   }
 
   function formatText(text: string) {
     if (!text) return '';
+    // Images
+    let formatted = text.replace(/!\[(.*?)\]\((.*?)\)/g, 
+      `<div class="my-3 rounded-2xl overflow-hidden border border-slate-200/60 shadow-sm bg-slate-50/50 relative min-h-[240px] flex items-center justify-center group cursor-pointer">
+        <!-- Loading State -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2.5 bg-slate-50 z-0">
+          <svg class="animate-spin h-7 w-7 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          <span class="text-xs font-bold tracking-wide animate-pulse">MAZEEDA SEDANG MELUKIS...</span>
+        </div>
+        <!-- Actual Image -->
+        <img src="$2" alt="$1" class="w-full h-auto object-cover relative z-10 transition-opacity duration-700 downloadable-image" loading="lazy" style="opacity: 0;" onload="this.style.opacity=1; this.previousElementSibling.style.display='none'; this.nextElementSibling.style.display='flex';" onerror="this.previousElementSibling.innerHTML='<span class=\\'text-rose-500 text-xs font-medium\\'>Gagal memuat gambar</span>'" />
+        <!-- Download Overlay -->
+        <div class="absolute inset-0 bg-slate-900/40 z-20 hidden flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+          <div class="bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-full text-slate-700 font-bold text-sm shadow-xl flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+            Perbesar Gambar
+          </div>
+        </div>
+      </div>`
+    );
     // Basic Markdown support (bold)
-    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     // Italic
     formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
     // Line breaks
@@ -168,7 +295,7 @@
 
       const model = genAI.getGenerativeModel({ 
         model: "gemini-2.5-flash",
-        systemInstruction: `Kamu adalah MAZEEDA AI, asisten virtual super cerdas, ramah, Islami, dan gaul untuk pengguna aplikasi MAZEEDA. MAZEEDA adalah aplikasi santri kekinian yang memiliki fitur Quran, Wirid/Sangu, Timeline (Galeri), Mading, dan database Squad. Kamu harus selalu menjawab menggunakan bahasa Indonesia yang santai, sopan, kadang diselingi salam atau kalimat thoyyibah yang pas, namun tetap terlihat keren dan modern (satset). Panggil pengguna dengan sebutan akrab seperti "Sobat", "Kak", atau "Abang". Jangan pernah bilang kamu hanya AI buatan OpenAI, karena kamu adalah MAZEEDA AI.\n\nINFO PENGGUNA SAAT INI:\nNama pengguna yang sedang bicara denganmu adalah: ${userName}. (Peran/Status: ${userRole}).\n\nINFO DATA SQUAD MAZEEDA:\nBerikut adalah daftar anggota Squad yang terdaftar di aplikasi (Gunakan data ini jika pengguna bertanya siapa saja anggotanya atau mencari nama seseorang):\n${squadContext}`
+        systemInstruction: `Kamu adalah MAZEEDA AI, asisten virtual super cerdas, ramah, Islami, dan gaul untuk pengguna aplikasi MAZEEDA. MAZEEDA adalah aplikasi santri kekinian yang memiliki fitur Quran, Wirid/Sangu, Timeline (Galeri), Mading, dan database Squad. Kamu harus selalu menjawab menggunakan bahasa Indonesia yang santai, sopan, kadang diselingi salam atau kalimat thoyyibah yang pas, namun tetap terlihat keren dan modern (satset). Panggil pengguna dengan sebutan akrab seperti "Sobat", "Kak", atau "Abang". Jangan pernah bilang kamu hanya AI buatan OpenAI, karena kamu adalah MAZEEDA AI.\n\nINFO PENGGUNA SAAT INI:\nNama pengguna yang sedang bicara denganmu adalah: ${userName}. (Peran/Status: ${userRole}).\n\nINFO DATA SQUAD MAZEEDA:\nBerikut adalah daftar anggota Squad yang terdaftar di aplikasi (Gunakan data ini jika pengguna bertanya siapa saja anggotanya atau mencari nama seseorang):\n${squadContext}\n\nFITUR GAMBAR (PENTING!):\nJika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BISA meng-generate gambar. Gunakan format Markdown gambar secara persis tanpa spasi di URL (ganti spasi dengan %20 atau strip, gunakan bahasa inggris untuk prompt di URL). Format: ![Deskripsi gambar](https://image.pollinations.ai/prompt/deskripsi%20dalam%20bahasa%20inggris)\nContoh: "Siap Kak! Ini gambar kucing terbang yang imut banget: \n![Flying cat](https://image.pollinations.ai/prompt/A%20super%20cute%20cat%20flying%20in%20outer%20space%20with%20stars)"`
       });
 
       const chat = model.startChat({ history: history });
@@ -234,18 +361,48 @@
   <title>MAZEEDA AI</title>
 </svelte:head>
 
-<div class="flex flex-col h-[100dvh] bg-slate-50 relative overflow-hidden">
+<div class="fixed inset-0 z-[70] flex flex-col bg-slate-50 overflow-hidden">
   
   <!-- Header -->
   <PageHeader title="MAZEEDA AI" backTo="/">
-    <div slot="right">
+    <div slot="right" class="relative">
       <button 
-        on:click={() => showClearModal = true}
-        class="p-2 text-slate-400 hover:text-rose-500 rounded-full hover:bg-rose-50 transition-colors"
-        title="Bersihkan riwayat obrolan"
+        on:click={() => showDropdown = !showDropdown}
+        class="p-2 text-slate-400 hover:text-indigo-500 rounded-full hover:bg-indigo-50 transition-colors"
       >
-        <Trash2 class="h-5 w-5" />
+        <MoreVertical class="h-5 w-5" />
       </button>
+
+      {#if showDropdown}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div class="fixed inset-0 z-40" on:click={() => showDropdown = false}></div>
+        
+        <div 
+          class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 origin-top-right"
+          transition:fly={{ y: -10, duration: 200 }}
+        >
+          <button 
+            on:click={startNewChat}
+            class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 transition-colors font-medium"
+          >
+            <Plus class="h-4 w-4" /> Obrolan Baru
+          </button>
+          <button 
+            on:click={() => { showHistoryModal = true; showDropdown = false; }}
+            class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 transition-colors font-medium"
+          >
+            <History class="h-4 w-4" /> Riwayat
+          </button>
+          <div class="h-px bg-slate-100 my-1"></div>
+          <button 
+            on:click={() => { showClearModal = true; showDropdown = false; }}
+            class="w-full text-left px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors font-medium"
+          >
+            <Trash2 class="h-4 w-4" /> Hapus Obrolan Ini
+          </button>
+        </div>
+      {/if}
     </div>
   </PageHeader>
 
@@ -257,9 +414,12 @@
   </div>
 
   <!-- Chat History Container -->
+  <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <main 
     class="flex-1 overflow-y-auto px-4 py-6 scroll-smooth relative z-10"
     bind:this={chatContainer}
+    on:click={handleImageClick}
     style="padding-bottom: 90px;"
   >
     <div class="max-w-3xl mx-auto space-y-6">
@@ -360,32 +520,80 @@
           type="button"
           on:click={sendMessage}
           disabled={!currentMessage.trim() || isLoading}
-          class="shrink-0 h-12 w-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-md border border-white/20
+          class="shrink-0 h-12 w-12 rounded-full flex items-center justify-center transition-all duration-300
             {currentMessage.trim() && !isLoading
-              ? 'bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white scale-100 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/30 active:scale-95'
-              : 'bg-slate-200 text-slate-400 scale-95 cursor-not-allowed'}"
+              ? 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:via-purple-400 hover:to-pink-400 text-white shadow-[0_4px_15px_rgba(99,102,241,0.4)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.6)] scale-100 hover:scale-105 active:scale-95 border-none'
+              : 'bg-slate-100 text-slate-300 border border-slate-200 shadow-inner scale-95 cursor-not-allowed'}"
         >
           {#if isLoading && !isStreaming}
             <Loader2 class="h-5 w-5 animate-spin" />
           {:else}
-            <Send class="h-5 w-5 translate-x-0.5" />
+            <Send class="h-[1.125rem] w-[1.125rem] -ml-0.5" />
           {/if}
         </button>
       {/if}
 
     </div>
     
-    <!-- Footer watermark -->
-    <div class="text-center mt-2.5 mb-1 hidden md:block">
-      <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Didukung oleh Google Gemini AI</span>
-    </div>
+
   </div>
 
 </div>
 
-<!-- Clear History Modal -->
+<!-- History Modal -->
+{#if showHistoryModal}
+  <div class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" transition:fade={{ duration: 200 }}>
+    <div class="bg-white rounded-3xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl relative overflow-hidden" transition:fly={{ y: 20, duration: 300 }}>
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <History class="h-5 w-5 text-indigo-500" />
+          Riwayat Percakapan
+        </h3>
+        <button on:click={() => showHistoryModal = false} class="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm border border-slate-200">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto p-2">
+        {#if chatSessions.length === 0}
+          <div class="text-center py-10 px-4">
+            <MessageSquare class="h-10 w-10 text-slate-200 mx-auto mb-3" />
+            <p class="text-slate-500 text-sm font-medium">Belum ada riwayat percakapan.</p>
+          </div>
+        {:else}
+          <div class="space-y-1">
+            {#each chatSessions as session}
+              <div class="flex items-center gap-2 p-2 rounded-xl hover:bg-slate-50 group border border-transparent hover:border-slate-100 transition-colors">
+                <button 
+                  on:click={() => loadChat(session.id)}
+                  class="flex-1 text-left"
+                >
+                  <p class="text-sm font-bold truncate {currentChatId === session.id ? 'text-indigo-600' : 'text-slate-700'}">
+                    {session.title || 'Obrolan Tanpa Judul'}
+                  </p>
+                  <p class="text-[10px] font-semibold text-slate-400">
+                    {new Date(session.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </button>
+                <button
+                  on:click={() => deleteChat(session.id)}
+                  class="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                  title="Hapus"
+                >
+                  <Trash2 class="h-4 w-4" />
+                </button>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
+  <!-- Clear History Modal -->
 {#if showClearModal}
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" transition:fade={{ duration: 200 }}>
+  <div class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" transition:fade={{ duration: 200 }}>
     <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative overflow-hidden text-center" transition:fly={{ y: 20, duration: 300 }}>
       <!-- Icon -->
       <div class="mx-auto w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mb-4">
@@ -402,7 +610,7 @@
           on:click={clearHistory}
           class="w-full py-3.5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white font-bold rounded-xl transition-colors shadow-sm shadow-rose-200"
         >
-          Ya, Hapus Semua
+          Ya, Hapus
         </button>
         <button 
           on:click={() => showClearModal = false}
@@ -411,6 +619,44 @@
           Batal
         </button>
       </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Lightbox Modal -->
+{#if selectedImage}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <div 
+    class="fixed inset-0 z-[100] flex flex-col bg-slate-950/95 backdrop-blur-md transition-opacity" 
+    transition:fade={{ duration: 200 }}
+  >
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 relative z-10">
+      <button 
+        on:click={() => selectedImage = null}
+        class="p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <button 
+        on:click={() => downloadImage(selectedImage)}
+        class="p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+        title="Unduh Gambar"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+    </div>
+    <!-- Image Area -->
+    <div class="flex-1 overflow-hidden p-4 flex items-center justify-center" on:click={() => selectedImage = null}>
+      <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+      <img 
+        src={selectedImage} 
+        alt="Diperbesar" 
+        class="max-w-full max-h-full object-contain rounded-xl shadow-2xl" 
+        on:click|stopPropagation 
+        transition:fly={{ y: 20, duration: 300 }}
+      />
     </div>
   </div>
 {/if}

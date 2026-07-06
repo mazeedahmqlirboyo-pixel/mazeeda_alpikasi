@@ -248,7 +248,7 @@
         
         <div class="relative z-10 space-y-1">
           <p class="text-white/80 text-sm font-medium">Sisa Saldo Anda</p>
-          <h2 class="text-3xl sm:text-4xl font-black tracking-tight truncate" title={formatIDR(currentBalance)}>{formatCompactIDR(currentBalance)}</h2>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight break-all">{formatIDR(currentBalance)}</h2>
         </div>
 
         <div class="grid grid-cols-2 gap-4 mt-8 relative z-10">
@@ -259,7 +259,7 @@
               </div>
               <p class="text-slate-500 text-xs font-bold">Pemasukan</p>
             </div>
-            <p class="font-black text-emerald-600 text-base truncate" title={formatIDR(totalIncome)}>{formatCompactIDR(totalIncome)}</p>
+            <p class="font-black text-emerald-600 text-base break-all">{formatIDR(totalIncome)}</p>
           </div>
           <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100/50">
             <div class="flex items-center gap-2 mb-1">
@@ -268,7 +268,7 @@
               </div>
               <p class="text-slate-500 text-xs font-bold">Pengeluaran</p>
             </div>
-            <p class="font-black text-rose-600 text-base truncate" title={formatIDR(totalExpense)}>{formatCompactIDR(totalExpense)}</p>
+            <p class="font-black text-rose-600 text-base break-all">{formatIDR(totalExpense)}</p>
           </div>
         </div>
       </div>
@@ -320,9 +320,9 @@
                     <p class="text-[11px] text-slate-400 font-medium truncate">{formatDate(t.date)}</p>
                   </div>
                 </div>
-                <div class="flex items-center gap-2 pl-3 shrink-0 pr-2 sm:pr-0">
-                  <span class="font-bold text-[15px] whitespace-nowrap truncate max-w-[100px] sm:max-w-none text-right {t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}" title={formatIDR(t.amount)}>
-                    {t.type === 'income' ? '+ ' : '- '}{formatCompactIDR(t.amount).replace('Rp', '').trim()}
+                <div class="flex items-center gap-2 pl-3 shrink-0 pr-2 sm:pr-0 text-right">
+                  <span class="font-bold text-[15px] break-all {t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}">
+                    {t.type === 'income' ? '+ ' : '- '}{formatIDR(t.amount).replace('Rp', '').trim()}
                   </span>
                 </div>
               </div>
@@ -339,16 +339,16 @@
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div 
-    class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm p-0 sm:p-4"
+    class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm p-0 sm:p-4"
     transition:fade={{ duration: 200 }}
     on:click={closeModal}
   >
     <div 
-      class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+      class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[95dvh] overflow-y-auto"
       on:click|stopPropagation
       transition:slide={{ duration: 300, axis: 'y' }}
     >
-      <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50">
+      <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50 shrink-0">
         <h3 class="font-bold text-slate-800">{isEditing ? 'Edit Transaksi' : 'Tambah Transaksi'}</h3>
         <div class="flex items-center gap-2">
           {#if isEditing && editingId}
@@ -362,7 +362,7 @@
         </div>
       </div>
       
-      <form on:submit={handleSave} class="flex-1 overflow-y-auto p-5 pb-24 space-y-5">
+      <form id="form-keuangan" on:submit={handleSave} class="p-5 space-y-5">
         <!-- Type Selector -->
         <div class="flex bg-slate-100 p-1 rounded-xl">
           <button 
@@ -451,16 +451,17 @@
           </div>
         </div>
 
-        <div class="pt-4 border-t border-slate-100">
-          <button 
-            type="submit" 
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
-          >
-            <Save class="w-4 h-4" />
-            {isEditing ? 'Simpan Perubahan' : 'Simpan Transaksi'}
-          </button>
-        </div>
       </form>
+      <div class="p-5 border-t border-slate-100 bg-white shrink-0" style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 1.25rem));">
+        <button 
+          type="submit" 
+          form="form-keuangan"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+        >
+          <Save class="w-4 h-4" />
+          {isEditing ? 'Simpan Perubahan' : 'Simpan Transaksi'}
+        </button>
+      </div>
     </div>
   </div>
 {/if}
