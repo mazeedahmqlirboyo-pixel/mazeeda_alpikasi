@@ -4,8 +4,6 @@
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import { Send, Bot, User, Loader2, Sparkles, AlertCircle, Trash2, StopCircle, MoreVertical, History, Plus, MessageSquare } from 'lucide-svelte';
   import { authStore } from '$lib/auth';
-  import { env } from '$env/dynamic/public';
-  import { GoogleGenerativeAI } from '@google/generative-ai';
   import { supabase } from '$lib/supabase';
 
   interface Message {
@@ -274,39 +272,54 @@
     };
     messages = [...messages, modelMsg];
 
+    // Helper to get the correct API URL (local dev vs production Vercel proxy)
+    const getApiUrl = () => {
+      if (typeof window === 'undefined') return '/api/chat';
+      // Local dev/preview ports
+      if (window.location.port === '5173' || window.location.port === '4173' || window.location.port === '3000') {
+        return '/api/chat';
+      }
+      return 'https://mazeeda-alpikasi.vercel.app/api/chat';
+    };
+
     try {
-      if (!env.PUBLIC_GEMINI_API_KEY) {
-        throw new Error('Kunci API Gemini belum dikonfigurasi (PUBLIC_GEMINI_API_KEY).');
-      }
-      const genAI = new GoogleGenerativeAI(env.PUBLIC_GEMINI_API_KEY);
-      
-      const latestMessage = userMsg.content;
-      let history = messages.slice(0, -2).map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }]
-      }));
-
-      while (history.length > 0 && history[0].role === 'model') {
-        history.shift();
-      }
-
       const userName = $authStore.user?.name || 'Anonim';
       const userRole = $authStore.user?.role === 'admin' ? 'Admin' : 'Santri/Alumni';
 
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash",
-        systemInstruction: `Kamu adalah MAZEEDA AI, asisten virtual super cerdas, ramah, Islami, dan gaul untuk pengguna aplikasi MAZEEDA. MAZEEDA adalah aplikasi santri kekinian yang memiliki fitur Quran, Wirid/Sangu, Timeline (Galeri), Mading, dan database Squad. Kamu harus selalu menjawab menggunakan bahasa Indonesia yang santai, sopan, kadang diselingi salam atau kalimat thoyyibah yang pas, namun tetap terlihat keren dan modern (satset). Panggil pengguna dengan sebutan akrab seperti "Sobat", "Kak", atau "Abang". Jangan pernah bilang kamu hanya AI buatan OpenAI, karena kamu adalah MAZEEDA AI.\n\nINFO PENGGUNA SAAT INI:\nNama pengguna yang sedang bicara denganmu adalah: ${userName}. (Peran/Status: ${userRole}).\n\nINFO DATA SQUAD MAZEEDA:\nBerikut adalah daftar anggota Squad yang terdaftar di aplikasi (Gunakan data ini jika pengguna bertanya siapa saja anggotanya atau mencari nama seseorang):\n${squadContext}\n\nFITUR GAMBAR (PENTING!):\nJika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BISA meng-generate gambar. Gunakan format Markdown gambar secara persis tanpa spasi di URL (ganti spasi dengan %20 atau strip, gunakan bahasa inggris untuk prompt di URL). Format: ![Deskripsi gambar](https://image.pollinations.ai/prompt/deskripsi%20dalam%20bahasa%20inggris)\nContoh: "Siap Kak! Ini gambar kucing terbang yang imut banget: \n![Flying cat](https://image.pollinations.ai/prompt/A%20super%20cute%20cat%20flying%20in%20outer%20space%20with%20stars)"`
+      const systemInstruction = `Kamu adalah MAZEEDA AI, asisten virtual super cerdas, ramah, Islami, dan gaul untuk pengguna aplikasi MAZEEDA. MAZEEDA adalah aplikasi santri kekinian yang memiliki fitur Quran, Wirid/Sangu, Timeline (Galeri), Mading, dan database Squad. Kamu harus selalu menjawab menggunakan bahasa Indonesia yang santai, sopan, kadang diselingi salam atau kalimat thoyyibah yang pas, namun tetap terlihat keren dan modern (satset). Panggil pengguna dengan sebutan akrab seperti "Sobat", "Kak", atau "Abang". Jangan pernah bilang kamu hanya AI buatan OpenAI, karena kamu adalah MAZEEDA AI.\n\nINFO PENGGUNA SAAT INI:\nNama pengguna yang sedang bicara denganmu adalah: ${userName}. (Peran/Status: ${userRole}).\n\nINFO DATA SQUAD MAZEEDA:\nBerikut adalah daftar anggota Squad yang terdaftar di aplikasi (Gunakan data ini jika pengguna bertanya siapa saja anggotanya atau mencari nama seseorang):\n${squadContext}\n\nFITUR GAMBAR (PENTING!):\nJika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BISA meng-generate gambar. Gunakan format Markdown gambar secara persis tanpa spasi di URL (ganti spasi dengan %20 atau strip, gunakan bahasa inggris untuk prompt di URL). Format: ![Deskripsi gambar](https://image.pollinations.ai/prompt/deskripsi%20dalam%20bahasa%20inggris)\nContoh: "Siap Kak! Ini gambar kucing terbang yang imut banget: \n![Flying cat](https://image.pollinations.ai/prompt/A%20super%20cute%20cat%20flying%20in%20outer%20space%20with%20stars)"`;
+
+      const response = await fetch(getApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          messages: messages.slice(0, -1), // kirim tanpa modelMsg kosong
+          systemInstruction 
+        }),
+        signal: abortController.signal
       });
 
-      const chat = model.startChat({ history: history });
-      const result = await chat.sendMessageStream(latestMessage);
+      if (!response.ok) {
+        let errMsg = 'Terjadi kesalahan jaringan.';
+        try { 
+          const errObj = await response.json(); 
+          errMsg = errObj.error || errMsg; 
+        } catch(e) {}
+        throw new Error(errMsg);
+      }
 
-      for await (const chunk of result.stream) {
-        if (abortController?.signal.aborted) break;
-        const chunkText = chunk.text();
+      if (!response.body) throw new Error("No response body");
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
         messages = messages.map(msg => {
           if (msg.id === modelMsgId) {
-            return { ...msg, content: msg.content + chunkText };
+            return { ...msg, content: msg.content + chunk };
           }
           return msg;
         });
