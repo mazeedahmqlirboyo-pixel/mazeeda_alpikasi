@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mazeeda-cache-v1.6';
+const CACHE_NAME = 'mazeeda-cache-v1.7';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',
@@ -42,6 +42,7 @@ self.addEventListener('fetch', (event) => {
     url.pathname.includes('node_modules') ||
     url.pathname.includes('.svelte-kit') ||
     url.pathname.startsWith('/api') ||
+    url.pathname.endsWith('env.js') || // Bypas caching untuk env.js agar perubahan API Key langsung terbaca
     url.search.includes('v=') // Ignore vite cache busting queries
   ) {
     return;
