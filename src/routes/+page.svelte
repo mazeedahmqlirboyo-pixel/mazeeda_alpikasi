@@ -732,6 +732,7 @@
           Ashar: timings.Asr,
           Maghrib: timings.Maghrib,
           Isya: timings.Isha,
+          Isha: timings.Isha,
         };
 
         const hijriDay = json.data.date.hijri.day;
@@ -795,6 +796,7 @@
         Ashar: fallback.Asr,
         Maghrib: fallback.Maghrib,
         Isya: fallback.Isha,
+        Isha: fallback.Isha,
       };
 
       const now = new Date();
@@ -1872,7 +1874,7 @@
               Isya
             </p>
             <p class="text-xs font-black text-slate-800 font-mono mt-0.5">
-              {prayerTimes.Isha}
+              {prayerTimes.Isya}
             </p>
           </div>
         {:else}
