@@ -475,15 +475,25 @@
         // Ignore if not running in Capacitor environment
       });
 
-      // Register Service Worker with Auto-Update logic (ONLY IN PRODUCTION)
+      // Register Service Worker with Auto-Update logic (ONLY IN PRODUCTION WEB, NOT IN CAPACITOR)
       if ('serviceWorker' in navigator) {
+        const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
         // @ts-ignore
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV || isCapacitor) {
           navigator.serviceWorker.getRegistrations().then(registrations => {
             for (let registration of registrations) {
-              registration.unregister();
+              registration.unregister().then((success) => {
+                if (success) console.log('Successfully unregistered service worker for Capacitor/Dev mode');
+              });
             }
           });
+          if (typeof caches !== 'undefined') {
+            caches.keys().then((names) => {
+              for (let name of names) {
+                caches.delete(name);
+              }
+            });
+          }
         } else {
           navigator.serviceWorker.register('/sw.js')
             .then((reg) => {
