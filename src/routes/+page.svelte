@@ -269,11 +269,20 @@
     }
   })();
 
-  // --- Prayer Times State ---
-  let selectedCity = "Jakarta";
-  let timezoneOffset = 7; // WIB offset
-  let cityTimezone = "WIB";
-  let prayerTimes: any = null;
+  import { prayerStore } from "$lib/prayerStore";
+
+  // --- Prayer Times State (Synced from Store) ---
+  $: selectedCity = $prayerStore.selectedCity;
+  $: timezoneOffset = $prayerStore.timezoneOffset;
+  $: cityTimezone = $prayerStore.cityTimezone;
+  $: prayerTimes = $prayerStore.prayerTimes;
+  $: hijriDate = $prayerStore.hijriDate;
+  $: gregorianDate = $prayerStore.gregorianDate;
+  $: isLoadingPrayers = $prayerStore.isLoadingPrayers;
+  $: hasGPSCoords = $prayerStore.hasGPSCoords;
+  $: gpsLatitude = $prayerStore.gpsLatitude;
+  $: gpsLongitude = $prayerStore.gpsLongitude;
+
   let nextPrayer = { name: "", time: "", countdown: "" };
   $: isFridayLocal =
     new Date(
@@ -281,17 +290,13 @@
         new Date().getTimezoneOffset() * 60000 +
         3600000 * timezoneOffset,
     ).getDay() === 5;
-  let hijriDate = "";
-  let gregorianDate = "";
-  let isLoadingPrayers = false;
+  
   let prayerTimer: any;
 
   // Searchable dropdown state
   let isCityDropdownOpen = false;
   let citySearchQuery = "";
-  let hasGPSCoords = false;
-  let gpsLatitude: number | null = null;
-  let gpsLongitude: number | null = null;
+
 
   const cities = [
     // --- WIB (Waktu Indonesia Barat) - GMT+7 ---
@@ -542,272 +547,23 @@
     c.name.toLowerCase().includes(citySearchQuery.toLowerCase()),
   );
 
+  // requestGeolocation removed (handled by prayerStore)
   async function requestGeolocation() {
     isCityDropdownOpen = false;
-    isLoadingPrayers = true;
-    try {
-      const permission = await Geolocation.checkPermissions();
-      if (permission.location !== 'granted') {
-        const req = await Geolocation.requestPermissions();
-        if (req.location !== 'granted') {
-           throw new Error("Permission denied");
-        }
-      }
-      
-      const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
-      gpsLatitude = position.coords.latitude;
-      gpsLongitude = position.coords.longitude;
-      hasGPSCoords = true;
-      selectedCity = "Mendeteksi lokasi...";
-
-      // Determine timezone based on longitude mapping:
-      if (gpsLongitude >= 135) {
-        cityTimezone = "WIT";
-        timezoneOffset = 9;
-      } else if (gpsLongitude >= 120) {
-        cityTimezone = "WITA";
-        timezoneOffset = 8;
-      } else {
-        cityTimezone = "WIB";
-        timezoneOffset = 7;
-      }
-
-      // Reverse Geocoding using Nominatim (OpenStreetMap)
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${gpsLatitude}&lon=${gpsLongitude}&format=json&accept-language=id`,
-        );
-        const data = await res.json();
-        if (data && data.address) {
-          const addr = data.address;
-
-          const road = addr.road || addr.pedestrian || "";
-
-          let village =
-            addr.village || addr.neighbourhood || addr.hamlet || "";
-          if (
-            village &&
-            !village.toLowerCase().includes("kelurahan") &&
-            !village.toLowerCase().includes("desa") &&
-            !village.toLowerCase().includes("kel.")
-          ) {
-            village = "Kel. " + village;
-          }
-
-          let district =
-            addr.city_district ||
-            addr.district ||
-            addr.suburb ||
-            addr.town ||
-            addr.municipality ||
-            "";
-          if (
-            district &&
-            !district.toLowerCase().includes("kecamatan") &&
-            !district.toLowerCase().includes("kec.")
-          ) {
-            district = "Kec. " + district;
-          }
-
-          let city = addr.city || addr.county || addr.state_district || "";
-
-          // Gabungkan nama lokasi selengkap mungkin
-          const rawParts = [road, village, district, city].filter(
-            (p) => p && p.trim() !== "" && p !== "Kel. " && p !== "Kec. ",
-          );
-
-          // Hapus duplikat nama berurutan atau nama yang mirip
-          const uniqueParts = [...new Set(rawParts)];
-
-          if (uniqueParts.length > 0) {
-            selectedCity = uniqueParts.join(", ");
-          } else {
-            selectedCity = "Lokasi Saat Ini";
-          }
-        } else {
-          selectedCity = "Lokasi Saat Ini";
-        }
-      } catch (e) {
-        console.error("Reverse geocoding error:", e);
-        selectedCity = "Lokasi Saat Ini";
-      }
-
-      await fetchPrayerTimes();
-    } catch (error: any) {
-      console.error("Geolocation error:", error);
-      isLoadingPrayers = false;
-      
-      let errorMessage = "Gagal mengakses lokasi Anda. ";
-      if (error && error.message) {
-        const msg = error.message.toLowerCase();
-        if (msg.includes('permission denied')) {
-          errorMessage += "Pastikan Anda telah memberikan Izin Lokasi untuk aplikasi ini.";
-        } else if (msg.includes('location unavailable') || msg.includes('position unavailable')) {
-          errorMessage += "Pastikan GPS/Lokasi di HP Anda sudah dinyalakan.";
-        } else if (msg.includes('timeout')) {
-          errorMessage += "Waktu pencarian lokasi habis. Pastikan GPS menyala dan sinyal stabil.";
-        } else {
-          errorMessage += "Pastikan GPS menyala dan Izin Lokasi aktif.";
-        }
-      } else {
-        errorMessage += "Pastikan GPS menyala dan Izin Lokasi aktif.";
-      }
-      
-      alert(errorMessage);
-    }
+    await prayerStore.requestGeolocation();
   }
 
   function selectCity(city: any) {
-    selectedCity = city.name;
-    cityTimezone = city.timezone;
-    timezoneOffset = city.offset;
-    hasGPSCoords = false;
-    gpsLatitude = null;
-    gpsLongitude = null;
+    prayerStore.setCity(city);
     isCityDropdownOpen = false;
     citySearchQuery = "";
   }
 
-  // --- Prayer Times logic ---
-  async function fetchPrayerTimes() {
-    const INDO_MONTHS = [
-      "JANUARI",
-      "FEBRUARI",
-      "MARET",
-      "APRIL",
-      "MEI",
-      "JUNI",
-      "JULI",
-      "AGUSTUS",
-      "SEPTEMBER",
-      "OKTOBER",
-      "NOVEMBER",
-      "DESEMBER",
-    ];
-
-    const INDO_DAYS_ARRAY = [
-      "MINGGU",
-      "SENIN",
-      "SELASA",
-      "RABU",
-      "KAMIS",
-      "JUMAT",
-      "SABTU",
-    ];
-
-    const INDO_HIJRI_MONTHS = [
-      "MUHARRAM",
-      "SAFAR",
-      "RABIUL AWWAL",
-      "RABIUL AKHIR",
-      "JUMADIL AWWAL",
-      "JUMADIL AKHIR",
-      "RAJAB",
-      "SYA'BAN",
-      "RAMADHAN",
-      "SYAWWAL",
-      "DZULQA'DAH",
-      "DZULHIJJAH",
-    ];
-
-    isLoadingPrayers = true;
-
-    let url = "";
-    if (selectedCity === "Lokasi Saya" && gpsLatitude && gpsLongitude) {
-      url = `https://api.aladhan.com/v1/timings?latitude=${gpsLatitude}&longitude=${gpsLongitude}&method=15`;
-    } else {
-      url = `https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(selectedCity)}&country=Indonesia&method=15`;
-    }
-
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("API request failed");
-      const json = await res.json();
-      if (json.code === 200) {
-        const timings = json.data.timings;
-        prayerTimes = {
-          Subuh: timings.Fajr,
-          Terbit: timings.Sunrise,
-          Dzuhur: timings.Dhuhr,
-          Ashar: timings.Asr,
-          Maghrib: timings.Maghrib,
-          Isya: timings.Isha,
-          Isha: timings.Isha,
-        };
-
-        const hijriDay = json.data.date.hijri.day;
-        const hijriMonthNum = parseInt(json.data.date.hijri.month.number, 10);
-        const hijriYear = json.data.date.hijri.year;
-        const indHijriMonth =
-          INDO_HIJRI_MONTHS[hijriMonthNum - 1] ||
-          json.data.date.hijri.month.en.toUpperCase();
-        hijriDate = `${hijriDay} ${indHijriMonth} ${hijriYear} H.`;
-
-        const gregDay = json.data.date.gregorian.day;
-        const gregMonthNum = parseInt(
-          json.data.date.gregorian.month.number,
-          10,
-        );
-        const gregYear = json.data.date.gregorian.year;
-        const indMonth =
-          INDO_MONTHS[gregMonthNum - 1] ||
-          json.data.date.gregorian.month.en.toUpperCase();
-
-        // Calculate day name from gregorian date string DD-MM-YYYY
-        const [d, m, y] = json.data.date.gregorian.date.split("-");
-        const dateObj = new Date(
-          parseInt(y, 10),
-          parseInt(m, 10) - 1,
-          parseInt(d, 10),
-        );
-        const indDayName = INDO_DAYS_ARRAY[dateObj.getDay()];
-
-        gregorianDate = `${indDayName}, ${gregDay} ${indMonth} ${gregYear} M.`;
-
-        // Auto parse timezone meta from API to support any custom city
-        if (json.data.meta && json.data.meta.timezone) {
-          const apiTimezone = json.data.meta.timezone;
-          const lng = json.data.meta.longitude;
-          if (apiTimezone.includes("Jayapura") || lng >= 135) {
-            cityTimezone = "WIT";
-            timezoneOffset = 9;
-          } else if (apiTimezone.includes("Makassar") || lng >= 120) {
-            cityTimezone = "WITA";
-            timezoneOffset = 8;
-          } else {
-            cityTimezone = "WIB";
-            timezoneOffset = 7;
-          }
-        }
-      }
-    } catch (e) {
-      console.warn(
-        "API error, using offline prayer times fallback for city:",
-        selectedCity,
-      );
-      const fallbackCity =
-        selectedCity === "Lokasi Saya" ? "Jakarta" : selectedCity;
-      const fallback =
-        prayerFallbacks[fallbackCity] || prayerFallbacks["Jakarta"];
-      prayerTimes = {
-        Subuh: fallback.Fajr,
-        Terbit: fallback.Sunrise,
-        Dzuhur: fallback.Dhuhr,
-        Ashar: fallback.Asr,
-        Maghrib: fallback.Maghrib,
-        Isya: fallback.Isha,
-        Isha: fallback.Isha,
-      };
-
-      const now = new Date();
-      const indDayName = INDO_DAYS_ARRAY[now.getDay()];
-      gregorianDate = `${indDayName}, ${now.getDate()} ${INDO_MONTHS[now.getMonth()]} ${now.getFullYear()} M.`;
-      hijriDate = "KALENDER HIJRIYAH H.";
-    } finally {
-      isLoadingPrayers = false;
-      calculateNextPrayer();
-    }
+  // Reactively calculate next prayer whenever prayerTimes updates
+  $: if (prayerTimes) {
+    calculateNextPrayer();
   }
+
 
   function calculateNextPrayer() {
     if (!prayerTimes) return;
@@ -968,9 +724,9 @@
   }
 
   // Reactively fetch prayer times on city change
-  $: if (selectedCity) {
-    fetchPrayerTimes();
-  }
+  // $: if (selectedCity) {
+  //   fetchPrayerTimes(); // Now handled inside the store
+  // }
 
   // Handle click outside dropdown
   function handleClickOutside(event: MouseEvent) {
@@ -1199,8 +955,8 @@
     fetchCarousel();
     startAutoPlay();
 
-    // Default to using GPS
-    requestGeolocation();
+    // Init prayer store (will load from cache instantly, or trigger GPS if empty)
+    prayerStore.init();
 
     // Recalculate next prayer countdown every minute
     prayerTimer = setInterval(calculateNextPrayer, 60000);
@@ -2127,6 +1883,46 @@
         </div>
       </a>
     </div>
+  </section>
+
+  <!-- ==================== KHASANAH LIRBOYO BANNER ==================== -->
+  <section class="space-y-4">
+    <h2 class="text-lg font-bold text-slate-800 tracking-tight">
+      Khasanah Lirboyo
+    </h2>
+    <a
+      href="/khasanah"
+      class="group block transition-all hover:-translate-y-1.5 duration-300"
+    >
+      <div
+        class="relative overflow-hidden rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50/40 via-white to-white hover:border-teal-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+      >
+        <!-- Dekorasi Background -->
+        <div
+          class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply flex items-center justify-center text-teal-100"
+          style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+        >
+          <div class="text-8xl scale-125 translate-x-2 translate-y-2 opacity-30 drop-shadow-md">
+            🕌
+          </div>
+        </div>
+        <div class="space-y-1.5 z-10">
+          <span
+            class="inline-flex items-center space-x-1.5 bg-teal-50 border border-teal-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-teal-700 leading-none"
+          >
+            📖 Profil & Sejarah
+          </span>
+          <h3 class="text-lg font-extrabold tracking-tight mt-1 text-slate-800">
+            Jejak Lirboyo & Mozaik Murobbi
+          </h3>
+          <p
+            class="text-xs text-slate-500 leading-relaxed font-normal max-w-xl"
+          >
+            Selami nilai-nilai sejarah, filosofi, dan profil lengkap Pondok Pesantren Lirboyo beserta pesan-pesan Masyayikh.
+          </p>
+        </div>
+      </div>
+    </a>
   </section>
 
   <!-- ==================== KABINET KEPENGURUSAN BANNER ==================== -->

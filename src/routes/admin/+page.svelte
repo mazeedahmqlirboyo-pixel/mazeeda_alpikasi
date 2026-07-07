@@ -10,7 +10,7 @@
   import { 
     Users, Megaphone, Image, Plus, Trash2, Edit, Save, CheckCircle,
     UserPlus, UploadCloud, FileText, Heart, Globe, Phone, Home, 
-    Award, Music, X, Bell, Search, BookOpen, Info, Calendar
+    Award, Music, X, Bell, Search, BookOpen, Info, Calendar, ChevronRight
   } from 'lucide-svelte';
 
   // Current active management tab
@@ -1987,6 +1987,24 @@
       <span>{alertMessage}</span>
     </div>
   {/if}
+
+  <!-- Khasanah Lirboyo CMS Link -->
+  <a href="/admin/khasanah" class="block mb-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl">
+    <Card class="p-4 sm:p-5 flex items-center justify-between border-emerald-200/50 bg-emerald-50/30 hover:bg-emerald-50/60 transition-colors shadow-sm">
+      <div class="flex items-center space-x-4">
+        <div class="h-12 w-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center border border-emerald-200">
+          <BookOpen class="h-6 w-6" />
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">Kelola Khasanah Lirboyo</h3>
+          <p class="text-xs text-slate-500 mt-1">Manajemen dinamis Mozaik Murobbi, Sambutan, dan Profil Unit dengan Editor.</p>
+        </div>
+      </div>
+      <div class="h-8 w-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+        <ChevronRight class="text-slate-400 h-4 w-4" />
+      </div>
+    </Card>
+  </a>
 
   <!-- Section togglers -->
   <Tabs items={sections} bind:activeTab={activeSection} class="w-full" />
