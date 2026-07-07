@@ -1,6 +1,8 @@
 import { supabase } from '$lib/supabase';
 import { error } from '@sveltejs/kit';
 
+export const prerender = false;
+
 export const load = async ({ params }: { params: { slug: string } }) => {
   const { data: kyai, error: err } = await supabase
     .from('khasanah_mozaik')
