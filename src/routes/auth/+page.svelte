@@ -14,6 +14,15 @@
   let message = { type: '', content: '' }; // { type: 'success' | 'error', content: string }
   let focusedInput = '';
   let showPassword = false;
+  let rememberMe = true;
+
+  onMount(() => {
+    const savedNis = localStorage.getItem('mazeeda_remembered_nis');
+    if (savedNis) {
+      nis = savedNis;
+      rememberMe = true;
+    }
+  });
 
   // Mascot Interactive State
   let peacockState = 'idle'; // 'idle', 'angry', 'laughing'
@@ -33,6 +42,7 @@
   // Form methods
   async function handleAuthSubmit() {
     loading = true;
+    peacockState = 'loading';
     message = { type: '', content: '' };
 
     try {
@@ -53,6 +63,13 @@
         if (error) throw error;
 
         loginAsAdmin();
+        
+        if (rememberMe) {
+          localStorage.setItem('mazeeda_remembered_nis', inputNIS);
+        } else {
+          localStorage.removeItem('mazeeda_remembered_nis');
+        }
+
         message = { type: 'success', content: 'Login admin berhasil!' };
         window.location.href = '/';
       } else {
@@ -116,14 +133,32 @@
           tahun_lahir: match.tahun_lahir
         });
 
+        if (rememberMe) {
+          localStorage.setItem('mazeeda_remembered_nis', inputNIS);
+        } else {
+          localStorage.removeItem('mazeeda_remembered_nis');
+        }
+
         peacockState = 'laughing';
         message = { type: 'success', content: `Selamat datang kembali, ${match.nama_lengkap}!` };
         window.location.href = '/';
       }
     } catch (err: any) {
-      peacockState = 'laughing';
+      peacockState = 'angry';
       setTimeout(() => peacockState = 'idle', 3000);
-      message = { type: 'error', content: err.message || 'Terjadi kesalahan sistem' };
+      
+      let errorMsg = err.message || 'Terjadi kesalahan sistem';
+      
+      // Translasi pesan error bahasa Inggris (khususnya dari Supabase untuk Admin) ke Bahasa Indonesia
+      if (errorMsg.toLowerCase().includes('invalid login credentials')) {
+        errorMsg = 'Kredensial login tidak valid. Pastikan password Anda benar.';
+      } else if (errorMsg.toLowerCase().includes('failed to fetch')) {
+        errorMsg = 'Gagal memuat. Silakan periksa koneksi internet Anda.';
+      } else if (errorMsg.toLowerCase().includes('user not found')) {
+        errorMsg = 'Akun Admin tidak ditemukan.';
+      }
+
+      message = { type: 'error', content: errorMsg };
     } finally {
       loading = false;
     }
@@ -211,7 +246,7 @@
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div class="relative w-32 h-32 mb-6 cursor-pointer" on:click={() => { peacockState = 'angry'; setTimeout(() => peacockState = 'idle', 2000); }}>
               <!-- Tail Fan Background -->
-              <div class="absolute inset-x-0 bottom-2 h-32 flex justify-center items-end z-0 transition-transform duration-700 {focusedInput === 'namaAyah' && !showPassword ? 'scale-110' : 'scale-100'}">
+              <div class="absolute inset-x-0 bottom-2 h-32 flex justify-center items-end z-0 transition-transform duration-700 {focusedInput === 'namaAyah' && !showPassword ? 'scale-110' : 'scale-100'} {peacockState === 'loading' ? 'animate-pulse scale-105' : ''}">
                 <!-- Far Left -->
                 <div class="absolute bottom-0 w-8 h-20 bg-emerald-500 rounded-full origin-bottom rotate-[-70deg] border-2 border-emerald-600 flex justify-center pt-1"><div class="w-3.5 h-4 bg-blue-600 rounded-full border-2 border-yellow-400"></div></div>
                 <!-- Mid Left -->
@@ -244,8 +279,8 @@
                   <!-- Left Eye -->
                   <div class="relative w-3.5 h-4 shadow-inner transition-all duration-300 {peacockState === 'angry' ? 'bg-yellow-300 scale-125 rounded-full overflow-hidden' : (peacockState === 'laughing' ? 'bg-transparent h-2 mt-1.5 border-t-[3px] border-slate-900 rounded-t-full shadow-none' : 'bg-white rounded-full overflow-hidden')}">
                     {#if peacockState !== 'laughing'}
-                      <div class="absolute w-2 h-2 rounded-full transition-all duration-100 {peacockState === 'angry' ? 'bg-rose-600 top-1 left-0.5 w-2.5 h-2.5' : 'bg-slate-900'} 
-                        {focusedInput === 'nis' ? 'top-2 left-1' : (focusedInput === 'namaAyah' ? 'top-0.5 left-1' : 'top-1 left-1')}"
+                      <div class="absolute w-2 h-2 rounded-full transition-all duration-100 {peacockState === 'angry' ? 'bg-rose-600 top-1 left-0.5 w-2.5 h-2.5' : (peacockState === 'loading' ? 'animate-spin border-[2px] border-slate-900 border-t-transparent bg-transparent w-3 h-3 top-0.5 left-[1px]' : 'bg-slate-900')} 
+                        {peacockState !== 'loading' && focusedInput === 'nis' ? 'top-2 left-1' : (peacockState !== 'loading' && focusedInput === 'namaAyah' ? 'top-0.5 left-1' : (peacockState !== 'loading' ? 'top-1 left-1' : ''))}"
                         style={peacockState === 'idle' && !focusedInput ? `transform: translate(${mouseX * 6}px, ${mouseY * 4}px)` : ''}>
                       </div>
                     {/if}
@@ -257,8 +292,8 @@
                   <!-- Right Eye -->
                   <div class="relative w-3.5 h-4 shadow-inner transition-all duration-300 {peacockState === 'angry' ? 'bg-yellow-300 scale-125 rounded-full overflow-hidden' : (peacockState === 'laughing' ? 'bg-transparent h-2 mt-1.5 border-t-[3px] border-slate-900 rounded-t-full shadow-none' : 'bg-white rounded-full overflow-hidden')}">
                     {#if peacockState !== 'laughing'}
-                      <div class="absolute w-2 h-2 rounded-full transition-all duration-100 {peacockState === 'angry' ? 'bg-rose-600 top-1 right-0.5 w-2.5 h-2.5' : 'bg-slate-900'} 
-                        {focusedInput === 'nis' ? 'top-2 right-1' : (focusedInput === 'namaAyah' ? 'top-0.5 right-1' : 'top-1 right-1')}"
+                      <div class="absolute w-2 h-2 rounded-full transition-all duration-100 {peacockState === 'angry' ? 'bg-rose-600 top-1 right-0.5 w-2.5 h-2.5' : (peacockState === 'loading' ? 'animate-spin border-[2px] border-slate-900 border-t-transparent bg-transparent w-3 h-3 top-0.5 right-[1px]' : 'bg-slate-900')} 
+                        {peacockState !== 'loading' && focusedInput === 'nis' ? 'top-2 right-1' : (peacockState !== 'loading' && focusedInput === 'namaAyah' ? 'top-0.5 right-1' : (peacockState !== 'loading' ? 'top-1 right-1' : ''))}"
                         style={peacockState === 'idle' && !focusedInput ? `transform: translate(${mouseX * 6}px, ${mouseY * 4}px)` : ''}>
                       </div>
                     {/if}
@@ -283,14 +318,14 @@
               <div class="absolute bottom-0 left-1/2 w-7 h-12 bg-blue-500 rounded-full shadow-[inset_-2px_0_10px_rgba(0,0,0,0.1)] transition-all duration-500 z-20 origin-bottom 
                 {focusedInput === 'namaAyah' 
                   ? (showPassword ? 'ml-[-40px] mb-8 rotate-[-70deg]' : 'ml-[-15px] mb-14 rotate-[45deg]') 
-                  : 'ml-[-35px] mb-2 -rotate-12'} {peacockState === 'laughing' ? 'ml-[-40px] mb-4 -rotate-[30deg] animate-pulse' : ''} {peacockState === 'angry' ? 'bg-rose-700 ml-[-45px] mb-6 -rotate-45 scale-110' : ''}">
+                  : 'ml-[-35px] mb-2 -rotate-12'} {peacockState === 'laughing' ? 'ml-[-40px] mb-4 -rotate-[30deg] animate-pulse' : ''} {peacockState === 'angry' ? 'bg-rose-700 ml-[-45px] mb-6 -rotate-45 scale-110' : ''} {peacockState === 'loading' ? 'ml-[-40px] mb-6 -rotate-[50deg] animate-pulse' : ''}">
               </div>
               
               <!-- Right Wing -->
               <div class="absolute bottom-0 right-1/2 w-7 h-12 bg-blue-500 rounded-full shadow-[inset_2px_0_10px_rgba(0,0,0,0.1)] transition-all duration-500 z-20 origin-bottom 
                 {focusedInput === 'namaAyah' 
                   ? 'mr-[-15px] mb-14 rotate-[-45deg]' 
-                  : 'mr-[-35px] mb-2 rotate-12'} {peacockState === 'laughing' ? 'mr-[-40px] mb-4 rotate-[30deg] animate-pulse' : ''} {peacockState === 'angry' ? 'bg-rose-700 mr-[-45px] mb-6 rotate-45 scale-110' : ''}">
+                  : 'mr-[-35px] mb-2 rotate-12'} {peacockState === 'laughing' ? 'mr-[-40px] mb-4 rotate-[30deg] animate-pulse' : ''} {peacockState === 'angry' ? 'bg-rose-700 mr-[-45px] mb-6 rotate-45 scale-110' : ''} {peacockState === 'loading' ? 'mr-[-40px] mb-6 rotate-[50deg] animate-pulse' : ''}">
               </div>
             </div>
 
@@ -372,6 +407,28 @@
               </div>
             </div>
 
+            <!-- Checkbox Remember Me -->
+            <label class="flex items-center mt-3 ml-1 cursor-pointer group/checkbox" in:fly|global={{ y: 10, duration: 400, delay: 300 }}>
+              <div class="relative flex items-center justify-center">
+                <input 
+                  type="checkbox" 
+                  class="sr-only"
+                  bind:checked={rememberMe}
+                  disabled={loading}
+                />
+                <div class="w-5 h-5 border-2 rounded-md transition-all duration-300 flex items-center justify-center shadow-sm {rememberMe ? 'bg-primary border-primary' : 'bg-white border-slate-300 group-hover/checkbox:border-primary'}">
+                  {#if rememberMe}
+                    <svg class="w-3.5 h-3.5 text-white" in:scale={{duration: 200, start: 0.5}} out:scale={{duration: 200, start: 0.5}} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  {/if}
+                </div>
+              </div>
+              <span class="ml-3 text-sm font-semibold text-slate-500 select-none group-hover/checkbox:text-slate-800 transition-colors">
+                Ingat NIS saya
+              </span>
+            </label>
+
             <!-- Submit Button -->
             <div in:fly|global={{ y: 10, duration: 400, delay: 350 }}>
               <Button 
@@ -380,12 +437,23 @@
                 disabled={loading}
               >
               {#if loading}
-                <span class="animate-pulse flex items-center justify-center">
-                  <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Memverifikasi...
+                <span class="flex items-center justify-center w-full relative">
+                  <div class="relative flex items-center justify-center mr-3 z-10 animate-rocket-shake">
+                    <svg class="w-6 h-6 text-white transform rotate-45" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+                      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
+                      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5-4 5-4l.29.35"></path>
+                      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 4-5 4-5l-.35-.29"></path>
+                    </svg>
+                    <!-- Fire -->
+                    <div class="absolute -bottom-2 -left-2 w-3 h-3 bg-gradient-to-t from-yellow-300 to-orange-500 rounded-full blur-[2px] animate-rocket-fire"></div>
+                  </div>
+                  <span class="font-bold tracking-widest text-white z-10 animate-pulse">MELUNCUR...</span>
+                  <div class="absolute inset-0 pointer-events-none opacity-20 flex items-center overflow-hidden">
+                    <div class="h-0.5 bg-white w-4 rounded-full absolute animate-cloud-1 right-0 top-1/4"></div>
+                    <div class="h-0.5 bg-white w-8 rounded-full absolute animate-cloud-2 right-0 bottom-1/4"></div>
+                    <div class="h-0.5 bg-white w-2 rounded-full absolute animate-cloud-3 right-0 top-1/2"></div>
+                  </div>
                 </span>
               {:else}
                 <span class="flex items-center justify-center">
@@ -474,5 +542,40 @@
   }
   .animation-delay-4000 {
     animation-delay: 4s;
+  }
+
+  /* Rocket Animations */
+  .animate-rocket-shake {
+    animation: rocketShake 0.4s infinite alternate ease-in-out;
+  }
+  @keyframes rocketShake {
+    0% { transform: translateY(0px) rotate(0deg); }
+    100% { transform: translateY(-2px) rotate(2deg); }
+  }
+
+  .animate-rocket-fire {
+    animation: rocketFire 0.1s infinite alternate;
+  }
+  @keyframes rocketFire {
+    0% { height: 10px; opacity: 0.8; transform: translate(-2px, 2px); }
+    100% { height: 16px; opacity: 1; transform: translate(0px, 0px); }
+  }
+
+  .animate-cloud-1 {
+    animation: cloudPassBy 0.8s linear infinite;
+  }
+  .animate-cloud-2 {
+    animation: cloudPassBy 1.2s linear infinite 0.4s;
+    opacity: 0;
+  }
+  .animate-cloud-3 {
+    animation: cloudPassBy 0.6s linear infinite 0.2s;
+    opacity: 0;
+  }
+  @keyframes cloudPassBy {
+    0% { transform: translateX(50px); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateX(-300px); opacity: 0; }
   }
 </style>

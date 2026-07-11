@@ -16,19 +16,23 @@
   
   // Drag state
   let isDragging = false;
+  let hasDragged = false;
   let startX = 0;
   let dragOffset = 0;
 
   function handlePointerDown(e: PointerEvent) {
     isDragging = true;
+    hasDragged = false;
     startX = e.clientX;
     dragOffset = 0;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }
 
   function handlePointerMove(e: PointerEvent) {
     if (!isDragging) return;
     dragOffset = e.clientX - startX;
+    if (Math.abs(dragOffset) > 10) {
+      hasDragged = true;
+    }
   }
 
   function handlePointerUp(e: PointerEvent) {
@@ -43,11 +47,10 @@
     
     isDragging = false;
     dragOffset = 0;
-    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
   }
 
   function goToIndex(index: number) {
-    if (!isDragging) {
+    if (!hasDragged) {
       if (currentIndex === index) {
         dispatch('imageClick', images[index]);
       } else {

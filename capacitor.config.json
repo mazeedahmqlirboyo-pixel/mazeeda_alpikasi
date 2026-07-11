@@ -1,6 +1,6 @@
 {
-  "appId": "mazeedahmqlirboyo.pixel",
-  "appName": "MAZEEDA",
+  "appId": "com.mazeedahmqlirboyo.app",
+  "appName": "Mazeeda",
   "webDir": "build",
   "bundledWebRuntime": false,
   "plugins": {

@@ -8,6 +8,7 @@
   let itemsRef: HTMLElement[] = [];
 
   let isDown = false;
+  let hasDragged = false;
   let startX = 0;
   let scrollLeft = 0;
 
@@ -54,6 +55,7 @@
   // Drag to scroll logic
   function handlePointerDown(e: PointerEvent) {
     isDown = true;
+    hasDragged = false;
     startX = e.pageX - carouselRef.offsetLeft;
     scrollLeft = carouselRef.scrollLeft;
     carouselRef.style.scrollSnapType = 'none'; 
@@ -72,6 +74,9 @@
     e.preventDefault();
     const x = e.pageX - carouselRef.offsetLeft;
     const walk = (x - startX) * 1.5; // Drag speed multiplier
+    if (Math.abs(walk) > 10) {
+      hasDragged = true;
+    }
     carouselRef.scrollLeft = scrollLeft - walk;
   }
 </script>
@@ -93,8 +98,8 @@
       <div 
         bind:this={itemsRef[i]}
         class="snap-center shrink-0 w-[260px] sm:w-[320px] md:w-[400px] aspect-[4/3] sm:aspect-[16/9] rounded-[2rem] overflow-hidden shadow-2xl transition-all duration-75 ease-linear relative bg-slate-100 border-[4px] sm:border-[6px] border-white cursor-pointer"
-        on:pointerdown|stopPropagation
         on:click={() => {
+          if (hasDragged) return; // Prevent click if dragged
           if (!carouselRef || !itemsRef[i]) return;
           const carouselCenter = carouselRef.getBoundingClientRect().left + carouselRef.offsetWidth / 2;
           const rect = itemsRef[i].getBoundingClientRect();

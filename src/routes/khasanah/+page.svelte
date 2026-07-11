@@ -1,80 +1,87 @@
 <script lang="ts">
-  import { ChevronLeft, BookOpen, Users, PenTool, Building2 } from "lucide-svelte";
+  import { ChevronLeft, BookOpen, Users, PenTool, Building2, ChevronRight } from "lucide-svelte";
   
   const menus = [
     {
       title: "Filosofi Logo",
-      desc: "Makna mendalam lambang pesantren.",
+      desc: "Menyingkap makna mendalam di balik lambang kebesaran pesantren.",
       icon: PenTool,
       href: "/khasanah/filosofi",
-      color: "from-teal-600 to-emerald-800",
-      image: "https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=800&q=80"
+      bgDeco: "bg-teal-50",
+      iconColor: "text-teal-600"
     },
     {
       title: "Mozaik Murobbi",
-      desc: "Biografi pendiri & pengasuh.",
+      desc: "Menelusuri biografi, perjuangan, dan keteladanan para pendiri & pengasuh.",
       icon: Users,
       href: "/khasanah/mozaik",
-      color: "from-amber-600 to-orange-800",
-      image: "https://images.unsplash.com/photo-1517409276906-8b9a2ab5f14e?w=800&q=80"
+      bgDeco: "bg-amber-50",
+      iconColor: "text-amber-600"
     },
     {
       title: "Dawuh & Sambutan",
-      desc: "Pesan & nasehat masyayikh.",
+      desc: "Kumpulan pesan, nasihat, dan sambutan inspiratif dari para masyayikh.",
       icon: BookOpen,
       href: "/khasanah/sambutan",
-      color: "from-blue-600 to-indigo-900",
-      image: "https://images.unsplash.com/photo-1558222218-b7b54eede3f3?w=800&q=80"
+      bgDeco: "bg-indigo-50",
+      iconColor: "text-indigo-600"
     },
     {
       title: "Profil Unit",
-      desc: "Lembaga & unit pendidikan.",
+      desc: "Mengenal lebih dekat berbagai lembaga dan unit pendidikan di bawah naungan pesantren.",
       icon: Building2,
       href: "/khasanah/unit",
-      color: "from-rose-600 to-pink-900",
-      image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80"
+      bgDeco: "bg-rose-50",
+      iconColor: "text-rose-600"
     }
   ];
 </script>
 
-<div class="min-h-screen bg-slate-100 pb-24 font-sans">
+<div class="min-h-screen bg-slate-50/50 pb-24 font-sans selection:bg-indigo-100">
   <!-- Elegant Header -->
-  <header class="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-white/50 shadow-sm">
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm transition-all">
     <div class="px-4 h-16 flex items-center justify-between max-w-2xl mx-auto">
-      <a href="/" class="p-2 -ml-2 rounded-full hover:bg-slate-200/50 transition-colors">
-        <ChevronLeft class="h-6 w-6 text-slate-800" />
+      <a href="/" class="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors active:scale-95">
+        <ChevronLeft class="h-6 w-6 text-slate-700" />
       </a>
-      <h1 class="font-bold text-lg text-slate-900 tracking-tight">Khasanah Lirboyo</h1>
+      <h1 class="font-bold text-[17px] text-slate-800 tracking-tight">Khasanah Lirboyo</h1>
       <div class="w-10"></div>
     </div>
   </header>
 
-  <main class="max-w-2xl mx-auto px-4 py-8 space-y-8">
-    <div class="text-center space-y-3 mb-10">
-      <h2 class="text-3xl font-black text-slate-900 tracking-tight drop-shadow-sm">Jejak & Sejarah</h2>
-      <p class="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed">Menyelami khasanah keilmuan dan keteladanan Pondok Pesantren Lirboyo.</p>
+  <main class="max-w-2xl mx-auto px-4 py-8 space-y-10">
+    <div class="text-center space-y-3 mb-8 px-4">
+      <div class="inline-flex items-center justify-center p-3 bg-indigo-50 rounded-2xl mb-2 ring-4 ring-white shadow-sm">
+        <BookOpen class="w-6 h-6 text-indigo-600" />
+      </div>
+      <h2 class="text-3xl font-black text-slate-800 tracking-tight">Jejak & Sejarah</h2>
+      <p class="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed">Penyelaman mendalam ke dalam khasanah keilmuan, sejarah, dan keteladanan Pondok Pesantren Lirboyo.</p>
     </div>
 
-    <div class="grid grid-cols-1 gap-5">
-      {#each menus as menu}
-        <a href={menu.href} class="group block focus:outline-none">
-          <div class="relative overflow-hidden rounded-3xl h-40 flex items-center shadow-md hover:shadow-xl transition-all duration-500 hover:-translate-y-1">
-            <!-- Background Image with Parallax effect on hover -->
-            <img src={menu.image} alt={menu.title} class="absolute inset-0 w-full h-full object-cover filter brightness-75 grayscale-[0.3] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" />
+    <div class="grid grid-cols-1 gap-4">
+      {#each menus as menu, i}
+        <a href={menu.href} class="group block focus:outline-none" style="animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) {i * 0.08}s both;">
+          <div class="relative overflow-hidden bg-white rounded-3xl p-5 flex items-center border border-slate-200/60 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_30px_rgb(0,0,0,0.06)] hover:border-slate-300 transition-all duration-300 hover:-translate-y-1">
             
-            <!-- Gradient Overlay -->
-            <div class={`absolute inset-0 bg-gradient-to-r ${menu.color} opacity-80 mix-blend-multiply transition-opacity group-hover:opacity-60`}></div>
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
+            <!-- Oversized background icon decoration -->
+            <div class="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity duration-300 pointer-events-none transform group-hover:scale-110 group-hover:-rotate-6 transition-transform">
+              <svelte:component this={menu.icon} class="w-40 h-40" />
+            </div>
+
+            <!-- Icon Box -->
+            <div class={`relative shrink-0 w-16 h-16 ${menu.bgDeco} rounded-[1.25rem] flex items-center justify-center mr-5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner border border-white`}>
+              <svelte:component this={menu.icon} class={`w-7 h-7 ${menu.iconColor}`} />
+            </div>
             
-            <!-- Content -->
-            <div class="relative z-10 p-6 flex items-center w-full">
-              <div class="bg-white/20 backdrop-blur-md p-3.5 rounded-2xl text-white mr-5 border border-white/30 shadow-inner group-hover:rotate-6 transition-transform duration-300">
-                <svelte:component this={menu.icon} class="w-7 h-7" />
-              </div>
-              <div class="text-white">
-                <h3 class="font-extrabold text-2xl mb-1 tracking-wide drop-shadow-md">{menu.title}</h3>
-                <p class="text-white/80 text-sm font-medium leading-relaxed drop-shadow-sm">{menu.desc}</p>
-              </div>
+            <!-- Text Content -->
+            <div class="flex-1 pr-4">
+              <h3 class="font-bold text-[17px] text-slate-800 mb-1 tracking-tight group-hover:text-indigo-600 transition-colors">{menu.title}</h3>
+              <p class="text-slate-500 text-xs leading-relaxed font-medium line-clamp-2">{menu.desc}</p>
+            </div>
+
+            <!-- Chevron Right -->
+            <div class="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-indigo-500 group-hover:border-indigo-500 group-hover:shadow-md transition-all duration-300">
+              <ChevronRight class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
             </div>
           </div>
         </a>
@@ -82,3 +89,16 @@
     </div>
   </main>
 </div>
+
+<style>
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
