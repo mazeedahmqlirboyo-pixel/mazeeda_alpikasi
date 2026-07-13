@@ -1858,10 +1858,7 @@
             class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply flex items-center justify-center text-blue-100"
             style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
           >
-            <!-- Using an inline icon or image as background. Let's use an icon placeholder since we don't have a specific image yet. -->
-            <div class="text-8xl scale-125 translate-x-2 translate-y-2 opacity-30 drop-shadow-md">
-              💰
-            </div>
+            <img src="/images/cashflow_icon.png" alt="Cash Flow" class="w-full h-full object-contain drop-shadow-sm scale-110 translate-x-2 translate-y-2 opacity-80" />
           </div>
           <div class="space-y-1.5 z-10">
             <span

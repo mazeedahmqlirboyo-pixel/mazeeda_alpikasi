@@ -470,6 +470,14 @@
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Keterampilan Khusus</span>
                 <strong class="text-slate-800 font-medium leading-relaxed text-justify">{selectedMember.keterampilan_khusus || '-'}</strong>
               </div>
+              <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
+                <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Cita-cita</span>
+                <strong class="text-slate-800 font-medium leading-relaxed text-justify">{selectedMember.cita_cita || '-'}</strong>
+              </div>
+              <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
+                <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Makanan Kesukaan</span>
+                <strong class="text-slate-800 font-medium leading-relaxed text-justify">{selectedMember.makanan_kesukaan || '-'}</strong>
+              </div>
               <div class="flex flex-col gap-1 py-1.5">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Musik Kesukaan</span>
                 {#if selectedMember.music && selectedMember.music.startsWith('http')}

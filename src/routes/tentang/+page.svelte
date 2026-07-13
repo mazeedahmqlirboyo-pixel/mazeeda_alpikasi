@@ -1,14 +1,23 @@
 <script lang="ts">
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import { Heart, Sparkles, BookOpen, Users, Megaphone, Image, Bot, ShieldCheck, Code, Smartphone } from 'lucide-svelte';
-
+  import { Heart, Sparkles, BookOpen, Users, Megaphone, Image as ImageIcon, Bot, ShieldCheck, Code, Smartphone, Wallet, Bell } from 'lucide-svelte';
   const features = [
-    { name: "Al-Qur'an Digital", desc: "Bacaan Al-Qur'an lengkap dengan terjemahan dan progres tilawah.", icon: BookOpen, color: "text-emerald-500", bg: "bg-emerald-50" },
-    { name: "Sangu & Wirid", desc: "Koleksi doa harian, sholawat, dan nadzom santri.", icon: Sparkles, color: "text-amber-500", bg: "bg-amber-50" },
-    { name: "Squad MAZEEDA", desc: "Direktori lengkap data santri, alumni, dan asatidzah.", icon: Users, color: "text-blue-500", bg: "bg-blue-50" },
-    { name: "Mading & Artikel", desc: "Pusat informasi, mading digital, dan artikel bermanfaat.", icon: Megaphone, color: "text-rose-500", bg: "bg-rose-50" },
-    { name: "Timeline Galeri", desc: "Bagikan momen dan kenangan tak terlupakan.", icon: Image, color: "text-purple-500", bg: "bg-purple-50" },
-    { name: "MAZEEDA AI", desc: "Asisten virtual super cerdas untuk berdiskusi dan curhat.", icon: Bot, color: "text-indigo-500", bg: "bg-indigo-50" }
+    { name: "Arah Kiblat", desc: "Cari arah kiblat sholat secara real-time dengan HP atau GPS.", image: "/images/kiblat_bg.png", color: "text-indigo-500", bg: "bg-indigo-50", offset: "scale-[1.2]" },
+    { name: "Kalkulator Zakat", desc: "Hitung Zakat Penghasilan, Maal, Emas, Peternakan, Saham, dll.", image: "/images/zakat_bg.png", color: "text-emerald-500", bg: "bg-emerald-50", offset: "scale-[1.2]" },
+    { name: "Kalkulator Faraidh", desc: "Hitung pembagian waris secara syariat Islam dengan mudah.", image: "/images/faraidh_bg.png", color: "text-amber-500", bg: "bg-amber-50", offset: "scale-[1.2]" },
+    { name: "Masehi & Hijriah", desc: "Lihat penanggalan Masehi dan Hijriah secara interaktif dalam satu layar.", image: "/images/kalender_bg.png", color: "text-green-500", bg: "bg-green-50", offset: "scale-[1.2]" },
+    { name: "Tasbih Digital", desc: "Hitung dan simpan zikir harianmu secara otomatis.", image: "/images/tasbih_icon.png", color: "text-teal-500", bg: "bg-teal-50", offset: "scale-[1.2]" },
+    { name: "Cash Flow", desc: "Catat Cash Flow harianmu dengan mudah dan aman sebagaimana isyarat QS. Al-Baqarah: 282.", image: "/images/cashflow_icon.png", color: "text-blue-500", bg: "bg-blue-50", offset: "scale-[1.15]" },
+    { name: "Jejak Lirboyo", desc: "Selami nilai-nilai sejarah, filosofi, dan profil lengkap Pondok Pesantren Lirboyo.", image: "/images/journey_compass.png", color: "text-teal-500", bg: "bg-teal-50", offset: "scale-[1.2]" },
+    { name: "Guruku (Asatidzah)", desc: "Direktori lengkap profil asatidzah dan pengajar.", image: "/images/asatidzah_icon_v3.png", color: "text-purple-500", bg: "bg-purple-50", offset: "scale-110" },
+    { name: "Kepengurusan", desc: "Struktur kepengurusan dan rekam jejak pengabdian.", image: "/images/kepengurusan_bg.png", color: "text-orange-500", bg: "bg-orange-50", offset: "scale-[1.2]" },
+    { name: "Pusat Notifikasi", desc: "Pemberitahuan sistem secara real-time.", image: "/images/notifikasi_icon.png", color: "text-pink-500", bg: "bg-pink-50", offset: "scale-[1.15]" },
+    { name: "Al-Qur'an Digital", desc: "Bacaan Al-Qur'an lengkap dengan terjemahan dan progres tilawah.", image: "/images/quran_icon.png", color: "text-emerald-500", bg: "bg-emerald-50", offset: "scale-110" },
+    { name: "Sangu & Wirid", desc: "Koleksi doa harian, sholawat, dan nadzom santri.", image: "/images/sangu_icon.png", color: "text-amber-500", bg: "bg-amber-50", offset: "scale-110" },
+    { name: "Squad MAZEEDA", desc: "Direktori lengkap data santri, alumni, dan asatidzah.", image: "/images/squad_icon_v3.png", color: "text-blue-500", bg: "bg-blue-50", offset: "scale-110" },
+    { name: "Mading & Artikel", desc: "Pusat informasi, mading digital, dan artikel bermanfaat.", image: "/images/mading_icon.png", color: "text-rose-500", bg: "bg-rose-50", offset: "scale-110" },
+    { name: "Timeline Galeri", desc: "Bagikan momen dan kenangan tak terlupakan.", image: "/images/timeline_icon.png", color: "text-purple-500", bg: "bg-purple-50", offset: "scale-110" },
+    { name: "MAZEEDA AI", desc: "Asisten virtual super cerdas untuk berdiskusi dan curhat.", image: "/merak.png", color: "text-indigo-500", bg: "bg-indigo-50", offset: "scale-110" }
   ];
 </script>
 
@@ -45,13 +54,17 @@
       <div class="space-y-4">
         <div class="flex items-center gap-2 px-2">
           <Sparkles class="w-5 h-5 text-indigo-500" />
-          <h2 class="text-lg font-bold text-slate-800">Fitur Utama</h2>
+          <h2 class="text-lg font-bold text-slate-800">Fitur-Fitur</h2>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {#each features as feature}
-            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex items-start gap-4 group cursor-default">
-              <div class="w-12 h-12 rounded-2xl {feature.bg} {feature.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
-                <svelte:component this={feature.icon} class="w-6 h-6" />
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4 group cursor-default">
+              <div class="w-12 h-12 rounded-2xl {feature.bg} {feature.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300 overflow-hidden relative">
+                {#if feature.image}
+                  <img src={feature.image} alt={feature.name} class="w-full h-full object-contain mix-blend-multiply drop-shadow-sm relative z-10 {feature.offset || ''}" />
+                {:else}
+                  <svelte:component this={feature.icon} class="w-6 h-6" />
+                {/if}
               </div>
               <div>
                 <h3 class="font-bold text-slate-800 mb-1">{feature.name}</h3>
@@ -74,7 +87,7 @@
               <Sparkles class="w-5 h-5 text-blue-200" />
               Tujuan MAZEEDA
             </h2>
-            <p class="text-blue-100 text-sm leading-relaxed">
+            <p class="text-blue-100 text-sm leading-relaxed text-justify">
               Aplikasi MAZEEDA didedikasikan sebagai pusat informasi, komunikasi, dan sarana ibadah digital yang mudah diakses. Tujuan utamanya adalah untuk mempermudah santri dan alumni dalam menjaga produktivitas amaliyah (seperti rutinan wirid & ngaji), sekaligus mempererat ikatan silaturahmi yang tak lekang oleh waktu dan jarak.
             </p>
           </div>
@@ -86,8 +99,8 @@
               <ShieldCheck class="w-5 h-5 text-blue-200" />
               Nilai & Semangat
             </h2>
-            <p class="text-blue-100 text-sm leading-relaxed">
-              Berlandaskan ajaran <strong>Ahlussunnah wal Jama'ah</strong> dan tradisi khas pesantren (khususnya <em>MQL Lirboyo</em>), MAZEEDA mengusung semangat adaptasi teknologi yang positif. Kami percaya bahwa kemajuan zaman (AI, digitalisasi) harus dirangkul sebagai alat untuk menyebarkan kebaikan, tanpa pernah melupakan akar akhlak dan adab seorang santri.
+            <p class="text-blue-100 text-sm leading-relaxed text-justify">
+              Berlandaskan ajaran Ahlussunnah wal Jama'ah dan tradisi khas pesantren Lirboyo, MAZEEDA mengusung semangat adaptasi teknologi yang positif. Kami percaya bahwa kemajuan zaman (digitalisasi) harus dirangkul sebagai alat untuk menyebarkan kebaikan, tanpa pernah melupakan akar akhlak dan adab seorang santri.
             </p>
           </div>
         </div>
@@ -98,7 +111,7 @@
         <p class="text-sm font-medium text-slate-500 flex items-center justify-center gap-1.5">
           Dibuat dengan <Heart class="w-4 h-4 text-rose-500 fill-rose-500 animate-pulse" /> untuk MAZEEDA
         </p>
-        <p class="text-xs font-semibold text-slate-400 mt-2">© {new Date().getFullYear()} MAZEEDA Community. Hak Cipta Dilindungi.</p>
+        <p class="text-xs font-semibold text-slate-400 mt-2">© {new Date().getFullYear()} MAZEEDA - Hak Cipta Dilindungi.</p>
       </div>
 
     </div>

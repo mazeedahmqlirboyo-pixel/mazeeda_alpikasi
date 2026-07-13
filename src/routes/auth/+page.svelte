@@ -5,7 +5,7 @@
   import Input from '$lib/components/ui/input.svelte';
   import { supabase } from '$lib/supabase';
   import { authStore, loginAsStudent, loginAsAdmin, logout } from '$lib/auth';
-  import { User, Hash, LogOut, ArrowRight, ShieldCheck, UserCheck, Instagram, Youtube, Rss, MessageCircle, AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-svelte';
+  import { User, Hash, LogOut, ArrowRight, ShieldCheck, UserCheck, Instagram, Youtube, Rss, MessageCircle, AlertCircle, CheckCircle2, Eye, EyeOff, Search, X } from 'lucide-svelte';
 
   // State management
   let nis = '';
@@ -16,6 +16,16 @@
   let showPassword = false;
   let rememberMe = true;
 
+  // Lupa NIS State
+  let showLupaNisModal = false;
+  let searchNamaLengkap = '';
+  let searchTempatLahir = '';
+  let isSearchingNis = false;
+  let searchNisMessage = { type: '', content: '' };
+
+  $: searchNamaLengkap = searchNamaLengkap.toUpperCase();
+  $: searchTempatLahir = searchTempatLahir.toUpperCase();
+
   onMount(() => {
     const savedNis = localStorage.getItem('mazeeda_remembered_nis');
     if (savedNis) {
@@ -25,7 +35,7 @@
   });
 
   // Mascot Interactive State
-  let peacockState = 'idle'; // 'idle', 'angry', 'laughing'
+  let peacockState = 'idle'; // 'idle', 'angry', 'laughing', 'sad', 'loading'
   let mouseX = 0;
   let mouseY = 0;
 
@@ -44,6 +54,9 @@
     loading = true;
     peacockState = 'loading';
     message = { type: '', content: '' };
+
+    // Paksa delay 3 detik agar animasi loading terlihat (meskipun aslinya cepat)
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     try {
       const inputNIS = nis.trim();
@@ -144,7 +157,7 @@
         window.location.href = '/';
       }
     } catch (err: any) {
-      peacockState = 'angry';
+      peacockState = 'sad';
       setTimeout(() => peacockState = 'idle', 3000);
       
       let errorMsg = err.message || 'Terjadi kesalahan sistem';
@@ -171,6 +184,63 @@
     } catch (err: any) {
       message = { type: 'error', content: 'Gagal keluar: ' + err.message };
       loading = false;
+    }
+  }
+
+  async function handleCariNIS() {
+    isSearchingNis = true;
+    searchNisMessage = { type: '', content: '' };
+    
+    try {
+      if (!searchNamaLengkap || searchNamaLengkap.trim().length < 3 || !searchTempatLahir) {
+        throw new Error('Nama Lengkap (min. 3 huruf) dan Tempat Lahir wajib diisi!');
+      }
+
+      // Search in allowed_alumni
+      let { data, error } = await supabase
+        .from('allowed_alumni')
+        .select('nis, nama_lengkap, tempat_lahir')
+        .ilike('nama_lengkap', `%${searchNamaLengkap.trim()}%`)
+        .ilike('tempat_lahir', `%${searchTempatLahir.trim()}%`);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // Search in asatidzah
+        const asatidzahRes = await supabase
+          .from('asatidzah')
+          .select('nis, nama_lengkap, tempat_lahir')
+          .ilike('nama_lengkap', `%${searchNamaLengkap.trim()}%`)
+          .ilike('tempat_lahir', `%${searchTempatLahir.trim()}%`);
+          
+        if (asatidzahRes.error) throw asatidzahRes.error;
+        data = asatidzahRes.data;
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('Data tidak ditemukan. Pastikan ketikan sudah sesuai data sekolah/pondok atau hubungi Admin.');
+      }
+
+      const foundNis = data[0].nis;
+      
+      // Auto-fill and close
+      nis = foundNis;
+      showLupaNisModal = false;
+      searchNamaLengkap = '';
+      searchTempatLahir = '';
+      
+      // Give feedback and focus on password
+      message = { type: 'success', content: `NIS ditemukan dan otomatis terisi! Silakan masukkan Nama Ayah untuk login.` };
+      
+      setTimeout(() => {
+         const psw = document.getElementById('namaAyah');
+         if (psw) psw.focus();
+      }, 100);
+      
+    } catch (err: any) {
+      searchNisMessage = { type: 'error', content: err.message || 'Terjadi kesalahan sistem.' };
+    } finally {
+      isSearchingNis = false;
     }
   }
 </script>
@@ -277,10 +347,10 @@
                 <!-- Eyes Container -->
                 <div class="absolute top-5 left-1/2 -translate-x-1/2 w-10 h-4 flex justify-between px-0.5 z-10">
                   <!-- Left Eye -->
-                  <div class="relative w-3.5 h-4 shadow-inner transition-all duration-300 {peacockState === 'angry' ? 'bg-yellow-300 scale-125 rounded-full overflow-hidden' : (peacockState === 'laughing' ? 'bg-transparent h-2 mt-1.5 border-t-[3px] border-slate-900 rounded-t-full shadow-none' : 'bg-white rounded-full overflow-hidden')}">
+                  <div class="relative w-3.5 h-4 shadow-inner transition-all duration-300 {peacockState === 'angry' ? 'bg-yellow-300 scale-125 rounded-full overflow-hidden' : (peacockState === 'sad' ? 'bg-sky-100 scale-110 rounded-full overflow-hidden' : (peacockState === 'laughing' ? 'bg-transparent h-2 mt-1.5 border-t-[3px] border-slate-900 rounded-t-full shadow-none' : 'bg-white rounded-full overflow-hidden'))}">
                     {#if peacockState !== 'laughing'}
-                      <div class="absolute w-2 h-2 rounded-full transition-all duration-100 {peacockState === 'angry' ? 'bg-rose-600 top-1 left-0.5 w-2.5 h-2.5' : (peacockState === 'loading' ? 'animate-spin border-[2px] border-slate-900 border-t-transparent bg-transparent w-3 h-3 top-0.5 left-[1px]' : 'bg-slate-900')} 
-                        {peacockState !== 'loading' && focusedInput === 'nis' ? 'top-2 left-1' : (peacockState !== 'loading' && focusedInput === 'namaAyah' ? 'top-0.5 left-1' : (peacockState !== 'loading' ? 'top-1 left-1' : ''))}"
+                      <div class="absolute w-2 h-2 rounded-full transition-all duration-100 {peacockState === 'angry' ? 'bg-rose-600 top-1 left-0.5 w-2.5 h-2.5' : (peacockState === 'sad' ? 'bg-slate-900 top-2 left-0.5 w-2 h-2' : (peacockState === 'loading' ? 'animate-spin border-[2px] border-slate-900 border-t-transparent bg-transparent w-3 h-3 top-0.5 left-[1px]' : 'bg-slate-900'))} 
+                        {peacockState === 'idle' && focusedInput === 'nis' ? 'top-2 left-1' : (peacockState === 'idle' && focusedInput === 'namaAyah' ? 'top-0.5 left-1' : (peacockState === 'idle' ? 'top-1 left-1' : ''))}"
                         style={peacockState === 'idle' && !focusedInput ? `transform: translate(${mouseX * 6}px, ${mouseY * 4}px)` : ''}>
                       </div>
                     {/if}
@@ -288,12 +358,16 @@
                     {#if peacockState === 'angry'}
                       <div class="absolute -top-1 left-0 w-full h-2 bg-slate-900 rotate-[25deg] scale-150"></div>
                     {/if}
+                    <!-- Sad Eyebrow -->
+                    {#if peacockState === 'sad'}
+                      <div class="absolute -top-1 left-0 w-full h-2 bg-slate-900 rotate-[-25deg] scale-150"></div>
+                    {/if}
                   </div>
                   <!-- Right Eye -->
-                  <div class="relative w-3.5 h-4 shadow-inner transition-all duration-300 {peacockState === 'angry' ? 'bg-yellow-300 scale-125 rounded-full overflow-hidden' : (peacockState === 'laughing' ? 'bg-transparent h-2 mt-1.5 border-t-[3px] border-slate-900 rounded-t-full shadow-none' : 'bg-white rounded-full overflow-hidden')}">
+                  <div class="relative w-3.5 h-4 shadow-inner transition-all duration-300 {peacockState === 'angry' ? 'bg-yellow-300 scale-125 rounded-full overflow-hidden' : (peacockState === 'sad' ? 'bg-sky-100 scale-110 rounded-full overflow-hidden' : (peacockState === 'laughing' ? 'bg-transparent h-2 mt-1.5 border-t-[3px] border-slate-900 rounded-t-full shadow-none' : 'bg-white rounded-full overflow-hidden'))}">
                     {#if peacockState !== 'laughing'}
-                      <div class="absolute w-2 h-2 rounded-full transition-all duration-100 {peacockState === 'angry' ? 'bg-rose-600 top-1 right-0.5 w-2.5 h-2.5' : (peacockState === 'loading' ? 'animate-spin border-[2px] border-slate-900 border-t-transparent bg-transparent w-3 h-3 top-0.5 right-[1px]' : 'bg-slate-900')} 
-                        {peacockState !== 'loading' && focusedInput === 'nis' ? 'top-2 right-1' : (peacockState !== 'loading' && focusedInput === 'namaAyah' ? 'top-0.5 right-1' : (peacockState !== 'loading' ? 'top-1 right-1' : ''))}"
+                      <div class="absolute w-2 h-2 rounded-full transition-all duration-100 {peacockState === 'angry' ? 'bg-rose-600 top-1 right-0.5 w-2.5 h-2.5' : (peacockState === 'sad' ? 'bg-slate-900 top-2 right-0.5 w-2 h-2' : (peacockState === 'loading' ? 'animate-spin border-[2px] border-slate-900 border-t-transparent bg-transparent w-3 h-3 top-0.5 right-[1px]' : 'bg-slate-900'))} 
+                        {peacockState === 'idle' && focusedInput === 'nis' ? 'top-2 right-1' : (peacockState === 'idle' && focusedInput === 'namaAyah' ? 'top-0.5 right-1' : (peacockState === 'idle' ? 'top-1 right-1' : ''))}"
                         style={peacockState === 'idle' && !focusedInput ? `transform: translate(${mouseX * 6}px, ${mouseY * 4}px)` : ''}>
                       </div>
                     {/if}
@@ -301,15 +375,23 @@
                     {#if peacockState === 'angry'}
                       <div class="absolute -top-1 right-0 w-full h-2 bg-slate-900 rotate-[-25deg] scale-150"></div>
                     {/if}
+                    <!-- Sad Eyebrow -->
+                    {#if peacockState === 'sad'}
+                      <div class="absolute -top-1 right-0 w-full h-2 bg-slate-900 rotate-[25deg] scale-150"></div>
+                    {/if}
                   </div>
                 </div>
                 
-                <!-- Laughing Tears -->
+                <!-- Laughing & Sad Tears -->
                 {#if peacockState === 'laughing'}
                   <div class="absolute top-8 left-1 w-2 h-2.5 bg-blue-300 animate-bounce" style="border-radius: 0 50% 50% 50%; transform: rotate(45deg);"></div>
                   <div class="absolute top-8 right-1 w-2 h-2.5 bg-blue-300 animate-bounce" style="animation-delay: 0.1s; border-radius: 0 50% 50% 50%; transform: rotate(45deg);"></div>
                   <div class="absolute top-5 left-0 w-1.5 h-1.5 bg-sky-200 rounded-full animate-ping"></div>
                   <div class="absolute top-5 right-0 w-1.5 h-1.5 bg-sky-200 rounded-full animate-ping" style="animation-delay: 0.2s"></div>
+                {/if}
+                {#if peacockState === 'sad'}
+                  <div class="absolute top-7 left-1.5 w-1.5 h-2.5 bg-blue-300 rounded-full animate-pulse" style="border-radius: 0 50% 50% 50%; transform: rotate(45deg);"></div>
+                  <div class="absolute top-7 right-1.5 w-1.5 h-2.5 bg-blue-300 rounded-full animate-pulse" style="animation-delay: 0.5s; border-radius: 0 50% 50% 50%; transform: rotate(45deg);"></div>
                 {/if}
               </div>
 
@@ -318,14 +400,14 @@
               <div class="absolute bottom-0 left-1/2 w-7 h-12 bg-blue-500 rounded-full shadow-[inset_-2px_0_10px_rgba(0,0,0,0.1)] transition-all duration-500 z-20 origin-bottom 
                 {focusedInput === 'namaAyah' 
                   ? (showPassword ? 'ml-[-40px] mb-8 rotate-[-70deg]' : 'ml-[-15px] mb-14 rotate-[45deg]') 
-                  : 'ml-[-35px] mb-2 -rotate-12'} {peacockState === 'laughing' ? 'ml-[-40px] mb-4 -rotate-[30deg] animate-pulse' : ''} {peacockState === 'angry' ? 'bg-rose-700 ml-[-45px] mb-6 -rotate-45 scale-110' : ''} {peacockState === 'loading' ? 'ml-[-40px] mb-6 -rotate-[50deg] animate-pulse' : ''}">
+                  : 'ml-[-35px] mb-2 -rotate-12'} {peacockState === 'laughing' ? 'ml-[-40px] mb-4 -rotate-[30deg] animate-pulse' : ''} {peacockState === 'angry' ? 'bg-rose-700 ml-[-45px] mb-6 -rotate-45 scale-110' : ''} {peacockState === 'sad' ? 'ml-[-38px] mb-1 -rotate-[5deg] scale-95' : ''} {peacockState === 'loading' ? 'ml-[-40px] mb-6 -rotate-[50deg] animate-pulse' : ''}">
               </div>
               
               <!-- Right Wing -->
               <div class="absolute bottom-0 right-1/2 w-7 h-12 bg-blue-500 rounded-full shadow-[inset_2px_0_10px_rgba(0,0,0,0.1)] transition-all duration-500 z-20 origin-bottom 
                 {focusedInput === 'namaAyah' 
                   ? 'mr-[-15px] mb-14 rotate-[-45deg]' 
-                  : 'mr-[-35px] mb-2 rotate-12'} {peacockState === 'laughing' ? 'mr-[-40px] mb-4 rotate-[30deg] animate-pulse' : ''} {peacockState === 'angry' ? 'bg-rose-700 mr-[-45px] mb-6 rotate-45 scale-110' : ''} {peacockState === 'loading' ? 'mr-[-40px] mb-6 rotate-[50deg] animate-pulse' : ''}">
+                  : 'mr-[-35px] mb-2 rotate-12'} {peacockState === 'laughing' ? 'mr-[-40px] mb-4 rotate-[30deg] animate-pulse' : ''} {peacockState === 'angry' ? 'bg-rose-700 mr-[-45px] mb-6 rotate-45 scale-110' : ''} {peacockState === 'sad' ? 'mr-[-38px] mb-1 rotate-[5deg] scale-95' : ''} {peacockState === 'loading' ? 'mr-[-40px] mb-6 rotate-[50deg] animate-pulse' : ''}">
               </div>
             </div>
 
@@ -445,8 +527,6 @@
                       <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5-4 5-4l.29.35"></path>
                       <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 4-5 4-5l-.35-.29"></path>
                     </svg>
-                    <!-- Fire -->
-                    <div class="absolute -bottom-2 -left-2 w-3 h-3 bg-gradient-to-t from-yellow-300 to-orange-500 rounded-full blur-[2px] animate-rocket-fire"></div>
                   </div>
                   <span class="font-bold tracking-widest text-white z-10 animate-pulse">MELUNCUR...</span>
                   <div class="absolute inset-0 pointer-events-none opacity-20 flex items-center overflow-hidden">
@@ -465,11 +545,17 @@
             </div>
           </form>
 
-          <!-- Bantuan Login -->
+          <!-- Bantuan Login & Lupa NIS -->
           <div class="mt-8 pt-6 border-t border-slate-100/80 text-center" in:fly|global={{ y: 10, duration: 400, delay: 450 }}>
-            <p class="text-xs text-slate-400 font-medium">
-              Mengalami masalah login? <br class="lg:hidden" />
-              <a href="https://wa.me/6289507436989" target="_blank" class="text-primary font-bold hover:underline">Hubungi ADMIN MAZEEDA</a>
+            <p class="text-sm font-semibold text-slate-600 mb-4">
+              Lupa atau tidak tahu NIS Anda? <br />
+              <button type="button" class="text-primary font-bold hover:underline mt-1.5 inline-flex items-center" on:click={() => showLupaNisModal = true}>
+                <Search class="w-4 h-4 mr-1.5" /> Cari NIS Saya di Sini
+              </button>
+            </p>
+            <p class="text-xs text-slate-400 font-medium pt-3 border-t border-slate-50/50">
+              Mengalami masalah lain? <br class="lg:hidden" />
+              <a href="https://wa.me/6289507436989" target="_blank" class="text-slate-500 font-bold hover:text-primary transition-colors">Hubungi ADMIN MAZEEDA</a>
             </p>
           </div>
 
@@ -515,6 +601,45 @@
       {/if}
     </div>
   </div>
+
+  <!-- Modal Lupa NIS -->
+  {#if showLupaNisModal}
+    <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" transition:fade={{ duration: 200 }}>
+      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100" transition:scale={{ duration: 300, start: 0.95 }}>
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <h3 class="text-lg font-bold text-slate-800 flex items-center">
+            <Search class="w-5 h-5 mr-2 text-primary" />
+            Cari NIS Saya
+          </h3>
+          <button class="text-slate-400 hover:text-rose-500 transition-colors p-1 rounded-full hover:bg-rose-50" on:click={() => showLupaNisModal = false}>
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        <div class="p-6">
+          {#if searchNisMessage.content}
+            <div class="flex items-start p-3.5 mb-5 rounded-xl text-sm font-semibold {searchNisMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'}" in:slide>
+              <AlertCircle class="w-5 h-5 mr-2.5 shrink-0" />
+              <span>{searchNisMessage.content}</span>
+            </div>
+          {/if}
+
+          <form on:submit|preventDefault={handleCariNIS} class="space-y-4">
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">NAMA LENGKAP</label>
+              <Input bind:value={searchNamaLengkap} placeholder="Contoh: SITI AISYAH" required disabled={isSearchingNis} class="py-3" />
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">TEMPAT LAHIR</label>
+              <Input bind:value={searchTempatLahir} placeholder="Contoh: KEDIRI" required disabled={isSearchingNis} class="py-3" />
+            </div>
+            <Button type="submit" class="w-full py-6 mt-4 text-base font-bold shadow-md hover:shadow-lg transition-all rounded-xl" disabled={isSearchingNis}>
+              {isSearchingNis ? 'Mencari Data...' : 'Cari NIS Sekarang'}
+            </Button>
+          </form>
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -551,14 +676,6 @@
   @keyframes rocketShake {
     0% { transform: translateY(0px) rotate(0deg); }
     100% { transform: translateY(-2px) rotate(2deg); }
-  }
-
-  .animate-rocket-fire {
-    animation: rocketFire 0.1s infinite alternate;
-  }
-  @keyframes rocketFire {
-    0% { height: 10px; opacity: 0.8; transform: translate(-2px, 2px); }
-    100% { height: 16px; opacity: 1; transform: translate(0px, 0px); }
   }
 
   .animate-cloud-1 {

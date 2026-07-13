@@ -115,6 +115,8 @@
     alamat_riwayatpendidikan = item.alamat_riwayatpendidikan || '';
     tahun_masuk = item.tahun_masuk ? String(item.tahun_masuk) : '2026';
     keterampilan_khusus = item.keterampilan_khusus || '';
+    cita_cita = item.cita_cita || '';
+    makanan_kesukaan = item.makanan_kesukaan || '';
     kutipan_kenangan = item.kutipan_kenangan || '';
     music = item.music || '';
     hobi = item.hobi || '';
@@ -140,6 +142,7 @@
     tahun_lahir = ''; golongan_darah = 'O'; alamat_ktp = ''; alamat_domisili = '';
     no_whatsapp = ''; email = ''; media_social = ''; riwayat_pendidikan = '';
     alamat_riwayatpendidikan = ''; tahun_masuk = '2026'; keterampilan_khusus = '';
+    cita_cita = ''; makanan_kesukaan = '';
     kutipan_kenangan = ''; music = ''; hobi = ''; kesan = ''; pesan = '';
     nis = ''; nama_ayah = ''; kategori_mazeeda = activeSection === 'asatidzah' ? 'pengajar' : 'alumni'; daerah_santri = '';
     tiktok_akun = ''; facebook_akun = ''; xtwitter_akun = ''; rute_lengkap = '';
@@ -191,6 +194,8 @@
   let alamat_riwayatpendidikan = ''; // ADDED
   let tahun_masuk = '2026';
   let keterampilan_khusus = '';
+  let cita_cita = '';
+  let makanan_kesukaan = '';
   let kutipan_kenangan = '';
   let music = '';
   let hobi = '';
@@ -460,6 +465,8 @@
       alamat_riwayatpendidikan: capitalizeEachWord(alamat_riwayatpendidikan),
       tahun_masuk: tahun_masuk ? (parseInt(tahun_masuk, 10) || null) : null,
       keterampilan_khusus,
+      cita_cita,
+      makanan_kesukaan,
       kutipan_kenangan,
       music,
       hobi,
@@ -608,6 +615,8 @@
         alamat_riwayatpendidikan: findIndex(["alamat_riwayatpendidikan", "alamat riwayat pendidikan", "alamat riwayatpendidikan", "alamat_pendidikan", "alamat pendidikan"]),
         tahun_masuk: findIndex(["tahun_masuk", "tahun masuk", "masuk", "angkatan", "tahun_masuk_pondok"]),
         keterampilan_khusus: findIndex(["keterampilan_khusus", "keterampilan", "keahlian", "skill", "keterampilan khusus"]),
+        cita_cita: findIndex(["cita_cita", "cita-cita", "cita cita", "harapan", "impian"]),
+        makanan_kesukaan: findIndex(["makanan_kesukaan", "makanan kesukaan", "makanan", "makanan favorit"]),
         kutipan_kenangan: findIndex(["kutipan_kenangan", "kutipan", "quote", "quotes", "kutipan kenangan"]),
         music: findIndex(["music", "musik", "lagu", "spotify", "lagu_kesukaan", "lagu kesukaan"]),
         hobi: findIndex(["hobi", "hobby"]),
@@ -686,6 +695,8 @@
             alamat_riwayatpendidikan: capitalizeEachWord(getValue(columns, "alamat_riwayatpendidikan")),
             tahun_masuk: rawTahunMasuk ? (parseInt(rawTahunMasuk, 10) || null) : null,
             keterampilan_khusus: getValue(columns, "keterampilan_khusus"),
+            cita_cita: getValue(columns, "cita_cita"),
+            makanan_kesukaan: getValue(columns, "makanan_kesukaan"),
             kutipan_kenangan: getValue(columns, "kutipan_kenangan"),
             music: getValue(columns, "music"),
             hobi: getValue(columns, "hobi"),

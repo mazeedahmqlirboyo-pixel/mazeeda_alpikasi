@@ -44,67 +44,7 @@
   let likedPostsList: any[] = [];
   let likedNotesList: any[] = [];
 
-  let announcements: any[] = [
-    {
-      id: 1,
-      title: "Peluncuran Website MAZEEDA V1",
-      category: "Informasi",
-      content:
-        "Alhamdulillah, hari ini kita resmi meluncurkan platform MAZEEDA. Platform ini diharapkan mempermudah koordinasi seluruh agenda keagamaan, sosial, dan transparansi keuangan Sangu. Berikan tanggapan Anda di kolom saran admin!",
-      date: "12 Juni 2026",
-      author: "Siti Fatimah",
-      likes: 18,
-      hasLiked: false,
-      comments: [
-        {
-          id: 101,
-          author: "Ahmad Fauzi",
-          text: "MasyaAllah, barakallah! Semoga berkah dan bermanfaat bagi seluruh alumni.",
-          date: "12 Juni 2026",
-        },
-        {
-          id: 102,
-          author: "Muhammad Ali",
-          text: "Keren banget UI-nya, sangat bersih, modern, dan responsive.",
-          date: "12 Juni 2026",
-        },
-      ],
-      showComments: false,
-    },
-    {
-      id: 2,
-      title: "Khataman Al-Qur'an Bersama & Doa Akhir Tahun",
-      category: "Kajian",
-      content:
-        "Mengundang seluruh alumni dan mustahiq untuk menghadiri program Semaan dan Khataman Juz 30 yang akan ditutup dengan buka puasa sunnah senin-kamis bersama. Tempat di Musholla Baiturrahman mulai Ba'da Ashar.",
-      date: "08 Juni 2026",
-      author: "Ahmad Fauzi",
-      likes: 21,
-      hasLiked: false,
-      comments: [
-        {
-          id: 201,
-          author: "Siti Sarah",
-          text: "InsyaAllah hadir bersama keluarga kak. Mohon doanya agar lancar perjalanan.",
-          date: "08 Juni 2026",
-        },
-      ],
-      showComments: false,
-    },
-    {
-      id: 3,
-      title: "Penyaluran Zakat & Donasi Mustahiq Tahap III",
-      category: "Sosial",
-      content:
-        "Laporan penyaluran donasi Sangu ke 5 kepala keluarga di Tasikmalaya telah selesai dilaksanakan. Kuitansi dan dokumentasi foto lengkap dapat dilihat di folder administrasi publik.",
-      date: "02 Juni 2026",
-      author: "Muhammad Ali",
-      likes: 14,
-      hasLiked: false,
-      comments: [],
-      showComments: false,
-    },
-  ];
+  let announcements: any[] = [];
 
   // Sticky Notes State (Aspirasi / Community Board)
   let stickyNotes: any[] = [];

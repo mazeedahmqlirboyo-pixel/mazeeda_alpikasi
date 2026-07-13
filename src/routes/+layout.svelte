@@ -1392,6 +1392,16 @@
                           <input type="text" placeholder="Musik favorit" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.music} />
                         </div>
                       </div>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <div class="space-y-1">
+                          <label class="text-xs font-bold text-slate-500 block">Cita-cita</label>
+                          <input type="text" placeholder="Cita-cita" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.cita_cita} />
+                        </div>
+                        <div class="space-y-1">
+                          <label class="text-xs font-bold text-slate-500 block">Makanan Kesukaan</label>
+                          <input type="text" placeholder="Makanan favorit" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.makanan_kesukaan} />
+                        </div>
+                      </div>
                     </div>
 
                     <!-- Section: Kesan, Pesan & Kutipan -->
@@ -1649,6 +1659,14 @@
                         <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
                           <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Keterampilan Khusus</span>
                           <strong class="text-slate-800 font-medium leading-relaxed text-justify">{myProfileData.keterampilan_khusus || '-'}</strong>
+                        </div>
+                        <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Cita-cita</span>
+                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{myProfileData.cita_cita || '-'}</strong>
+                        </div>
+                        <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
+                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Makanan Kesukaan</span>
+                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{myProfileData.makanan_kesukaan || '-'}</strong>
                         </div>
                         <div class="flex flex-col gap-1 py-1.5">
                           <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Musik Kesukaan</span>
