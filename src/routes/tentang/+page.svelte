@@ -100,7 +100,7 @@
               Nilai & Semangat
             </h2>
             <p class="text-blue-100 text-sm leading-relaxed text-justify">
-              Berlandaskan ajaran Ahlussunnah wal Jama'ah dan tradisi khas pesantren Lirboyo, MAZEEDA mengusung semangat adaptasi teknologi yang positif. Kami percaya bahwa kemajuan zaman (digitalisasi) harus dirangkul sebagai alat untuk menyebarkan kebaikan, tanpa pernah melupakan akar akhlak dan adab seorang santri.
+              Berlandaskan ajaran Ahlussunnah wal Jama'ah serta tradisi luhur pondok pesantren Lirboyo Kediri, khususnya di lingkungan MA HMQ Lirboyo, MAZEEDA hadir mengusung semangat adaptasi teknologi yang positif. Kami percaya bahwa modernisasi dan digitalisasi harus dirangkul sebagai sarana menyebarkan kemaslahatan, dengan tetap memegang teguh prinsip akhlakul karimah dan adab santri yang kokoh.
             </p>
           </div>
         </div>
