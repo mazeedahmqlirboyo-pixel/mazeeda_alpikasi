@@ -701,7 +701,7 @@
           {#each filteredMembers as member (member.id || member.nama_lengkap)}
             {@const accent = getAccent(member.nama_lengkap)}
             <Card 
-              class="group flex flex-col justify-between hover:scale-[1.01] hover:shadow-soft-md transition-all duration-300 cursor-pointer h-full {member.is_active === false ? 'border-rose-200 bg-rose-50/40 shadow-sm' : ''}" 
+              class="group flex flex-col justify-between hover:scale-[1.01] hover:shadow-soft-md transition-all duration-300 cursor-pointer h-full {member.is_active === false ? 'border-red-300 bg-red-100 shadow-sm shadow-red-200/50' : ''}" 
               on:click={() => handleCardClick(member)}
             >
               <div class="flex items-center space-x-3 min-w-0">
@@ -737,13 +737,6 @@
                   <p class="text-xs text-slate-400 font-medium truncate mt-1">
                     {member.nama_panggilan || '-'}{member.daerah_santri ? ' | ' + capitalizeEachWord(member.daerah_santri) : ''}
                   </p>
-
-                  {#if member.is_active === false}
-                    <div class="mt-2 inline-flex items-center space-x-1 bg-red-50 text-red-600 border border-red-100 rounded-lg px-2 py-0.5 text-[10px] font-bold w-fit">
-                      <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
-                      <span>Akun Dinonaktifkan</span>
-                    </div>
-                  {/if}
                 </div>
               </div>
             </Card>
