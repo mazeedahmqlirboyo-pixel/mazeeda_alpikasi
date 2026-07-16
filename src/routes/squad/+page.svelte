@@ -701,7 +701,7 @@
           {#each filteredMembers as member (member.id || member.nama_lengkap)}
             {@const accent = getAccent(member.nama_lengkap)}
             <Card 
-              class="group flex flex-col justify-between hover:scale-[1.01] hover:shadow-soft-md transition-all duration-300 cursor-pointer h-full {member.is_active === false ? 'border-red-300 bg-red-100 shadow-sm shadow-red-200/50' : ''}" 
+              class="group flex flex-col justify-between hover:scale-[1.01] hover:shadow-soft-md transition-all duration-300 cursor-pointer h-full {member.is_active === false ? '!border-rose-400 !bg-rose-100 shadow-sm shadow-rose-200/50' : ''}" 
               on:click={() => handleCardClick(member)}
             >
               <div class="flex items-center space-x-3 min-w-0">
