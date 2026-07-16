@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { ChevronLeft, BookOpen, Users, PenTool, Building2, ChevronRight } from "lucide-svelte";
+  import { BookOpen, Users, PenTool, Building2, ChevronRight } from "lucide-svelte";
+  import PageHeader from "$lib/components/ui/PageHeader.svelte";
   
   const menus = [
     {
@@ -38,16 +39,8 @@
 </script>
 
 <div class="min-h-screen bg-slate-50/50 pb-24 font-sans selection:bg-indigo-100">
-  <!-- Elegant Header -->
-  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm transition-all">
-    <div class="px-4 h-16 flex items-center justify-between max-w-2xl mx-auto">
-      <a href="/" class="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors active:scale-95">
-        <ChevronLeft class="h-6 w-6 text-slate-700" />
-      </a>
-      <h1 class="font-bold text-[17px] text-slate-800 tracking-tight">Khasanah Lirboyo</h1>
-      <div class="w-10"></div>
-    </div>
-  </header>
+  
+  <PageHeader title="Khasanah Lirboyo" backTo="/" />
 
   <main class="max-w-2xl mx-auto px-4 py-8 space-y-10">
     <div class="text-center space-y-3 mb-8 px-4">
