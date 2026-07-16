@@ -2182,7 +2182,7 @@
               <div
                 class="flex items-center space-x-1 text-xs opacity-90 mb-1 font-semibold"
               >
-                <ImageIcon class="h-3.5 w-3.5 text-blue-200" />
+                <MapPin class="h-3.5 w-3.5 text-blue-200" />
                 <span>{recentMemory.location}</span>
               </div>
               <h4
