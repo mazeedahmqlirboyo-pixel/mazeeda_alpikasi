@@ -5,7 +5,7 @@
   import Input from '$lib/components/ui/input.svelte';
   import { supabase } from '$lib/supabase';
   import { authStore, loginAsStudent, loginAsAdmin, logout } from '$lib/auth';
-  import { User, Hash, LogOut, ArrowRight, ShieldCheck, UserCheck, Instagram, Youtube, Rss, MessageCircle, AlertCircle, CheckCircle2, Eye, EyeOff, Search, X } from 'lucide-svelte';
+  import { User, IdCard, LogOut, ArrowRight, ShieldCheck, UserCheck, Instagram, Youtube, Rss, MessageCircle, AlertCircle, CheckCircle2, Eye, EyeOff, Search, X } from 'lucide-svelte';
 
   // State management
   let nis = '';
@@ -436,13 +436,13 @@
               <label for="nis" class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">NIS</label>
               <div class="relative overflow-hidden rounded-xl transition-all duration-300 {focusedInput === 'nis' ? 'ring-2 ring-primary ring-offset-1 -translate-y-1 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]' : 'border border-slate-200 hover:border-slate-300'}">
                 <div class="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-slate-50 border-r border-slate-100 text-slate-400">
-                  <Hash class="w-5 h-5 {focusedInput === 'nis' ? 'text-primary' : ''} transition-colors" />
+                  <IdCard class="w-5 h-5 {focusedInput === 'nis' ? 'text-primary' : ''} transition-colors" />
                 </div>
                 <input 
                   id="nis" 
                   type="text" 
                   class="w-full bg-white pl-16 pr-4 py-3.5 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-300 focus:bg-slate-50/50 transition-colors"
-                  placeholder="Contoh: 220412" 
+                  placeholder="CONTOH: 220412" 
                   bind:value={nis} 
                   on:focus={() => focusedInput = 'nis'}
                   on:blur={() => focusedInput = ''}
@@ -623,11 +623,11 @@
           <form on:submit|preventDefault={handleCariNIS} class="space-y-4">
             <div class="space-y-1.5">
               <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">NAMA LENGKAP</label>
-              <Input bind:value={searchNamaLengkap} placeholder="Contoh: SITI AISYAH" required disabled={isSearchingNis} class="py-3 uppercase" />
+              <Input bind:value={searchNamaLengkap} placeholder="CONTOH: SITI AISYAH" required disabled={isSearchingNis} class="py-3 uppercase" />
             </div>
             <div class="space-y-1.5">
               <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">TEMPAT LAHIR</label>
-              <Input bind:value={searchTempatLahir} placeholder="Contoh: KEDIRI" required disabled={isSearchingNis} class="py-3 uppercase" />
+              <Input bind:value={searchTempatLahir} placeholder="CONTOH: KEDIRI" required disabled={isSearchingNis} class="py-3 uppercase" />
             </div>
             <Button type="submit" class="w-full py-6 mt-4 text-base font-bold shadow-md hover:shadow-lg transition-all rounded-xl" disabled={isSearchingNis}>
               {isSearchingNis ? 'Mencari Data...' : 'Cari NIS Sekarang'}
