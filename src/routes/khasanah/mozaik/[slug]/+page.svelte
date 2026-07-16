@@ -1,54 +1,80 @@
 <script lang="ts">
-  import { ChevronLeft } from "lucide-svelte";
+  import { ChevronLeft, X, ZoomIn } from "lucide-svelte";
+  import { fade } from "svelte/transition";
+  
   export let data: any;
   $: kyai = data.kyai;
+  
+  let showLightbox = false;
 </script>
 
-<div class="min-h-screen bg-[#F8FAFC] pb-24 font-sans selection:bg-amber-100 selection:text-amber-900">
-  <header class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl border-b border-white/20 shadow-sm transition-all duration-300">
-    <div class="px-4 h-16 flex items-center justify-between max-w-2xl mx-auto">
-      <a href="/khasanah/mozaik" class="flex items-center justify-center w-10 h-10 rounded-full bg-white/60 hover:bg-white text-slate-700 shadow-sm border border-slate-100 transition-all">
-        <ChevronLeft class="h-5 w-5" />
-      </a>
-      <h1 class="font-bold text-sm uppercase tracking-widest text-slate-800">Profil Murobbi</h1>
-      <div class="w-10"></div> <!-- spacer for centering -->
-    </div>
-  </header>
+<div class="min-h-screen bg-[#F8FAFC] pb-24 font-sans selection:bg-amber-100 selection:text-amber-900 lg:py-8 lg:px-6">
+  
+  <div class="max-w-4xl mx-auto bg-white lg:rounded-3xl lg:shadow-xl lg:overflow-hidden relative border-slate-100 lg:border">
+    
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200 shadow-sm transition-all duration-300">
+      <div class="px-4 h-16 flex items-center justify-between mx-auto">
+        <a href="/khasanah/mozaik" class="flex items-center justify-center w-10 h-10 rounded-full bg-white/60 hover:bg-slate-100 text-slate-700 transition-colors">
+          <ChevronLeft class="h-5 w-5" />
+        </a>
+        <h1 class="font-bold text-sm uppercase tracking-widest text-slate-800">Profil Murobbi</h1>
+        <div class="w-10"></div> <!-- spacer for centering -->
+      </div>
+    </header>
 
-  <!-- Hero Section with Premium feel -->
-  <div class="relative w-full h-[55vh] min-h-[400px] bg-slate-900 overflow-hidden">
-    <img src={kyai.image_url} alt={kyai.name} class="absolute inset-0 w-full h-full object-cover object-top opacity-70 filter saturate-[0.85] contrast-[1.1]" />
-    
-    <!-- Rich Gradients for premium feel -->
-    <div class="absolute inset-0 bg-gradient-to-b from-slate-900/60 via-transparent to-transparent"></div>
-    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>
-    
-    <div class="absolute bottom-24 left-0 w-full px-6 text-white max-w-2xl mx-auto left-1/2 -translate-x-1/2 flex flex-col items-center text-center">
-      <span class="inline-block px-3 py-1.5 bg-amber-600/90 text-white text-[10px] font-bold uppercase tracking-[0.2em] rounded-full mb-4 shadow-lg ring-1 ring-white/20 backdrop-blur-sm">
-        {kyai.title}
-      </span>
-      <h2 class="text-4xl md:text-5xl font-black leading-tight mb-2 drop-shadow-2xl">
-        {kyai.name}
-      </h2>
+    <!-- Hero Section with Premium feel -->
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="relative w-full h-[55vh] min-h-[400px] lg:h-[450px] bg-slate-900 overflow-hidden group cursor-pointer" on:click={() => showLightbox = true}>
+      <img src={kyai.image_url} alt={kyai.name} class="absolute inset-0 w-full h-full object-cover object-top opacity-70 filter saturate-[0.85] contrast-[1.1] group-hover:scale-105 transition-transform duration-700 ease-out" />
+      
+      <!-- Rich Gradients for premium feel -->
+      <div class="absolute inset-0 bg-gradient-to-b from-slate-900/40 via-transparent to-transparent"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent group-hover:via-slate-900/70 transition-all duration-500"></div>
+      
+      <!-- Click indicator -->
+      <div class="absolute top-4 right-4 bg-black/40 backdrop-blur-sm text-white/90 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <ZoomIn class="w-5 h-5" />
+      </div>
+      
+      <div class="absolute bottom-24 lg:bottom-16 left-0 w-full px-6 text-white max-w-2xl mx-auto left-1/2 -translate-x-1/2 flex flex-col items-center text-center">
+        <span class="inline-block px-3 py-1.5 bg-amber-600/90 text-white text-[10px] font-bold uppercase tracking-[0.2em] rounded-full mb-4 shadow-lg ring-1 ring-white/20 backdrop-blur-sm group-hover:bg-amber-500 transition-colors">
+          {kyai.title}
+        </span>
+        <h2 class="text-4xl md:text-5xl font-black leading-tight mb-2 drop-shadow-2xl">
+          {kyai.name}
+        </h2>
+      </div>
     </div>
+
+    <main class="max-w-3xl mx-auto px-0 sm:px-4 lg:px-8">
+      <article class="bg-white rounded-t-[2.5rem] sm:rounded-3xl px-6 py-10 sm:p-10 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)] lg:shadow-none border-t border-x border-white/50 lg:border-none -mt-16 relative z-10 
+        prose prose-slate prose-lg max-w-none
+        prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-slate-900
+        prose-a:text-amber-600 prose-a:no-underline hover:prose-a:text-amber-700
+        prose-img:rounded-2xl prose-img:shadow-md
+        text-slate-700 leading-relaxed">
+        
+        <!-- Decorative pull tab for mobile -->
+        <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8 sm:hidden"></div>
+        
+        <!-- Dynamic HTML Rendering -->
+        {@html kyai.content}
+      </article>
+    </main>
   </div>
-
-  <main class="max-w-2xl mx-auto px-0 sm:px-4">
-    <article class="bg-white rounded-t-[2.5rem] sm:rounded-3xl px-6 py-10 sm:p-10 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)] border-t border-x border-white/50 -mt-16 relative z-10 
-      prose prose-slate prose-lg max-w-none
-      prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-slate-900
-      prose-a:text-amber-600 prose-a:no-underline hover:prose-a:text-amber-700
-      prose-img:rounded-2xl prose-img:shadow-md
-      text-slate-700 leading-relaxed">
-      
-      <!-- Decorative pull tab for mobile -->
-      <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8 sm:hidden"></div>
-      
-      <!-- Dynamic HTML Rendering -->
-      {@html kyai.content}
-    </article>
-  </main>
 </div>
+
+{#if showLightbox}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <div class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4" on:click={() => showLightbox = false} transition:fade={{ duration: 200 }}>
+    <button class="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors" on:click={() => showLightbox = false}>
+      <X class="w-6 h-6" />
+    </button>
+    <img src={kyai.image_url} alt={kyai.name} class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" on:click|stopPropagation />
+  </div>
+{/if}
 
 <style>
   /* Global styles for dynamic HTML content injected via @html */
