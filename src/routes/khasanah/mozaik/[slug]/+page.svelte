@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { ChevronLeft, X, ZoomIn } from "lucide-svelte";
+  import { X, ZoomIn } from "lucide-svelte";
   import { fade } from "svelte/transition";
+  import PageHeader from "$lib/components/ui/PageHeader.svelte";
   
   export let data: any;
   $: kyai = data.kyai;
@@ -8,19 +9,11 @@
   let showLightbox = false;
 </script>
 
-<div class="min-h-screen bg-[#F8FAFC] pb-24 font-sans selection:bg-amber-100 selection:text-amber-900 lg:py-8 lg:px-6">
+<div class="min-h-screen bg-[#F8FAFC] pb-24 font-sans selection:bg-amber-100 selection:text-amber-900">
   
-  <div class="max-w-4xl mx-auto bg-white lg:rounded-3xl lg:shadow-xl lg:overflow-hidden relative border-slate-100 lg:border">
-    
-    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200 shadow-sm transition-all duration-300">
-      <div class="px-4 h-16 flex items-center justify-between mx-auto">
-        <a href="/khasanah/mozaik" class="flex items-center justify-center w-10 h-10 rounded-full bg-white/60 hover:bg-slate-100 text-slate-700 transition-colors">
-          <ChevronLeft class="h-5 w-5" />
-        </a>
-        <h1 class="font-bold text-sm uppercase tracking-widest text-slate-800">Profil Murobbi</h1>
-        <div class="w-10"></div> <!-- spacer for centering -->
-      </div>
-    </header>
+  <PageHeader title="Profil Murobbi" backTo="/khasanah/mozaik" />
+  
+  <div class="max-w-4xl mx-auto bg-white lg:rounded-3xl lg:shadow-xl lg:overflow-hidden relative border-slate-100 lg:border mt-0 lg:mt-8 mb-8 lg:mx-6">
 
     <!-- Hero Section with Premium feel -->
     <!-- svelte-ignore a11y-click-events-have-key-events -->
