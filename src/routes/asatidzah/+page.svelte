@@ -20,6 +20,9 @@
   let members: any[] = [];
   let isLoading = true;
 
+  // Warning modal state
+  let showDeactivatedWarningFor: any = null;
+
   // Selected member for inline detailed view (replaces popup)
   let selectedMember: any = null;
   let failedImages = new Set();
@@ -111,6 +114,21 @@
     setTimeout(scrollToTop, 50);
     setTimeout(scrollToTop, 150);
     setTimeout(scrollToTop, 300);
+  }
+
+  function handleCardClick(member: any) {
+    if (member.is_active === false) {
+      showDeactivatedWarningFor = member;
+    } else {
+      openDetails(member);
+    }
+  }
+
+  function confirmViewDeactivated() {
+    if (showDeactivatedWarningFor) {
+      openDetails(showDeactivatedWarningFor);
+      showDeactivatedWarningFor = null;
+    }
   }
 
   // Generate Initials
@@ -683,8 +701,8 @@
           {#each filteredMembers as member (member.id || member.nama_lengkap)}
             {@const accent = getAccent(member.nama_lengkap)}
             <Card 
-              class="group flex flex-col justify-between hover:scale-[1.01] hover:shadow-soft-md transition-all duration-300 cursor-pointer h-full" 
-              on:click={() => openDetails(member)}
+              class="group flex flex-col justify-between hover:scale-[1.01] hover:shadow-soft-md transition-all duration-300 cursor-pointer h-full {member.is_active === false ? 'border-rose-200 bg-rose-50/40 shadow-sm' : ''}" 
+              on:click={() => handleCardClick(member)}
             >
               <div class="flex items-center space-x-3 min-w-0">
                 <!-- Avatar with accent ring + dot -->
@@ -764,6 +782,46 @@
           {#if selectedMember.nama_panggilan}
             <p class="text-xs font-semibold text-slate-300 text-center mt-1 drop-shadow-md">{selectedMember.nama_panggilan}</p>
           {/if}
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- DEACTIVATED WARNING MODAL -->
+{#if showDeactivatedWarningFor}
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full border border-slate-100 animate-in zoom-in-95 duration-300 relative">
+      <div class="h-2 w-full bg-gradient-to-r from-rose-500 to-red-600"></div>
+      
+      <div class="p-6 sm:p-8 flex flex-col items-center text-center space-y-4">
+        <div class="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center shrink-0 mb-1">
+          <span class="text-3xl">⚠️</span>
+        </div>
+
+        <div class="space-y-2">
+          <h2 class="text-lg sm:text-xl font-black text-slate-800 tracking-tight">Akun Dinonaktifkan</h2>
+          <p class="text-sm font-medium text-slate-500 leading-relaxed">
+            Akun milik <span class="font-bold text-slate-700">{showDeactivatedWarningFor.nama_lengkap}</span> saat ini sedang dinonaktifkan oleh Admin.
+          </p>
+          <p class="text-xs text-slate-400 font-medium">Anda masih bisa melihat data profilnya.</p>
+        </div>
+
+        <div class="pt-4 w-full flex flex-col gap-2">
+          <button
+            type="button"
+            on:click={confirmViewDeactivated}
+            class="w-full h-11 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 active:scale-95"
+          >
+            Oke, Lihat Profil
+          </button>
+          <button
+            type="button"
+            on:click={() => showDeactivatedWarningFor = null}
+            class="w-full h-11 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all duration-200"
+          >
+            Batal
+          </button>
         </div>
       </div>
     </div>
