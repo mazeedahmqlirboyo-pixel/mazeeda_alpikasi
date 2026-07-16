@@ -29,8 +29,7 @@
     { label: '🎪 Banner Slide', value: 'carousel' },
     { label: '🖼️ Galeri Kenangan', value: 'gallery_coverflow' },
     { label: '🖼️ Momen Spesial', value: 'gallery_landscape' },
-    { label: '🖼️ Wajah MAZEEDA', value: 'gallery_marquee' },
-    { label: '📝 Dokumen Legal', value: 'dokumen' }
+    { label: '🖼️ Wajah MAZEEDA', value: 'gallery_marquee' }
   ];
 
   // Custom confirmation modal states
@@ -1907,7 +1906,7 @@
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const tab = urlParams.get('tab');
-      if (tab && ['members', 'sangu', 'mading', 'stickynotes', 'timeline', 'notifikasi', 'carousel', 'kepengurusan', 'dokumen'].includes(tab)) {
+      if (tab && ['members', 'sangu', 'mading', 'stickynotes', 'timeline', 'notifikasi', 'carousel', 'kepengurusan'].includes(tab)) {
         activeSection = tab;
       }
     }
@@ -1920,45 +1919,6 @@
     fetchCarouselSlides();
     fetchKepengurusan();
   });
-  // --- 9. LEGAL DOCUMENTS CRUD ---
-  let isSavingLegal = false;
-  let legalDocs = { privacy_policy: '', terms_conditions: '' };
-  
-  $: if (activeSection === 'dokumen') {
-    if (typeof window !== 'undefined') fetchLegalDocs();
-  }
-
-  async function fetchLegalDocs() {
-    try {
-      const { data, error } = await supabase.from('legal_documents').select('*');
-      if (data) {
-        data.forEach((doc: any) => {
-          if (doc.id === 'privacy_policy') legalDocs.privacy_policy = doc.content;
-          if (doc.id === 'terms_conditions') legalDocs.terms_conditions = doc.content;
-        });
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  async function saveLegalDoc(id: string) {
-    isSavingLegal = true;
-    try {
-      const content = id === 'privacy_policy' ? legalDocs.privacy_policy : legalDocs.terms_conditions;
-      const { error } = await supabase.from('legal_documents').upsert({
-        id,
-        content
-      });
-      if (error) throw error;
-      triggerAlert('Dokumen berhasil disimpan!');
-    } catch (err: any) {
-      triggerAlert('Gagal menyimpan dokumen: ' + err.message);
-    } finally {
-      isSavingLegal = false;
-    }
-  }
-
   // --- 8. GALLERIES CRUD ---
   let galleryItems: any[] = [];
   let isLoadingGallery = false;
@@ -2065,8 +2025,11 @@
     </div>
   {/if}
 
+  <!-- Section togglers -->
+  <Tabs items={sections} bind:activeTab={activeSection} class="w-full" />
+
   <!-- Khasanah Lirboyo CMS Link -->
-  <a href="/admin/khasanah" class="block mb-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl">
+  <a href="/admin/khasanah" class="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl">
     <Card class="p-4 sm:p-5 flex items-center justify-between border-emerald-200/50 bg-emerald-50/30 hover:bg-emerald-50/60 transition-colors shadow-sm">
       <div class="flex items-center space-x-4">
         <div class="h-12 w-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center border border-emerald-200">
@@ -2082,9 +2045,6 @@
       </div>
     </Card>
   </a>
-
-  <!-- Section togglers -->
-  <Tabs items={sections} bind:activeTab={activeSection} class="w-full" />
 
   <!-- Tab Content Grid -->
   {#if activeSection === 'members' || activeSection === 'asatidzah'}
@@ -4036,46 +3996,6 @@
           {:else}
             <div class="col-span-full py-12 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Belum ada gambar di galeri ini.</div>
           {/if}
-        </div>
-      </div>
-    </div>
-  {:else if activeSection === 'dokumen'}
-    <!-- Dokumen Legal Tab -->
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-6" in:fade={{ duration: 250, delay: 50 }}>
-      <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-        <h2 class="text-xl font-bold text-slate-800">Manajemen Dokumen Legal</h2>
-      </div>
-      <div class="p-6 space-y-8">
-        <!-- Kebijakan Privasi -->
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="font-bold text-lg text-slate-800">Kebijakan Privasi</h3>
-            <Button on:click={() => saveLegalDoc('privacy_policy')} disabled={isSavingLegal} size="sm" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 rounded-xl">
-              Simpan Perubahan
-            </Button>
-          </div>
-          <p class="text-xs text-slate-500 font-medium">Edit kode HTML untuk halaman Kebijakan Privasi di bawah ini:</p>
-          <textarea
-            bind:value={legalDocs.privacy_policy}
-            class="w-full h-[400px] p-4 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring focus:ring-blue-200 font-mono text-xs bg-slate-50"
-          ></textarea>
-        </div>
-
-        <div class="w-full h-px bg-slate-100"></div>
-
-        <!-- Syarat Ketentuan -->
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="font-bold text-lg text-slate-800">Syarat & Ketentuan</h3>
-            <Button on:click={() => saveLegalDoc('terms_conditions')} disabled={isSavingLegal} size="sm" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 px-4 rounded-xl">
-              Simpan Perubahan
-            </Button>
-          </div>
-          <p class="text-xs text-slate-500 font-medium">Edit kode HTML untuk halaman Syarat & Ketentuan di bawah ini:</p>
-          <textarea
-            bind:value={legalDocs.terms_conditions}
-            class="w-full h-[400px] p-4 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring focus:ring-emerald-200 font-mono text-xs bg-slate-50"
-          ></textarea>
         </div>
       </div>
     </div>
