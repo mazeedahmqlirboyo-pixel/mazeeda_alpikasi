@@ -357,6 +357,32 @@
     }
   }
 
+  let isUploadingSinglePhoto = false;
+
+  async function handleSinglePhotoUpload(e: Event) {
+    const target = e.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      const rawFile = target.files[0];
+      if (!rawFile.type.startsWith('image/')) {
+        alert("File harus berupa gambar!");
+        return;
+      }
+      
+      isUploadingSinglePhoto = true;
+      try {
+        const file = await compressImage(rawFile);
+        const publicUrl = await uploadProfilePhoto(file);
+        foto_url = publicUrl;
+        triggerAlert("Foto berhasil diunggah!");
+      } catch (err: any) {
+        alert("Gagal mengunggah foto: " + err.message);
+      } finally {
+        isUploadingSinglePhoto = false;
+        target.value = '';
+      }
+    }
+  }
+
   // Form step navigation for the member creation form
   let activeFormStep = 'personal'; // 'personal' | 'academic' | 'social' | 'messages'
 
@@ -2322,9 +2348,43 @@
                   </div>
                 </div>
 
-                <div class="space-y-1">
-                  <label class="text-xs font-bold text-slate-500" for="foto_url">Foto Profile (URL / Link Storage)</label>
-                  <Input id="foto_url" placeholder="Paste link foto dari Storage" bind:value={foto_url} />
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-500" for="foto_url">Foto Profile</label>
+                  
+                  <div class="flex items-center gap-3">
+                    {#if foto_url}
+                      <img src={convertDriveUrl(foto_url)} alt="Preview" class="w-12 h-12 rounded-full object-cover border border-slate-200 shadow-sm" />
+                    {:else}
+                      <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-200 shadow-sm">
+                        <Image class="w-5 h-5" />
+                      </div>
+                    {/if}
+                    
+                    <div class="flex-1">
+                      <div class="flex gap-2 relative">
+                        <Input id="foto_url" placeholder="URL Foto / Link Storage" bind:value={foto_url} class="flex-1" />
+                        
+                        <div class="relative flex">
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            on:change={handleSinglePhotoUpload}
+                            disabled={isUploadingSinglePhoto}
+                          />
+                          <Button type="button" variant="outline" class="whitespace-nowrap px-3 pointer-events-none relative z-0 {isUploadingSinglePhoto ? 'bg-slate-50 text-slate-400' : ''}" disabled={isUploadingSinglePhoto}>
+                            {#if isUploadingSinglePhoto}
+                              <UploadCloud class="w-4 h-4 mr-2 animate-pulse" />
+                              Loading...
+                            {:else}
+                              <UploadCloud class="w-4 h-4 mr-2" />
+                              Pilih Foto
+                            {/if}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
