@@ -57,7 +57,7 @@
 
     try {
       const inputNIS = nis.trim();
-      const inputNamaAyah = namaAyah.trim();
+      const inputNamaAyah = namaAyah.trim().toUpperCase();
 
       if (!inputNIS || !inputNamaAyah) {
         throw new Error('Semua kolom wajib diisi dengan benar!');
