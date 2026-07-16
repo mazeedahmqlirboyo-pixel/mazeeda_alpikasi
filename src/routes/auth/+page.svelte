@@ -396,14 +396,14 @@
               <!-- Left Wing -->
               <div class="absolute bottom-0 left-1/2 w-7 h-12 bg-blue-500 rounded-full shadow-[inset_-2px_0_10px_rgba(0,0,0,0.1)] transition-all duration-500 z-20 origin-bottom 
                 {focusedInput === 'namaAyah' 
-                  ? (showPassword ? 'ml-[-40px] mb-8 rotate-[-70deg]' : 'ml-[-15px] mb-14 rotate-[45deg]') 
+                  ? (showPassword ? 'ml-[-40px] mb-8 rotate-[-70deg]' : 'ml-[-28px] mb-12 rotate-[30deg]') 
                   : 'ml-[-35px] mb-2 -rotate-12'} {peacockState === 'laughing' ? 'ml-[-40px] mb-4 -rotate-[30deg] animate-pulse' : ''} {peacockState === 'angry' ? 'bg-rose-700 ml-[-45px] mb-6 -rotate-45 scale-110' : ''} {peacockState === 'sad' ? 'ml-[-38px] mb-1 -rotate-[5deg] scale-95' : ''} {peacockState === 'loading' ? 'ml-[-40px] mb-6 -rotate-[50deg] animate-pulse' : ''}">
               </div>
               
               <!-- Right Wing -->
               <div class="absolute bottom-0 right-1/2 w-7 h-12 bg-blue-500 rounded-full shadow-[inset_2px_0_10px_rgba(0,0,0,0.1)] transition-all duration-500 z-20 origin-bottom 
                 {focusedInput === 'namaAyah' 
-                  ? 'mr-[-15px] mb-14 rotate-[-45deg]' 
+                  ? (showPassword ? 'mr-[-40px] mb-8 rotate-[70deg]' : 'mr-[-28px] mb-12 rotate-[-30deg]') 
                   : 'mr-[-35px] mb-2 rotate-12'} {peacockState === 'laughing' ? 'mr-[-40px] mb-4 rotate-[30deg] animate-pulse' : ''} {peacockState === 'angry' ? 'bg-rose-700 mr-[-45px] mb-6 rotate-45 scale-110' : ''} {peacockState === 'sad' ? 'mr-[-38px] mb-1 rotate-[5deg] scale-95' : ''} {peacockState === 'loading' ? 'mr-[-40px] mb-6 rotate-[50deg] animate-pulse' : ''}">
               </div>
             </div>
