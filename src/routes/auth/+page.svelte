@@ -23,9 +23,6 @@
   let isSearchingNis = false;
   let searchNisMessage = { type: '', content: '' };
 
-  $: searchNamaLengkap = searchNamaLengkap.toUpperCase();
-  $: searchTempatLahir = searchTempatLahir.toUpperCase();
-
   onMount(() => {
     const savedNis = localStorage.getItem('mazeeda_remembered_nis');
     if (savedNis) {
@@ -465,10 +462,10 @@
                 <input 
                   id="namaAyah" 
                   type={showPassword ? "text" : "password"} 
-                  class="w-full bg-white pl-16 pr-12 py-3.5 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-300 focus:bg-slate-50/50 transition-colors"
+                  class="w-full bg-white pl-16 pr-12 py-3.5 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-300 focus:bg-slate-50/50 transition-colors uppercase"
                   placeholder="Nama lengkap ayah kandung" 
                   value={namaAyah} 
-                  on:input={(e) => namaAyah = e.currentTarget.value.toUpperCase()}
+                  on:input={(e) => namaAyah = e.currentTarget.value}
                   on:focus={() => focusedInput = 'namaAyah'}
                   on:blur={() => focusedInput = ''}
                   disabled={loading}
@@ -626,11 +623,11 @@
           <form on:submit|preventDefault={handleCariNIS} class="space-y-4">
             <div class="space-y-1.5">
               <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">NAMA LENGKAP</label>
-              <Input bind:value={searchNamaLengkap} placeholder="Contoh: SITI AISYAH" required disabled={isSearchingNis} class="py-3" />
+              <Input bind:value={searchNamaLengkap} placeholder="Contoh: SITI AISYAH" required disabled={isSearchingNis} class="py-3 uppercase" />
             </div>
             <div class="space-y-1.5">
               <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">TEMPAT LAHIR</label>
-              <Input bind:value={searchTempatLahir} placeholder="Contoh: KEDIRI" required disabled={isSearchingNis} class="py-3" />
+              <Input bind:value={searchTempatLahir} placeholder="Contoh: KEDIRI" required disabled={isSearchingNis} class="py-3 uppercase" />
             </div>
             <Button type="submit" class="w-full py-6 mt-4 text-base font-bold shadow-md hover:shadow-lg transition-all rounded-xl" disabled={isSearchingNis}>
               {isSearchingNis ? 'Mencari Data...' : 'Cari NIS Sekarang'}
