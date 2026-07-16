@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { fade, slide } from 'svelte/transition';
+  import { page } from '$app/stores';
   import { supabase, uploadMemoryPhoto, uploadProfilePhoto } from '$lib/supabase';
   import Card from '$lib/components/ui/card.svelte';
   import Button from '$lib/components/ui/button.svelte';
@@ -14,7 +15,16 @@
   } from 'lucide-svelte';
 
   // Current active management tab
-  let activeSection = 'members'; // 'members' | 'sangu' | 'mading' | 'stickynotes' | 'timeline' | 'notifikasi' | 'carousel' | 'kepengurusan'
+  let activeSection = 'members';
+
+  $: {
+    const tabParam = $page.url.searchParams.get('tab');
+    if (tabParam) {
+      activeSection = tabParam;
+    } else {
+      activeSection = 'members';
+    }
+  }
 
   // Admin Management Tabs Configuration
   const sections = [
@@ -2024,27 +2034,6 @@
       <span>{alertMessage}</span>
     </div>
   {/if}
-
-  <!-- Section togglers -->
-  <Tabs items={sections} bind:activeTab={activeSection} class="w-full" />
-
-  <!-- Khasanah Lirboyo CMS Link -->
-  <a href="/admin/khasanah" class="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl">
-    <Card class="p-4 sm:p-5 flex items-center justify-between border-emerald-200/50 bg-emerald-50/30 hover:bg-emerald-50/60 transition-colors shadow-sm">
-      <div class="flex items-center space-x-4">
-        <div class="h-12 w-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center border border-emerald-200">
-          <BookOpen class="h-6 w-6" />
-        </div>
-        <div>
-          <h3 class="font-bold text-slate-800 text-base">Kelola Khasanah Lirboyo</h3>
-          <p class="text-xs text-slate-500 mt-1">Manajemen dinamis Mozaik Murobbi, Sambutan, dan Profil Unit dengan Editor.</p>
-        </div>
-      </div>
-      <div class="h-8 w-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
-        <ChevronRight class="text-slate-400 h-4 w-4" />
-      </div>
-    </Card>
-  </a>
 
   <!-- Tab Content Grid -->
   {#if activeSection === 'members' || activeSection === 'asatidzah'}

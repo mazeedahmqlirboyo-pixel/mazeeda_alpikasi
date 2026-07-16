@@ -21,10 +21,10 @@
     Music,
     Heart,
     Bell,
-    Edit,
     Save,
     ExternalLink,
-    Info
+    Info,
+    FileText
   } from 'lucide-svelte';
   import Card from '$lib/components/ui/card.svelte';
   import { isAudioPlayingGlobal } from '$lib/audioStore';
@@ -41,11 +41,38 @@
     { name: 'Timeline', path: '/timeline', icon: Image }
   ];
 
+  const adminSubmenus = [
+    { name: 'Khasanah Lirboyo', path: '/admin/khasanah', icon: BookOpen },
+    { name: 'Kelola Squad', path: '/admin?tab=members', icon: Users },
+    { name: 'Kelola Asatidzah', path: '/admin?tab=asatidzah', icon: Users },
+    { name: 'Kelola Kepengurusan', path: '/admin?tab=kepengurusan', icon: Award },
+    { name: 'Kelola Sangu', path: '/admin?tab=sangu', icon: BookOpen },
+    { name: 'Pengumuman Mading', path: '/admin?tab=mading', icon: Megaphone },
+    { name: 'Dinding Aspirasi', path: '/admin?tab=stickynotes', icon: FileText },
+    { name: 'Kelola Timeline', path: '/admin?tab=timeline', icon: Image },
+    { name: 'Notifikasi', path: '/admin?tab=notifikasi', icon: Bell },
+    { name: 'Banner Slide', path: '/admin?tab=carousel', icon: Image },
+    { name: 'Galeri Kenangan', path: '/admin?tab=gallery_coverflow', icon: Image },
+    { name: 'Momen Spesial', path: '/admin?tab=gallery_landscape', icon: Image },
+    { name: 'Wajah MAZEEDA', path: '/admin?tab=gallery_marquee', icon: Image }
+  ];
+
   // Helper to check if a navigation item is active
   $: currentPath = $page.url.pathname;
   $: isActive = (path: string) => {
     if (path === '/') return currentPath === '/';
+    if (path === '/admin') return currentPath.startsWith('/admin');
     return currentPath.startsWith(path);
+  };
+
+  $: isActiveQuery = (pathWithQuery: string) => {
+    const [path, query] = pathWithQuery.split('?');
+    if (currentPath !== path) return false;
+    if (!query) return true;
+    
+    const targetTab = new URLSearchParams(query).get('tab');
+    const currentTab = $page.url.searchParams.get('tab') || 'members';
+    return targetTab === currentTab;
   };
 
   // Do not show full layouts (sidebar / bottom-nav) on the Auth page
@@ -1157,8 +1184,26 @@
                   <ShieldCheck class="h-5 w-5" />
                   <span>Admin Panel</span>
                 </div>
-                <ChevronRight class="h-4 w-4 opacity-60" />
+                <ChevronRight class="h-4 w-4 opacity-60 {currentPath.startsWith('/admin') ? 'rotate-90 transition-transform' : ''}" />
               </a>
+
+              {#if currentPath.startsWith('/admin')}
+                <div class="mt-2 space-y-1 ml-4 pl-4 border-l-2 border-slate-100" transition:slide={{duration: 200}}>
+                  {#each adminSubmenus as sub}
+                    <a
+                      href={sub.path}
+                      on:click={handleNavClick}
+                      class="flex items-center space-x-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200
+                        {isActiveQuery(sub.path)
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-slate-500 hover:bg-slate-50 hover:text-primary'}"
+                    >
+                      <svelte:component this={sub.icon} class="h-4 w-4" />
+                      <span>{sub.name}</span>
+                    </a>
+                  {/each}
+                </div>
+              {/if}
             </div>
           {/if}
         </nav>
