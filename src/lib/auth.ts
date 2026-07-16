@@ -19,6 +19,7 @@ export interface AuthState {
 
 export const authStore = writable<AuthState>({ loading: true, user: null });
 export const activeProfileStore = writable<{ type: 'admin' | 'member'; nameOrNis: string } | null>(null);
+export const deactivatedAlertStore = writable<boolean>(false);
 
 // Helper: load saved admin profile (name + foto) from localStorage
 function loadSavedAdminProfile(): { name: string; foto_url: string } {
@@ -55,8 +56,7 @@ export function initAuth() {
             data = asat.data;
           }
           if (data && data.is_active === false) {
-            alert('Sesi Anda telah dihentikan karena akun Anda dinonaktifkan oleh Admin MAZEEDA.');
-            logout();
+            deactivatedAlertStore.set(true);
           }
         };
         checkBanStatus();

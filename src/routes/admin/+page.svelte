@@ -188,6 +188,7 @@
   $: filteredSquad = squad.filter(item => {
     if (squadLoginFilter === 'logged_in' && !item.has_logged_in) return false;
     if (squadLoginFilter === 'not_logged_in' && item.has_logged_in) return false;
+    if (squadLoginFilter === 'deactivated' && item.is_active !== false) return false;
 
     if (!squadSearchQuery) return true;
     const query = squadSearchQuery.toLowerCase();
@@ -2592,6 +2593,14 @@
                     {squadLoginFilter === 'not_logged_in' ? 'bg-white text-slate-600 shadow-soft-sm' : 'text-slate-500 hover:text-slate-700'}"
                 >
                   Belum Login ({squad.filter(s => !s.has_logged_in).length})
+                </button>
+                <button
+                  type="button"
+                  on:click={() => squadLoginFilter = 'deactivated'}
+                  class="px-2.5 py-1 text-[10px] font-bold rounded-md transition-all duration-200
+                    {squadLoginFilter === 'deactivated' ? 'bg-white text-rose-600 shadow-soft-sm' : 'text-slate-500 hover:text-slate-700'}"
+                >
+                  Dinonaktifkan ({squad.filter(s => s.is_active === false).length})
                 </button>
               </div>
             </div>

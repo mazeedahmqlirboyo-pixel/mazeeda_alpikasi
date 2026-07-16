@@ -24,7 +24,8 @@
     Save,
     ExternalLink,
     Info,
-    FileText
+    FileText,
+    Ban
   } from 'lucide-svelte';
   import Card from '$lib/components/ui/card.svelte';
   import { isAudioPlayingGlobal } from '$lib/audioStore';
@@ -84,7 +85,7 @@
   import { onMount, onDestroy, tick } from 'svelte';
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
-  import { authStore, initAuth, logout, activeProfileStore } from '$lib/auth';
+  import { authStore, initAuth, logout, activeProfileStore, deactivatedAlertStore } from '$lib/auth';
 
   $: userRole = $authStore.user?.role || '';
 
@@ -1924,4 +1925,46 @@
 
     {/if}
   {/if}
+
+  <!-- DEACTIVATED ACCOUNT MODAL -->
+  {#if $deactivatedAlertStore}
+    <div class="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div class="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full border border-slate-100 animate-in zoom-in-95 duration-300 relative">
+        <!-- Decorative Top Border -->
+        <div class="h-2 w-full bg-gradient-to-r from-rose-500 to-red-600"></div>
+        
+        <div class="p-6 sm:p-8 flex flex-col items-center text-center space-y-4">
+          <!-- Icon -->
+          <div class="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center shrink-0 mb-2 relative">
+            <div class="absolute inset-0 bg-rose-100/50 rounded-full animate-ping" style="animation-duration: 3s;"></div>
+            <Ban class="w-10 h-10 text-rose-600 relative z-10" />
+          </div>
+
+          <!-- Content -->
+          <div class="space-y-2">
+            <h2 class="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Akun Dinonaktifkan</h2>
+            <p class="text-sm font-medium text-slate-500 leading-relaxed">
+              Sesi Anda telah dihentikan karena akun Anda dinonaktifkan oleh <span class="font-bold text-slate-700">Admin MAZEEDA</span>.
+            </p>
+            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider pt-2">Silakan hubungi pengurus jika ini adalah kesalahan.</p>
+          </div>
+
+          <!-- Action -->
+          <div class="pt-4 w-full">
+            <button
+              type="button"
+              on:click={() => {
+                $deactivatedAlertStore = false;
+                logout();
+              }}
+              class="w-full h-12 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 active:scale-95"
+            >
+              Mengerti & Keluar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  {/if}
+
 </div>
