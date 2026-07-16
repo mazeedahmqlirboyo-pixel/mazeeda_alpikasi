@@ -719,6 +719,13 @@
                   <p class="text-xs text-slate-400 font-medium truncate mt-1">
                     {member.nama_panggilan || '-'}{member.daerah_santri ? ' | ' + capitalizeEachWord(member.daerah_santri) : ''}
                   </p>
+
+                  {#if member.is_active === false}
+                    <div class="mt-2 inline-flex items-center space-x-1 bg-red-50 text-red-600 border border-red-100 rounded-lg px-2 py-0.5 text-[10px] font-bold w-fit">
+                      <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                      <span>Akun Dinonaktifkan</span>
+                    </div>
+                  {/if}
                 </div>
               </div>
             </Card>

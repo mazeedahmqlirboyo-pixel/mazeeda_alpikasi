@@ -43,7 +43,24 @@ export function initAuth() {
   const stored = localStorage.getItem('mazeeda_logged_user');
   if (stored) {
     try {
-      authStore.set({ loading: false, user: JSON.parse(stored) });
+      const user = JSON.parse(stored);
+      authStore.set({ loading: false, user });
+
+      // Async check for account deactivation (if member)
+      if (user.role === 'member' && user.nis) {
+        const checkBanStatus = async () => {
+          let { data } = await supabase.from('allowed_alumni').select('is_active').eq('nis', user.nis).maybeSingle();
+          if (!data) {
+            const asat = await supabase.from('asatidzah').select('is_active').eq('nis', user.nis).maybeSingle();
+            data = asat.data;
+          }
+          if (data && data.is_active === false) {
+            alert('Sesi Anda telah dihentikan karena akun Anda dinonaktifkan oleh Admin MAZEEDA.');
+            logout();
+          }
+        };
+        checkBanStatus();
+      }
     } catch (e) {
       localStorage.removeItem('mazeeda_logged_user');
       authStore.set({ loading: false, user: null });

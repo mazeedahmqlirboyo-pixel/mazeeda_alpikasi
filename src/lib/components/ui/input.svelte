@@ -3,6 +3,7 @@
   export let placeholder = '';
   export let type = 'text';
   export let disabled = false;
+  export let id = undefined;
   
   let className = '';
   export { className as class };
@@ -11,6 +12,7 @@
 {#if type === 'password'}
   <input
     type="password"
+    {id}
     {placeholder}
     {disabled}
     bind:value
@@ -30,6 +32,7 @@
 {:else if type === 'email'}
   <input
     type="email"
+    {id}
     {placeholder}
     {disabled}
     bind:value
@@ -49,6 +52,7 @@
 {:else if type === 'number'}
   <input
     type="number"
+    {id}
     {placeholder}
     {disabled}
     bind:value
@@ -68,6 +72,7 @@
 {:else if type === 'date'}
   <input
     type="date"
+    {id}
     {placeholder}
     {disabled}
     bind:value
@@ -87,6 +92,7 @@
 {:else}
   <input
     type="text"
+    {id}
     {placeholder}
     {disabled}
     bind:value

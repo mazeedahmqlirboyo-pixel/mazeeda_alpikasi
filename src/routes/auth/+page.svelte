@@ -121,6 +121,10 @@
           throw new Error('Nama ayah kandung tidak sesuai!');
         }
 
+        if (match.is_active === false) {
+          throw new Error('Akun Anda telah dinonaktifkan oleh Admin MAZEEDA. Silakan hubungi pengurus jika ini adalah kesalahan.');
+        }
+
         // Update login status
         try {
           await supabase

@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { fade, slide } from 'svelte/transition';
+  import { fade, slide as slideTransition } from 'svelte/transition';
   import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
   import { supabase, uploadMemoryPhoto, uploadProfilePhoto } from '$lib/supabase';
   import Card from '$lib/components/ui/card.svelte';
   import Button from '$lib/components/ui/button.svelte';
@@ -11,11 +12,13 @@
   import { 
     Users, Megaphone, Image, Plus, Trash2, Edit, Save, CheckCircle,
     UserPlus, UploadCloud, FileText, Heart, Globe, Phone, Home, 
-    Award, Music, X, Bell, Search, BookOpen, Info, Calendar, ChevronRight
+    Award, Music, X, Bell, Search, BookOpen, Info, Calendar, ChevronRight,
+    ChevronDown, ShieldCheck, UserX, UserCheck
   } from 'lucide-svelte';
 
   // Current active management tab
   let activeSection = 'members';
+  let isMobileDropdownOpen = false;
 
   $: {
     const tabParam = $page.url.searchParams.get('tab');
@@ -23,6 +26,16 @@
       activeSection = tabParam;
     } else {
       activeSection = 'members';
+    }
+  }
+
+  function handleMobileNav(e: Event) {
+    const select = e.target as HTMLSelectElement;
+    const val = select.value;
+    if (val === 'khasanah') {
+      goto('/admin/khasanah');
+    } else {
+      goto(`/admin?tab=${val}`, { replaceState: true });
     }
   }
 
@@ -815,6 +828,28 @@
           await fetchSquad();
         } catch (err: any) {
           alert('Error deleting: ' + err.message);
+        }
+      }
+    );
+  }
+
+  async function toggleMemberActiveStatus(item: any) {
+    const currentStatus = item.is_active === false ? false : true;
+    const newStatus = !currentStatus;
+    const actionText = newStatus ? 'Mengaktifkan' : 'Menonaktifkan';
+    
+    runWithConfirmation(
+      `${actionText} Akun`,
+      `Yakin ingin ${actionText.toLowerCase()} akun ${item.nama_lengkap}? ${!newStatus ? 'Pengguna ini akan segera dikeluarkan dari aplikasi jika sedang login.' : ''}`,
+      async () => {
+        try {
+          const tableName = activeSection === 'asatidzah' ? 'asatidzah' : 'allowed_alumni';
+          const { error } = await supabase.from(tableName).update({ is_active: newStatus }).eq('id', item.id);
+          if (error) throw error;
+          triggerAlert(`Akun berhasil ${actionText.toLowerCase()}!`);
+          await fetchSquad();
+        } catch (err: any) {
+          alert(`Gagal ${actionText.toLowerCase()} akun: ` + err.message);
         }
       }
     );
@@ -2035,6 +2070,65 @@
     </div>
   {/if}
 
+  <!-- Mobile Only Admin Navigation Dropdown -->
+  <div class="md:hidden mb-4 relative z-[60]">
+    <button
+      on:click={() => isMobileDropdownOpen = !isMobileDropdownOpen}
+      class="w-full flex items-center justify-between bg-white border border-slate-200 text-slate-700 font-bold rounded-xl p-3.5 shadow-sm transition-all {isMobileDropdownOpen ? 'ring-2 ring-primary border-transparent' : ''}"
+    >
+      <div class="flex items-center space-x-3 text-sm">
+        <ShieldCheck class="h-5 w-5 text-primary" />
+        <span class="truncate">{sections.find(s => s.value === activeSection)?.label || 'Pilih Menu Pengelolaan...'}</span>
+      </div>
+      <ChevronDown class="h-5 w-5 text-slate-400 transition-transform duration-200 {isMobileDropdownOpen ? 'rotate-180' : ''}" />
+    </button>
+
+    {#if isMobileDropdownOpen}
+      <!-- Backdrop -->
+      <button 
+        class="fixed inset-0 z-40 w-full h-full cursor-default" 
+        on:click={() => isMobileDropdownOpen = false}
+        aria-label="Tutup menu"
+      ></button>
+
+      <!-- Dropdown Menu -->
+      <div 
+        transition:slideTransition={{ duration: 200 }}
+        class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50"
+      >
+        <div class="max-h-[60vh] overflow-y-auto py-2">
+          <!-- Khasanah Link -->
+          <button 
+            on:click={() => { isMobileDropdownOpen = false; goto('/admin/khasanah'); }}
+            class="w-full flex items-center space-x-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors border-b border-slate-50"
+          >
+            <BookOpen class="h-5 w-5 text-emerald-500" />
+            <span class="text-sm font-bold text-slate-700">Khasanah Lirboyo (Mozaik, dll)</span>
+          </button>
+          
+          <div class="px-4 py-3 bg-slate-50/50">
+            <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Manajemen Data</span>
+          </div>
+
+          {#each sections as s}
+            <button
+              on:click={() => { 
+                isMobileDropdownOpen = false; 
+                activeSection = s.value;
+                goto(`/admin?tab=${s.value}`, { replaceState: true });
+              }}
+              class="w-full flex items-center px-4 py-3 text-left transition-colors
+                {activeSection === s.value ? 'bg-primary/5 text-primary' : 'text-slate-600 hover:bg-slate-50'}"
+            >
+              <div class="w-1.5 h-1.5 rounded-full {activeSection === s.value ? 'bg-primary' : 'bg-transparent'} mr-3"></div>
+              <span class="text-sm {activeSection === s.value ? 'font-bold' : 'font-medium'}">{s.label}</span>
+            </button>
+          {/each}
+        </div>
+      </div>
+    {/if}
+  </div>
+
   <!-- Tab Content Grid -->
   {#if activeSection === 'members' || activeSection === 'asatidzah'}
     <!-- ==================== TAB: MEMBERS & ASATIDZAH ==================== -->
@@ -2581,6 +2675,19 @@
                     <div class="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
+                        on:click={() => toggleMemberActiveStatus(item)}
+                        class="p-2 rounded-lg transition-all duration-200 flex items-center justify-center
+                          {item.is_active === false ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-500 hover:text-white border border-emerald-100 hover:border-emerald-500' : 'text-amber-600 bg-amber-50 hover:bg-amber-500 hover:text-white border border-amber-100 hover:border-amber-500'}"
+                        title={item.is_active === false ? 'Aktifkan Akun' : 'Nonaktifkan Akun'}
+                      >
+                        {#if item.is_active === false}
+                          <UserCheck class="h-4 w-4" />
+                        {:else}
+                          <UserX class="h-4 w-4" />
+                        {/if}
+                      </button>
+                      <button
+                        type="button"
                         on:click={() => startEditMember(item)}
                         class="p-2 rounded-lg text-indigo-600 hover:text-white bg-indigo-50 hover:bg-indigo-600 border border-indigo-100 hover:border-indigo-600 transition-all duration-200 flex items-center justify-center"
                         title="Edit Anggota"
@@ -2677,7 +2784,7 @@
             </div>
 
             {#if sanguCategory === 'new'}
-              <div class="space-y-1" transition:slide>
+              <div class="space-y-1" transition:slideTransition>
                 <label class="text-xs font-bold text-slate-500" for="sangu_new_cat">Nama Kategori Baru *</label>
                 <Input id="sangu_new_cat" placeholder="e.g. Wirid, Ratib" bind:value={sanguNewCategory} required />
               </div>
@@ -2812,7 +2919,7 @@
             </div>
 
             {#if madingCategory === 'new'}
-              <div class="space-y-1" transition:slide>
+              <div class="space-y-1" transition:slideTransition>
                 <label class="text-xs font-bold text-slate-500" for="madNewCat">Nama Kategori Baru</label>
                 <Input id="madNewCat" placeholder="e.g. Kreatif, Olahraga" bind:value={madingNewCategory} required />
               </div>

@@ -79,6 +79,8 @@
   $: isAuthPage = currentPath === '/auth';
   $: isFullscreenPage = currentPath.startsWith('/perjalanan');
   
+  let isAdminMenuExpanded = false;
+  
   import { onMount, onDestroy, tick } from 'svelte';
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
@@ -99,6 +101,20 @@
       }
     }
   }
+
+  onMount(() => {
+    if (browser) {
+      if (window.innerWidth < 768) {
+        showBottomNav = true;
+      }
+    }
+    initAuth();
+    
+    // Auto-expand admin menu if starting on admin page
+    if (currentPath.startsWith('/admin')) {
+      isAdminMenuExpanded = true;
+    }
+  });
 
   $: if (browser && (currentPath || $page.url.searchParams)) {
     resetScrollToTop();
@@ -1172,30 +1188,29 @@
           {#if userRole === 'admin'}
             <div class="pt-4 mt-4 border-t border-border/50">
               <span class="px-4 text-[10px] font-bold tracking-wider text-slate-400 uppercase">Management</span>
-              <a
-                href="/admin"
-                on:click={handleNavClick}
-                class="flex items-center justify-between px-4 py-3 mt-1.5 rounded-xl text-sm font-semibold transition-all duration-200
-                  {isActive('/admin') 
-                    ? 'bg-primary text-white shadow-soft-sm hover:bg-primary-hover' 
+              <button
+                on:click={() => isAdminMenuExpanded = !isAdminMenuExpanded}
+                class="w-full flex items-center justify-between px-4 py-3 mt-1.5 rounded-xl text-sm font-semibold transition-all duration-200
+                  {isAdminMenuExpanded 
+                    ? 'bg-primary text-white shadow-soft-sm' 
                     : 'text-slate-600 hover:bg-slate-100 hover:text-primary'}"
               >
                 <div class="flex items-center space-x-3.5">
                   <ShieldCheck class="h-5 w-5" />
                   <span>Admin Panel</span>
                 </div>
-                <ChevronRight class="h-4 w-4 opacity-60 {currentPath.startsWith('/admin') ? 'rotate-90 transition-transform' : ''}" />
-              </a>
+                <ChevronRight class="h-4 w-4 {isAdminMenuExpanded ? 'rotate-90 opacity-100' : 'opacity-60'} transition-transform duration-200" />
+              </button>
 
-              {#if currentPath.startsWith('/admin')}
-                <div class="mt-2 space-y-1 ml-4 pl-4 border-l-2 border-slate-100" transition:slide={{duration: 200}}>
+              {#if isAdminMenuExpanded}
+                <div class="mt-2 space-y-1" transition:slide={{duration: 200}}>
                   {#each adminSubmenus as sub}
                     <a
                       href={sub.path}
                       on:click={handleNavClick}
-                      class="flex items-center space-x-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200
+                      class="flex items-center space-x-3.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200
                         {isActiveQuery(sub.path)
-                          ? 'bg-primary/10 text-primary'
+                          ? 'bg-blue-50 text-blue-600 font-bold'
                           : 'text-slate-500 hover:bg-slate-50 hover:text-primary'}"
                     >
                       <svelte:component this={sub.icon} class="h-4 w-4" />
