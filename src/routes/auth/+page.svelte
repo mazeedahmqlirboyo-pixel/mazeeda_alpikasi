@@ -5,7 +5,7 @@
   import Input from '$lib/components/ui/input.svelte';
   import { supabase } from '$lib/supabase';
   import { authStore, loginAsStudent, loginAsAdmin, logout } from '$lib/auth';
-  import { User, IdCard, LogOut, ArrowRight, ShieldCheck, UserCheck, Instagram, Youtube, Rss, MessageCircle, AlertCircle, CheckCircle2, Eye, EyeOff, Search, X } from 'lucide-svelte';
+  import { User, Hash, LogOut, ArrowRight, ShieldCheck, UserCheck, Instagram, Youtube, Rss, MessageCircle, AlertCircle, CheckCircle2, Eye, EyeOff, Search, X } from 'lucide-svelte';
 
   // State management
   let nis = '';
@@ -440,7 +440,7 @@
               <label for="nis" class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">NIS</label>
               <div class="relative overflow-hidden rounded-xl transition-all duration-300 {focusedInput === 'nis' ? 'ring-2 ring-primary ring-offset-1 -translate-y-1 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]' : 'border border-slate-200 hover:border-slate-300'}">
                 <div class="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-slate-50 border-r border-slate-100 text-slate-400">
-                  <IdCard class="w-5 h-5 {focusedInput === 'nis' ? 'text-primary' : ''} transition-colors" />
+                  <Hash class="w-5 h-5 {focusedInput === 'nis' ? 'text-primary' : ''} transition-colors" />
                 </div>
                 <input 
                   id="nis" 
