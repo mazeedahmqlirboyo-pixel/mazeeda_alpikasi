@@ -14,7 +14,16 @@
   let fileInput: HTMLInputElement;
   
   let showColors = false;
+  let showSizes = false;
   let isUploading = false;
+  
+  const fontSizes = [
+    { name: 'Kecil', value: '2' },
+    { name: 'Normal', value: '3' },
+    { name: 'Agak Besar', value: '4' },
+    { name: 'Besar', value: '5' },
+    { name: 'Jumbo', value: '6' }
+  ];
   
   // Track selected element for deletion
   let selectedElement: HTMLElement | null = null;
@@ -224,21 +233,39 @@
       <button type="button" on:click={() => execCommand('justifyLeft')} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Kiri"><AlignLeft class="h-4 w-4" /></button>
       <button type="button" on:click={() => execCommand('justifyCenter')} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Tengah"><AlignCenter class="h-4 w-4" /></button>
       <button type="button" on:click={() => execCommand('justifyRight')} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Kanan"><AlignRight class="h-4 w-4" /></button>
+      <button type="button" on:click={() => execCommand('justifyFull')} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Rata Kiri Kanan"><AlignJustify class="h-4 w-4" /></button>
     </div>
 
-    <!-- Colors -->
-    <div class="flex items-center bg-white border border-slate-200/80 rounded-lg p-0.5 shadow-soft-sm relative">
-      <button type="button" on:click={() => showColors = !showColors} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Warna Teks"><Palette class="h-4 w-4" /></button>
-      {#if showColors}
-        <div class="absolute top-9 left-0 z-50 bg-white border border-slate-200 rounded-xl shadow-lg p-2 flex flex-col gap-1 w-40">
-          {#each colors as color}
-            <button type="button" on:click={() => { execCommand('foreColor', color.value); showColors = false; }} class="flex items-center space-x-2 w-full p-1.5 rounded-lg text-left text-xs font-semibold hover:bg-slate-50">
-              <span class="w-3.5 h-3.5 rounded-full" style="background-color: {color.value}"></span>
-              <span>{color.name}</span>
-            </button>
-          {/each}
-        </div>
-      {/if}
+    <!-- Colors & Font Size -->
+    <div class="flex items-center bg-white border border-slate-200/80 rounded-lg p-0.5 shadow-soft-sm gap-0.5">
+      <!-- Font Size -->
+      <div class="relative">
+        <button type="button" on:click={() => { showSizes = !showSizes; showColors = false; }} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Ukuran Font"><Type class="h-4 w-4" /></button>
+        {#if showSizes}
+          <div class="absolute top-9 left-0 z-50 bg-white border border-slate-200 rounded-xl shadow-lg p-2 flex flex-col gap-1 w-36">
+            {#each fontSizes as size}
+              <button type="button" on:click={() => { execCommand('fontSize', size.value); showSizes = false; }} class="text-left px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-50 text-slate-700">
+                {size.name}
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+
+      <!-- Colors -->
+      <div class="relative">
+        <button type="button" on:click={() => { showColors = !showColors; showSizes = false; }} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Warna Teks"><Palette class="h-4 w-4" /></button>
+        {#if showColors}
+          <div class="absolute top-9 left-0 z-50 bg-white border border-slate-200 rounded-xl shadow-lg p-2 flex flex-col gap-1 w-40">
+            {#each colors as color}
+              <button type="button" on:click={() => { execCommand('foreColor', color.value); showColors = false; }} class="flex items-center space-x-2 w-full p-1.5 rounded-lg text-left text-xs font-semibold hover:bg-slate-50">
+                <span class="w-3.5 h-3.5 rounded-full" style="background-color: {color.value}"></span>
+                <span>{color.name}</span>
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
     </div>
 
     <div class="w-px h-6 bg-slate-300 mx-1"></div>

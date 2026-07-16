@@ -34,6 +34,9 @@
 
 <style>
   /* Global styles for dynamic HTML content injected via @html */
+  :global(.prose p) {
+    text-align: justify;
+  }
   :global(.prose img.float-right) {
     float: right;
     margin-left: 1.5rem;
