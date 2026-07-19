@@ -25,7 +25,8 @@
     ExternalLink,
     Info,
     FileText,
-    Ban
+    Ban,
+    Edit
   } from 'lucide-svelte';
   import Card from '$lib/components/ui/card.svelte';
   import { isAudioPlayingGlobal } from '$lib/audioStore';

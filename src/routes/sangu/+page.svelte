@@ -703,15 +703,17 @@
               </div>
 
               <!-- Visibility toggles for Terjemah and Latin -->
-              <div class="flex items-center space-x-2.5 text-[9px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg shrink-0">
-                <label class="flex items-center space-x-1 cursor-pointer hover:text-slate-700 select-none">
-                  <input type="checkbox" bind:checked={showLatin} class="rounded text-teal-600 focus:ring-teal-500 border-slate-300 h-3 w-3" />
-                  <span>Latin</span>
+              <div class="flex items-center space-x-4 text-[9px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg shrink-0">
+                <label class="relative inline-flex items-center cursor-pointer select-none group">
+                  <input type="checkbox" bind:checked={showLatin} class="sr-only peer" />
+                  <div class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-teal-600 group-hover:after:bg-slate-50"></div>
+                  <span class="ml-2 group-hover:text-slate-700 transition-colors">Latin</span>
                 </label>
 
-                <label class="flex items-center space-x-1 cursor-pointer hover:text-slate-700 select-none">
-                  <input type="checkbox" bind:checked={showTranslation} class="rounded text-teal-600 focus:ring-teal-500 border-slate-300 h-3 w-3" />
-                  <span>Terjemah</span>
+                <label class="relative inline-flex items-center cursor-pointer select-none group">
+                  <input type="checkbox" bind:checked={showTranslation} class="sr-only peer" />
+                  <div class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-teal-600 group-hover:after:bg-slate-50"></div>
+                  <span class="ml-2 group-hover:text-slate-700 transition-colors">Terjemah</span>
                 </label>
               </div>
             </div>

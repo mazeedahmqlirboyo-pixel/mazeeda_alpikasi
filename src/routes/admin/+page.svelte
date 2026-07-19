@@ -43,6 +43,7 @@
   const sections = [
     { label: '👥 Kelola Squad', value: 'members' },
     { label: '🧑‍🏫 Kelola Asatidzah', value: 'asatidzah' },
+    { label: '📊 Nilai Akademik', value: 'nilai' },
     { label: '🎓 Kelola Kepengurusan', value: 'kepengurusan' },
     { label: '📖 Kelola Sangu', value: 'sangu' },
     { label: '📢 Pengumuman Mading', value: 'mading' },
@@ -434,16 +435,18 @@
     return match ? match[1] : '';
   }
 
-  // Format WhatsApp to start with 0
+  // Format WhatsApp to start with 0 and prevent exceeding 20 chars
   function normalizeWhatsApp(phone: string) {
     if (!phone) return '';
-    let cleaned = phone.replace(/[^0-9]/g, '');
+    // Jika ada nomor ganda (dipisah koma/garis miring), ambil yang pertama
+    let firstPhone = phone.split(/[\/,]/)[0];
+    let cleaned = firstPhone.replace(/[^0-9]/g, '');
     if (cleaned.startsWith('62')) {
       cleaned = '0' + cleaned.slice(2);
     } else if (cleaned.startsWith('8')) {
       cleaned = '0' + cleaned;
     }
-    return cleaned;
+    return cleaned.slice(0, 20);
   }
 
   // Convert Google Drive share link to direct image link
@@ -752,10 +755,10 @@
             hobi: getValue(columns, "hobi"),
             kesan: getValue(columns, "kesan"),
             pesan: getValue(columns, "pesan"),
-            status: getValue(columns, "status", "Alumni"),
-            category: finalCategory.toLowerCase(),
-            kategori_mazeeda: finalCategory.toLowerCase(),
-            nis: getValue(columns, "nis"),
+            status: getValue(columns, "status", "Alumni").slice(0, 20),
+            category: finalCategory.toLowerCase().slice(0, 20),
+            kategori_mazeeda: finalCategory.toLowerCase().slice(0, 20),
+            nis: getValue(columns, "nis").slice(0, 20),
             nama_ayah: getValue(columns, "nama_ayah"),
             daerah_santri: capitalizeEachWord(getValue(columns, "daerah_santri")),
             tiktok_akun: getValue(columns, "tiktok_akun"),
@@ -763,7 +766,8 @@
             xtwitter_akun: getValue(columns, "xtwitter_akun"),
             rute_lengkap: getValue(columns, "rute_lengkap"),
             kamar_santri: getValue(columns, "kamar_santri"),
-            tahfidz_santri: capitalizeEachWord(getValue(columns, "tahfidz_santri"))
+            tahfidz_santri: capitalizeEachWord(getValue(columns, "tahfidz_santri")),
+            bagian: getValue(columns, "bagian", getValue(columns, "kelas", "")).trim()
           });
         }
       }
@@ -1966,6 +1970,112 @@
     fetchKepengurusan();
   });
   // --- 8. GALLERIES CRUD ---
+  // --- CSV Import for Nilai Akademik ---
+  let nilai_targetTable = 'nilai_tamrin';
+  let nilai_csvFile: File | null = null;
+  let nilai_parsedCSVData: any[] = [];
+  let nilai_csvImportStatus = '';
+  let nilai_csvImportError = '';
+
+  function nilai_processCSV(file: File) {
+    nilai_csvImportError = "";
+    nilai_csvImportStatus = "";
+    if (!file.name.endsWith(".csv")) {
+      nilai_csvImportError = "File harus berupa format .csv";
+      return;
+    }
+    nilai_csvFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (!text) { nilai_csvImportError = "File CSV kosong."; nilai_csvFile = null; return; }
+      const lines = text.split(/\r?\n/).filter((l: string) => l.trim() !== "");
+      if (lines.length < 2) { nilai_csvImportError = "CSV harus ada header + minimal 1 baris data."; nilai_csvFile = null; return; }
+      const sep = text.includes("\t") ? "\t" : text.includes(";") ? ";" : ",";
+      const rawHeaders = parseCSVLine(lines[0], sep);
+      const headers = rawHeaders.map((h: string) => h.trim().toLowerCase());
+
+      function localFindIdx(aliases: string[]) {
+        for (const a of aliases) { const i = headers.indexOf(a); if (i !== -1) return i; }
+        return -1;
+      }
+
+      const nisIdx      = localFindIdx(["nis", "no_induk", "nomor induk", "no induk"]);
+      const namaIdx     = localFindIdx(["nama", "nama_siswi", "nama lengkap", "nama_lengkap"]);
+      const periodeIdx  = localFindIdx(["periode", "semester"]);
+      const tahunIdx    = localFindIdx(["tahun_ajaran", "tahun ajaran", "tahun"]);
+      const kategoriIdx = localFindIdx(["kategori", "kategori_mazeeda"]);
+
+      if (nisIdx === -1) { nilai_csvImportError = "Kolom 'NIS' wajib ada di file CSV."; nilai_csvFile = null; return; }
+
+      const standardIdx = new Set([nisIdx, namaIdx, periodeIdx, tahunIdx, kategoriIdx]);
+      const subjectCols: {idx: number, name: string}[] = [];
+      headers.forEach((h: string, idx: number) => {
+        if (!standardIdx.has(idx) && h !== "") subjectCols.push({ idx, name: rawHeaders[idx].trim() });
+      });
+      if (subjectCols.length === 0) { nilai_csvImportError = "Tidak ditemukan kolom mata pelajaran."; nilai_csvFile = null; return; }
+
+      const list: any[] = [];
+      const baseTime = Date.now();
+      let sortCounter = 0;
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const cols = parseCSVLine(lines[i], sep);
+        const nis = nisIdx < cols.length ? cols[nisIdx] : "";
+        if (!nis) continue;
+        const nama     = namaIdx !== -1 && namaIdx < cols.length     ? cols[namaIdx]     : "";
+        const periode  = periodeIdx !== -1 && periodeIdx < cols.length  ? cols[periodeIdx]  : "";
+        const tahun    = tahunIdx !== -1 && tahunIdx < cols.length    ? cols[tahunIdx]    : "";
+        const kategori = kategoriIdx !== -1 && kategoriIdx < cols.length ? cols[kategoriIdx] : "";
+        for (let j = 0; j < subjectCols.length; j++) {
+          const sub = subjectCols[j];
+          const rawVal = sub.idx < cols.length ? cols[sub.idx] : "";
+          if (rawVal && rawVal.trim() !== "") {
+            const num = parseFloat(rawVal.replace(",", "."));
+            list.push({ 
+              nis: nis.slice(0, 20), 
+              nama_siswi: nama, 
+              periode, 
+              tahun_ajaran: tahun, 
+              kategori, 
+              mata_pelajaran: sub.name, 
+              nilai: isNaN(num) ? null : num, 
+              catatan: isNaN(num) ? rawVal : "",
+              created_at: new Date(baseTime + sortCounter++).toISOString()
+            });
+          }
+        }
+      }
+      if (list.length === 0) { nilai_csvImportError = "Tidak ditemukan data nilai valid."; nilai_csvFile = null; }
+      else { nilai_parsedCSVData = list; nilai_csvImportStatus = `Berhasil memproses ${list.length} baris nilai pelajaran.`; }
+    };
+    reader.onerror = () => { nilai_csvImportError = "Gagal membaca berkas CSV."; nilai_csvFile = null; };
+    reader.readAsText(file);
+  }
+
+  async function handleUploadNilaiCSV() {
+    if (nilai_parsedCSVData.length === 0) return;
+    nilai_csvImportStatus = `Mengunggah ke ${nilai_targetTable}...`;
+    nilai_csvImportError = "";
+    isImporting = true;
+    try {
+      const { error: err } = await supabase.from(nilai_targetTable).insert(nilai_parsedCSVData);
+      if (err) throw err;
+      triggerAlert(`Berhasil mengimpor ${nilai_parsedCSVData.length} nilai ke ${nilai_targetTable}!`);
+      nilai_parsedCSVData = []; nilai_csvFile = null; nilai_csvImportStatus = "";
+    } catch (err: any) {
+      nilai_csvImportError = "Gagal mengunggah: " + err.message;
+      nilai_csvImportStatus = "";
+    } finally { isImporting = false; }
+  }
+
+  function handleNilaiFileSelect(e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) nilai_processCSV(input.files[0]);
+  }
+  // -------------------------------------------
+
+
   let galleryItems: any[] = [];
   let isLoadingGallery = false;
   let galleryImageUrl = '';
@@ -2492,6 +2602,17 @@
                   <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-500" for="music">Musik Favorit</label>
                     <Input id="music" placeholder="Musik kesukaan" bind:value={music} />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500" for="cita_cita">Cita-Cita</label>
+                    <Input id="cita_cita" placeholder="Cita-cita santri" bind:value={cita_cita} />
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500" for="makanan_kesukaan">Makanan Kesukaan</label>
+                    <Input id="makanan_kesukaan" placeholder="Makanan favorit" bind:value={makanan_kesukaan} />
                   </div>
                 </div>
 
@@ -3678,6 +3799,91 @@
           {/if}
         </div>
       </div>
+    </div>
+
+  {:else if activeSection === 'nilai'}
+    <!-- ==================== NILAI AKADEMIK ==================== -->
+    <div in:fade={{ duration: 200 }} class="space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+            <Award class="h-8 w-8 text-primary" />
+            Upload Nilai Akademik
+          </h1>
+          <p class="text-sm text-slate-500 mt-1">Upload CSV nilai tamrin atau nilai ujian semester santri.</p>
+        </div>
+      </div>
+
+      <Card class="p-6">
+        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <UploadCloud class="h-5 w-5 text-emerald-500" />
+          Import CSV Nilai
+        </h3>
+        
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-slate-500 mb-2">Pilih Tujuan Tabel Database</label>
+          <select bind:value={nilai_targetTable} class="w-full sm:w-64 text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-primary">
+            <option value="nilai_tamrin">Tabel: nilai_tamrin</option>
+            <option value="nilai_ujian">Tabel: nilai_ujian</option>
+          </select>
+        </div>
+
+        <div class="space-y-4">
+          <div class="p-4 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 hover:border-emerald-400 transition-colors relative group text-center cursor-pointer">
+            <input type="file" accept=".csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" on:change={handleNilaiFileSelect} />
+            <div class="flex flex-col items-center justify-center space-y-2 text-slate-500 group-hover:text-emerald-500 transition-colors">
+              <UploadCloud class="h-8 w-8" />
+              <p class="text-sm font-semibold">Klik atau Drag & Drop file CSV Nilai di sini</p>
+              <p class="text-xs opacity-75">Hanya file berformat .csv yang diterima</p>
+            </div>
+          </div>
+
+          <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+            <h4 class="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-2 flex items-center gap-1">
+              <Info class="h-3 w-3" /> Panduan Format CSV Nilai
+            </h4>
+            <ul class="text-xs text-indigo-700/80 space-y-1.5 list-disc list-inside">
+              <li>Header wajib: <code class="font-mono bg-indigo-100 px-1 rounded">nis</code></li>
+              <li>Header informasi opsional: <code class="font-mono bg-indigo-100 px-1 rounded">nama_siswi</code>, <code class="font-mono bg-indigo-100 px-1 rounded">periode</code>, <code class="font-mono bg-indigo-100 px-1 rounded">tahun_ajaran</code>, <code class="font-mono bg-indigo-100 px-1 rounded">kategori</code></li>
+              <li>Selain header di atas, <strong>kolom lainnya akan dianggap sebagai nama Mata Pelajaran</strong>.</li>
+              <li>Contoh Format CSV yang benar: <br/>
+                <code class="font-mono bg-indigo-100 px-1 rounded block mt-1 overflow-x-auto whitespace-nowrap p-2">
+                  nis,nama_siswi,periode,tahun_ajaran,MTK,Fiqih,Nahwu<br/>
+                  22001,Aisyah,Ganjil,2024/2025,85,90,75<br/>
+                  22002,Fatimah,Ganjil,2024/2025,80,88,82
+                </code>
+              </li>
+            </ul>
+          </div>
+
+          {#if nilai_csvImportError}
+            <div class="p-3 bg-rose-50 text-rose-600 text-sm rounded-lg border border-rose-100 flex items-start gap-2">
+              <X class="h-4 w-4 mt-0.5 shrink-0" />
+              <p>{nilai_csvImportError}</p>
+            </div>
+          {/if}
+          {#if nilai_csvImportStatus}
+            <div class="p-3 bg-emerald-50 text-emerald-600 text-sm rounded-lg border border-emerald-100 flex items-start gap-2">
+              <CheckCircle class="h-4 w-4 mt-0.5 shrink-0" />
+              <p>{nilai_csvImportStatus}</p>
+            </div>
+          {/if}
+
+          {#if nilai_parsedCSVData.length > 0}
+            <div class="flex justify-end pt-2">
+              <Button on:click={handleUploadNilaiCSV} disabled={isImporting} class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-2 rounded-xl shadow-lg shadow-emerald-500/20">
+                {#if isImporting}
+                  <div class="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                  Mengunggah...
+                {:else}
+                  <UploadCloud class="h-4 w-4 mr-2" />
+                  Mulai Import ke Database
+                {/if}
+              </Button>
+            </div>
+          {/if}
+        </div>
+      </Card>
     </div>
   {:else if activeSection === 'kepengurusan'}
     <!-- ==================== TAB: KEPENGURUSAN ==================== -->

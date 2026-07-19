@@ -25,6 +25,17 @@
 		href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Amiri:wght@400;700&family=Amiri+Quran&family=Scheherazade+New:wght@400;700&display=swap"
 		rel="stylesheet">
 
+	<!-- Hide scrollbar globally for native app feel -->
+	<style>
+		::-webkit-scrollbar {
+			display: none;
+		}
+		* {
+			-ms-overflow-style: none;
+			scrollbar-width: none;
+		}
+	</style>
+
 	%sveltekit.head%
 </head>
 

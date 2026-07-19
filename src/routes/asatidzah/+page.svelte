@@ -14,11 +14,12 @@
 
   // State
   let searchQuery = '';
+  let daerahSearch = '';
   let activeCategory = 'semua'; // 'semua' | 'alumni' | 'alumnus' | 'mustahiq' | 'mustahiqoh'
   let activeDaerah = 'semua'; // 'semua' = all regions
   let showFilter = false;
   let members: any[] = [];
-  let isLoading = true;
+  let isLoading = false;
 
   // Warning modal state
   let showDeactivatedWarningFor: any = null;
@@ -31,7 +32,7 @@
   let isImageLarge = false;
   
   // Category configuration
-  const categories = [
+  let categories = [
     { label: 'Semua', value: 'semua' },
     { label: 'Pengajar', value: 'pengajar' },
     { label: 'Musyrif', value: 'musyrif' },
@@ -40,11 +41,38 @@
   ];
 
   // Unique daerah list from loaded members
-  $: uniqueDaerah = ['semua', ...new Set(
-    members
-      .map((m: any) => (m.daerah_santri || '').trim().toUpperCase())
-      .filter(Boolean)
-  )].sort((a, b) => a === 'semua' ? -1 : b === 'semua' ? 1 : a.localeCompare(b));
+  let uniqueDaerah = ['semua'];
+  
+  onMount(async () => {
+    try {
+      // Load unique categories and regions directly from the database
+      const { data, error } = await supabase
+        .from('asatidzah')
+        .select('kategori_mazeeda, daerah_santri');
+        
+      if (!error && data) {
+        // Extract unique categories
+        const uniqueCats = [...new Set(data.map(item => (item.kategori_mazeeda || '').trim().toLowerCase()).filter(Boolean))].sort();
+        if (uniqueCats.length > 0) {
+          categories = [
+            { label: 'Semua', value: 'semua' },
+            ...uniqueCats.map(cat => ({ 
+              label: cat.charAt(0).toUpperCase() + cat.slice(1), 
+              value: cat 
+            }))
+          ];
+        }
+
+        // Extract unique regions
+        const uniqueRegions = [...new Set(data.map(item => (item.daerah_santri || '').trim().toUpperCase()).filter(Boolean))].sort();
+        if (uniqueRegions.length > 0) {
+          uniqueDaerah = ['semua', ...uniqueRegions];
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch filters:', err);
+    }
+  });
 
   // Active filter count badge
   $: activeFilterCount = (activeCategory !== 'semua' ? 1 : 0) + (activeDaerah !== 'semua' ? 1 : 0);
@@ -54,42 +82,53 @@
     { id: 1, nama_lengkap: 'USTADZ MAZEEDA', kategori_mazeeda: 'pengajar', email: 'pengajar@email.com', no_whatsapp: '8950000000', alamat_domisili: 'Ponpes', tahun_masuk: '2020', nama_panggilan: 'Ustadz', tempat_lahir: 'CIREBON', tahun_lahir: '22 September 1990', golongan_darah: 'O', alamat_ktp: 'KALIWEDI', riwayat_pendidikan: 'S1', keterampilan_khusus: 'Pendidikan', kutipan_kenangan: 'Menjadi teladan', music: '', hobi: 'Membaca', kesan: 'Luar biasa', pesan: 'Istiqomah', daerah_santri: 'LOKAL', tiktok_akun: '', facebook_akun: '', xtwitter_akun: '', rute_lengkap: '', kamar_santri: '', tahfidz_santri: '' }
   ];
 
-  // Fetch data onMount
-  onMount(async () => {
+  let searchTimeout: ReturnType<typeof setTimeout>;
+  
+  // Reactive trigger for server-side search
+  $: {
+    if (searchQuery.trim().length >= 2 || activeCategory !== 'semua' || activeDaerah !== 'semua') {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        performSearch();
+      }, 600);
+    } else {
+      members = [];
+      isLoading = false;
+    }
+  }
+
+  async function performSearch() {
+    isLoading = true;
     try {
-      isLoading = true;
-      const { data, error } = await supabase
-        .from('asatidzah')
-        .select('*');
-        
+      let query = supabase.from('asatidzah').select('*').limit(50);
+      
+      if (searchQuery.trim()) {
+        const sq = `%${searchQuery.trim()}%`;
+        query = query.or(`nama_lengkap.ilike.${sq},alamat_domisili.ilike.${sq},email.ilike.${sq}`);
+      }
+      
+      if (activeCategory !== 'semua') {
+        query = query.eq('kategori_mazeeda', activeCategory.toLowerCase());
+      }
+      
+      if (activeDaerah !== 'semua') {
+        query = query.ilike('daerah_santri', `%${activeDaerah}%`);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       
       members = data || [];
     } catch (err) {
-      console.error('Failed to fetch from allowed_alumni:', err);
+      console.error('Failed to search asatidzah:', err);
       members = [];
     } finally {
       isLoading = false;
     }
-  });
+  }
 
-  // Filtering Logic
-  $: filteredMembers = members.filter((member: any) => {
-    const name = member.nama_lengkap || '';
-    const email = member.email || '';
-    const address = member.alamat_domisili || '';
-    const category = member.kategori_mazeeda || '';
-    const daerah = (member.daerah_santri || '').trim().toUpperCase();
-
-    const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          address.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = activeCategory === 'semua' || category.toLowerCase() === activeCategory.toLowerCase();
-    const matchesDaerah = activeDaerah === 'semua' || daerah === activeDaerah;
-
-    return matchesSearch && matchesCategory && matchesDaerah;
-  });
+  // Since we fetch filtered data from server, filteredMembers is just members
+  $: filteredMembers = members;
 
   // Open details inline
   async function openDetails(member: any) {
@@ -490,18 +529,40 @@
               </div>
               <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Cita-cita</span>
-                <strong class="text-slate-800 font-medium leading-relaxed text-justify">{selectedMember.cita_cita || '-'}</strong>
+                {#if selectedMember.cita_cita}
+                  <a href="https://www.google.com/search?q={encodeURIComponent(selectedMember.cita_cita)}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit" title="Cari di Google">
+                    <span>{selectedMember.cita_cita}</span>
+                    <ExternalLink class="h-3 w-3 shrink-0" />
+                  </a>
+                {:else}
+                  <strong class="text-slate-800 font-medium leading-relaxed text-justify">-</strong>
+                {/if}
               </div>
               <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Makanan Kesukaan</span>
-                <strong class="text-slate-800 font-medium leading-relaxed text-justify">{selectedMember.makanan_kesukaan || '-'}</strong>
+                {#if selectedMember.makanan_kesukaan}
+                  <a href="https://www.google.com/search?q={encodeURIComponent(selectedMember.makanan_kesukaan)}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit" title="Cari di Google">
+                    <span>{selectedMember.makanan_kesukaan}</span>
+                    <ExternalLink class="h-3 w-3 shrink-0" />
+                  </a>
+                {:else}
+                  <strong class="text-slate-800 font-medium leading-relaxed text-justify">-</strong>
+                {/if}
               </div>
               <div class="flex flex-col gap-1 py-1.5">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Musik Kesukaan</span>
                 {#if selectedMember.music && selectedMember.music.startsWith('http')}
-                  <a href={selectedMember.music} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold break-all inline-block mt-0.5">Klik Disini!</a>
+                  <a href={selectedMember.music} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold break-all inline-flex items-center gap-1 mt-0.5 w-fit">
+                    <span>Klik Disini!</span>
+                    <ExternalLink class="h-3 w-3 shrink-0" />
+                  </a>
+                {:else if selectedMember.music}
+                  <a href="https://www.youtube.com/results?search_query={encodeURIComponent(selectedMember.music)}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit" title="Cari di YouTube">
+                    <span>{selectedMember.music}</span>
+                    <ExternalLink class="h-3 w-3 shrink-0" />
+                  </a>
                 {:else}
-                  <strong class="text-slate-800 font-medium leading-relaxed">{selectedMember.music || '-'}</strong>
+                  <strong class="text-slate-800 font-medium leading-relaxed">-</strong>
                 {/if}
                 
                 {#if getYouTubeId(selectedMember.music)}
@@ -605,7 +666,7 @@
               aria-label="Tutup filter"
             ></button>
 
-            <div class="absolute right-0 top-[calc(100%+8px)] z-20 w-64 bg-white border border-slate-200/80 rounded-2xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-1 duration-150 origin-top-right">
+            <div class="absolute right-0 top-[calc(100%+8px)] z-20 w-80 bg-white border border-slate-200/80 rounded-2xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-1 duration-150 origin-top-right">
               
               <!-- Kategori section -->
               <div class="px-3 pt-3 pb-2">
@@ -629,8 +690,11 @@
               <!-- Daerah Santri section -->
               <div class="px-3 pt-2 pb-2">
                 <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Daerah Santri</p>
-                <div class="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
-                  {#each uniqueDaerah as d}
+                <div class="mb-2">
+                  <input type="text" placeholder="Cari daerah..." bind:value={daerahSearch} class="w-full text-[11px] px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:bg-white transition-colors" />
+                </div>
+                <div class="flex flex-wrap gap-1 max-h-40 overflow-y-auto pr-1">
+                  {#each uniqueDaerah.filter(d => d.toLowerCase().includes((daerahSearch || '').toLowerCase())) as d}
                     <button
                       type="button"
                       on:click={() => activeDaerah = d}
@@ -640,6 +704,9 @@
                           : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}"
                     >{d === 'semua' ? 'Semua' : d}</button>
                   {/each}
+                  {#if uniqueDaerah.filter(d => d.toLowerCase().includes((daerahSearch || '').toLowerCase())).length === 0}
+                    <p class="text-[10px] text-slate-400 italic py-1 px-1">Daerah tidak ditemukan</p>
+                  {/if}
                 </div>
               </div>
 
@@ -745,8 +812,13 @@
       {:else}
         <div class="py-16 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
           <div class="max-w-xs mx-auto space-y-2">
-            <p class="text-sm font-bold text-slate-600">Tidak ada anggota ditemukan</p>
-            <p class="text-xs text-slate-400">Silakan ganti kata kunci pencarian Anda atau periksa filter kategori yang aktif.</p>
+            {#if searchQuery.trim().length < 2 && activeCategory === 'semua' && activeDaerah === 'semua'}
+              <p class="text-sm font-bold text-slate-600">Mulai Pencarian</p>
+              <p class="text-xs text-slate-400">Ketik minimal 2 huruf nama atau domisili untuk mulai mencari data.</p>
+            {:else}
+              <p class="text-sm font-bold text-slate-600">Tidak ada anggota ditemukan</p>
+              <p class="text-xs text-slate-400">Silakan ganti kata kunci pencarian Anda atau periksa filter kategori yang aktif.</p>
+            {/if}
           </div>
         </div>
       {/if}

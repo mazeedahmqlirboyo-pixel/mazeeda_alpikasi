@@ -113,6 +113,7 @@
   let asatidzahCount = "20 Pengajar";
   let madingCount = "12 Momen";
   let sanguCount = "15 Berkas";
+  let nilaiCount = "0 Data";
   let quranProgress = "QS. Al-Kahf";
   let quranDescription = "Surah Terakhir";
   let isLoadingStats = true;
@@ -835,6 +836,10 @@
       const { data: landscapeData } = await supabase.from("gallery_landscape").select("image_url").order("created_at", { ascending: true });
       const { data: marqueeData } = await supabase.from("gallery_marquee").select("image_url").order("created_at", { ascending: true });
 
+      // Fetch Nilai counts
+      const { count: nilaiTamrinCount } = await supabase.from("nilai_tamrin").select("*", { count: "exact", head: true });
+      const { count: nilaiUjianCount } = await supabase.from("nilai_ujian").select("*", { count: "exact", head: true });
+
       return {
         squadCount,
         asatidzahCountRaw,
@@ -845,7 +850,9 @@
         memData,
         coverflowData,
         landscapeData,
-        marqueeData
+        marqueeData,
+        nilaiTamrinCount,
+        nilaiUjianCount
       };
     },
     null
@@ -863,6 +870,9 @@
     madingCount = `${totalMading} Momen`;
     
     if (d.bacaanCount !== null) sanguCount = `${d.bacaanCount} Berkas`;
+
+    const totalNilai = (d.nilaiTamrinCount || 0) + (d.nilaiUjianCount || 0);
+    nilaiCount = `${totalNilai} Data`;
 
     if (d.annData && d.annData.length > 0) {
       const item = d.annData[0];
@@ -1032,6 +1042,16 @@
       color: "text-rose-600 bg-rose-50/50 border-rose-100",
       gradient: "from-rose-100/80 to-rose-50/20",
       href: "/ai-chat",
+    },
+    {
+      name: "Nilai Akademik",
+      value: nilaiCount,
+      description: "Cari & lihat transkrip nilai santri",
+      icon: Award,
+      image: null,
+      color: "text-teal-600 bg-teal-50/50 border-teal-100",
+      gradient: "from-teal-100/80 to-teal-50/20",
+      href: "/nilai",
     },
   ];
 </script>
@@ -2282,7 +2302,7 @@
       class="py-8 px-4 flex flex-col items-center justify-center border-b border-slate-200/40"
     >
       <a
-        href="https://play.google.com/store/apps/details?id=mazeedahmqlirboyo-pixel"
+        href="https://play.google.com/store/apps/details?id=com.miHoYo.GenshinImpact"
         target="_blank"
         rel="noopener noreferrer"
         class="transition-all hover:scale-105 active:scale-95 duration-200"
@@ -2305,7 +2325,7 @@
       <div class="flex items-center justify-center gap-3">
         <!-- WhatsApp -->
         <a
-          href="https://wa.me/6289507436989"
+          href="https://wa.me/6285111653232"
           target="_blank"
           rel="noopener noreferrer"
           class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200"
@@ -2335,7 +2355,7 @@
 
         <!-- Twitter -->
         <a
-          href="https://x.com/mazeedahmqlirboyo"
+          href="https://x.com/MAZEEDA_HMQ_LBY"
           target="_blank"
           rel="noopener noreferrer"
           class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200"
@@ -2365,7 +2385,7 @@
 
         <!-- YouTube -->
         <a
-          href="https://youtube.com/mazeedahmqlirboyo"
+          href="https://www.youtube.com/@HaloMazeeda"
           target="_blank"
           rel="noopener noreferrer"
           class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200"
@@ -2375,21 +2395,6 @@
             src="/youtube.png"
             alt="YouTube"
             class="h-full w-full object-contain scale-[0.90] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]"
-          />
-        </a>
-
-        <!-- Web / RSS -->
-        <a
-          href="https://mazeedahmqlirboyo.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200"
-          title="Website MAZEEDA"
-        >
-          <img
-            src="/rss.png"
-            alt="Website / RSS"
-            class="h-full w-full object-contain scale-[0.88] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]"
           />
         </a>
       </div>

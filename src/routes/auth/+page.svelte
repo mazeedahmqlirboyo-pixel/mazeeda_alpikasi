@@ -556,14 +556,14 @@
             </p>
             <p class="text-xs text-slate-400 font-medium pt-3 border-t border-slate-50/50">
               Mengalami masalah lain? <br class="lg:hidden" />
-              <a href="https://wa.me/6289507436989" target="_blank" class="text-slate-500 font-bold hover:text-primary transition-colors">Hubungi ADMIN MAZEEDA</a>
+              <a href="https://wa.me/6285111653232" target="_blank" class="text-slate-500 font-bold hover:text-primary transition-colors">Hubungi ADMIN MAZEEDA</a>
             </p>
           </div>
 
           <!-- Footer (Play Store & Social Media) -->
           <div class="mt-8 pt-8 border-t border-slate-100/80 text-center space-y-6" in:fly|global={{ y: 10, duration: 400, delay: 550 }}>
             <!-- Google Play -->
-            <a href="https://play.google.com/store/apps/details?id=mazeedahmqlirboyo-pixel" target="_blank" class="inline-block transition-transform hover:scale-105">
+            <a href="https://play.google.com/store/apps/details?id=com.miHoYo.GenshinImpact" target="_blank" class="inline-block transition-transform hover:scale-105">
               <img src="/google-play-badge.png" alt="Get it on Google Play" class="h-11 w-auto mx-auto" />
             </a>
             
@@ -573,7 +573,7 @@
             <!-- Social Icons -->
             <div class="flex items-center justify-center gap-3">
               <!-- WhatsApp -->
-              <a href="https://wa.me/6289507436989" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="WhatsApp MAZEEDA">
+              <a href="https://wa.me/6285111653232" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="WhatsApp MAZEEDA">
                 <img src="/whatsapp.png" alt="WhatsApp" class="h-full w-full object-contain scale-[0.88] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- Instagram -->
@@ -581,7 +581,7 @@
                 <img src="/instagram.png" alt="Instagram" class="h-full w-full object-contain scale-[0.98] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- X / Twitter -->
-              <a href="https://x.com/mazeedahmqlirboyo" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="Twitter MAZEEDA">
+              <a href="https://x.com/MAZEEDA_HMQ_LBY" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="Twitter MAZEEDA">
                 <img src="/twitter.png" alt="Twitter" class="h-full w-full object-contain scale-[0.87] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- TikTok -->
@@ -589,12 +589,8 @@
                 <img src="/tiktok.png" alt="TikTok" class="h-full w-full object-contain scale-[0.87] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- YouTube -->
-              <a href="https://youtube.com/mazeedahmqlirboyo" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="YouTube MAZEEDA">
+              <a href="https://www.youtube.com/@HaloMazeeda" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="YouTube MAZEEDA">
                 <img src="/youtube.png" alt="YouTube" class="h-full w-full object-contain scale-[0.90] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
-              </a>
-              <!-- RSS/Website -->
-              <a href="https://mazeedahmqlirboyo.com" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="Website MAZEEDA">
-                <img src="/rss.png" alt="Website / RSS" class="h-full w-full object-contain scale-[0.88] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
             </div>
           </div>
@@ -644,6 +640,12 @@
 </div>
 
 <style>
+  /* Hide default browser password reveal icon (e.g. in Microsoft Edge) */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none;
+  }
+
   /* Menyembunyikan scrollbar tapi tetap bisa discroll */
   .hide-scrollbar {
     -ms-overflow-style: none;  /* IE and Edge */
