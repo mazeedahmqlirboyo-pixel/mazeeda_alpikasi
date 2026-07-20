@@ -1,4 +1,5 @@
 <script lang="ts">
+  export let params: any = undefined;
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
@@ -894,7 +895,7 @@
   }
   
   .sangu-reader-content :global(.sangu-arabic):not(.sangu-heading) {
-    font-family: 'KFGQPC Uthmanic Script HAFS', 'Amiri Quran', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+    font-family: 'Amiri Quran', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
     direction: rtl !important;
     text-align: justify !important;
     text-align-last: right !important;

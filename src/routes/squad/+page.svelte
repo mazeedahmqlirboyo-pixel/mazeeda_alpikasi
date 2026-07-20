@@ -694,15 +694,40 @@
                 {/if}
                 
                 {#if getYouTubeId(selectedMember.music)}
-                  <div class="mt-3 rounded-2xl overflow-hidden aspect-video border border-slate-200/80 shadow-soft-sm hover:shadow-soft-md transition-all duration-300">
-                    <iframe 
-                      class="w-full h-full animate-in fade-in"
-                      src="https://www.youtube-nocookie.com/embed/{getYouTubeId(selectedMember.music)}" 
-                      title="YouTube video player" 
-                      frameborder="0" 
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                      allowfullscreen
-                    ></iframe>
+                  <div class="mt-4 relative group">
+                    <!-- Glowing Background -->
+                    <div class="absolute -inset-1.5 bg-gradient-to-r from-teal-400 via-blue-500 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-60 transition duration-500"></div>
+                    
+                    <div class="relative bg-slate-900 rounded-2xl p-1.5 shadow-xl ring-1 ring-white/10">
+                      <!-- macOS Style Top Bar -->
+                      <div class="flex items-center justify-between px-3 py-2 border-b border-white/10 mb-1.5">
+                        <div class="flex gap-1.5">
+                          <div class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm"></div>
+                          <div class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm"></div>
+                          <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></div>
+                        </div>
+                        <div class="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                          <Music class="w-3 h-3 text-teal-400 animate-pulse" />
+                          <p class="text-[9px] font-bold text-slate-300 tracking-widest uppercase">Now Playing</p>
+                        </div>
+                      </div>
+                      
+                      <!-- Video Container -->
+                      <div class="rounded-xl overflow-hidden aspect-video bg-black relative">
+                        <!-- Loading placeholder behind video -->
+                        <div class="absolute inset-0 bg-slate-800 animate-pulse flex items-center justify-center">
+                           <Music class="w-8 h-8 text-slate-700" />
+                        </div>
+                        <iframe 
+                          class="w-full h-full relative z-10"
+                          src="https://www.youtube-nocookie.com/embed/{getYouTubeId(selectedMember.music)}" 
+                          title="YouTube video player" 
+                          frameborder="0" 
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                          allowfullscreen
+                        ></iframe>
+                      </div>
+                    </div>
                   </div>
                 {/if}
               </div>
@@ -751,169 +776,18 @@
 
         <!-- ======= NILAI AKADEMIK SECTION ======= -->
         <div class="space-y-4 pt-2">
-          <button
-            type="button"
+          <a
+            href="/nilai?nis={selectedMember.nis}"
             class="w-full flex items-center justify-between px-5 py-4 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-2xl shadow-lg shadow-teal-500/20 hover:shadow-teal-500/40 hover:from-teal-600 hover:to-emerald-600 transition-all duration-300 font-bold"
-            on:click={() => {
-              if (!showNilaiModal) {
-                showNilaiModal = true;
-                fetchNilaiForMember(selectedMember.nis);
-              } else {
-                showNilaiModal = false;
-              }
-            }}
           >
             <span class="flex items-center gap-2 text-sm">
               <Award class="h-5 w-5" />
               📊 Lihat Transkrip Nilai Akademik
             </span>
-            <span class="text-xs font-bold opacity-80">{showNilaiModal ? 'Tutup ▲' : 'Buka ▼'}</span>
-          </button>
-
-          {#if showNilaiModal}
-            <div class="bg-white border border-slate-200 rounded-3xl shadow-md">
-              {#if isLoadingNilai}
-                <div class="flex flex-col items-center justify-center py-12 gap-3 text-slate-400">
-                  <div class="h-6 w-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                  <p class="text-xs font-semibold">Memuat data nilai...</p>
-                </div>
-              {:else if currentTamrinData.length === 0 && currentUjianData.length === 0}
-                <div class="flex flex-col items-center justify-center py-12 gap-2 text-slate-400">
-                  <BookOpen class="h-10 w-10 text-slate-200 mb-2" />
-                  <p class="text-sm font-semibold">Belum ada data nilai</p>
-                </div>
-              {:else}
-                        {#if availableYears.length > 0}
-                          <div class="p-5 border-b border-slate-100">
-                            <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-                              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Tahun Ajaran</p>
-                              <div class="w-full sm:w-auto mt-2 sm:mt-0">
-                                {#if selectedMember.bagian || getKelasByTahunAjaran(selectedYear)}
-                                  <div class="text-[10px] sm:text-xs font-bold text-blue-700 bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200 inline-block max-w-full break-words leading-relaxed shadow-sm">
-                                    {#if getKelasByTahunAjaran(selectedYear)}
-                                      {getKelasByTahunAjaran(selectedYear)}
-                                    {/if}
-                                    {#if getKelasByTahunAjaran(selectedYear) && selectedMember.bagian}
-                                      <span class="text-blue-300 mx-1.5 font-normal inline-block">|</span>
-                                    {/if}
-                                    {#if selectedMember.bagian}
-                                      {selectedMember.bagian}
-                                    {/if}
-                                  </div>
-                                {/if}
-                              </div>
-                            </div>
-                            <div class="relative">
-                              <button 
-                                on:click={() => isYearDropdownOpen = !isYearDropdownOpen}
-                                class="w-full sm:w-64 flex items-center justify-between px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-700 hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm"
-                              >
-                                <span>{selectedYear || 'Pilih Tahun Ajaran'}</span>
-                                <ChevronDown class="h-4 w-4 text-slate-400 transition-transform {isYearDropdownOpen ? 'rotate-180' : ''}" />
-                              </button>
-                              {#if isYearDropdownOpen}
-                                <div 
-                                  transition:slide={{ duration: 200 }}
-                                  class="absolute top-full left-0 mt-2 w-full sm:w-64 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50 overflow-hidden z-10"
-                                >
-                                  <div class="max-h-60 overflow-y-auto py-1">
-                                    {#each availableYears as year}
-                                      <button 
-                                        on:click={() => { selectedYear = year; isYearDropdownOpen = false; }}
-                                        class="w-full text-left px-4 py-2 text-sm font-bold transition-colors {selectedYear === year ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}"
-                                      >
-                                        {year}
-                                      </button>
-                                    {/each}
-                                  </div>
-                                </div>
-                              {/if}
-                            </div>
-                          </div>
-                        {/if}
-
-                <!-- NILAI TAMRIN -->
-                {#if currentTamrinData.length > 0}
-                  <div class="p-4 sm:p-6 border-b border-slate-100 space-y-3">
-                    <button 
-                      on:click={() => isTamrinOpen = !isTamrinOpen}
-                      class="w-full flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-teal-200 transition-colors"
-                    >
-                      <div class="flex items-center gap-3">
-                        <div class="p-2.5 bg-teal-50 rounded-xl border border-teal-100">
-                          <BookOpen class="h-5 w-5 text-teal-600" />
-                        </div>
-                        <h3 class="text-sm font-black text-slate-700 uppercase tracking-widest">Nilai Tamrin</h3>
-                      </div>
-                      <ChevronDown class="h-5 w-5 text-slate-400 transition-transform {isTamrinOpen ? 'rotate-180' : ''}" />
-                    </button>
-                    
-                    {#if isTamrinOpen}
-                      <div transition:slide={{ duration: 200 }} class="space-y-4 pt-2">
-                        {#each sortedEntries(tamrinGroups) as [periode, groupItems]}
-                          <div class="bg-white border border-teal-100 rounded-2xl overflow-hidden">
-                            <div class="px-4 py-2 bg-teal-50 border-b border-teal-100">
-                              <p class="text-[10px] font-black text-teal-700 uppercase tracking-widest">{periode}</p>
-                            </div>
-                            <div class="p-2 space-y-1">
-                              {#each groupItems as row}
-                                <div class="flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-teal-50/40 transition-colors">
-                                  <span class="text-xs font-semibold text-slate-700 flex-1 mr-2">{row.mata_pelajaran || '-'}</span>
-                                  <span class="inline-block min-w-[34px] text-center px-2 py-0.5 rounded-full font-black text-white text-[11px] {getNilaiColor(row.nilai)}">
-                                    {displayNilai(row.nilai)}
-                                  </span>
-                                </div>
-                              {/each}
-                            </div>
-                          </div>
-                        {/each}
-                      </div>
-                    {/if}
-                  </div>
-                {/if}
-
-                <!-- NILAI UJIAN -->
-                {#if currentUjianData.length > 0}
-                  <div class="p-4 sm:p-6 border-b border-slate-100 space-y-3">
-                    <button 
-                      on:click={() => isUjianOpen = !isUjianOpen}
-                      class="w-full flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-indigo-200 transition-colors"
-                    >
-                      <div class="flex items-center gap-3">
-                        <div class="p-2.5 bg-indigo-50 rounded-xl border border-indigo-100">
-                          <GraduationCap class="h-5 w-5 text-indigo-600" />
-                        </div>
-                        <h3 class="text-sm font-black text-slate-700 uppercase tracking-widest">Nilai Ujian Semester</h3>
-                      </div>
-                      <ChevronDown class="h-5 w-5 text-slate-400 transition-transform {isUjianOpen ? 'rotate-180' : ''}" />
-                    </button>
-                    
-                    {#if isUjianOpen}
-                      <div transition:slide={{ duration: 200 }} class="space-y-4 pt-2">
-                        {#each sortedEntries(ujianGroups) as [periode, groupItems]}
-                          <div class="bg-white border border-indigo-100 rounded-2xl overflow-hidden">
-                            <div class="px-4 py-2 bg-indigo-50 border-b border-indigo-100">
-                              <p class="text-[10px] font-black text-indigo-700 uppercase tracking-widest">{periode}</p>
-                            </div>
-                            <div class="p-2 space-y-1">
-                              {#each groupItems as row}
-                                <div class="flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-indigo-50/40 transition-colors">
-                                  <span class="text-xs font-semibold text-slate-700 flex-1 mr-2">{row.mata_pelajaran || '-'}</span>
-                                  <span class="inline-block min-w-[34px] text-center px-2 py-0.5 rounded-full font-black text-white text-[11px] {getNilaiColor(row.nilai)}">
-                                    {displayNilai(row.nilai)}
-                                  </span>
-                                </div>
-                              {/each}
-                            </div>
-                          </div>
-                        {/each}
-                      </div>
-                    {/if}
-                  </div>
-                {/if}
-              {/if}
-            </div>
-          {/if}
+            <span class="text-xs font-bold opacity-80 flex items-center gap-1">
+              Buka <ExternalLink class="h-3 w-3" />
+            </span>
+          </a>
         </div>
   
       </div>
@@ -1108,6 +982,9 @@
         <div class="py-16 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
           <div class="max-w-xs mx-auto space-y-2">
             {#if searchQuery.trim().length < 2 && activeCategory === 'semua' && activeDaerah === 'semua'}
+              <div class="flex justify-center mb-6">
+                <img src="/images/islamic-squad.svg" alt="Mulai Pencarian" class="h-40 w-auto object-contain drop-shadow-sm" />
+              </div>
               <p class="text-sm font-bold text-slate-600">Mulai Pencarian</p>
               <p class="text-xs text-slate-400">Ketik minimal 2 huruf nama atau domisili untuk mulai mencari data.</p>
             {:else}

@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
   import { supabase } from '$lib/supabase';
   import Card from '$lib/components/ui/card.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import ImageLightbox from '$lib/components/ImageLightbox.svelte';
   import { slide } from 'svelte/transition';
   import { Search, Award, ChevronRight, ArrowLeft, BookOpen, GraduationCap, X, ChevronDown } from 'lucide-svelte';
 
@@ -14,12 +16,57 @@
   let hasSearched = false;
   let failedImages = new Set<string>();
 
+  onMount(async () => {
+    // Check if there's a specific NIS in the URL
+    const nis = $page.url.searchParams.get('nis');
+    if (nis) {
+      const { data } = await supabase
+        .from('allowed_alumni')
+        .select('id, nama_lengkap, nis, foto_url, daerah_santri')
+        .eq('nis', nis)
+        .single();
+      
+      if (data) {
+        selectStudent(data);
+      }
+    } else {
+      // Check if there's a search query in the URL
+      const q = $page.url.searchParams.get('q');
+      if (q) {
+        searchQuery = q;
+      }
+    }
+  });
+
+  // Action to force play when element is added to DOM
+  function autoPlayLottie(node: any) {
+    const playAnim = () => {
+      if (node && typeof node.play === 'function') {
+        node.play();
+      } else {
+        setTimeout(playAnim, 100);
+      }
+    };
+    playAnim();
+    return { destroy() {} };
+  }
+
   // Selected student state
   let selectedStudent: any = null;
   let nilaiTamrinData: any[] = [];
   let nilaiUjianData: any[] = [];
   let isLoadingNilai = false;
   let selectedFailedImg = false;
+
+  let showLightbox = false;
+  let lightboxImageUrl = '';
+
+  function openLightbox(url: string) {
+    if (!url) return;
+    lightboxImageUrl = convertDriveUrl(url);
+    showLightbox = true;
+  }
+
   // Urutkan nilai sesuai urutan (berdasarkan kolom urutan di database)
   function sortByMapel(data: any[]) {
     const hasValidUrutan = data.some(d => d.urutan !== undefined && d.urutan < 999);
@@ -247,7 +294,12 @@
       <div class="bg-white border border-slate-200 rounded-2xl shadow-soft-sm p-5 text-left focus:outline-none">
         <div class="flex items-center gap-4">
           <!-- Profile photo same as squad -->
-          <div class="h-16 w-16 rounded-2xl bg-gradient-to-br {accent.gradient} flex items-center justify-center text-white font-black text-xl shrink-0 shadow-md overflow-hidden">
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div 
+            class="h-16 w-16 rounded-2xl bg-gradient-to-br {accent.gradient} flex items-center justify-center text-white font-black text-xl shrink-0 shadow-md overflow-hidden {selectedStudent.foto_url && !selectedFailedImg ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}"
+            on:click={() => selectedStudent.foto_url && !selectedFailedImg && openLightbox(selectedStudent.foto_url)}
+          >
             {#if selectedStudent.foto_url && !selectedFailedImg}
               <img
                 src={convertDriveUrl(selectedStudent.foto_url)}
@@ -263,7 +315,7 @@
             <h2 class="text-xl font-black text-slate-800 tracking-tight">{selectedStudent.nama_lengkap}</h2>
             {#if selectedStudent.nis}
               <div class="mt-1 w-full">
-                <div class="text-[11px] sm:text-xs font-bold text-blue-700 bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200 inline-block max-w-full break-words leading-relaxed shadow-sm">
+                <div class="text-[9px] sm:text-[10px] font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200 inline-block max-w-full break-words leading-tight shadow-sm">
                   NIS: {selectedStudent.nis}
                   {#if getKelasByTahunAjaran(selectedYear)}
                     <span class="text-blue-300 mx-1.5 font-normal inline-block">|</span> {getKelasByTahunAjaran(selectedYear)}
@@ -492,9 +544,11 @@
     {:else}
       <Card class="p-10 text-center">
         <div class="flex flex-col items-center gap-3 text-slate-400">
-          <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl border border-blue-100">
-            <Award class="h-10 w-10 text-blue-400" />
-          </div>
+          <img
+            src="/images/online-learning-platform.svg"
+            alt="Pencarian Nilai"
+            style="width: 200px; height: 200px; object-fit: contain;"
+          />
           <div class="space-y-1">
             <p class="text-sm font-bold text-slate-600">Cari nama santri di atas</p>
             <p class="text-xs">Minimal 2 karakter untuk memulai pencarian</p>
@@ -518,3 +572,5 @@
     {/if}
   {/if}
 </div>
+
+<ImageLightbox bind:show={showLightbox} imageUrl={lightboxImageUrl} on:close={() => showLightbox = false} />

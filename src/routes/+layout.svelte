@@ -1724,30 +1724,76 @@
                         </div>
                         <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
                           <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Cita-cita</span>
-                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{myProfileData.cita_cita || '-'}</strong>
+                          {#if myProfileData.cita_cita}
+                            <a href="https://www.google.com/search?q={encodeURIComponent(myProfileData.cita_cita)}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit" title="Cari di Google">
+                              <span>{myProfileData.cita_cita}</span>
+                              <ExternalLink class="h-3 w-3 shrink-0" />
+                            </a>
+                          {:else}
+                            <strong class="text-slate-800 font-medium leading-relaxed text-justify">-</strong>
+                          {/if}
                         </div>
                         <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
                           <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Makanan Kesukaan</span>
-                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{myProfileData.makanan_kesukaan || '-'}</strong>
+                          {#if myProfileData.makanan_kesukaan}
+                            <a href="https://www.google.com/search?q={encodeURIComponent(myProfileData.makanan_kesukaan)}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit" title="Cari di Google">
+                              <span>{myProfileData.makanan_kesukaan}</span>
+                              <ExternalLink class="h-3 w-3 shrink-0" />
+                            </a>
+                          {:else}
+                            <strong class="text-slate-800 font-medium leading-relaxed text-justify">-</strong>
+                          {/if}
                         </div>
                         <div class="flex flex-col gap-1 py-1.5">
                           <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Musik Kesukaan</span>
                           {#if myProfileData.music && myProfileData.music.startsWith('http')}
-                            <a href={myProfileData.music} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold break-all inline-block mt-0.5">Klik Disini!</a>
+                            <a href={myProfileData.music} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold break-all inline-flex items-center gap-1 mt-0.5 w-fit">
+                              <span>Klik Disini!</span>
+                              <ExternalLink class="h-3 w-3 shrink-0" />
+                            </a>
+                          {:else if myProfileData.music}
+                            <a href="https://www.youtube.com/results?search_query={encodeURIComponent(myProfileData.music)}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit" title="Cari di YouTube">
+                              <span>{myProfileData.music}</span>
+                              <ExternalLink class="h-3 w-3 shrink-0" />
+                            </a>
                           {:else}
-                            <strong class="text-slate-800 font-medium leading-relaxed">{myProfileData.music || '-'}</strong>
+                            <strong class="text-slate-800 font-medium leading-relaxed">-</strong>
                           {/if}
                           
                           {#if getYouTubeId(myProfileData.music)}
-                            <div class="mt-3 rounded-2xl overflow-hidden aspect-video border border-slate-200/80 shadow-soft-sm hover:shadow-soft-md transition-all duration-300">
-                              <iframe 
-                                class="w-full h-full animate-in fade-in"
-                                src="https://www.youtube-nocookie.com/embed/{getYouTubeId(myProfileData.music)}" 
-                                title="YouTube video player" 
-                                frameborder="0" 
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                allowfullscreen
-                              ></iframe>
+                            <div class="mt-4 relative group">
+                              <!-- Glowing Background -->
+                              <div class="absolute -inset-1.5 bg-gradient-to-r from-teal-400 via-blue-500 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-60 transition duration-500"></div>
+                              
+                              <div class="relative bg-slate-900 rounded-2xl p-1.5 shadow-xl ring-1 ring-white/10">
+                                <!-- macOS Style Top Bar -->
+                                <div class="flex items-center justify-between px-3 py-2 border-b border-white/10 mb-1.5">
+                                  <div class="flex gap-1.5">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm"></div>
+                                    <div class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm"></div>
+                                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></div>
+                                  </div>
+                                  <div class="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                                    <Music class="w-3 h-3 text-teal-400 animate-pulse" />
+                                    <p class="text-[9px] font-bold text-slate-300 tracking-widest uppercase">Now Playing</p>
+                                  </div>
+                                </div>
+                                
+                                <!-- Video Container -->
+                                <div class="rounded-xl overflow-hidden aspect-video bg-black relative">
+                                  <div class="absolute inset-0 bg-slate-800 animate-pulse flex items-center justify-center">
+                                     <Music class="w-8 h-8 text-slate-700" />
+                                  </div>
+                                  <iframe 
+                                    class="w-full h-full relative z-10"
+                                    src="https://www.youtube-nocookie.com/embed/{getYouTubeId(myProfileData.music)}" 
+                                    title="YouTube video player" 
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                    allowfullscreen
+                                  ></iframe>
+                                </div>
+                              </div>
                             </div>
                           {/if}
                         </div>
@@ -1877,7 +1923,7 @@
       {#if showBottomNav}
         <nav
           id="mobile-bottom-nav"
-          class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-border/60 shadow-lg px-2 flex justify-around items-center h-14 pb-safe"
+          class="md:hidden fixed bottom-4 left-4 right-4 z-50 bg-white/90 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.08)] px-2 flex justify-between items-center h-16 rounded-2xl"
           transition:slide={{ duration: 200 }}
         >
           {#each navItems as item}
@@ -1885,11 +1931,16 @@
               href={item.path}
               id="mobile-nav-{item.name.toLowerCase().replace(/[^a-z]/g, '')}"
               on:click={() => { resetAutoHide(); handleNavClick(); }}
-              class="flex items-center justify-center flex-1 h-12 transition-all duration-200
-                {isActive(item.path) ? 'text-primary scale-110' : 'text-slate-500'}"
-              style="min-width: 48px; min-height: 48px;"
+              class="flex flex-col items-center justify-center flex-1 h-12 transition-all duration-300 relative
+                {isActive(item.path) ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
+              style="min-width: 44px; min-height: 48px;"
             >
-              <svelte:component this={item.icon} class="h-6 w-6 transition-transform" />
+              <div class="relative flex items-center justify-center {isActive(item.path) ? 'scale-110' : ''} transition-transform duration-300">
+                <svelte:component this={item.icon} class="h-6 w-6 relative z-10" />
+                {#if isActive(item.path)}
+                  <div class="absolute inset-0 bg-primary/10 w-10 h-10 -left-2 -top-2 rounded-full blur-sm"></div>
+                {/if}
+              </div>
             </a>
           {/each}
           
@@ -1898,11 +1949,16 @@
               href="/admin"
               id="mobile-nav-admin"
               on:click={() => { resetAutoHide(); handleNavClick(); }}
-              class="flex items-center justify-center flex-1 h-12 transition-all duration-200
-                {isActive('/admin') ? 'text-primary scale-110' : 'text-slate-500'}"
-              style="min-width: 48px; min-height: 48px;"
+              class="flex flex-col items-center justify-center flex-1 h-12 transition-all duration-300 relative
+                {isActive('/admin') ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
+              style="min-width: 44px; min-height: 48px;"
             >
-              <ShieldCheck class="h-6 w-6 transition-transform" />
+              <div class="relative flex items-center justify-center {isActive('/admin') ? 'scale-110' : ''} transition-transform duration-300">
+                <ShieldCheck class="h-6 w-6 relative z-10" />
+                {#if isActive('/admin')}
+                  <div class="absolute inset-0 bg-primary/10 w-10 h-10 -left-2 -top-2 rounded-full blur-sm"></div>
+                {/if}
+              </div>
             </a>
           {/if}
         </nav>

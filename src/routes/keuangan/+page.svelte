@@ -432,8 +432,8 @@
 
         {#if activeTransactions.length === 0}
           <div class="bg-white rounded-3xl p-8 text-center border border-slate-100 shadow-sm flex flex-col items-center justify-center space-y-3">
-            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-2">
-              <Wallet class="w-8 h-8" />
+            <div class="w-32 h-32 flex items-center justify-center mb-2">
+              <img src="/images/wallet-animation.svg" alt="Belum ada catatan" class="w-full h-full object-contain" />
             </div>
             <p class="text-slate-500 text-sm font-medium">Belum ada catatan keuangan.</p>
             <button 

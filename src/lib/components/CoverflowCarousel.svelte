@@ -100,7 +100,7 @@
   }
 </script>
 
-<div class="relative w-full max-w-5xl mx-auto pt-2 pb-8 overflow-hidden select-none">
+<div class="relative w-full max-w-5xl mx-auto pt-2 pb-8 overflow-hidden select-none z-10">
   <!-- Draggable Container -->
   <div 
     class="relative h-[260px] sm:h-[320px] md:h-[400px] w-full flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"

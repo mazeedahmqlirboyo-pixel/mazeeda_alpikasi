@@ -566,15 +566,40 @@
                 {/if}
                 
                 {#if getYouTubeId(selectedMember.music)}
-                  <div class="mt-3 rounded-2xl overflow-hidden aspect-video border border-slate-200/80 shadow-soft-sm hover:shadow-soft-md transition-all duration-300">
-                    <iframe 
-                      class="w-full h-full animate-in fade-in"
-                      src="https://www.youtube-nocookie.com/embed/{getYouTubeId(selectedMember.music)}" 
-                      title="YouTube video player" 
-                      frameborder="0" 
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                      allowfullscreen
-                    ></iframe>
+                  <div class="mt-4 relative group">
+                    <!-- Glowing Background -->
+                    <div class="absolute -inset-1.5 bg-gradient-to-r from-teal-400 via-blue-500 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-60 transition duration-500"></div>
+                    
+                    <div class="relative bg-slate-900 rounded-2xl p-1.5 shadow-xl ring-1 ring-white/10">
+                      <!-- macOS Style Top Bar -->
+                      <div class="flex items-center justify-between px-3 py-2 border-b border-white/10 mb-1.5">
+                        <div class="flex gap-1.5">
+                          <div class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm"></div>
+                          <div class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm"></div>
+                          <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></div>
+                        </div>
+                        <div class="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                          <Music class="w-3 h-3 text-teal-400 animate-pulse" />
+                          <p class="text-[9px] font-bold text-slate-300 tracking-widest uppercase">Now Playing</p>
+                        </div>
+                      </div>
+                      
+                      <!-- Video Container -->
+                      <div class="rounded-xl overflow-hidden aspect-video bg-black relative">
+                        <!-- Loading placeholder behind video -->
+                        <div class="absolute inset-0 bg-slate-800 animate-pulse flex items-center justify-center">
+                           <Music class="w-8 h-8 text-slate-700" />
+                        </div>
+                        <iframe 
+                          class="w-full h-full relative z-10"
+                          src="https://www.youtube-nocookie.com/embed/{getYouTubeId(selectedMember.music)}" 
+                          title="YouTube video player" 
+                          frameborder="0" 
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                          allowfullscreen
+                        ></iframe>
+                      </div>
+                    </div>
                   </div>
                 {/if}
               </div>
@@ -813,6 +838,9 @@
         <div class="py-16 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
           <div class="max-w-xs mx-auto space-y-2">
             {#if searchQuery.trim().length < 2 && activeCategory === 'semua' && activeDaerah === 'semua'}
+              <div class="flex justify-center mb-6">
+                <img src="/images/islamic-business-woman.svg" alt="Mulai Pencarian" class="h-40 w-auto object-contain drop-shadow-sm" />
+              </div>
               <p class="text-sm font-bold text-slate-600">Mulai Pencarian</p>
               <p class="text-xs text-slate-400">Ketik minimal 2 huruf nama atau domisili untuk mulai mencari data.</p>
             {:else}

@@ -81,7 +81,7 @@
   }
 </script>
 
-<div class="relative w-full overflow-hidden select-none pb-8 pt-4">
+<div class="relative w-full overflow-hidden select-none pb-8 pt-4 z-10">
   <div 
     bind:this={carouselRef}
     on:scroll={updateParallax}

@@ -2,9 +2,11 @@
   let className = '';
   export { className as class };
   export let noPadding = false;
+  export let id: string | undefined = undefined;
 </script>
 
 <div 
+  {id}
   on:click
   on:keydown
   role="button"

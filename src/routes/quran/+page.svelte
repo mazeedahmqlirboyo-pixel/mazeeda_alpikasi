@@ -1,4 +1,5 @@
 <script lang="ts">
+  export let params: any = undefined;
   import { onMount, onDestroy } from 'svelte';
   import { fade, slide } from 'svelte/transition';
   import Card from '$lib/components/ui/card.svelte';
