@@ -2031,7 +2031,11 @@
           const sub = subjectCols[j];
           const rawVal = sub.idx < cols.length ? cols[sub.idx] : "";
           if (rawVal && rawVal.trim() !== "") {
-            const num = parseFloat(rawVal.replace(",", "."));
+            const cleanVal = rawVal.trim();
+            const num = parseFloat(cleanVal.replace(",", "."));
+            const isStrictNum = !isNaN(Number(cleanVal.replace(",", "."))) && cleanVal !== "";
+            const hasBayan = cleanVal.includes("|||");
+            
             list.push({ 
               nis: nis.slice(0, 20), 
               nama_siswi: nama, 
@@ -2040,7 +2044,7 @@
               kategori, 
               mata_pelajaran: sub.name, 
               nilai: isNaN(num) ? null : num, 
-              catatan: isNaN(num) ? rawVal : "",
+              catatan: (!isStrictNum || hasBayan) ? cleanVal : "",
               created_at: new Date(baseTime + sortCounter++).toISOString()
             });
           }
@@ -3823,7 +3827,7 @@
         <div class="mb-4">
           <label class="block text-xs font-bold text-slate-500 mb-2">Pilih Tujuan Tabel Database</label>
           <select bind:value={nilai_targetTable} class="w-full sm:w-64 text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-primary">
-            <option value="nilai_tamrin">Tabel: nilai_tamrin</option>
+            <option value="nilai_tamrin">Tabel: nilai_tamrin (Atau Muhafadzoh)</option>
             <option value="nilai_ujian">Tabel: nilai_ujian</option>
           </select>
         </div>

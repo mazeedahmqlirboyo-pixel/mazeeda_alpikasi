@@ -55,8 +55,65 @@
   let selectedStudent: any = null;
   let nilaiTamrinData: any[] = [];
   let nilaiUjianData: any[] = [];
+  let nilaiMuhafadzohData: any[] = [];
   let isLoadingNilai = false;
   let selectedFailedImg = false;
+  
+  function parseMuhafadzoh(item: any) {
+    let nadzom = "Belum";
+    let bayan = "Belum";
+    
+    if (item.catatan && item.catatan.includes("|||")) {
+      const parts = item.catatan.split("|||");
+      nadzom = parts[0].trim();
+      if (!nadzom && item.nilai !== null && item.nilai !== undefined) {
+        nadzom = String(item.nilai);
+      }
+      bayan = parts[1] ? parts[1].trim() : "Belum";
+    } else {
+      if (item.nilai !== null && item.nilai !== undefined) {
+        nadzom = String(item.nilai);
+      } else if (item.catatan) {
+        nadzom = item.catatan.trim();
+      }
+    }
+    
+    if (!nadzom) nadzom = "Belum";
+    
+    if (nadzom !== "Belum") {
+      if (!nadzom.toLowerCase().includes("bait")) {
+        if (!isNaN(Number(nadzom)) && nadzom.trim() !== "") {
+          nadzom = `${nadzom} BAIT`;
+        }
+      } else {
+        nadzom = nadzom.replace(/bait/i, 'BAIT');
+      }
+    }
+    
+    return { nadzom, bayan };
+  }
+
+  function getOverallBayan(rows: any[]) {
+    if (!rows || rows.length === 0) return null;
+    const rank = (b: string) => {
+      const bStr = b.toLowerCase();
+      if (bStr.includes('jayyid')) return 3;
+      if (bStr.includes('mutawas')) return 2;
+      if (bStr.includes('rodi')) return 1;
+      return 0; // Belum or anything else
+    };
+    let lowestRank = 999;
+    let lowestBayan = "";
+    for (const row of rows) {
+      const p = parseMuhafadzoh(row);
+      const r = rank(p.bayan);
+      if (r < lowestRank) {
+        lowestRank = r;
+        lowestBayan = p.bayan;
+      }
+    }
+    return lowestBayan;
+  }
 
   let showLightbox = false;
   let lightboxImageUrl = '';
@@ -118,7 +175,7 @@
     });
   }
 
-  $: availableYears = [...new Set([...nilaiTamrinData, ...nilaiUjianData].map(d => d.tahun_ajaran || '-'))].sort((a, b) => b.localeCompare(a));
+  $: availableYears = [...new Set([...nilaiTamrinData, ...nilaiUjianData, ...nilaiMuhafadzohData].map(d => d.tahun_ajaran || '-'))].sort((a, b) => b.localeCompare(a));
   
   $: if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
        selectedYear = availableYears[0];
@@ -126,13 +183,16 @@
 
   $: currentTamrinData = nilaiTamrinData.filter(d => (d.tahun_ajaran || '-') === selectedYear);
   $: currentUjianData = nilaiUjianData.filter(d => (d.tahun_ajaran || '-') === selectedYear);
+  $: currentMuhafadzohData = nilaiMuhafadzohData.filter(d => (d.tahun_ajaran || '-') === selectedYear);
 
   $: tamrinGroups = groupByPeriode(currentTamrinData);
   $: ujianGroups = groupByPeriode(currentUjianData);
+  $: overallBayan = getOverallBayan(currentMuhafadzohData);
 
   let isYearDropdownOpen = false;
   let isTamrinOpen = false;
   let isUjianOpen = false;
+  let isMuhafadzohOpen = false;
 
   function getKelasByTahunAjaran(tahun: string) {
     if (!tahun) return '';
@@ -150,6 +210,26 @@
       case 3: return 'I ALIYAH';
       case 4: return 'II ALIYAH';
       case 5: return 'III ALIYAH';
+      default: return '';
+    }
+  }
+
+  function getTargetNadzomByTahun(tahun: string) {
+    if (!tahun) return '';
+    const startYear = parseInt(tahun.split('-')[0]);
+    if (isNaN(startYear)) return '';
+    const diff = startYear - 2026;
+    switch (diff) {
+      case -4: return '';
+      case -3: return "Ro'sun Sirah (76 Bait)";
+      case -2: return 'Mathlab (38 Bait)';
+      case -1: return "Tanwirul Hija' (312 Bait)";
+      case 0: return 'Al-Qawaid as-Shorfiyah (82 Bait) | Al-Amtsilah at-Tashrifiyah';
+      case 1: return 'Al-Qawaid as-Shorfiyah (111 Bait) | Al-Amtsilah at-Tashrifiyah';
+      case 2: return "Al-'Amrithy (254 Bait)";
+      case 3: return 'Alfiyah Ibnu Malik Awal (495 Bait)';
+      case 4: return 'Alfiyah Ibnu Malik Tsani (507 Bait)';
+      case 5: return 'Jauharul Maknun (291 Bait)';
       default: return '';
     }
   }
@@ -232,6 +312,7 @@
     selectedFailedImg = false;
     nilaiTamrinData = [];
     nilaiUjianData = [];
+    nilaiMuhafadzohData = [];
     isLoadingNilai = true;
     
     try {
@@ -243,12 +324,14 @@
     } catch(e) {}
 
     try {
-      const [tamrinRes, ujianRes] = await Promise.all([
+      const [tamrinRes, ujianRes, muhafadzohRes] = await Promise.all([
         supabase.from('nilai_tamrin').select('*').eq('nis', student.nis).eq('kategori', 'Tamrin').order('tahun_ajaran').order('periode').order('created_at', { ascending: true }),
-        supabase.from('nilai_tamrin').select('*').eq('nis', student.nis).eq('kategori', 'Ujian').order('tahun_ajaran').order('periode').order('created_at', { ascending: true })
+        supabase.from('nilai_tamrin').select('*').eq('nis', student.nis).eq('kategori', 'Ujian').order('tahun_ajaran').order('periode').order('created_at', { ascending: true }),
+        supabase.from('nilai_tamrin').select('*').eq('nis', student.nis).eq('kategori', 'Muhafadzoh').order('tahun_ajaran').order('created_at', { ascending: true })
       ]);
       if (tamrinRes.data) nilaiTamrinData = sortByMapel(tamrinRes.data);
       if (ujianRes.data) nilaiUjianData = sortByMapel(ujianRes.data);
+      if (muhafadzohRes.data) nilaiMuhafadzohData = sortByMapel(muhafadzohRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -260,6 +343,7 @@
     selectedStudent = null;
     nilaiTamrinData = [];
     nilaiUjianData = [];
+    nilaiMuhafadzohData = [];
   }
 
   function getAvgNilai(data: any[]) {
@@ -369,7 +453,7 @@
             <p class="text-sm font-semibold">Mengambil data nilai...</p>
           </div>
         </Card>
-      {:else if nilaiTamrinData.length === 0 && nilaiUjianData.length === 0}
+      {:else if nilaiTamrinData.length === 0 && nilaiUjianData.length === 0 && nilaiMuhafadzohData.length === 0}
         <Card class="p-12">
           <div class="flex flex-col items-center gap-3 text-slate-400">
             <div class="p-4 bg-slate-100 rounded-2xl">
@@ -469,6 +553,69 @@
             {/if}
           </div>
         {/if}
+
+        <!-- MUHAFADZOH -->
+        {#if currentMuhafadzohData.length > 0}
+          <div class="space-y-3">
+            <button 
+              on:click={() => isMuhafadzohOpen = !isMuhafadzohOpen}
+              class="w-full flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-blue-200 transition-colors"
+            >
+              <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-blue-50 rounded-xl border border-blue-100">
+                  <BookOpen class="h-5 w-5 text-blue-600" />
+                </div>
+                <h3 class="text-base font-black text-slate-800 tracking-tight">Riwayat Muhafadzoh</h3>
+              </div>
+              <ChevronDown class="h-5 w-5 text-slate-400 transition-transform {isMuhafadzohOpen ? 'rotate-180' : ''}" />
+            </button>
+            
+            {#if isMuhafadzohOpen}
+              <div transition:slide={{ duration: 200 }} class="space-y-3 pt-1">
+                <Card class="overflow-hidden">
+                  <div class="px-4 py-3 bg-gradient-to-r from-blue-50 to-sky-50 border-b border-blue-100 flex flex-col gap-1 relative">
+                    <p class="text-[10px] font-black text-blue-700 uppercase tracking-widest">Tahun Ajaran {selectedYear}</p>
+                    {#if getTargetNadzomByTahun(selectedYear)}
+                      <p class="text-[11px] font-bold text-blue-600/80">{getTargetNadzomByTahun(selectedYear)}</p>
+                    {/if}
+                    {#if currentMuhafadzohData.length > 1 && overallBayan}
+                      <div class="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-100/50 border border-blue-200 w-fit">
+                         <span class="text-[10px] font-bold text-slate-600">PREDIKAT AKHIR:</span>
+                         <span class="text-[10px] font-black {overallBayan.toLowerCase().includes('jayyid') ? 'text-emerald-600' : overallBayan.toLowerCase().includes('mutawas') ? 'text-amber-600' : overallBayan.toLowerCase().includes('rodi') ? 'text-rose-600' : 'text-slate-500'} uppercase">{overallBayan}</span>
+                      </div>
+                    {/if}
+                  </div>
+                  <div class="p-3 grid grid-cols-1 gap-1.5">
+                    {#each currentMuhafadzohData as row}
+                      {@const parsed = parseMuhafadzoh(row)}
+                      <div class="flex flex-col gap-2 px-3 py-2.5 rounded-xl bg-slate-50 hover:bg-blue-50/40 transition-colors border border-transparent hover:border-blue-100">
+                        <span class="text-xs font-semibold text-slate-700 text-center">{row.mata_pelajaran || '-'}</span>
+                        <div class="flex items-center justify-center">
+                          <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50/70 border border-blue-100 shadow-sm text-[11px]">
+                            <span class="font-semibold text-slate-500">
+                              PEROLEHAN: <span class="font-black {parsed.nadzom === 'Belum' ? 'text-slate-400' : 'text-blue-700'}">{parsed.nadzom}</span>
+                            </span>
+                            <span class="text-blue-200 mx-1">|</span>
+                            <span class="font-semibold text-slate-500">
+                              BAYAN: 
+                              <span class="font-black
+                                {parsed.bayan.toLowerCase().includes('jayyid') ? 'text-emerald-600' : 
+                                 parsed.bayan.toLowerCase().includes('mutawas') ? 'text-amber-600' :
+                                 parsed.bayan.toLowerCase().includes('rodi') ? 'text-rose-600' :
+                                 'text-slate-500'}">
+                                {parsed.bayan}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                </Card>
+              </div>
+            {/if}
+          </div>
+        {/if}
       {/if}
     </div>
 
@@ -502,8 +649,8 @@
     {:else if hasSearched && searchResults.length === 0}
       <Card class="p-10 text-center">
         <div class="flex flex-col items-center gap-3 text-slate-400">
-          <div class="p-4 bg-slate-100 rounded-2xl"><Search class="h-7 w-7" /></div>
-          <p class="text-sm font-semibold">Tidak ditemukan santri dengan nama "<strong class="text-slate-600">{searchQuery}</strong>"</p>
+          <img src="/Empty content.svg" alt="Data kosong" class="w-40 sm:w-48 h-auto opacity-90 drop-shadow-sm transition-all hover:scale-105 duration-300 ease-out" />
+          <p class="text-sm font-semibold mt-2">Tidak ditemukan santri dengan nama "<strong class="text-slate-600">{searchQuery}</strong>"</p>
         </div>
       </Card>
 
