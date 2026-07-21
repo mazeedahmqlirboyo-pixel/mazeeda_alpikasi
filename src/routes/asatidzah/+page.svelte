@@ -844,8 +844,11 @@
               <p class="text-sm font-bold text-slate-600">Mulai Pencarian</p>
               <p class="text-xs text-slate-400">Ketik minimal 2 huruf nama atau domisili untuk mulai mencari data.</p>
             {:else}
-              <p class="text-sm font-bold text-slate-600">Tidak ada anggota ditemukan</p>
-              <p class="text-xs text-slate-400">Silakan ganti kata kunci pencarian Anda atau periksa filter kategori yang aktif.</p>
+              <div class="flex justify-center mb-6">
+                <img src="/images/empty-content.svg" alt="Tidak Ditemukan" class="h-40 w-auto object-contain drop-shadow-sm opacity-80 hover:opacity-100 transition-opacity" />
+              </div>
+              <p class="text-sm font-bold text-slate-600">Tidak ada asatidzah ditemukan</p>
+              <p class="text-xs text-slate-400">Silakan ganti kata kunci pencarian Anda atau periksa filter yang aktif.</p>
             {/if}
           </div>
         </div>

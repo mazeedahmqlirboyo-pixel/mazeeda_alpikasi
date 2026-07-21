@@ -268,6 +268,9 @@
     { gradient: 'from-cyan-400 via-sky-500 to-blue-500', bg: 'bg-cyan-100 text-cyan-700' }
   ];
 
+  let studentBagianMap: Record<string, string> = {};
+  $: currentBagian = selectedYear && studentBagianMap[selectedYear] ? studentBagianMap[selectedYear] : (selectedStudent?.bagian || "");
+
   function getAccent(name: string) {
     if (!name) return accentPalette[0];
     let hash = 0;
@@ -316,10 +319,25 @@
     isLoadingNilai = true;
     
     try {
-      // Try fetching bagian from a dedicated 'siswi' table silently just in case they added it there
-      const { data: bagianData } = await supabase.from('siswi').select('bagian').eq('nis', student.nis).limit(1);
-      if (bagianData && bagianData.length > 0 && bagianData[0].bagian) {
-        selectedStudent.bagian = bagianData[0].bagian;
+      if (!selectedStudent.bagian) {
+        const { data: bagianData, error: err } = await supabase
+          .from('siswi')
+          .select('bagian, tahun_ajaran')
+          .eq('nis', student.nis)
+          .order('id', { ascending: false });
+        
+        if (err) console.error("Error fetching bagian:", err);
+        
+        studentBagianMap = {};
+        if (bagianData && bagianData.length > 0) {
+          bagianData.forEach(s => {
+            if (s.tahun_ajaran && s.bagian) {
+              studentBagianMap[s.tahun_ajaran] = s.bagian;
+            }
+          });
+          // Fallback to latest
+          selectedStudent.bagian = bagianData[0].bagian;
+        }
       }
     } catch(e) {}
 
@@ -404,8 +422,8 @@
                   {#if getKelasByTahunAjaran(selectedYear)}
                     <span class="text-blue-300 mx-1.5 font-normal inline-block">|</span> {getKelasByTahunAjaran(selectedYear)}
                   {/if}
-                  {#if selectedStudent.bagian}
-                    <span class="text-blue-300 mx-1.5 font-normal inline-block">|</span> {selectedStudent.bagian}
+                  {#if currentBagian}
+                    <span class="text-blue-300 mx-1.5 font-normal inline-block">|</span> {currentBagian}
                   {/if}
                 </div>
               </div>

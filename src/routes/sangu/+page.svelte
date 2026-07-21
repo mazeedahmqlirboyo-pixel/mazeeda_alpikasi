@@ -178,8 +178,13 @@
   }
 
   // Reactively execute style processing
+  let stylesApplied = false;
   $: if (selectedItem || readerContainer) {
-    setTimeout(applyRichStyles, 50);
+    stylesApplied = false;
+    setTimeout(() => {
+      applyRichStyles();
+      stylesApplied = true;
+    }, 10); // Reduced delay for faster rendering
   }
 
   async function loadBacaan() {
@@ -602,32 +607,10 @@
                 class="group p-5 bg-white border border-slate-200/60 hover:border-teal-200 hover:shadow-soft-md rounded-2xl transition-premium cursor-pointer relative"
               >
                 <div class="space-y-2.5">
-                  <!-- Category Badge & Header -->
                   <div class="flex items-center justify-between">
                     <span class="text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider {getCategoryBadgeClass(item.category)}">
                       {getCategoryLabel(item.category)}
                     </span>
-
-                    {#if isAdmin}
-                      <div class="flex items-center space-x-1">
-                        <button
-                          on:click={(e) => { e.stopPropagation(); startEdit(item); }}
-                          class="p-1 rounded-lg text-slate-300 hover:text-teal-600 hover:bg-teal-50 transition-premium"
-                          title="Edit Sangu"
-                          style="min-height: 28px;"
-                        >
-                          <Edit class="h-4 w-4" />
-                        </button>
-                        <button
-                          on:click={(e) => handleDeleteSangu(item.id, e)}
-                          class="p-1 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-premium"
-                          title="Hapus Sangu"
-                          style="min-height: 28px;"
-                        >
-                          <Trash2 class="h-4 w-4" />
-                        </button>
-                      </div>
-                    {/if}
                   </div>
 
                   <!-- Title -->
@@ -642,23 +625,14 @@
           </div>
         {:else}
           <!-- Empty state -->
-          <div class="py-24 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/20 max-w-lg mx-auto">
-            <BookOpen class="h-10 w-10 text-slate-300 mx-auto animate-pulse" />
+          <div class="py-16 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/20 max-w-lg mx-auto">
+            <div class="flex justify-center mb-6">
+              <img src="/images/empty-content.svg" alt="Tidak Ditemukan" class="h-40 w-auto object-contain drop-shadow-sm opacity-80 hover:opacity-100 transition-opacity" />
+            </div>
             <h3 class="text-sm font-extrabold text-slate-600 mt-3">Tidak Ada Teks Sangu</h3>
             <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1 leading-relaxed">
               Tidak ditemukan berkas bacaan yang cocok untuk pencarian atau kategori ini.
             </p>
-            {#if isAdmin}
-              <button
-                type="button"
-                on:click={() => activeTab = 'tambah'}
-                class="mt-4 inline-flex items-center space-x-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-soft-sm transition-premium"
-                style="min-height: 38px;"
-              >
-                <Plus class="h-4 w-4" />
-                <span>Buat Teks Sangu</span>
-              </button>
-            {/if}
           </div>
         {/if}
 
@@ -672,7 +646,7 @@
           <!-- Top Row: Back button + Title & Category -->
           <div class="flex items-center justify-between border-b border-slate-100/70 pb-2">
             <button 
-              on:click={() => { selectedDoa = null; showDoaDetail = false; isPlayingContent = false; }}
+              on:click={closeDetail}
               class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 hover:text-primary transition-colors -ml-2"
             >
               <ArrowLeft class="w-5 h-5" />
@@ -719,20 +693,6 @@
               </div>
             </div>
 
-            <!-- Action buttons -->
-            {#if isAdmin}
-              <div class="flex items-center space-x-1.5 border-l-0 md:border-l md:border-slate-200 md:pl-3">
-                <button
-                  type="button"
-                  on:click={() => startEdit(selectedItem)}
-                  class="flex items-center space-x-1 bg-blue-50 border border-blue-100 hover:bg-blue-100 text-blue-700 px-2.5 py-1.5 rounded-lg text-[9px] font-bold transition-premium"
-                  style="min-height: 26px;"
-                >
-                  <Edit class="h-3 w-3" />
-                  <span>Edit Teks</span>
-                </button>
-              </div>
-            {/if}
           </div>
         </Card>
 
@@ -746,9 +706,10 @@
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div 
               bind:this={readerContainer} 
-              class="sangu-reader-content select-none font-sans leading-relaxed" 
+              class="sangu-reader-content select-none font-sans leading-relaxed transition-opacity duration-300" 
               class:hide-latin={!showLatin}
               class:hide-translation={!showTranslation}
+              class:opacity-0={!stylesApplied}
               style="font-size: {arabicFontSize}px; -webkit-touch-callout: none; -webkit-user-select: none;"
               on:contextmenu|preventDefault
             >

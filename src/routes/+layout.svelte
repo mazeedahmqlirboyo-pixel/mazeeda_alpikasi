@@ -47,6 +47,7 @@
     { name: 'Khasanah Lirboyo', path: '/admin/khasanah', icon: BookOpen },
     { name: 'Kelola Squad', path: '/admin?tab=members', icon: Users },
     { name: 'Kelola Asatidzah', path: '/admin?tab=asatidzah', icon: Users },
+    { name: 'Nilai Akademik', path: '/admin?tab=nilai', icon: Award },
     { name: 'Kelola Kepengurusan', path: '/admin?tab=kepengurusan', icon: Award },
     { name: 'Kelola Sangu', path: '/admin?tab=sangu', icon: BookOpen },
     { name: 'Pengumuman Mading', path: '/admin?tab=mading', icon: Megaphone },

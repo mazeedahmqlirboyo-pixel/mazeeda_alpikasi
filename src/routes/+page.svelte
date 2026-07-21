@@ -43,8 +43,15 @@
     CloudRain,
     Wind,
     Bot,
-    Info
+    Info,
+    Brain,
+    CheckCircle2,
+    XCircle,
+    PartyPopper,
+    Play
   } from "lucide-svelte";
+
+  import { fade, fly, scale } from "svelte/transition";
 
   // --- Lightbox State ---
   let showLightbox = false;
@@ -53,6 +60,79 @@
   function openLightbox(e: CustomEvent<string>) {
     lightboxImageUrl = e.detail;
     showLightbox = true;
+  }
+
+  // --- Quiz State ---
+  import { quizData, type QuizQuestion } from "$lib/data/quizQuestions";
+
+  let showQuizModal = false;
+  let selectedGrade: 'ula' | 'wustha' | 'ulya' | null = null;
+  let activeQuestions: QuizQuestion[] = [];
+  
+  let currentQuestionIndex = 0;
+  let quizScore = 0;
+  let isQuizFinished = false;
+  let selectedAnswer: number | null = null;
+  let isAnswerChecked = false;
+  
+  // Start Modal (Show Grade Selection)
+  function startQuiz() {
+    selectedGrade = null;
+    activeQuestions = [];
+    currentQuestionIndex = 0;
+    quizScore = 0;
+    isQuizFinished = false;
+    selectedAnswer = null;
+    isAnswerChecked = false;
+    showQuizModal = true;
+  }
+
+  // Pick 5 random questions and start the game
+  function startGame(grade: 'ula' | 'wustha' | 'ulya') {
+    selectedGrade = grade;
+    const allQuestions = [...quizData[grade]];
+    
+    // Fisher-Yates shuffle
+    for (let i = allQuestions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
+    }
+    
+    // Pick 5 questions
+    activeQuestions = allQuestions.slice(0, 5);
+    
+    currentQuestionIndex = 0;
+    quizScore = 0;
+    isQuizFinished = false;
+    selectedAnswer = null;
+    isAnswerChecked = false;
+  }
+
+  function checkAnswer(index: number) {
+    if (isAnswerChecked) return;
+    selectedAnswer = index;
+    isAnswerChecked = true;
+    if (index === activeQuestions[currentQuestionIndex].correct) {
+      quizScore += 20; // 5 questions * 20 = 100 max score
+    }
+  }
+
+  function nextQuestion() {
+    if (currentQuestionIndex < activeQuestions.length - 1) {
+      currentQuestionIndex++;
+      selectedAnswer = null;
+      isAnswerChecked = false;
+    } else {
+      isQuizFinished = true;
+    }
+  }
+
+  function getPredikat(score: number) {
+    if (score === 100) return "Mumtaz! Luar Biasa";
+    if (score >= 80) return "Jayyid Jiddan! Hebat";
+    if (score >= 60) return "Jayyid! Cukup Baik";
+    if (score >= 40) return "Mutawassith! Semangat Terus";
+    return "Teruslah Belajar & Mengaji!";
   }
 
   // --- Reactive PWA State ---
@@ -1902,6 +1982,48 @@
     </div>
   </section>
 
+  <!-- ==================== KUIS CERDAS CERMAT WIDGET ==================== -->
+  <section class="space-y-4">
+    <h2 class="text-lg font-bold text-slate-800 tracking-tight">
+      Uji Pengetahuanmu
+    </h2>
+    <a
+      href="#"
+      on:click|preventDefault={startQuiz}
+      class="group block transition-all hover:-translate-y-1.5 duration-300"
+    >
+      <div
+        class="relative overflow-hidden rounded-2xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50/40 via-white to-white hover:border-fuchsia-300 hover:shadow-soft-md text-slate-800 p-5 sm:p-6 min-h-[11rem] flex flex-col justify-between transition-all duration-300"
+      >
+        <!-- Dekorasi AI -->
+        <div
+          class="absolute -right-4 -bottom-4 w-40 h-40 sm:w-48 sm:h-48 opacity-100 pointer-events-none group-hover:scale-110 transition-transform duration-500 flex items-center justify-center"
+          style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+        >
+          <img src="/images/quiz_icon.png" alt="Quiz Cerdas Cermat" class="w-full h-full object-contain drop-shadow-md scale-110 translate-x-2 translate-y-2 opacity-90 group-hover:opacity-100 transition-opacity" />
+        </div>
+        
+        <div class="space-y-2 z-10 w-[70%] sm:w-2/3">
+          <span
+            class="inline-flex items-center space-x-1.5 bg-fuchsia-50 border border-fuchsia-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 leading-none"
+          >
+            🎉 Mini Game Baru!
+          </span>
+          <h3
+            class="text-lg sm:text-xl font-extrabold tracking-tight mt-1 text-slate-800"
+          >
+            Kuis Cerdas Cermat Islami
+          </h3>
+          <p
+            class="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal max-w-sm"
+          >
+            Uji seberapa jauh pengetahuan agamamu! Ada pertanyaan seputar Fiqih, Nahwu, dan Sejarah.
+          </p>
+        </div>
+      </div>
+    </a>
+  </section>
+
   <!-- ==================== KHASANAH LIRBOYO BANNER ==================== -->
   <section class="space-y-4">
     <h2 class="text-lg font-bold text-slate-800 tracking-tight">
@@ -2412,6 +2534,193 @@
 </div>
 
 <ImageLightbox bind:show={showLightbox} imageUrl={lightboxImageUrl} on:close={() => showLightbox = false} />
+
+<!-- ==================== FULLSCREEN QUIZ MODAL ==================== -->
+{#if showQuizModal}
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/80 backdrop-blur-md" transition:fade={{ duration: 200 }}>
+    <div 
+      class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden relative flex flex-col max-h-[90vh]" 
+      in:scale={{ duration: 300, start: 0.95 }}
+    >
+      <!-- Top Header -->
+      <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-5 flex items-center justify-between shrink-0 relative overflow-hidden">
+        <div class="absolute inset-0 bg-[url('/images/pattern-islamic.png')] opacity-10 mix-blend-overlay"></div>
+        <h3 class="font-black text-white text-lg tracking-tight relative z-10 flex items-center gap-2">
+          <Brain class="w-5 h-5 text-yellow-300" />
+          Kuis Cerdas Cermat
+        </h3>
+        <button
+          on:click={() => showQuizModal = false}
+          class="relative z-10 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+        >
+          <XCircle class="w-5 h-5" />
+        </button>
+      </div>
+
+      <div class="p-6 sm:p-8 overflow-y-auto flex-1">
+        {#if !selectedGrade}
+          <!-- Grade Selection Screen -->
+          <div class="text-center space-y-8 py-4" in:fly={{ y: 20, duration: 400 }}>
+            <div class="space-y-2">
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-800">Pilih Tingkat Kesulitan</h2>
+              <p class="text-slate-500 text-sm">Pilih grade untuk memulai kuis. Soal akan diacak dan berbeda setiap kali Anda bermain!</p>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <!-- Grade Ula -->
+              <button 
+                on:click={() => startGame('ula')}
+                class="flex flex-col items-center p-6 bg-white border-2 border-emerald-100 hover:border-emerald-400 rounded-2xl hover:shadow-xl transition-all duration-300 group"
+              >
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span class="text-2xl font-black">1</span>
+                </div>
+                <h3 class="font-black text-lg text-slate-800">Grade Ula</h3>
+                <p class="text-xs text-slate-500 mt-2">Dasar Sejarah, Fiqih, & Tauhid</p>
+              </button>
+
+              <!-- Grade Wustha -->
+              <button 
+                on:click={() => startGame('wustha')}
+                class="flex flex-col items-center p-6 bg-white border-2 border-amber-100 hover:border-amber-400 rounded-2xl hover:shadow-xl transition-all duration-300 group"
+              >
+                <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span class="text-2xl font-black">2</span>
+                </div>
+                <h3 class="font-black text-lg text-slate-800">Grade Wustha</h3>
+                <p class="text-xs text-slate-500 mt-2">Fiqih Menengah & Shorof</p>
+              </button>
+
+              <!-- Grade Ulya -->
+              <button 
+                on:click={() => startGame('ulya')}
+                class="flex flex-col items-center p-6 bg-white border-2 border-rose-100 hover:border-rose-400 rounded-2xl hover:shadow-xl transition-all duration-300 group"
+              >
+                <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span class="text-2xl font-black">3</span>
+                </div>
+                <h3 class="font-black text-lg text-slate-800">Grade Ulya</h3>
+                <p class="text-xs text-slate-500 mt-2">Ushul Fiqih, Alfiyah & Lanjutan</p>
+              </button>
+            </div>
+          </div>
+
+        {:else if !isQuizFinished}
+          <!-- Progress Bar -->
+          <div class="flex items-center justify-between mb-6">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Pertanyaan {currentQuestionIndex + 1} / {activeQuestions.length}
+              <span class="ml-2 px-2 py-0.5 bg-slate-100 rounded text-[10px] text-slate-500 font-bold uppercase">{selectedGrade}</span>
+            </span>
+            <span class="text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+              Skor: {quizScore}
+            </span>
+          </div>
+          <div class="w-full bg-slate-100 h-2 rounded-full mb-8 overflow-hidden">
+            <div 
+              class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-500" 
+              style="width: {((currentQuestionIndex + 1) / activeQuestions.length) * 100}%"
+            ></div>
+          </div>
+
+          <!-- Question Content -->
+          <div class="space-y-6">
+            <h2 class="text-xl sm:text-2xl font-black text-slate-800 leading-tight">
+              {activeQuestions[currentQuestionIndex].question}
+            </h2>
+
+            <div class="space-y-3">
+              {#each activeQuestions[currentQuestionIndex].options as option, idx}
+                {@const isSelected = selectedAnswer === idx}
+                {@const isCorrect = idx === activeQuestions[currentQuestionIndex].correct}
+                {@const statusClass = !isAnswerChecked 
+                  ? "border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600" 
+                  : (isCorrect 
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20" 
+                      : (isSelected ? "border-rose-500 bg-rose-50 text-rose-800" : "border-slate-100 text-slate-400 opacity-50"))}
+                
+                <button
+                  type="button"
+                  on:click={() => checkAnswer(idx)}
+                  disabled={isAnswerChecked}
+                  class="w-full text-left p-4 sm:p-5 rounded-2xl border-2 transition-all duration-200 flex items-center justify-between group {statusClass}"
+                >
+                  <span class="font-bold text-sm sm:text-base">{option}</span>
+                  
+                  {#if isAnswerChecked}
+                    {#if isCorrect}
+                      <span in:scale><CheckCircle2 class="w-5 h-5 text-emerald-500" /></span>
+                    {:else if isSelected}
+                      <span in:scale><XCircle class="w-5 h-5 text-rose-500" /></span>
+                    {/if}
+                  {/if}
+                </button>
+              {/each}
+            </div>
+
+            <!-- Explanation Box -->
+            {#if isAnswerChecked}
+              <div class="p-4 rounded-2xl bg-blue-50 border border-blue-100" in:fly={{ y: 20, duration: 300 }}>
+                <p class="text-sm text-blue-800 font-medium leading-relaxed">
+                  <span class="font-black text-blue-900 block mb-1">Penjelasan:</span>
+                  {activeQuestions[currentQuestionIndex].explanation}
+                </p>
+              </div>
+            {/if}
+          </div>
+        {:else}
+          <!-- Result Screen -->
+          <div class="text-center space-y-6 py-8" in:fly={{ y: 20, duration: 400 }}>
+            <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-yellow-100 text-yellow-500 mb-2 ring-8 ring-yellow-50 relative">
+              <Award class="w-12 h-12" />
+              <!-- Confetti dots for result -->
+              <span class="absolute top-0 right-0 w-3 h-3 bg-rose-400 rounded-full animate-ping"></span>
+              <span class="absolute bottom-4 -left-2 w-2 h-2 bg-blue-400 rounded-full animate-ping" style="animation-delay: 300ms;"></span>
+            </div>
+
+            <div>
+              <h2 class="text-3xl font-black text-slate-800">Skor Akhir: {quizScore}</h2>
+              <p class="text-lg font-bold text-indigo-600 mt-2">{getPredikat(quizScore)}</p>
+            </div>
+            
+            <p class="text-slate-500 text-sm max-w-sm mx-auto">
+              Terima kasih telah mencoba Kuis Cerdas Cermat Islami. Tetap semangat mengaji dan menuntut ilmu!
+            </p>
+          </div>
+        {/if}
+      </div>
+
+      <!-- Footer Action -->
+      <div class="p-4 sm:p-6 border-t border-slate-100 bg-slate-50 flex justify-end shrink-0">
+        {#if !selectedGrade}
+           <Button on:click={() => showQuizModal = false} variant="outline" class="w-full sm:w-auto border-slate-200 text-slate-600 font-bold rounded-xl h-12 px-8">
+              Tutup Modal
+            </Button>
+        {:else if !isQuizFinished}
+          {#if isAnswerChecked}
+            <Button on:click={nextQuestion} class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl h-12 px-8">
+              {currentQuestionIndex < activeQuestions.length - 1 ? 'Lanjut ke Soal Berikutnya' : 'Lihat Hasil Akhir'}
+            </Button>
+          {:else}
+            <Button disabled class="w-full sm:w-auto bg-slate-200 text-slate-400 font-bold rounded-xl h-12 px-8">
+              Pilih Jawaban Dulu
+            </Button>
+          {/if}
+        {:else}
+          <div class="w-full flex flex-col sm:flex-row gap-3">
+            <Button on:click={() => showQuizModal = false} variant="outline" class="w-full sm:flex-1 border-slate-200 text-slate-600 font-bold rounded-xl h-12">
+              Tutup Kuis
+            </Button>
+            <Button on:click={startQuiz} class="w-full sm:flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl h-12">
+              <PartyPopper class="w-4 h-4 mr-2" />
+              Pilih Grade Baru
+            </Button>
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   @keyframes marqueeRight {

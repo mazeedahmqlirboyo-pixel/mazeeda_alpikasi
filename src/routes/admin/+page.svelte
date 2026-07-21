@@ -1977,6 +1977,133 @@
   let nilai_csvImportStatus = '';
   let nilai_csvImportError = '';
 
+  // --- CRUD Manual Nilai Akademik ---
+  let nilai_mode: 'manual' | 'csv' = 'manual';
+  let isFetchingNilai = false;
+  let nilaiData: any[] = [];
+  let nilaiSearch = '';
+  let showNilaiModal = false;
+  let editingNilai: any = null;
+  let nilaiFilterKategori = '';
+  let nilaiFilterTahunAjaran = '';
+  let formNilai = {
+    nis: '',
+    nama_siswi: '',
+    periode: '',
+    tahun_ajaran: '2026-2027',
+    kategori: '',
+    mata_pelajaran: '',
+    nilai: '',
+    catatan: ''
+  };
+
+  async function fetchNilaiManual() {
+    if (nilaiSearch.trim().length < 2) {
+      nilaiData = [];
+      return;
+    }
+    isFetchingNilai = true;
+    try {
+      let query = supabase.from('nilai_tamrin').select('*').order('created_at', { ascending: false }).limit(50);
+      if (nilaiSearch.trim()) {
+        query = query.or(`nama_siswi.ilike.%${nilaiSearch}%,nis.ilike.%${nilaiSearch}%`);
+      }
+      if (nilaiFilterKategori) {
+        query = query.eq('kategori', nilaiFilterKategori);
+      }
+      if (nilaiFilterTahunAjaran) {
+        query = query.eq('tahun_ajaran', nilaiFilterTahunAjaran);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      nilaiData = data || [];
+    } catch (err) {
+      console.error(err);
+    } finally {
+      isFetchingNilai = false;
+    }
+  }
+
+  // Remove automatic fetching to save egress
+  // Re-fetch only if they are actively searching and change the table type
+  $: if (nilai_targetTable && activeSection === 'nilai' && nilai_mode === 'manual' && nilaiSearch.trim().length >= 2) {
+    fetchNilaiManual();
+  }
+
+  function openAddNilai() {
+    editingNilai = null;
+    formNilai = { nis: '', nama_siswi: '', periode: 'Ganjil', tahun_ajaran: '2026-2027', kategori: '', mata_pelajaran: '', nilai: '', catatan: '' };
+    showNilaiModal = true;
+  }
+
+  function openEditNilai(n: any) {
+    editingNilai = n;
+    formNilai = {
+      nis: n.nis || '',
+      nama_siswi: n.nama_siswi || '',
+      periode: n.periode || '',
+      tahun_ajaran: n.tahun_ajaran || '2026-2027',
+      kategori: n.kategori || '',
+      mata_pelajaran: n.mata_pelajaran || '',
+      nilai: n.nilai !== null ? String(n.nilai) : '',
+      catatan: n.catatan || ''
+    };
+    showNilaiModal = true;
+  }
+
+  async function saveNilaiManual() {
+    if (!formNilai.nis || !formNilai.nama_siswi || !formNilai.mata_pelajaran) {
+      triggerAlert("NIS, Nama Siswi, dan Mata Pelajaran wajib diisi!");
+      return;
+    }
+    isSubmitting = true;
+    try {
+      const payload = {
+        nis: formNilai.nis,
+        nama_siswi: formNilai.nama_siswi,
+        periode: formNilai.periode,
+        tahun_ajaran: formNilai.tahun_ajaran,
+        kategori: formNilai.kategori,
+        mata_pelajaran: formNilai.mata_pelajaran,
+        nilai: formNilai.nilai ? parseFloat(formNilai.nilai.replace(',','.')) : null,
+        catatan: formNilai.catatan
+      };
+
+      if (editingNilai) {
+        const { error } = await supabase.from(nilai_targetTable).update(payload).eq('id', editingNilai.id);
+        if (error) throw error;
+        triggerAlert("Berhasil memperbarui nilai!");
+      } else {
+        const { error } = await supabase.from(nilai_targetTable).insert([payload]);
+        if (error) throw error;
+        triggerAlert("Berhasil menambah nilai!");
+      }
+      showNilaiModal = false;
+      fetchNilaiManual();
+    } catch (err: any) {
+      triggerAlert("Gagal menyimpan nilai: " + err.message);
+    } finally {
+      isSubmitting = false;
+    }
+  }
+
+  function deleteNilai(id: string) {
+    runWithConfirmation(
+      'Hapus Nilai',
+      'Apakah Anda yakin ingin menghapus data nilai ini? Tindakan ini tidak dapat dibatalkan.',
+      async () => {
+        try {
+          const { error } = await supabase.from(nilai_targetTable).delete().eq('id', id);
+          if (error) throw error;
+          triggerAlert('Data nilai berhasil dihapus.');
+          fetchNilaiManual();
+        } catch (err: any) {
+          alert('Gagal menghapus nilai: ' + err.message);
+        }
+      }
+    );
+  }
+
   function nilai_processCSV(file: File) {
     nilai_csvImportError = "";
     nilai_csvImportStatus = "";
@@ -3808,29 +3935,49 @@
   {:else if activeSection === 'nilai'}
     <!-- ==================== NILAI AKADEMIK ==================== -->
     <div in:fade={{ duration: 200 }} class="space-y-6">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
         <div>
           <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
             <Award class="h-8 w-8 text-primary" />
-            Upload Nilai Akademik
+            Manajemen Nilai Akademik
           </h1>
-          <p class="text-sm text-slate-500 mt-1">Upload CSV nilai tamrin atau nilai ujian semester santri.</p>
+          <p class="text-sm text-slate-500 mt-1">Kelola data nilai santri secara manual atau upload via CSV.</p>
+        </div>
+        
+        <div class="flex items-center bg-slate-100 p-1 rounded-xl shadow-inner w-full sm:w-auto">
+          <button 
+            on:click={() => nilai_mode = 'manual'}
+            class="flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all duration-200 {nilai_mode === 'manual' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
+          >
+            Kelola Manual
+          </button>
+          <button 
+            on:click={() => nilai_mode = 'csv'}
+            class="flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all duration-200 {nilai_mode === 'csv' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
+          >
+            Upload CSV
+          </button>
         </div>
       </div>
 
-      <Card class="p-6">
-        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <UploadCloud class="h-5 w-5 text-emerald-500" />
-          Import CSV Nilai
-        </h3>
-        
-        <div class="mb-4">
-          <label class="block text-xs font-bold text-slate-500 mb-2">Pilih Tujuan Tabel Database</label>
-          <select bind:value={nilai_targetTable} class="w-full sm:w-64 text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-primary">
+
+
+      {#if nilai_mode === 'csv'}
+        <div class="mb-2 mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <label class="text-sm font-bold text-slate-700 whitespace-nowrap">Pilih Tabel Database:</label>
+          <select bind:value={nilai_targetTable} class="w-full sm:max-w-xs text-sm px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-medium text-slate-700">
             <option value="nilai_tamrin">Tabel: nilai_tamrin (Atau Muhafadzoh)</option>
             <option value="nilai_ujian">Tabel: nilai_ujian</option>
           </select>
         </div>
+
+        <Card class="p-6 border-emerald-100 shadow-sm mt-4">
+          <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <UploadCloud class="h-5 w-5 text-emerald-500" />
+            Import CSV Nilai
+          </h3>
+        
+
 
         <div class="space-y-4">
           <div class="p-4 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 hover:border-emerald-400 transition-colors relative group text-center cursor-pointer">
@@ -3888,6 +4035,146 @@
           {/if}
         </div>
       </Card>
+      
+      {:else}
+        <!-- MODE KELOLA MANUAL -->
+        <Card class="p-0 overflow-hidden shadow-sm border-indigo-100 mt-4">
+          <!-- Toolbar -->
+          <div class="p-4 sm:p-5 border-b border-slate-100 bg-white flex flex-col gap-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div class="relative w-full sm:max-w-md">
+                <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400" />
+                <input 
+                  type="text" 
+                  placeholder="Cari NIS atau Nama Siswi..." 
+                  bind:value={nilaiSearch}
+                  on:input={() => {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(fetchNilaiManual, 500);
+                  }}
+                  class="w-full pl-10 pr-4 py-2.5 text-sm font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
+                />
+              </div>
+              <Button on:click={openAddNilai} class="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg transition-all rounded-xl py-2.5 px-5 shrink-0">
+                <Plus class="h-4.5 w-4.5" />
+                <span class="font-bold tracking-wide">Tambah Nilai</span>
+              </Button>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-4 w-full bg-slate-50/80 p-3 rounded-xl border border-slate-100">
+              <div class="w-full sm:w-1/2">
+                <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2 block">Filter Kategori Nilai</label>
+                <div class="relative group cursor-pointer">
+                  <div class="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 bg-indigo-50 rounded-lg text-indigo-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors pointer-events-none">
+                    <Award class="h-3.5 w-3.5" />
+                  </div>
+                  <select bind:value={nilaiFilterKategori} on:change={() => { if(nilaiSearch.trim().length >= 2) fetchNilaiManual(); }} class="w-full text-sm pl-12 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-bold text-slate-700 appearance-none shadow-sm cursor-pointer hover:border-indigo-300">
+                    <option value="">Semua Kategori</option>
+                    <option value="Tamrin">Tamrin</option>
+                    <option value="Ujian">Ujian</option>
+                    <option value="Muhafadzoh">Muhafadzoh</option>
+                  </select>
+                  <ChevronDown class="absolute right-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400 group-hover:text-indigo-500 transition-colors pointer-events-none" />
+                </div>
+              </div>
+              <div class="w-full sm:w-1/2">
+                <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2 block">Filter Tahun Ajaran</label>
+                <div class="relative group cursor-pointer">
+                  <div class="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 bg-sky-50 rounded-lg text-sky-500 group-hover:bg-sky-100 group-hover:text-sky-600 transition-colors pointer-events-none">
+                    <Calendar class="h-3.5 w-3.5" />
+                  </div>
+                  <select bind:value={nilaiFilterTahunAjaran} on:change={() => { if(nilaiSearch.trim().length >= 2) fetchNilaiManual(); }} class="w-full text-sm pl-12 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all font-bold text-slate-700 appearance-none shadow-sm cursor-pointer hover:border-sky-300">
+                    <option value="">Semua Tahun Ajaran</option>
+                    <option value="2023-2024">2023-2024</option>
+                    <option value="2024-2025">2024-2025</option>
+                    <option value="2025-2026">2025-2026</option>
+                    <option value="2026-2027">2026-2027</option>
+                    <option value="2027-2028">2027-2028</option>
+                  </select>
+                  <ChevronDown class="absolute right-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400 group-hover:text-sky-500 transition-colors pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+              <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th class="px-5 py-4 border-b border-slate-100">Siswi</th>
+                  <th class="px-5 py-4 border-b border-slate-100">Periode & Tahun</th>
+                  <th class="px-5 py-4 border-b border-slate-100">Pelajaran</th>
+                  <th class="px-5 py-4 border-b border-slate-100">Perolehan / Bayan</th>
+                  <th class="px-5 py-4 border-b border-slate-100 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-50">
+                {#if isFetchingNilai}
+                  <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400 font-medium">Mencari data nilai...</td></tr>
+                {:else if !nilaiSearch || nilaiSearch.length < 2}
+                  <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400 font-medium bg-slate-50/50">Ketikkan minimal 2 huruf/angka dari Nama atau NIS untuk mencari data nilai.</td></tr>
+                {:else if nilaiData.length === 0}
+                  <tr><td colspan="5" class="px-5 py-12 text-center text-rose-400 font-medium bg-rose-50/50 border-y border-rose-100">Data nilai tidak ditemukan untuk pencarian "{nilaiSearch}".</td></tr>
+                {:else}
+                  {#each nilaiData as item}
+                    <tr class="hover:bg-slate-50/80 transition-colors group">
+                      <td class="px-5 py-3">
+                        <div class="font-bold text-slate-800">{item.nama_siswi || '-'}</div>
+                        <div class="text-[11px] font-semibold text-slate-500 mt-0.5">NIS: {item.nis}</div>
+                      </td>
+                      <td class="px-5 py-3">
+                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-50 border border-indigo-100/50 text-indigo-700 text-xs font-bold">
+                          {item.periode || '-'}
+                        </div>
+                        <div class="text-[11px] text-slate-500 font-medium mt-1">{item.tahun_ajaran || '-'}</div>
+                      </td>
+                      <td class="px-5 py-3">
+                        <div class="font-bold text-slate-700">{item.mata_pelajaran || '-'}</div>
+                        {#if item.kategori}
+                          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{item.kategori}</div>
+                        {/if}
+                      </td>
+                      <td class="px-5 py-3">
+                        {#if item.catatan && item.catatan.includes('|||')}
+                          {@const parts = item.catatan.split('|||')}
+                          {@const perolehan = (item.nilai !== null && item.nilai !== undefined && item.nilai !== -1) ? item.nilai : (parts[0].trim() || 'LULUS / KHATAM')}
+                          {@const bayan = parts[1] ? parts[1].trim() : '-'}
+                          
+                          <div class="font-black text-sm text-emerald-700">
+                            {perolehan} <span class="text-slate-300 font-normal mx-1.5">|</span> <span class="text-slate-600">{bayan}</span>
+                          </div>
+                        {:else}
+                          <!-- NON-MUHAFADZOH / STANDARD -->
+                          {@const perolehan = (item.nilai !== null && item.nilai !== undefined && item.nilai !== -1) ? item.nilai : 'LULUS / KHATAM'}
+                          {@const bayan = item.catatan ? item.catatan.trim() : ''}
+                          
+                          <div class="font-black text-sm text-emerald-700">
+                            {perolehan} 
+                            {#if bayan}
+                              <span class="text-slate-300 font-normal mx-1.5">|</span> <span class="text-slate-600">{bayan}</span>
+                            {/if}
+                          </div>
+                        {/if}
+                      </td>
+                      <td class="px-5 py-3 text-right">
+                        <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button on:click={() => openEditNilai(item)} class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                            <Edit class="h-4 w-4" />
+                          </button>
+                          <button on:click={() => deleteNilai(item.id)} class="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors" title="Hapus">
+                            <Trash2 class="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  {/each}
+                {/if}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      {/if}
     </div>
   {:else if activeSection === 'kepengurusan'}
     <!-- ==================== TAB: KEPENGURUSAN ==================== -->
@@ -4316,6 +4603,79 @@
     </div>
   {/if}
 </div>
+
+{#if showNilaiModal}
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-[2px] animate-in fade-in duration-200">
+    <div class="bg-white rounded-3xl border border-slate-100 shadow-soft-xl max-w-lg w-full overflow-hidden animate-in scale-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+      <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+        <h3 class="text-xl font-black text-slate-800 flex items-center gap-2">
+          <Award class="h-6 w-6 text-indigo-500" />
+          {editingNilai ? 'Edit Nilai Santri' : 'Tambah Nilai Manual'}
+        </h3>
+        <button on:click={() => showNilaiModal = false} class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors">
+          <X class="h-5 w-5" />
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-600">NIS Siswi <span class="text-rose-500">*</span></label>
+            <input type="text" bind:value={formNilai.nis} placeholder="Misal: 22001" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-600">Nama Lengkap <span class="text-rose-500">*</span></label>
+            <input type="text" bind:value={formNilai.nama_siswi} placeholder="Nama Siswi" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-600">Periode</label>
+            <select bind:value={formNilai.periode} class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none">
+              <option value="Ganjil">Ganjil</option>
+              <option value="Genap">Genap</option>
+            </select>
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-600">Tahun Ajaran</label>
+            <input type="text" bind:value={formNilai.tahun_ajaran} placeholder="2026-2027" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-600">Mata Pelajaran <span class="text-rose-500">*</span></label>
+            <input type="text" bind:value={formNilai.mata_pelajaran} placeholder="Fiqih / Nahwu / Shorof" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-600">Kategori</label>
+            <select bind:value={formNilai.kategori} class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none">
+              <option value="">- Pilih Kategori (Opsional) -</option>
+              <option value="Qobla Maulud">Qobla Maulud</option>
+              <option value="Ba'da Maulud">Ba'da Maulud</option>
+              <option value="Ramadhan">Ramadhan</option>
+              <option value="Syawal">Syawal</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-600">Nilai (Angka)</label>
+            <input type="text" bind:value={formNilai.nilai} placeholder="Contoh: 90.5" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-600">Catatan / Predikat</label>
+            <input type="text" bind:value={formNilai.catatan} placeholder="Misal: Mumtaz / Jayyid" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
+          </div>
+        </div>
+      </div>
+      <div class="p-6 border-t border-slate-100 bg-slate-50/30 flex justify-end gap-3 shrink-0">
+        <Button variant="secondary" on:click={() => showNilaiModal = false} class="rounded-xl">Batal</Button>
+        <Button on:click={saveNilaiManual} disabled={isSubmitting} class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-6 shadow-md">
+          {#if isSubmitting}Menyimpan...{:else}Simpan Data{/if}
+        </Button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 {#if showConfirmModal}
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-[2px] animate-in fade-in duration-200">

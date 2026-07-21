@@ -1,0 +1,1 @@
+const fs = require('fs'); const code = fs.readFileSync('src/lib/supabase.ts', 'utf8'); const urlMatch = code.match(/https:\/\/[^\']+/); const keyMatch = code.match(/eyJ[^\']+/); fetch(urlMatch[0] + '/rest/v1/nilai_ujian?select=*&limit=1', { headers: { apikey: keyMatch[0], Authorization: 'Bearer ' + keyMatch[0] } }).then(r => r.json()).then(console.log).catch(console.error);
