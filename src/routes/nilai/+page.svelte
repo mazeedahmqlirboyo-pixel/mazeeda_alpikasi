@@ -659,9 +659,9 @@
 
     <!-- Results -->
     {#if isSearching}
-      <div class="flex items-center justify-center py-10 gap-3 text-slate-400">
-        <div class="h-5 w-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-        <span class="text-sm font-semibold">Mencari...</span>
+      <div class="flex flex-col items-center justify-center py-10 gap-3 text-slate-400">
+        <img src="/images/loading.svg" alt="Loading" class="w-24 h-24 object-contain animate-pulse" />
+        <span class="text-sm font-semibold">Mencari data...</span>
       </div>
 
     {:else if hasSearched && searchResults.length === 0}
