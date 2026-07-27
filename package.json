@@ -43,6 +43,6 @@
     "svelte-i18n": "^4.0.1"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   }
 }
