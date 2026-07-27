@@ -1,5 +1,5 @@
 import adapterStatic from '@sveltejs/adapter-static';
-import adapterAuto from '@sveltejs/adapter-auto';
+import adapterVercel from '@sveltejs/adapter-vercel';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 const useStatic = !process.env.VERCEL;
@@ -14,7 +14,9 @@ const config = {
 				fallback: 'index.html',
 				strict: false
 			})
-			: adapterAuto(),
+			: adapterVercel({
+				runtime: 'nodejs22.x'
+			}),
 		prerender: {
 			handleHttpError: 'warn'
 		},
