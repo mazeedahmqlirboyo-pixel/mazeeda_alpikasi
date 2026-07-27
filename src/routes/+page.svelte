@@ -62,6 +62,39 @@
     showLightbox = true;
   }
 
+  // --- Feedback Modal State ---
+  let showFeedbackModal = false;
+  let feedbackMessage = "";
+  let isSubmittingFeedback = false;
+  let feedbackSuccess = false;
+
+  async function submitFeedback() {
+    if (!feedbackMessage.trim()) return;
+    const userName = $authStore.user?.name || "Anonim";
+    
+    isSubmittingFeedback = true;
+    try {
+      const { error } = await supabase.from('feedbacks').insert([{
+        user_name: userName,
+        message: feedbackMessage.trim()
+      }]);
+      
+      if (error) throw error;
+      
+      feedbackSuccess = true;
+      feedbackMessage = "";
+      setTimeout(() => {
+        showFeedbackModal = false;
+        feedbackSuccess = false;
+      }, 2000);
+    } catch (err) {
+      console.error("Gagal mengirim saran:", err);
+      alert("Gagal mengirim saran. Silakan coba lagi.");
+    } finally {
+      isSubmittingFeedback = false;
+    }
+  }
+
   // --- Reactive PWA State ---
   let showPWAInstall = false;
   $: showPWAInstall = $showInstallBtn;
@@ -2489,12 +2522,77 @@
         <a href="/kebijakan-privasi" class="hover:text-indigo-600 transition-colors">Kebijakan Privasi</a>
         <span class="w-1 h-1 rounded-full bg-slate-300"></span>
         <a href="/syarat-ketentuan" class="hover:text-indigo-600 transition-colors">Syarat & Ketentuan</a>
+        <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+        <button type="button" on:click={() => showFeedbackModal = true} class="hover:text-indigo-600 transition-colors cursor-pointer text-left focus:outline-none">Kirim Masukan</button>
       </div>
     </div>
   </footer>
 </div>
 
 <ImageLightbox bind:show={showLightbox} imageUrl={lightboxImageUrl} on:close={() => showLightbox = false} />
+
+<!-- Feedback Modal -->
+{#if showFeedbackModal}
+  <div 
+    class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6"
+    transition:fade={{ duration: 200 }}
+    on:click={() => showFeedbackModal = false}
+  >
+    <div 
+      class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+      transition:scale={{ duration: 200, start: 0.95 }}
+      on:click|stopPropagation
+    >
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h3 class="text-lg font-bold text-slate-800">Saran & Masukan</h3>
+        <button 
+          on:click={() => showFeedbackModal = false}
+          class="p-2 -mr-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors focus:outline-none"
+        >
+          <XCircle class="w-5 h-5" />
+        </button>
+      </div>
+
+      <div class="p-6">
+        {#if feedbackSuccess}
+          <div class="text-center py-6" in:fade={{ duration: 200 }}>
+            <div class="mx-auto w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle2 class="w-8 h-8 text-emerald-500" />
+            </div>
+            <h4 class="text-lg font-bold text-slate-800 mb-1">Terima Kasih!</h4>
+            <p class="text-sm text-slate-500">Saran dan masukan Anda telah terkirim dan akan sangat membantu kami mengembangkan aplikasi MAZEEDA.</p>
+          </div>
+        {:else}
+          <div class="space-y-4">
+            <div>
+              <label for="feedback" class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Pesan Anda</label>
+              <textarea 
+                id="feedback" 
+                rows="5" 
+                placeholder="Punya ide fitur baru, menemukan bug, atau sekadar memberi kritik dan saran? Tulis di sini..." 
+                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white resize-none transition-colors"
+                bind:value={feedbackMessage}
+              ></textarea>
+            </div>
+            <Button 
+              on:click={submitFeedback} 
+              disabled={isSubmittingFeedback || !feedbackMessage.trim()}
+              class="w-full py-2.5 font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-soft-sm disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            >
+              {#if isSubmittingFeedback}
+                <div class="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Mengirim...
+              {:else}
+                <Megaphone class="w-4 h-4" />
+                Kirim Masukan
+              {/if}
+            </Button>
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   @keyframes marqueeRight {

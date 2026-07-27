@@ -246,14 +246,16 @@
   <!-- Dashboard Content -->
   {#if isLoading}
     <div class="py-24 text-center space-y-4">
-      <div class="animate-spin h-8 w-8 border-3 border-primary border-t-transparent rounded-full mx-auto"></div>
-      <p class="text-xs font-semibold text-slate-500">Menyinkronkan data kepengurusan...</p>
+      <img src="/images/loading.svg" alt="Loading..." class="h-16 w-16 mx-auto animate-spin opacity-80" style="animation-duration: 2s;" />
+      <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Menyinkronkan data...</p>
     </div>
   {:else if !hasAnyData}
-    <div class="py-20 text-center border border-dashed border-slate-200 rounded-3xl bg-slate-50/40 space-y-2">
-      <Award class="h-10 w-10 text-slate-300 mx-auto" />
+    <div class="py-16 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 mt-6">
+      <div class="flex justify-center mb-6">
+        <img src="/images/empty-content.svg" alt="Tidak Ditemukan" class="h-40 w-auto object-contain drop-shadow-sm opacity-80 hover:opacity-100 transition-opacity" />
+      </div>
       <p class="text-sm font-bold text-slate-600">Tidak ada pengurus ditemukan</p>
-      <p class="text-xs text-slate-400">Belum ada data kepengurusan untuk periode atau pencarian ini.</p>
+      <p class="text-xs text-slate-400 mt-1">{searchQuery ? 'Silakan ganti kata kunci pencarian Anda.' : `Belum ada data pengurus untuk T.A ${activeYear}.`}</p>
     </div>
   {:else}
     <div class="space-y-12">

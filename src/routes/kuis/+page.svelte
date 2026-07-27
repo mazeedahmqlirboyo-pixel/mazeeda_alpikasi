@@ -9,7 +9,10 @@
     XCircle,
     PartyPopper,
     Award,
-    BookOpen
+    Medal,
+    Trophy,
+    Crown,
+    ArrowLeft
   } from "lucide-svelte";
   
   let selectedGrade: 'ula' | 'wustha' | 'ulya' | null = null;
@@ -32,7 +35,7 @@
     isAnswerChecked = false;
   }
 
-  function startGame(grade: 'ula' | 'wustha' | 'ulya') {
+  function startGame(grade: 'ula' | 'wustha' | 'ulya' | 'hmq') {
     selectedGrade = grade;
     const allQuestions = [...quizData[grade]];
     
@@ -41,7 +44,7 @@
       [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
     }
     
-    activeQuestions = allQuestions.slice(0, 5);
+    activeQuestions = allQuestions.slice(0, 25);
     currentQuestionIndex = 0;
     isQuizFinished = false;
     userAnswers = [];
@@ -89,14 +92,14 @@
             <h2 class="text-2xl sm:text-3xl font-black text-slate-800">Pilih Tingkat Kesulitan</h2>
           </div>
           
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <!-- Grade Ula -->
             <button 
               on:click={() => startGame('ula')}
               class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white border-2 border-emerald-100 hover:border-emerald-400 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
             >
               <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
-                <span class="text-xl sm:text-2xl font-black">1</span>
+                <Medal class="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
               <div>
                 <h3 class="font-black text-base sm:text-lg text-slate-800">Grade Ula</h3>
@@ -110,7 +113,7 @@
               class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white border-2 border-amber-100 hover:border-amber-400 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
             >
               <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
-                <span class="text-xl sm:text-2xl font-black">2</span>
+                <Award class="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
               <div>
                 <h3 class="font-black text-base sm:text-lg text-slate-800">Grade Wustha</h3>
@@ -124,11 +127,25 @@
               class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white border-2 border-rose-100 hover:border-rose-400 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
             >
               <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
-                <span class="text-xl sm:text-2xl font-black">3</span>
+                <Trophy class="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
               <div>
                 <h3 class="font-black text-base sm:text-lg text-slate-800">Grade Ulya</h3>
                 <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-2">Ushul Fiqih, Alfiyah & Lanjutan</p>
+              </div>
+            </button>
+
+            <!-- Grade HMQ / MAZEEDA -->
+            <button 
+              on:click={() => startGame('hmq')}
+              class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white border-2 border-indigo-100 hover:border-indigo-400 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
+            >
+              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
+                <Crown class="w-6 h-6 sm:w-8 sm:h-8" />
+              </div>
+              <div>
+                <h3 class="font-black text-base sm:text-lg text-slate-800">Grade HMQ</h3>
+                <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-2">Sejarah HMQ & MAZEEDA</p>
               </div>
             </button>
           </div>
@@ -137,10 +154,17 @@
       {:else if !isQuizFinished}
         <!-- Progress Bar -->
         <div class="flex items-center justify-between mb-6">
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            Pertanyaan {currentQuestionIndex + 1} / {activeQuestions.length}
-            <span class="ml-2 px-2 py-0.5 bg-slate-100 rounded text-[10px] text-slate-500 font-bold uppercase">{selectedGrade}</span>
-          </span>
+          <div class="flex items-center gap-3">
+            <button on:click={() => { selectedGrade = null; }} class="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors" title="Kembali ke Pilihan Grade">
+              <ArrowLeft class="w-4 h-4" />
+            </button>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Pertanyaan {currentQuestionIndex + 1} / {activeQuestions.length}
+            </span>
+          </div>
+          <div class="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-widest">
+            {selectedGrade}
+          </div>
         </div>
         <div class="w-full bg-slate-100 h-2 rounded-full mb-8 overflow-hidden">
           <div 

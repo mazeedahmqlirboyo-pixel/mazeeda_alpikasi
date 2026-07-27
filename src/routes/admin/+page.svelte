@@ -13,7 +13,7 @@
     Users, Megaphone, Image, Plus, Trash2, Edit, Save, CheckCircle,
     UserPlus, UploadCloud, FileText, Heart, Globe, Phone, Home, 
     Award, Music, X, Bell, Search, BookOpen, Info, Calendar, ChevronRight,
-    ChevronDown, ShieldCheck, UserX, UserCheck
+    ChevronDown, ShieldCheck, UserX, UserCheck, RefreshCw, CheckCircle2, Filter
   } from 'lucide-svelte';
 
   // Current active management tab
@@ -45,6 +45,7 @@
     { label: '🧑‍🏫 Kelola Asatidzah', value: 'asatidzah' },
     { label: '📊 Nilai Akademik', value: 'nilai' },
     { label: '🎓 Kelola Kepengurusan', value: 'kepengurusan' },
+    { label: '✅ Persetujuan Foto', value: 'persetujuan_foto' },
     { label: '📖 Kelola Sangu', value: 'sangu' },
     { label: '📢 Pengumuman Mading', value: 'mading' },
     { label: '📌 Dinding Aspirasi', value: 'stickynotes' },
@@ -53,7 +54,8 @@
     { label: '🎪 Banner Slide', value: 'carousel' },
     { label: '🖼️ Galeri Kenangan', value: 'gallery_coverflow' },
     { label: '🖼️ Momen Spesial', value: 'gallery_landscape' },
-    { label: '🖼️ Wajah MAZEEDA', value: 'gallery_marquee' }
+    { label: '🖼️ Wajah MAZEEDA', value: 'gallery_marquee' },
+    { label: '📬 Kotak Saran', value: 'feedbacks' }
   ];
 
   // Custom confirmation modal states
@@ -174,34 +176,36 @@
   }
 
 
-  // Helper alerts
+  // --- GLOBAL HELPERS ---
   let alertMessage = '';
+  let alertType: 'success' | 'error' = 'success';
   let isSubmitting = false;
-  function triggerAlert(msg: string) {
+  function triggerAlert(msg: string, type: 'success' | 'error' = 'success') {
     alertMessage = msg;
-    setTimeout(() => alertMessage = '', 3000);
+    alertType = type;
+    setTimeout(() => { alertMessage = ''; alertType = 'success'; }, 3000);
   }
 
   // --- 1. SQUAD MEMBERS CRUD (Direct Supabase Table: allowed_alumni) ---
   let squad: any[] = [];
   let isLoadingSquad = true;
 
-  $: filteredSquad = squad.filter(item => {
-    if (squadLoginFilter === 'logged_in' && !item.has_logged_in) return false;
-    if (squadLoginFilter === 'not_logged_in' && item.has_logged_in) return false;
-    if (squadLoginFilter === 'deactivated' && item.is_active !== false) return false;
+  let squadTotalCount = 0;
+  let squadLimit = 10;
+  let searchTimeout: any;
 
-    if (!squadSearchQuery) return true;
-    const query = squadSearchQuery.toLowerCase();
-    return (
-      (item.nama_lengkap || '').toLowerCase().includes(query) ||
-      (item.nama_panggilan || '').toLowerCase().includes(query) ||
-      (item.email || '').toLowerCase().includes(query) ||
-      (item.nis || '').toLowerCase().includes(query) ||
-      (item.alamat_domisili || '').toLowerCase().includes(query) ||
-      (item.daerah_santri || '').toLowerCase().includes(query)
-    );
-  });
+  // React to search query, filter, or limit changes with debounce
+  $: if (typeof window !== 'undefined' && (activeSection === 'members' || activeSection === 'asatidzah')) {
+    const search = squadSearchQuery;
+    const filter = squadLoginFilter;
+    const limit = squadLimit;
+    const section = activeSection; // dependency
+    
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      fetchSquad(search, filter, limit, section);
+    }, 300);
+  }
 
   // Form input states matching the 29 database columns exactly
   let foto_url = '';
@@ -464,24 +468,99 @@
     return cleaned;
   }
 
-  $: if (activeSection === 'members' || activeSection === 'asatidzah') {
-    if (typeof window !== 'undefined') fetchSquad();
+  $: if (activeSection === 'persetujuan_foto') {
+    fetchPendingPhotos();
+  }
+
+  // Feedbacks State
+  let feedbacksList: any[] = [];
+  let isLoadingFeedbacks = false;
+  let feedbackFilter = 'all'; // 'all', 'unread', 'read'
+
+  async function fetchFeedbacks() {
+    try {
+      isLoadingFeedbacks = true;
+      let query = supabase.from('feedbacks').select('*').order('created_at', { ascending: false });
+      
+      if (feedbackFilter === 'unread') {
+        query = query.eq('is_read', false);
+      } else if (feedbackFilter === 'read') {
+        query = query.eq('is_read', true);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      feedbacksList = data || [];
+    } catch (e) {
+      console.error('Failed to fetch feedbacks:', e);
+      triggerAlert('Gagal memuat daftar saran', 'error');
+    } finally {
+      isLoadingFeedbacks = false;
+    }
+  }
+
+  async function markFeedbackRead(id: string) {
+    try {
+      const { error } = await supabase.from('feedbacks').update({ is_read: true }).eq('id', id);
+      if (error) throw error;
+      feedbacksList = feedbacksList.map(f => f.id === id ? { ...f, is_read: true } : f);
+      triggerAlert('Ditandai sebagai telah dibaca');
+    } catch (e) {
+      triggerAlert('Gagal menandai pesan', 'error');
+    }
+  }
+
+  async function deleteFeedback(id: string) {
+    if (!confirm('Hapus saran ini secara permanen?')) return;
+    try {
+      const { error } = await supabase.from('feedbacks').delete().eq('id', id);
+      if (error) throw error;
+      feedbacksList = feedbacksList.filter(f => f.id !== id);
+      triggerAlert('Saran berhasil dihapus');
+    } catch (e) {
+      triggerAlert('Gagal menghapus saran', 'error');
+    }
+  }
+
+  $: if (activeSection === 'feedbacks') {
+    fetchFeedbacks();
   }
 
   // Fetch squad from database
-  async function fetchSquad() {
+  async function fetchSquad(search = squadSearchQuery, filter = squadLoginFilter, limit = squadLimit, section = activeSection) {
     try {
       isLoadingSquad = true;
-      const tableName = activeSection === 'asatidzah' ? 'asatidzah' : 'allowed_alumni';
-      const { data, error } = await supabase
+      const tableName = section === 'asatidzah' ? 'asatidzah' : 'allowed_alumni';
+      
+      let query = supabase
         .from(tableName)
-        .select('*')
-        .order('id', { ascending: false });
+        .select('*', { count: 'exact' });
+
+      // Apply Filter
+      if (filter === 'logged_in') {
+        query = query.eq('has_logged_in', true);
+      } else if (filter === 'not_logged_in') {
+        query = query.neq('has_logged_in', true);
+      } else if (filter === 'deactivated') {
+        query = query.eq('is_active', false);
+      }
+
+      // Apply Search
+      if (search && search.trim() !== '') {
+        const q = search.trim();
+        query = query.or(`nama_lengkap.ilike.%${q}%,nama_panggilan.ilike.%${q}%,nis.ilike.%${q}%,email.ilike.%${q}%`);
+      }
+
+      // Order and Limit
+      query = query.order('id', { ascending: false }).limit(limit);
+
+      const { data, count, error } = await query;
         
       if (error) throw error;
       squad = data || [];
+      squadTotalCount = count || 0;
     } catch (err) {
-      console.error('Error fetching allowed_alumni:', err);
+      console.error('Error fetching data:', err);
     } finally {
       isLoadingSquad = false;
     }
@@ -566,6 +645,80 @@
     } finally {
       isSubmitting = false;
     }
+  }
+
+  // --- PERSETUJUAN FOTO PROFIL ---
+  let pendingPhotos: any[] = [];
+  let isLoadingPendingPhotos = false;
+
+  async function fetchPendingPhotos() {
+    isLoadingPendingPhotos = true;
+    try {
+      const { data, error } = await supabase
+        .from('custom_profile_photos')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      pendingPhotos = data || [];
+    } catch (err: any) {
+      console.error('Error fetching pending photos:', err);
+    } finally {
+      isLoadingPendingPhotos = false;
+    }
+  }
+
+  async function approvePhoto(photo: any) {
+    isSubmitting = true;
+    try {
+      const { error } = await supabase
+        .from('custom_profile_photos')
+        .update({ status: 'approved' })
+        .eq('id', photo.id);
+        
+      if (error) throw error;
+      
+      // Kirim notifikasi ke user bahwa fotonya disetujui (opsional)
+      await supabase.from('app_notifications').insert([{
+        type: 'success',
+        title: 'Foto Disetujui',
+        message: `Foto profil tambahan Anda telah disetujui oleh Admin.`,
+        icon: 'CheckCircle',
+        is_read: false
+      }]);
+      
+      triggerAlert('Foto berhasil disetujui.', 'success');
+      await fetchPendingPhotos();
+    } catch (err: any) {
+      triggerAlert('Gagal menyetujui foto: ' + err.message, 'error');
+    } finally {
+      isSubmitting = false;
+    }
+  }
+
+  async function rejectPhoto(photo: any) {
+    isSubmitting = true;
+    runWithConfirmation(
+      'Tolak Foto',
+      `Yakin ingin menolak foto dari ${photo.user_name}?`,
+      async () => {
+        try {
+          const { error } = await supabase
+            .from('custom_profile_photos')
+            .update({ status: 'rejected' })
+            .eq('id', photo.id);
+            
+          if (error) throw error;
+          triggerAlert('Foto ditolak.', 'success');
+          await fetchPendingPhotos();
+        } catch (err: any) {
+          triggerAlert('Gagal menolak foto: ' + err.message, 'error');
+        } finally {
+          isSubmitting = false;
+        }
+      }
+    );
   }
 
   // --- CSV drag-and-drop & parsing logic ---
@@ -1381,9 +1534,15 @@
 
   // --- 4. TIMELINE PHOTO CRUD ---
   let photosList: any[] = [];
+  $: uniquePhotoCategories = Array.from(new Set([
+    'Kegiatan', 'Kajian', 'Rapat', 'Agenda', 'Sosial',
+    ...photosList.map(p => p.category).filter(Boolean)
+  ]));
   let isLoadingPhotos = false;
   let timelineSearchQuery = '';
-  let photoTitle = '', photoLoc = '', photoDate = new Date().toISOString().split('T')[0], photoCategory = 'Kegiatan', photoDesc = '';
+  let timelineFilterCategory = '';
+  let timelineFilterOpen = false;
+  let photoTitle = '', photoLoc = '', photoDate = new Date().toISOString().split('T')[0], photoCategory = 'Kegiatan', photoNewCategory = '', photoDesc = '';
   let selectedFile: File | null = null;
   let uploadProgressStatus = '';
   let fileInputRef: HTMLInputElement;
@@ -1406,6 +1565,7 @@
     photoLoc = '';
     photoDate = new Date().toISOString().split('T')[0];
     photoCategory = 'Kegiatan';
+    photoNewCategory = '';
     photoDesc = '';
     selectedFile = null;
     if (fileInputRef) fileInputRef.value = '';
@@ -1448,6 +1608,7 @@
     
     try {
       let finalImageUrl = undefined;
+      const finalCategory = photoCategory === 'new' ? photoNewCategory : photoCategory;
       
       // 1. Upload to Supabase Storage if a new file is selected
       if (selectedFile) {
@@ -1460,7 +1621,7 @@
           title: photoTitle,
           location: photoLoc,
           date: photoDate,
-          category: photoCategory,
+          category: finalCategory,
           description: photoDesc,
         };
         if (finalImageUrl) updatePayload.image_url = finalImageUrl;
@@ -1479,7 +1640,7 @@
             title: photoTitle,
             location: photoLoc,
             date: photoDate,
-            category: photoCategory,
+            category: finalCategory,
             description: photoDesc,
             image_url: finalImageUrl
           }]);
@@ -1956,7 +2117,7 @@
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const tab = urlParams.get('tab');
-      if (tab && ['members', 'sangu', 'mading', 'stickynotes', 'timeline', 'notifikasi', 'carousel', 'kepengurusan'].includes(tab)) {
+      if (tab && ['members', 'sangu', 'mading', 'stickynotes', 'timeline', 'notifikasi', 'carousel', 'kepengurusan', 'persetujuan_foto'].includes(tab)) {
         activeSection = tab;
       }
     }
@@ -1968,6 +2129,7 @@
     fetchNotifList();
     fetchCarouselSlides();
     fetchKepengurusan();
+    fetchPendingPhotos();
   });
   // --- 8. GALLERIES CRUD ---
   // --- CSV Import for Nilai Akademik ---
@@ -2305,9 +2467,13 @@
   {#if alertMessage}
     <div 
       transition:fade={{ duration: 150 }}
-      class="fixed top-20 right-4 z-50 flex items-center p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-semibold shadow-xl space-x-2.5 animate-in slide-in-from-top-4 duration-300"
+      class="fixed top-20 right-4 z-[999] flex items-center p-4 rounded-xl border {alertType === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-rose-200 bg-rose-50 text-rose-800'} text-xs font-semibold shadow-xl space-x-2.5 animate-in slide-in-from-top-4 duration-300"
     >
-      <CheckCircle class="h-4.5 w-4.5 text-emerald-600" />
+      {#if alertType === 'success'}
+        <CheckCircle class="h-4.5 w-4.5 text-emerald-600" />
+      {:else}
+        <X class="h-4.5 w-4.5 text-rose-600" />
+      {/if}
       <span>{alertMessage}</span>
     </div>
   {/if}
@@ -2797,7 +2963,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
             <FileText class="h-5 w-5 text-blue-600" />
-            <span>Database {activeSection === 'asatidzah' ? 'Asatidzah' : 'Squad'} ({filteredSquad.length})</span>
+            <span>Database {activeSection === 'asatidzah' ? 'Asatidzah' : 'Squad'} ({squad.length} dari {squadTotalCount})</span>
           </h2>
           <Button on:click={handleDeleteAllMembers} variant="destructive" size="sm" class="font-bold flex items-center space-x-1">
             <Trash2 class="h-3.5 w-3.5" />
@@ -2862,13 +3028,13 @@
         <!-- Squad List View (styled as Card Grid identical to /squad) -->
         <div class="max-h-[600px] overflow-y-auto pr-1">
           {#if isLoadingSquad}
-            <div class="py-12 text-center space-y-2">
-              <div class="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
-              <p class="text-xs font-semibold text-slate-400">Memuat data allowed_alumni...</p>
+            <div class="py-16 text-center space-y-4">
+              <img src="/loading.svg" alt="Loading..." class="h-16 w-16 mx-auto animate-pulse" />
+              <p class="text-xs font-bold text-slate-400 tracking-wide uppercase">Memuat data {activeSection === 'asatidzah' ? 'Asatidzah' : 'Squad'}...</p>
             </div>
-          {:else if filteredSquad.length > 0}
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {#each filteredSquad as item (item.id || item.nama_lengkap)}
+          {:else if squad.length > 0}
+            <div class="grid grid-cols-1 gap-2">
+              {#each squad as item (item.id || item.nama_lengkap)}
                 {@const accent = getAccent(item.nama_lengkap)}
                 <Card class="group flex flex-col justify-between hover:scale-[1.01] hover:shadow-soft-md transition-all duration-300 h-full p-4 border-slate-100">
                   <div class="flex items-center space-x-3 min-w-0">
@@ -2968,13 +3134,109 @@
                 </Card>
               {/each}
             </div>
+            
+            {#if squad.length < squadTotalCount}
+              <div class="mt-6 text-center pb-2">
+                <Button 
+                  on:click={() => { squadLimit += 10; fetchSquad(squadSearchQuery, squadLoginFilter, squadLimit, activeSection); }} 
+                  variant="outline" 
+                  class="font-bold text-slate-600 bg-white hover:bg-slate-50 border-slate-200/60 w-full sm:w-auto"
+                >
+                  Muat Lebih Banyak ({squadTotalCount - squad.length} tersisa)
+                </Button>
+              </div>
+            {/if}
           {:else}
-            <div class="py-12 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-              <p class="text-xs font-semibold text-slate-500">Tabel allowed_alumni kosong atau tidak cocok</p>
-              <p class="text-[10px] text-slate-400 mt-0.5">Silakan sesuaikan pencarian atau isi formulir di sebelah kiri.</p>
+            <div class="py-16 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50 flex flex-col items-center justify-center space-y-4">
+              <img src="/empty-content.svg" alt="Tidak ada data" class="h-40 w-40 opacity-80" />
+              <div>
+                <p class="text-sm font-bold text-slate-500">Data {activeSection === 'asatidzah' ? 'Asatidzah' : 'Squad'} tidak ditemukan</p>
+                <p class="text-xs text-slate-400 mt-1">Silakan sesuaikan filter pencarian atau isi formulir baru di sebelah kiri.</p>
+              </div>
             </div>
           {/if}
         </div>
+      </div>
+    </div>
+
+  {:else if activeSection === 'feedbacks'}
+    <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl shadow-soft-sm border border-slate-100">
+        <div>
+          <h2 class="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+            <span class="text-2xl">📬</span> Kotak Saran & Masukan
+          </h2>
+          <p class="text-sm text-slate-500 mt-1">Kelola dan baca saran dari para alumni & asatidzah.</p>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <select 
+            bind:value={feedbackFilter} 
+            on:change={fetchFeedbacks}
+            class="h-10 border border-slate-200 text-sm font-semibold text-slate-600 rounded-xl px-3 focus:outline-none focus:border-indigo-400 bg-slate-50"
+          >
+            <option value="all">Semua Pesan</option>
+            <option value="unread">Belum Dibaca</option>
+            <option value="read">Sudah Dibaca</option>
+          </select>
+          <Button on:click={fetchFeedbacks} class="h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-4 rounded-xl shadow-none">
+            <RefreshCw class="w-4 h-4 mr-2 {isLoadingFeedbacks ? 'animate-spin' : ''}" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-soft-sm border border-slate-100 overflow-hidden">
+        {#if isLoadingFeedbacks}
+          <div class="py-12 text-center space-y-4">
+            <img src="/loading.svg" alt="Loading..." class="h-16 w-16 mx-auto animate-pulse" />
+            <p class="text-xs font-bold text-slate-400 tracking-wide uppercase">Memuat Kotak Saran...</p>
+          </div>
+        {:else if feedbacksList.length === 0}
+          <div class="py-16 text-center flex flex-col items-center justify-center space-y-4">
+            <img src="/empty-content.svg" alt="Kosong" class="h-32 w-32 opacity-75" />
+            <div>
+              <p class="text-sm font-bold text-slate-500">Belum ada saran yang masuk</p>
+              <p class="text-xs text-slate-400 mt-1">Saran dan masukan pengguna akan muncul di sini.</p>
+            </div>
+          </div>
+        {:else}
+          <div class="divide-y divide-slate-100">
+            {#each feedbacksList as item (item.id)}
+              <div class="p-5 hover:bg-slate-50 transition-colors {item.is_read ? 'opacity-70' : 'bg-indigo-50/30'} flex flex-col sm:flex-row gap-4">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="font-bold text-slate-800 text-sm">{item.user_name}</span>
+                    <span class="text-[10px] text-slate-400 font-medium">• {formatDateTime(item.created_at)}</span>
+                    {#if !item.is_read}
+                      <span class="bg-indigo-100 text-indigo-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">Baru</span>
+                    {/if}
+                  </div>
+                  <p class="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{item.message}</p>
+                </div>
+                
+                <div class="flex sm:flex-col gap-2 shrink-0 justify-end sm:justify-start">
+                  {#if !item.is_read}
+                    <Button 
+                      on:click={() => markFeedbackRead(item.id)}
+                      class="h-8 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-100 text-[11px] font-bold px-3 rounded-lg shadow-none"
+                    >
+                      <CheckCircle class="w-3.5 h-3.5 mr-1.5" />
+                      Tandai Dibaca
+                    </Button>
+                  {/if}
+                  <Button 
+                    on:click={() => deleteFeedback(item.id)}
+                    class="h-8 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white border border-rose-100 text-[11px] font-bold px-3 rounded-lg shadow-none"
+                  >
+                    <Trash2 class="w-3.5 h-3.5 mr-1.5" />
+                    Hapus
+                  </Button>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
       </div>
     </div>
 
@@ -3474,13 +3736,19 @@
             <div class="space-y-1">
               <label class="text-xs font-bold text-slate-500" for="phCategory">Kategori</label>
               <select id="phCategory" class="flex h-12 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none" bind:value={photoCategory}>
-                <option value="Kegiatan">Kegiatan</option>
-                <option value="Kajian">Kajian</option>
-                <option value="Rapat">Rapat</option>
-                <option value="Agenda">Agenda</option>
-                <option value="Sosial">Sosial</option>
+                {#each uniquePhotoCategories as cat}
+                  <option value={cat}>{cat}</option>
+                {/each}
+                <option value="new">+ Tambah Kategori Baru...</option>
               </select>
             </div>
+
+            {#if photoCategory === 'new'}
+              <div class="space-y-1" transition:slideTransition>
+                <label class="text-xs font-bold text-slate-500" for="phNewCat">Nama Kategori Baru *</label>
+                <Input id="phNewCat" placeholder="e.g. Masa-masa Ibtida'iyah" bind:value={photoNewCategory} required />
+              </div>
+            {/if}
 
             <div class="space-y-1">
               <label class="text-xs font-bold text-slate-500" for="phDesc">Deskripsi Momen</label>
@@ -3556,26 +3824,65 @@
         </div>
 
         <!-- Timeline Search Bar -->
-        <Card class="p-3">
-          <div class="relative">
-            <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Cari foto memori berdasarkan judul, lokasi, kategori..." 
-              class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-indigo-500 focus:bg-white"
-              bind:value={timelineSearchQuery}
-            />
+        <Card class="p-3 !overflow-visible">
+          <div class="flex items-center space-x-2">
+            <div class="relative flex-1">
+              <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Cari foto memori berdasarkan judul, lokasi, kategori..." 
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-indigo-500 focus:bg-white"
+                bind:value={timelineSearchQuery}
+              />
+            </div>
+            <div class="relative">
+              <button 
+                type="button" 
+                class="flex items-center justify-center h-[38px] w-[38px] bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 hover:text-indigo-600 focus:outline-none focus:border-indigo-500 focus:bg-white text-slate-500 transition-colors relative" 
+                on:click={() => timelineFilterOpen = !timelineFilterOpen}
+                title="Filter Kategori"
+              >
+                <Filter class="h-4 w-4" />
+                {#if timelineFilterCategory}
+                  <span class="absolute top-2 right-2 h-2 w-2 rounded-full bg-indigo-500 ring-2 ring-white"></span>
+                {/if}
+              </button>
+              
+              {#if timelineFilterOpen}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div class="fixed inset-0 z-40" on:click={() => timelineFilterOpen = false}></div>
+                <div class="absolute right-0 top-full mt-1.5 w-48 bg-white border border-slate-100 rounded-xl shadow-lg z-50 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100">
+                  <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 {timelineFilterCategory === '' ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600'} transition-colors" on:click={() => { timelineFilterCategory = ''; timelineFilterOpen = false; }}>
+                    Semua Kategori
+                  </button>
+                  <div class="h-px bg-slate-100 w-full my-1"></div>
+                  <div class="max-h-60 overflow-y-auto">
+                    {#each uniquePhotoCategories as cat}
+                      <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 {timelineFilterCategory === cat ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600'} truncate transition-colors" on:click={() => { timelineFilterCategory = cat; timelineFilterOpen = false; }}>
+                        {cat}
+                      </button>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+            </div>
           </div>
         </Card>
 
         <div class="space-y-2.5 max-h-[600px] overflow-y-auto pr-1">
           {#if isLoadingPhotos}
-            <div class="py-12 text-center text-xs font-semibold text-slate-400">Memuat foto memori...</div>
+            <div class="py-12 text-center space-y-4">
+              <img src="/loading.svg" alt="Loading..." class="h-16 w-16 mx-auto animate-pulse" />
+              <p class="text-xs font-bold text-slate-400 tracking-wide uppercase">Memuat foto memori...</p>
+            </div>
           {:else}
             {@const filteredPhotos = photosList.filter(item => {
-              if (!timelineSearchQuery) return true;
+              const matchCat = !timelineFilterCategory || item.category === timelineFilterCategory;
+              if (!timelineSearchQuery) return matchCat;
               const q = timelineSearchQuery.toLowerCase();
-              return (item.title || '').toLowerCase().includes(q) || (item.location || '').toLowerCase().includes(q) || (item.category || '').toLowerCase().includes(q) || (item.description || '').toLowerCase().includes(q);
+              const matchSearch = (item.title || '').toLowerCase().includes(q) || (item.location || '').toLowerCase().includes(q) || (item.category || '').toLowerCase().includes(q) || (item.description || '').toLowerCase().includes(q);
+              return matchCat && matchSearch;
             })}
 
             {#if filteredPhotos.length > 0}
@@ -3614,7 +3921,13 @@
                 </Card>
               {/each}
             {:else}
-              <div class="py-12 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Tidak ada foto memori ditemukan.</div>
+              <div class="py-16 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50 flex flex-col items-center justify-center space-y-4">
+                <img src="/Empty content.svg" alt="Tidak ada data" class="h-40 w-40 opacity-80" />
+                <div>
+                  <p class="text-sm font-bold text-slate-500">Foto Memori tidak ditemukan</p>
+                  <p class="text-xs text-slate-400 mt-1">Silakan sesuaikan filter pencarian atau kategori.</p>
+                </div>
+              </div>
             {/if}
           {/if}
         </div>
@@ -4527,6 +4840,64 @@
           {/if}
         </div>
       </div>
+    </div>
+  {:else if activeSection === 'persetujuan_foto'}
+    <!-- ==================== PERSETUJUAN FOTO PROFIL ==================== -->
+    <div in:fade={{ duration: 200 }} class="space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+            <CheckCircle2 class="h-8 w-8 text-primary" />
+            Persetujuan Foto Profil
+          </h1>
+          <p class="text-sm text-slate-500 mt-1">Kelola dan setujui foto profil custom yang diunggah oleh anggota.</p>
+        </div>
+        <button on:click={fetchPendingPhotos} class="px-4 py-2 bg-white border border-slate-200 text-slate-600 font-bold text-xs rounded-xl shadow-sm hover:bg-slate-50 flex items-center gap-2">
+          <RefreshCw class="h-4 w-4 {isLoadingPendingPhotos ? 'animate-spin' : ''}" />
+          Segarkan
+        </button>
+      </div>
+
+      {#if isLoadingPendingPhotos}
+        <div class="py-16 text-center text-xs font-semibold text-slate-400">Memuat data foto...</div>
+      {:else if pendingPhotos.length === 0}
+        <div class="py-16 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 flex flex-col items-center">
+          <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-3">
+            <CheckCircle2 class="h-8 w-8 text-emerald-400" />
+          </div>
+          <h3 class="text-slate-700 font-bold">Semua Bersih!</h3>
+          <p class="text-slate-500 text-xs mt-1">Tidak ada foto baru yang menunggu persetujuan.</p>
+        </div>
+      {:else}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+          {#each pendingPhotos as photo (photo.id)}
+            <Card class="overflow-hidden flex flex-col bg-white border-slate-100 hover:shadow-soft-md transition-all">
+              <div class="relative w-full aspect-square bg-slate-100 group">
+                <img referrerpolicy="no-referrer" src={convertDriveUrl(photo.photo_url)} alt={photo.user_name} class="w-full h-full object-cover" />
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <a href={convertDriveUrl(photo.photo_url)} target="_blank" class="px-4 py-2 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-xl text-white text-xs font-bold transition-colors">
+                    Lihat Penuh
+                  </a>
+                </div>
+              </div>
+              <div class="p-4 flex flex-col gap-3 flex-1">
+                <div>
+                  <h3 class="font-bold text-sm text-slate-800 line-clamp-1">{photo.user_name}</h3>
+                  <p class="text-[10px] text-slate-400 font-medium mt-0.5">Diupload {new Date(photo.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})}</p>
+                </div>
+                <div class="flex items-center gap-2 mt-auto pt-2 border-t border-slate-50">
+                  <button on:click={() => rejectPhoto(photo)} class="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-lg transition-colors border border-rose-100 flex justify-center items-center gap-1.5" disabled={isSubmitting}>
+                    <X class="h-3.5 w-3.5" /> Tolak
+                  </button>
+                  <button on:click={() => approvePhoto(photo)} class="flex-1 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold text-xs rounded-lg transition-colors border border-emerald-100 flex justify-center items-center gap-1.5" disabled={isSubmitting}>
+                    <CheckCircle2 class="h-3.5 w-3.5" /> Setujui
+                  </button>
+                </div>
+              </div>
+            </Card>
+          {/each}
+        </div>
+      {/if}
     </div>
   {:else if activeSection === 'gallery_coverflow' || activeSection === 'gallery_landscape' || activeSection === 'gallery_marquee'}
     <!-- DYNAMIC GALLERIES MANAGEMENT -->

@@ -2053,7 +2053,18 @@
                     class="flex w-full items-center gap-2 px-3 py-2 hover:bg-indigo-50 border-b border-slate-100 last:border-b-0 transition-colors cursor-pointer"
                     on:click={() => insertMention(user.name)}
                   >
-                    <img src={convertDriveUrl(user.avatar)} alt={user.name} class="w-6 h-6 rounded-full object-cover shrink-0" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                    {#if user.avatar}
+                      <div class="w-6 h-6 rounded-full shrink-0 relative overflow-hidden bg-slate-200">
+                        <div class="absolute inset-0 flex items-center justify-center text-slate-600 font-bold text-[8px]">
+                          {getInitials(user.name)}
+                        </div>
+                        <img src={convertDriveUrl(user.avatar)} alt={user.name} class="absolute inset-0 w-full h-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                      </div>
+                    {:else}
+                      <div class="w-6 h-6 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 font-bold text-[8px] shrink-0">
+                        {getInitials(user.name)}
+                      </div>
+                    {/if}
                     <span class="text-[11px] font-bold text-slate-700 truncate">{user.name}</span>
                   </button>
                 {/each}
@@ -2293,7 +2304,18 @@
                     class="flex w-full items-center gap-2 px-3 py-2 hover:bg-indigo-50 border-b border-slate-100 last:border-b-0 transition-colors cursor-pointer"
                     on:click={() => insertMention(user.name)}
                   >
-                    <img src={convertDriveUrl(user.avatar)} alt={user.name} class="w-6 h-6 rounded-full object-cover shrink-0" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                    {#if user.avatar}
+                      <div class="w-6 h-6 rounded-full shrink-0 relative overflow-hidden bg-slate-200">
+                        <div class="absolute inset-0 flex items-center justify-center text-slate-600 font-bold text-[8px]">
+                          {getInitials(user.name)}
+                        </div>
+                        <img src={convertDriveUrl(user.avatar)} alt={user.name} class="absolute inset-0 w-full h-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                      </div>
+                    {:else}
+                      <div class="w-6 h-6 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 font-bold text-[8px] shrink-0">
+                        {getInitials(user.name)}
+                      </div>
+                    {/if}
                     <span class="text-[11px] font-bold text-slate-700 truncate">{user.name}</span>
                   </button>
                 {/each}

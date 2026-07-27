@@ -8,7 +8,7 @@
   import { supabase } from '$lib/supabase';
   import { authStore, activeProfileStore } from '$lib/auth';
   import { 
-    Image as ImageIcon, MapPin, Calendar, Heart, MessageCircle, CloudUpload, Sparkles, X, Trash2, Pencil, AlertCircle, CheckCircle 
+    Image as ImageIcon, MapPin, Calendar, Heart, MessageCircle, CloudUpload, Sparkles, X, Trash2, Pencil, AlertCircle, CheckCircle, LayoutGrid, Grid3X3, Filter
   } from 'lucide-svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
 
@@ -30,6 +30,14 @@
   let memories: MemoryItem[] = [];
   let isLoading = true;
   let guestId = '';
+  let viewMode: 'medium' | 'small' = 'medium';
+  let selectedCategory = 'Semua';
+  let showFilterDropdown = false;
+  
+  $: availableCategories = ['Semua', ...new Set(memories.map(m => m.category).filter(Boolean))];
+  $: filteredMemories = selectedCategory === 'Semua' 
+    ? memories 
+    : memories.filter(m => m.category === selectedCategory);
 
   // Auth / Admin check
   $: userRole = $authStore.user?.role || '';
@@ -622,7 +630,51 @@
 </script>
 
 <div class="space-y-6 pb-12">
-  <PageHeader title="Timeline" backTo="/" />
+  <PageHeader title="Timeline" backTo="/">
+    <svelte:fragment slot="right">
+      <div class="flex items-center bg-white/60 backdrop-blur-sm rounded-lg border border-slate-200 p-1 shadow-sm mr-2 sm:mr-0 gap-0.5">
+        <button on:click={() => viewMode = 'medium'} class="p-1.5 rounded-md transition-colors {viewMode === 'medium' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}" title="Tampilan Sedang"><LayoutGrid class="w-3.5 h-3.5 sm:w-4 sm:h-4"/></button>
+        <button on:click={() => viewMode = 'small'} class="p-1.5 rounded-md transition-colors {viewMode === 'small' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}" title="Tampilan Kecil"><Grid3X3 class="w-3.5 h-3.5 sm:w-4 sm:h-4"/></button>
+        <div class="w-[1px] h-4 bg-slate-200 mx-1"></div>
+        <div class="relative">
+          <button 
+            on:click={() => showFilterDropdown = !showFilterDropdown}
+            class="p-1.5 rounded-md transition-colors {selectedCategory !== 'Semua' ? 'bg-primary/10 text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}" 
+            title="Filter Kategori"
+          >
+            <Filter class="w-3.5 h-3.5 sm:w-4 sm:h-4"/>
+          </button>
+          
+          {#if showFilterDropdown}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div class="fixed inset-0 z-40" on:click={() => showFilterDropdown = false}></div>
+            <div 
+              transition:fade={{duration: 150}}
+              class="absolute right-0 top-full mt-2 w-64 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-slate-200/60 z-50 overflow-hidden py-1.5 flex flex-col"
+            >
+              <div class="px-3 py-1.5 mb-1 border-b border-slate-100">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Filter Kategori</span>
+              </div>
+              <div class="max-h-64 overflow-y-auto">
+                {#each availableCategories as cat}
+                  <button 
+                    class="w-full text-left px-3 py-2 text-xs font-semibold transition-colors flex flex-row items-center justify-between gap-2 {selectedCategory === cat ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}"
+                    on:click={() => { selectedCategory = cat; showFilterDropdown = false; }}
+                  >
+                    <span class="break-words leading-relaxed flex-1">{cat}</span>
+                    {#if selectedCategory === cat}
+                      <CheckCircle class="w-4 h-4 text-primary shrink-0" />
+                    {/if}
+                  </button>
+                {/each}
+              </div>
+            </div>
+          {/if}
+        </div>
+      </div>
+    </svelte:fragment>
+  </PageHeader>
 
   <!-- Alert / Toast Banner (Floating Toast) -->
   {#if alertMessage}
@@ -643,22 +695,46 @@
 
   <!-- Main Timeline Grid / Loading State -->
   {#if isLoading}
-    <div class="py-24 text-center space-y-3">
-      <div class="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-      <p class="text-sm font-semibold text-slate-400">Memuat galeri kenangan...</p>
+    <div class="py-24 text-center space-y-4">
+      <img src="/loading.svg" alt="Loading..." class="h-16 w-16 mx-auto opacity-80" />
+      <p class="text-sm font-bold text-slate-500 tracking-wide">Memuat galeri kenangan...</p>
     </div>
-  {:else if memories.length > 0}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {#each memories as memory (memory.id)}
+  {:else if filteredMemories.length === 0}
+    <div class="py-24 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/20 max-w-lg mx-auto">
+      <ImageIcon class="h-10 w-10 text-slate-300 mx-auto {selectedCategory === 'Semua' ? 'animate-pulse' : ''}" />
+      <h3 class="text-sm font-extrabold text-slate-600 mt-3">
+        {selectedCategory !== 'Semua' ? 'Tidak Ada Foto' : 'Belum Ada Foto Kenangan'}
+      </h3>
+      <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1 leading-relaxed">
+        {selectedCategory !== 'Semua' 
+          ? `Belum ada foto dalam kategori ${selectedCategory}.` 
+          : 'Belum ada dokumentasi momen yang diunggah.'}
+      </p>
+      {#if isAdmin && selectedCategory === 'Semua'}
+        <a href="/admin">
+          <button
+            type="button"
+            class="mt-4 inline-flex items-center space-x-1.5 bg-primary hover:bg-primary/90 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-soft-sm transition-premium"
+            style="min-height: 38px;"
+          >
+            <CloudUpload class="h-4.5 w-4.5" />
+            <span>Unggah Foto Pertama</span>
+          </button>
+        </a>
+      {/if}
+    </div>
+  {:else}
+    <div class="px-4 sm:px-6 {viewMode === 'small' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'}">
+      {#each filteredMemories as memory (memory.id)}
         <!-- Card -->
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div 
           on:click={() => openLightbox(memory)}
-          class="group bg-white border border-slate-200/60 hover:border-primary/20 hover:shadow-soft-md rounded-2xl overflow-hidden transition-premium flex flex-col h-full cursor-pointer relative"
+          class="group bg-white border border-slate-200/60 hover:border-primary/20 hover:shadow-soft-md {viewMode === 'small' ? 'rounded-xl' : 'rounded-2xl'} overflow-hidden transition-premium flex flex-col h-full cursor-pointer relative"
         >
           <!-- Image Area -->
-          <div class="h-56 w-full relative overflow-hidden bg-slate-950 flex items-center justify-center">
+          <div class="w-full relative overflow-hidden bg-slate-950 flex items-center justify-center {viewMode === 'small' ? 'h-32 sm:h-40' : 'h-56'}">
             <!-- Blurred background image to fill different aspect ratios smoothly -->
             <img referrerpolicy="no-referrer" 
               src={memory.image_url} 
@@ -673,14 +749,33 @@
             />
             
             <!-- Category Badge -->
-            <div class="absolute top-3 left-3 z-20 bg-white/95 backdrop-blur-sm border border-slate-200/40 rounded-lg px-2.5 py-0.5 shadow-soft-sm">
-              <span class="text-[10px] font-bold text-primary tracking-wide uppercase">{memory.category}</span>
-            </div>
+            {#if viewMode !== 'small'}
+              <div class="absolute top-3 left-3 z-20 bg-white/95 backdrop-blur-sm border border-slate-200/40 rounded-lg px-2.5 py-0.5 shadow-soft-sm">
+                <span class="text-[10px] font-bold text-primary tracking-wide uppercase">{memory.category}</span>
+              </div>
+            {/if}
           </div>
 
           <!-- Card Info Body -->
-          <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
-            <div class="space-y-2.5">
+          {#if viewMode === 'small'}
+             <div class="p-3">
+               <h3 class="font-extrabold text-slate-800 text-[11px] truncate leading-snug group-hover:text-primary transition-colors">
+                 {memory.title}
+               </h3>
+               <div class="flex items-center space-x-3 mt-1.5 text-[10px] text-slate-400 font-bold">
+                  <button type="button" on:click|preventDefault|stopPropagation={() => toggleLike(memory)} class="relative z-20 flex items-center space-x-1 hover:text-rose-500 transition-colors {memory.has_liked ? 'text-rose-500' : ''}">
+                    <Heart class="w-3 h-3 {memory.has_liked ? 'fill-current' : ''}"/> 
+                    <span>{memory.likes_count}</span>
+                  </button>
+                  <button type="button" on:click|preventDefault|stopPropagation={() => openLightbox(memory)} class="relative z-20 flex items-center space-x-1 hover:text-primary transition-colors">
+                    <MessageCircle class="w-3 h-3"/> 
+                    <span>{memory.comments_count}</span>
+                  </button>
+               </div>
+             </div>
+          {:else}
+            <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+              <div class="space-y-2.5">
               <!-- Location & Date Row -->
               <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
                 <div class="flex items-center space-x-1 min-w-0 flex-1 mr-2">
@@ -707,9 +802,10 @@
             </div>
 
             <!-- Actions Row -->
-            <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+            <div class="flex items-center justify-between border-t border-slate-100 pt-3 relative z-20">
               <button 
-                on:click|stopPropagation={() => toggleLike(memory)}
+                type="button"
+                on:click|preventDefault|stopPropagation={() => toggleLike(memory)}
                 class="inline-flex items-center justify-center space-x-1.5 text-xs font-bold transition-colors py-2 px-3 rounded-lg border border-transparent
                   {memory.has_liked 
                     ? 'text-rose-600 bg-rose-50 border-rose-100/40 hover:bg-rose-100/50' 
@@ -721,7 +817,8 @@
               </button>
 
               <button 
-                on:click|stopPropagation={() => openLightbox(memory)}
+                type="button"
+                on:click|preventDefault|stopPropagation={() => openLightbox(memory)}
                 class="inline-flex items-center justify-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-primary transition-colors py-2 px-3 rounded-lg hover:bg-blue-50 border border-transparent hover:border-blue-100/30"
                 style="min-height: 40px;"
               >
@@ -730,28 +827,9 @@
               </button>
             </div>
           </div>
+          {/if}
         </div>
       {/each}
-    </div>
-  {:else}
-    <div class="py-24 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/20 max-w-lg mx-auto">
-      <ImageIcon class="h-10 w-10 text-slate-300 mx-auto animate-pulse" />
-      <h3 class="text-sm font-extrabold text-slate-600 mt-3">Belum Ada Foto Kenangan</h3>
-      <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1 leading-relaxed">
-        Belum ada dokumentasi momen yang diunggah.
-      </p>
-      {#if isAdmin}
-        <a href="/admin">
-          <button
-            type="button"
-            class="mt-4 inline-flex items-center space-x-1.5 bg-primary hover:bg-primary/90 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-soft-sm transition-premium"
-            style="min-height: 38px;"
-          >
-            <CloudUpload class="h-4.5 w-4.5" />
-            <span>Unggah Foto Pertama</span>
-          </button>
-        </a>
-      {/if}
     </div>
   {/if}
 </div>
@@ -971,7 +1049,18 @@
                         class="flex w-full items-center gap-2 px-3 py-2 hover:bg-indigo-50 border-b border-slate-100 last:border-b-0 transition-colors cursor-pointer"
                         on:click={() => insertMention(user.name)}
                       >
-                        <img src={convertDriveUrl(user.avatar)} alt={user.name} class="w-6 h-6 rounded-full object-cover shrink-0" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                        {#if user.avatar}
+                          <div class="w-6 h-6 rounded-full shrink-0 relative overflow-hidden bg-slate-200">
+                            <div class="absolute inset-0 flex items-center justify-center text-slate-600 font-bold text-[8px]">
+                              {getInitials(user.name)}
+                            </div>
+                            <img src={convertDriveUrl(user.avatar)} alt={user.name} class="absolute inset-0 w-full h-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                          </div>
+                        {:else}
+                          <div class="w-6 h-6 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 font-bold text-[8px] shrink-0">
+                            {getInitials(user.name)}
+                          </div>
+                        {/if}
                         <span class="text-[11px] font-bold text-slate-700 truncate">{user.name}</span>
                       </button>
                     {/each}

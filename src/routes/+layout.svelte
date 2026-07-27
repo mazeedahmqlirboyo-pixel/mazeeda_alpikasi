@@ -26,11 +26,17 @@
     Info,
     FileText,
     Ban,
-    Edit
+    Edit,
+    ChevronLeft,
+    Camera,
+    CheckCircle2,
+    AlertCircle,
+    X,
+    Clock
   } from 'lucide-svelte';
   import Card from '$lib/components/ui/card.svelte';
   import { isAudioPlayingGlobal } from '$lib/audioStore';
-  import { supabase } from '$lib/supabase';
+  import { supabase, uploadCustomProfilePhoto } from '$lib/supabase';
   import { deferredPrompt, showInstallBtn } from '$lib/pwaStore';
 
   // Define navigation configuration
@@ -47,6 +53,7 @@
     { name: 'Khasanah Lirboyo', path: '/admin/khasanah', icon: BookOpen },
     { name: 'Kelola Squad', path: '/admin?tab=members', icon: Users },
     { name: 'Kelola Asatidzah', path: '/admin?tab=asatidzah', icon: Users },
+    { name: 'Persetujuan Foto', path: '/admin?tab=persetujuan_foto', icon: CheckCircle2 },
     { name: 'Nilai Akademik', path: '/admin?tab=nilai', icon: Award },
     { name: 'Kelola Kepengurusan', path: '/admin?tab=kepengurusan', icon: Award },
     { name: 'Kelola Sangu', path: '/admin?tab=sangu', icon: BookOpen },
@@ -57,7 +64,8 @@
     { name: 'Banner Slide', path: '/admin?tab=carousel', icon: Image },
     { name: 'Galeri Kenangan', path: '/admin?tab=gallery_coverflow', icon: Image },
     { name: 'Momen Spesial', path: '/admin?tab=gallery_landscape', icon: Image },
-    { name: 'Wajah MAZEEDA', path: '/admin?tab=gallery_marquee', icon: Image }
+    { name: 'Wajah MAZEEDA', path: '/admin?tab=gallery_marquee', icon: Image },
+    { name: 'Kotak Saran', path: '/admin?tab=feedbacks', icon: FileText }
   ];
 
   // Helper to check if a navigation item is active
@@ -83,6 +91,15 @@
   $: isFullscreenPage = currentPath.startsWith('/perjalanan');
   
   let isAdminMenuExpanded = false;
+  
+  // Navigation Icon Click Animation Logic
+  let activeNavAnim = '';
+  function triggerNavAnim(name: string) {
+    activeNavAnim = name;
+    setTimeout(() => {
+      if (activeNavAnim === name) activeNavAnim = '';
+    }, 600); // Wait for the animation to finish
+  }
   
   import { onMount, onDestroy, tick } from 'svelte';
   import { browser } from '$app/environment';
@@ -203,6 +220,102 @@
   let showMyProfile = false;
   let myProfileData: any = null;
   let isLoadingProfile = false;
+  let customPhotos: any[] = [];
+  let allProfilePhotos: {url: string, type: string, status: string}[] = [];
+  let currentPhotoIndex = 0;
+  let isUploadingPhoto = false;
+  let fileInputRef: HTMLInputElement;
+
+  let rlsDebug = 'wait';
+  
+  onMount(() => {
+    fetch('/api/test-rls')
+      .then(r => r.json())
+      .then(d => {
+        rlsDebug = d.anon_result?.error ? 'err' : (d.anon_result?.data ? 'ok' : 'null');
+      })
+      .catch(e => {
+        rlsDebug = 'catch';
+      });
+  });
+
+  async function fetchCustomPhotosForProfile(name: string) {
+    if (!name) return;
+    try {
+      const { data, error } = await supabase
+        .from('custom_profile_photos')
+        .select('*')
+        .eq('user_name', name);
+      if (error) {
+        console.error('Error fetching custom photos:', error);
+        triggerAlert('Gagal memuat foto tambahan: ' + error.message, 'error');
+        throw error;
+      }
+      
+      const isOwnOrAdmin = $authStore.user?.role === 'admin' || $authStore.user?.name === name || ($authStore.user?.nis && $authStore.user?.nis === myProfileData?.nis);
+      const visiblePhotos = data.filter(p => p.status?.toLowerCase() === 'approved' || (isOwnOrAdmin && p.status?.toLowerCase() === 'pending'));
+      
+      customPhotos = visiblePhotos;
+      
+      // Preserve only the first photo (which is the default drive photo) if it exists
+      const basePhoto = allProfilePhotos.length > 0 && allProfilePhotos[0].type !== 'custom' 
+        ? [allProfilePhotos[0]] 
+        : [];
+        
+      allProfilePhotos = [
+        ...basePhoto,
+        ...visiblePhotos.map(p => ({ url: p.photo_url, type: 'custom', status: p.status }))
+      ];
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // Photo Carousel Logic
+  function nextPhoto(e: Event) {
+    e.stopPropagation();
+    if (allProfilePhotos.length > 1) {
+      currentPhotoIndex = (currentPhotoIndex + 1) % allProfilePhotos.length;
+    }
+  }
+
+  function prevPhoto(e: Event) {
+    e.stopPropagation();
+    if (allProfilePhotos.length > 1) {
+      currentPhotoIndex = (currentPhotoIndex - 1 + allProfilePhotos.length) % allProfilePhotos.length;
+    }
+  }
+
+  let showToast = false;
+  let toastMessage = '';
+  let toastType = 'success';
+  function showNotification(msg: string, type: 'success' | 'error' = 'success') {
+    toastMessage = msg;
+    toastType = type;
+    showToast = true;
+  }
+
+  // Photo Upload Logic
+  async function handlePhotoUpload(e: Event) {
+    const target = e.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (!file || !myProfileData) return;
+    
+    target.value = '';
+    isUploadingPhoto = true;
+    try {
+      const url = await uploadCustomProfilePhoto(file, myProfileData.nama_lengkap);
+      const newPhoto = { url, type: 'custom', status: 'pending' };
+      customPhotos = [...customPhotos, newPhoto];
+      allProfilePhotos = [...allProfilePhotos, newPhoto];
+      currentPhotoIndex = allProfilePhotos.length - 1;
+      showNotification('Foto berhasil diunggah dan sedang menunggu persetujuan Admin (1x24 jam).', 'success');
+    } catch (err: any) {
+      showNotification(`Gagal mengunggah foto: ${err.message}`, 'error');
+    } finally {
+      isUploadingPhoto = false;
+    }
+  }
 
   // Logout Confirmation Modal State
   let showLogoutModal = false;
@@ -800,6 +913,18 @@
     (myProfileData.nis === $authStore.user.nis)
   );
 
+  $: if (showMyProfile && myProfileData) {
+    customPhotos = [];
+    currentPhotoIndex = 0;
+    allProfilePhotos = [];
+    if (myProfileData.foto_url) {
+      allProfilePhotos.push({ url: myProfileData.foto_url, type: 'admin', status: 'approved' });
+    }
+    if (myProfileData.nama_lengkap) {
+      fetchCustomPhotosForProfile(myProfileData.nama_lengkap);
+    }
+  }
+
   // Close profile on route changes
   $: if (currentPath) {
     showMyProfile = false;
@@ -972,14 +1097,23 @@
   >
     <!-- Foto Besar -->
     <div 
-      class="max-w-sm w-full mx-auto"
+      class="relative max-w-sm w-full mx-auto"
       on:click|stopPropagation
       style="animation: lightboxZoomIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;"
     >
+      {#if showMyProfile && allProfilePhotos.length > 1 && allProfilePhotos.some(p => p.url === lightboxUrl || convertDriveUrl(p.url) === lightboxUrl)}
+        <button type="button" on:click={(e) => { prevPhoto(e); lightboxUrl = convertDriveUrl(allProfilePhotos[currentPhotoIndex].url); }} class="absolute left-2 md:-left-12 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3 transition-colors z-[101]">
+          <ChevronLeft class="h-6 w-6 md:h-8 md:w-8" />
+        </button>
+        <button type="button" on:click={(e) => { nextPhoto(e); lightboxUrl = convertDriveUrl(allProfilePhotos[currentPhotoIndex].url); }} class="absolute right-2 md:-right-12 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3 transition-colors z-[101]">
+          <ChevronRight class="h-6 w-6 md:h-8 md:w-8" />
+        </button>
+      {/if}
+
       <img referrerpolicy="no-referrer" 
         src={lightboxUrl} 
         alt="Foto Profil"
-        class="w-full rounded-3xl shadow-2xl object-cover border-2 border-white/20"
+        class="w-full rounded-3xl shadow-2xl object-cover border-2 border-white/20 {showMyProfile && allProfilePhotos[currentPhotoIndex]?.status === 'pending' && allProfilePhotos[currentPhotoIndex]?.url === lightboxUrl ? 'opacity-70 blur-[2px]' : ''}"
         style="max-height: 80vh; object-fit: contain;"
         on:error={(e) => { closeLightbox(); }}
       />
@@ -988,6 +1122,15 @@
 {/if}
 
 <style>
+  :global(.animate-jump-spin) {
+    animation: jump-spin 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes jump-spin {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(180deg) scale(1.1); }
+    100% { transform: translateY(0) rotate(360deg) scale(1); }
+  }
+
   @keyframes lightboxZoomIn {
     from { opacity: 0; transform: scale(0.7); }
     to   { opacity: 1; transform: scale(1); }
@@ -1021,6 +1164,50 @@
     animation-delay: 1.6s;
   }
 </style>
+
+<!-- ===== NOTIFICATION MODAL ===== -->
+{#if showToast}
+  <div class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full border border-slate-100 animate-in zoom-in-95 duration-300 relative flex flex-col items-center text-center p-6 sm:p-8 space-y-4">
+      <div class="w-20 h-20 rounded-full flex items-center justify-center {toastType === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'}">
+        {#if toastType === 'success'}
+          <CheckCircle2 class="h-10 w-10" />
+        {:else}
+          <AlertCircle class="h-10 w-10" />
+        {/if}
+      </div>
+      
+      <div class="space-y-2">
+        <h2 class="text-xl sm:text-2xl font-black {toastType === 'success' ? 'text-emerald-700' : 'text-rose-700'} tracking-tight">
+          {toastType === 'success' ? 'Berhasil!' : 'Oops, Gagal!'}
+        </h2>
+        <p class="text-sm font-medium text-slate-500 leading-relaxed">
+          {toastMessage}
+        </p>
+      </div>
+
+      <button 
+        on:click={() => showToast = false}
+        class="mt-4 w-full {toastType === 'success' ? 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800' : 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800'} text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md active:scale-[0.98]"
+      >
+        Oke, Mengerti
+      </button>
+    </div>
+  </div>
+{/if}
+
+<!-- FULL SCREEN LOADING UNTUK UPLOAD -->
+{#if isUploadingPhoto}
+  <div class="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300 p-4">
+    <div class="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-4 animate-bounce-slow">
+      <div class="h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+      <div class="text-center">
+        <p class="font-black text-slate-800 text-lg">Mengunggah Foto...</p>
+        <p class="text-xs text-slate-500 font-medium">Mohon tunggu sebentar, sedang diproses.</p>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <!-- Swipe-to-Back Visual Indicator -->
 {#if isSwiping && swipeDelta > 8}
@@ -1070,7 +1257,7 @@
     <!-- Full-screen layout for Auth page without standard navigation bars -->
     <main class="flex-1 flex items-center justify-center p-4 bg-slate-50">
       {#key currentPath}
-        <div in:fade={{ duration: 250, delay: 100 }} out:fade={{ duration: 150 }} class="w-full max-w-md">
+        <div in:fly={{ y: 20, duration: 400, delay: 200 }} out:fade={{ duration: 150 }} class="w-full max-w-md">
           <slot />
         </div>
       {/key}
@@ -1079,7 +1266,7 @@
     <!-- Full-screen layout without standard navigation bars -->
     <main class="w-full min-h-screen p-0 m-0 bg-[#060a12] overflow-x-hidden">
       {#key currentPath}
-        <div in:fade={{ duration: 250, delay: 100 }} out:fade={{ duration: 150 }} class="w-full h-full">
+        <div in:fly={{ y: 20, duration: 400, delay: 200 }} out:fade={{ duration: 150 }} class="w-full h-full">
           <slot />
         </div>
       {/key}
@@ -1529,29 +1716,66 @@
                   <div class="flex flex-col sm:flex-row items-center sm:items-end gap-5 pb-6 border-b border-slate-100">
                     <!-- svelte-ignore a11y-click-events-have-key-events -->
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <div 
-                      class="relative group/avatar h-28 w-28 rounded-3xl bg-white p-0.5 border-2 border-white flex items-center justify-center text-primary font-bold text-3xl shrink-0 overflow-hidden shadow-md transition-all duration-300 {myProfileData.foto_url ? 'cursor-zoom-in hover:scale-105 hover:shadow-lg' : ''}"
-                      on:click={() => myProfileData.foto_url && openLightbox(convertDriveUrl(myProfileData.foto_url))}
-                    >
-                      <div class="w-full h-full rounded-2xl overflow-hidden bg-indigo-50/50 border border-indigo-100 flex items-center justify-center relative">
-                        {#if myProfileData.foto_url}
-                          <img referrerpolicy="no-referrer" 
-                            src={convertDriveUrl(myProfileData.foto_url)} 
-                            alt={myProfileData.nama_lengkap} 
-                            class="h-full w-full object-cover" 
-                            on:error={(e) => { e.currentTarget.style.display = 'none'; myProfileData.foto_url = null; }} 
-                          />
-                          <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity duration-300 pointer-events-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
-                          </div>
-                        {:else}
-                          {getInitials(myProfileData.nama_lengkap)}
-                        {/if}
+                    <div class="flex flex-col items-center gap-2">
+                      <div 
+                        class="relative group/avatar h-28 w-28 rounded-3xl bg-white p-0.5 border-2 border-white flex items-center justify-center text-primary font-bold text-3xl shrink-0 overflow-hidden shadow-md transition-all duration-300 {allProfilePhotos.length > 0 ? 'cursor-zoom-in hover:scale-105 hover:shadow-lg' : ''}"
+                        on:click={() => { if (allProfilePhotos.length > 0) openLightbox(convertDriveUrl(allProfilePhotos[currentPhotoIndex].url)) }}
+                      >
+                        <div class="w-full h-full rounded-2xl overflow-hidden bg-indigo-50/50 border border-indigo-100 flex items-center justify-center relative group/inner">
+                          {#if allProfilePhotos.length > 0}
+                            <img referrerpolicy="no-referrer" 
+                              src={convertDriveUrl(allProfilePhotos[currentPhotoIndex].url)} 
+                              alt={myProfileData.nama_lengkap} 
+                              class="h-full w-full object-cover transition-opacity duration-300 {allProfilePhotos[currentPhotoIndex].status === 'pending' ? 'opacity-70 blur-[1px]' : ''}" 
+                              on:error={(e) => {
+                                // Remove the failed photo from the array
+                                allProfilePhotos = allProfilePhotos.filter((_, i) => i !== currentPhotoIndex);
+                                if (currentPhotoIndex >= allProfilePhotos.length) {
+                                  currentPhotoIndex = Math.max(0, allProfilePhotos.length - 1);
+                                }
+                              }} 
+                            />
+                            
+                            {#if allProfilePhotos[currentPhotoIndex].status === 'pending'}
+                              <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex flex-col items-center justify-center pointer-events-none z-20">
+                                <div class="bg-amber-500/95 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5 border border-amber-400">
+                                  <Clock class="h-3 w-3 animate-pulse" />
+                                  <span>Verifikasi Admin</span>
+                                </div>
+                              </div>
+                            {/if}
+
+                            {#if allProfilePhotos.length > 1}
+                              <button type="button" on:click={(e) => { e.stopPropagation(); prevPhoto(e); }} class="absolute left-1 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 opacity-100 transition-opacity z-[100] shadow-md">
+                                <ChevronLeft class="h-4 w-4" />
+                              </button>
+                              <button type="button" on:click={(e) => { e.stopPropagation(); nextPhoto(e); }} class="absolute right-1 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 opacity-100 transition-opacity z-[100] shadow-md">
+                                <ChevronRight class="h-4 w-4" />
+                              </button>
+                              <div class="absolute top-1 right-1 flex space-x-0.5 bg-black/20 rounded-full px-1 py-0.5 z-10">
+                                {#each allProfilePhotos as _, i}
+                                  <div class="h-1 w-1 rounded-full {i === currentPhotoIndex ? 'bg-white' : 'bg-white/40'}"></div>
+                                {/each}
+                              </div>
+                            {/if}
+
+                            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity duration-300 pointer-events-none">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+                            </div>
+                          {:else}
+                            {getInitials(myProfileData.nama_lengkap)}
+                          {/if}
+                        </div>
                       </div>
+
+
                     </div>
                     
                     <div class="text-center sm:text-left space-y-2 min-w-0 flex-1 pb-1">
-                      <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-tight py-1 truncate">{myProfileData.nama_lengkap}</h2>
+                      <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-tight py-1 truncate">
+                        {myProfileData.nama_lengkap} 
+                        <span class="text-[8px] opacity-10">[{allProfilePhotos?.length || 0}:{customPhotos?.length || 0}:{myProfileData.foto_url ? 1 : 0}:{rlsDebug}]</span>
+                      </h2>
                       {#if myProfileData.nama_panggilan}
                         <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs font-bold">
                           <span class="px-2.5 py-1 bg-slate-100 rounded-full text-slate-600 border border-slate-200/50">{myProfileData.nama_panggilan}</span>
@@ -1908,7 +2132,7 @@
           {/if}
         {:else}
           {#key currentPath}
-            <div in:fade={{ duration: 200, delay: 100 }} out:fade={{ duration: 100 }} class="mx-auto max-w-7xl xl:max-w-[1400px] w-full">
+            <div in:fly={{ y: 20, duration: 400, delay: 150 }} out:fade={{ duration: 150 }} class="mx-auto max-w-7xl xl:max-w-[1400px] w-full">
               <slot />
             </div>
           {/key}
@@ -1931,12 +2155,12 @@
             <a
               href={item.path}
               id="mobile-nav-{item.name.toLowerCase().replace(/[^a-z]/g, '')}"
-              on:click={() => { resetAutoHide(); handleNavClick(); }}
+              on:click={() => { resetAutoHide(); handleNavClick(); triggerNavAnim(item.name); }}
               class="flex flex-col items-center justify-center flex-1 h-12 transition-all duration-300 relative
                 {isActive(item.path) ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
               style="min-width: 44px; min-height: 48px;"
             >
-              <div class="relative flex items-center justify-center {isActive(item.path) ? 'scale-110' : ''} transition-transform duration-300">
+              <div class="relative flex items-center justify-center {isActive(item.path) ? 'scale-110' : ''} transition-transform duration-300 {activeNavAnim === item.name ? 'animate-jump-spin text-primary drop-shadow-md' : ''}">
                 <svelte:component this={item.icon} class="h-6 w-6 relative z-10" />
                 {#if isActive(item.path)}
                   <div class="absolute inset-0 bg-primary/10 w-10 h-10 -left-2 -top-2 rounded-full blur-sm"></div>
@@ -1949,12 +2173,12 @@
             <a
               href="/admin"
               id="mobile-nav-admin"
-              on:click={() => { resetAutoHide(); handleNavClick(); }}
+              on:click={() => { resetAutoHide(); handleNavClick(); triggerNavAnim('admin'); }}
               class="flex flex-col items-center justify-center flex-1 h-12 transition-all duration-300 relative
                 {isActive('/admin') ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
               style="min-width: 44px; min-height: 48px;"
             >
-              <div class="relative flex items-center justify-center {isActive('/admin') ? 'scale-110' : ''} transition-transform duration-300">
+              <div class="relative flex items-center justify-center {isActive('/admin') ? 'scale-110' : ''} transition-transform duration-300 {activeNavAnim === 'admin' ? 'animate-jump-spin text-primary drop-shadow-md' : ''}">
                 <ShieldCheck class="h-6 w-6 relative z-10" />
                 {#if isActive('/admin')}
                   <div class="absolute inset-0 bg-primary/10 w-10 h-10 -left-2 -top-2 rounded-full blur-sm"></div>
