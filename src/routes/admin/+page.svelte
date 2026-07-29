@@ -4,6 +4,7 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { supabase, uploadMemoryPhoto, uploadProfilePhoto } from '$lib/supabase';
+  import { authStore } from '$lib/auth';
   import Card from '$lib/components/ui/card.svelte';
   import Button from '$lib/components/ui/button.svelte';
   import Input from '$lib/components/ui/input.svelte';
