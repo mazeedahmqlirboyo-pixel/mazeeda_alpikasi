@@ -477,10 +477,21 @@
   let adminCommentsType = 'timeline'; // 'timeline', 'mading_announcements', 'mading_notes'
   let adminCommentsList: any[] = [];
   let isLoadingAdminComments = false;
+  let adminUsersPhotoMap = new Map();
 
   async function fetchAdminComments() {
     isLoadingAdminComments = true;
     try {
+      if (adminUsersPhotoMap.size === 0) {
+        const [{ data: alumni }, { data: asatidzah }] = await Promise.all([
+          supabase.from('allowed_alumni').select('nama_lengkap, foto_url'),
+          supabase.from('asatidzah').select('nama_lengkap, foto_url')
+        ]);
+        const map = new Map();
+        if (alumni) alumni.forEach(u => u.nama_lengkap && map.set(u.nama_lengkap, u.foto_url));
+        if (asatidzah) asatidzah.forEach(u => u.nama_lengkap && map.set(u.nama_lengkap, u.foto_url));
+        adminUsersPhotoMap = map;
+      }
       let tableName = '';
       if (adminCommentsType === 'timeline') tableName = 'memory_comments';
       else if (adminCommentsType === 'mading_announcements') tableName = 'mading_comments';
@@ -3264,7 +3275,7 @@
           <h2 class="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
             <span class="text-2xl">💬</span> Manajemen Komentar
           </h2>
-          <p class="text-sm text-slate-500 font-medium mt-1">Pantau dan kelola semua komentar di aplikasi (Dibatasi 50 terbaru untuk menghemat kuota Egress database).</p>
+          <p class="text-sm text-slate-500 font-medium mt-1">Pantau dan kelola semua komentar di aplikasi.</p>
         </div>
         <button on:click={fetchAdminComments} class="px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl font-bold text-sm transition-colors flex items-center gap-2">
           <RefreshCw class="w-4 h-4 {isLoadingAdminComments ? 'animate-spin' : ''}" />
@@ -3306,16 +3317,23 @@
         {:else}
           <div class="divide-y divide-slate-100 max-h-[650px] overflow-y-auto custom-scrollbar pr-1">
             {#each adminCommentsList as comment (comment.id)}
+              {@const authorName = comment.user_name || comment.author || 'Anonim'}
+              {@const isSelfAdmin = authorName === 'ADMIN MAZEEDA' || authorName === $authStore.user?.name}
+              {@const authorPhotoUrl = isSelfAdmin ? $authStore.user?.foto_url : adminUsersPhotoMap.get(authorName)}
               <div class="p-5 hover:bg-slate-50/80 transition-all duration-300 group flex gap-4 items-start relative overflow-hidden">
                 <!-- Avatar -->
-                <div class="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex items-center justify-center text-indigo-700 font-black text-base shadow-sm ring-2 ring-white z-10">
-                  {(comment.user_name || comment.author || 'A')[0].toUpperCase()}
-                </div>
+                {#if authorPhotoUrl}
+                  <img src={convertDriveUrl(authorPhotoUrl)} alt={authorName} class="h-10 w-10 shrink-0 rounded-full object-cover shadow-sm ring-2 ring-white z-10" referrerpolicy="no-referrer" />
+                {:else}
+                  <div class="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex items-center justify-center text-indigo-700 font-black text-base shadow-sm ring-2 ring-white z-10">
+                    {authorName[0].toUpperCase()}
+                  </div>
+                {/if}
                 
                 <!-- Content -->
                 <div class="flex-1 min-w-0 z-10">
                   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-1.5">
-                    <h4 class="text-sm font-black text-slate-800 truncate pr-4">{comment.user_name || comment.author || 'Anonim'}</h4>
+                    <h4 class="text-sm font-black text-slate-800 truncate pr-4">{authorName}</h4>
                     <span class="text-[10px] text-slate-400 font-semibold whitespace-nowrap bg-slate-100/60 px-2 py-0.5 rounded-full w-fit">
                       {new Date(comment.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB
                     </span>
