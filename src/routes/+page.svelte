@@ -2545,21 +2545,24 @@
       transition:scale={{ duration: 200, start: 0.95 }}
       on:click|stopPropagation
     >
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-        <h3 class="text-lg font-bold text-slate-800">Saran & Masukan</h3>
-        <button 
-          on:click={() => showFeedbackModal = false}
-          class="p-2 -mr-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors focus:outline-none"
-        >
-          <XCircle class="w-5 h-5" />
-        </button>
-      </div>
+      {#if !feedbackSuccess}
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <h3 class="text-lg font-bold text-slate-800">Saran & Masukan</h3>
+          <button 
+            on:click={() => showFeedbackModal = false}
+            class="p-2 -mr-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors focus:outline-none"
+          >
+            <XCircle class="w-5 h-5" />
+          </button>
+        </div>
+      {/if}
+
 
       <div class="p-6">
         {#if feedbackSuccess}
-          <div class="text-center py-6" in:fade={{ duration: 200 }}>
-            <img src="/Success.svg" alt="Berhasil" class="w-32 h-32 mx-auto mb-2 object-contain" />
-            <h4 class="text-lg font-bold text-slate-800 mb-1">Terima Kasih!</h4>
+          <div class="text-center py-8" in:fade={{ duration: 200 }}>
+            <img src="/Success.svg" alt="Berhasil" class="w-48 h-48 mx-auto mb-4 object-contain scale-110" />
+            <h4 class="text-xl font-bold text-slate-800 mb-2">Terima Kasih!</h4>
             <p class="text-sm text-slate-500">Saran dan masukan Anda telah terkirim dan akan sangat membantu kami mengembangkan aplikasi MAZEEDA.</p>
           </div>
         {:else}
