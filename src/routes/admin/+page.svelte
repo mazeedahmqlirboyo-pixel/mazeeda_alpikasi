@@ -543,7 +543,6 @@
           title: "Balasan Saran & Masukan",
           message: `Admin MAZEEDA membalas saran Anda: "${replyMessage.trim()}"`,
           type: "success",
-          icon: "MessageCircle",
           is_active: true
         }]);
         if (notifError) throw notifError;
@@ -723,7 +722,6 @@
         type: 'success',
         title: 'Foto Disetujui',
         message: `Foto profil tambahan Anda telah disetujui oleh Admin.`,
-        icon: 'CheckCircle',
         is_read: false
       }]);
       

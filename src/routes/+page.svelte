@@ -89,7 +89,6 @@
         title: 'Saran & Masukan Baru',
         message: `Ada saran baru dari ${userName}. Cek di Kotak Saran!`,
         type: 'info',
-        icon: 'MessageCircle',
         is_active: true
       }]);
       
