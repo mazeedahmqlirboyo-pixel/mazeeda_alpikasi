@@ -43,6 +43,7 @@
     CloudRain,
     Wind,
     Bot,
+    AlertCircle,
     Info,
     Brain,
     CheckCircle2,
@@ -62,17 +63,18 @@
     showLightbox = true;
   }
 
-  // --- Feedback Modal State ---
   let showFeedbackModal = false;
   let feedbackMessage = "";
   let isSubmittingFeedback = false;
   let feedbackSuccess = false;
+  let feedbackError = "";
 
   async function submitFeedback() {
     if (!feedbackMessage.trim()) return;
     const userName = $authStore.user?.name || "Anonim";
     
     isSubmittingFeedback = true;
+    feedbackError = ""; // reset error
     try {
       const { error } = await supabase.from('feedbacks').insert([{
         user_name: userName,
@@ -89,7 +91,7 @@
       }, 2000);
     } catch (err) {
       console.error("Gagal mengirim saran:", err);
-      alert("Gagal mengirim saran. Silakan coba lagi.");
+      feedbackError = "Gagal mengirim masukan. Pastikan Anda sudah login atau jaringan stabil.";
     } finally {
       isSubmittingFeedback = false;
     }
@@ -2556,14 +2558,18 @@
       <div class="p-6">
         {#if feedbackSuccess}
           <div class="text-center py-6" in:fade={{ duration: 200 }}>
-            <div class="mx-auto w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle2 class="w-8 h-8 text-emerald-500" />
-            </div>
+            <img src="/Success.svg" alt="Berhasil" class="w-32 h-32 mx-auto mb-2 object-contain" />
             <h4 class="text-lg font-bold text-slate-800 mb-1">Terima Kasih!</h4>
             <p class="text-sm text-slate-500">Saran dan masukan Anda telah terkirim dan akan sangat membantu kami mengembangkan aplikasi MAZEEDA.</p>
           </div>
         {:else}
           <div class="space-y-4">
+            {#if feedbackError}
+              <div class="bg-rose-50/50 border border-rose-100 rounded-xl p-3 flex items-start gap-3 text-rose-600" in:fade={{duration: 200}}>
+                <AlertCircle class="w-5 h-5 shrink-0 mt-0.5" />
+                <p class="text-xs font-semibold leading-relaxed">{feedbackError}</p>
+              </div>
+            {/if}
             <div>
               <label for="feedback" class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Pesan Anda</label>
               <textarea 
@@ -2572,6 +2578,7 @@
                 placeholder="Punya ide fitur baru, menemukan bug, atau sekadar memberi kritik dan saran? Tulis di sini..." 
                 class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white resize-none transition-colors"
                 bind:value={feedbackMessage}
+                on:input={() => feedbackError = ""}
               ></textarea>
             </div>
             <Button 
