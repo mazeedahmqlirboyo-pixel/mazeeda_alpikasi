@@ -503,7 +503,7 @@
   }
 
   function deleteAdminComment(id: string) {
-    openConfirmModal(
+    runWithConfirmation(
       'Hapus Komentar?',
       'Komentar ini akan dihapus secara permanen dari aplikasi. Tindakan ini tidak dapat dibatalkan.',
       async () => {
@@ -567,7 +567,7 @@
   }
 
   function deleteFeedback(id: string) {
-    openConfirmModal(
+    runWithConfirmation(
       'Hapus Saran?',
       'Saran dan masukan ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.',
       async () => {
@@ -3304,31 +3304,41 @@
             <p class="text-sm text-slate-400 mt-1">Belum ada komentar di kategori ini.</p>
           </div>
         {:else}
-          <div class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto custom-scrollbar">
+          <div class="divide-y divide-slate-100 max-h-[650px] overflow-y-auto custom-scrollbar pr-1">
             {#each adminCommentsList as comment (comment.id)}
-              <div class="p-5 hover:bg-slate-50/80 transition-colors group flex flex-col sm:flex-row gap-4 justify-between items-start">
-                <div class="flex-1 space-y-2">
-                  <div class="flex items-center gap-2">
-                    <div class="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-black text-sm shadow-inner">
-                      {(comment.user_name || comment.author || 'A')[0].toUpperCase()}
-                    </div>
-                    <div>
-                      <h4 class="text-sm font-black text-slate-800">{comment.user_name || comment.author || 'Anonim'}</h4>
-                      <p class="text-[11px] text-slate-400 font-medium">
-                        {new Date(comment.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB
-                      </p>
-                    </div>
-                  </div>
-                  <p class="text-sm text-slate-600 leading-relaxed pl-10 border-l-2 border-slate-100 ml-4 py-1 whitespace-pre-wrap">{comment.comment_text || comment.text || comment.message}</p>
+              <div class="p-5 hover:bg-slate-50/80 transition-all duration-300 group flex gap-4 items-start relative overflow-hidden">
+                <!-- Avatar -->
+                <div class="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex items-center justify-center text-indigo-700 font-black text-base shadow-sm ring-2 ring-white z-10">
+                  {(comment.user_name || comment.author || 'A')[0].toUpperCase()}
                 </div>
                 
-                <button 
-                  on:click={() => deleteAdminComment(comment.id)}
-                  class="shrink-0 p-2 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all sm:opacity-0 group-hover:opacity-100"
-                  title="Hapus Komentar"
-                >
-                  <Trash2 class="w-5 h-5" />
-                </button>
+                <!-- Content -->
+                <div class="flex-1 min-w-0 z-10">
+                  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-1.5">
+                    <h4 class="text-sm font-black text-slate-800 truncate pr-4">{comment.user_name || comment.author || 'Anonim'}</h4>
+                    <span class="text-[10px] text-slate-400 font-semibold whitespace-nowrap bg-slate-100/60 px-2 py-0.5 rounded-full w-fit">
+                      {new Date(comment.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB
+                    </span>
+                  </div>
+                  
+                  <div class="bg-white/60 border border-slate-100/80 rounded-2xl p-3.5 shadow-sm">
+                    <p class="text-[13px] text-slate-600 leading-relaxed whitespace-pre-wrap break-words">{comment.comment_text || comment.text || comment.message}</p>
+                  </div>
+                </div>
+                
+                <!-- Action Button -->
+                <div class="shrink-0 flex items-center h-full sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 pt-1 sm:pt-0">
+                  <button 
+                    on:click={() => deleteAdminComment(comment.id)}
+                    class="p-2.5 bg-white text-slate-400 hover:text-white hover:bg-rose-500 rounded-xl shadow-soft-sm hover:shadow-md hover:shadow-rose-500/20 transition-all duration-300 border border-slate-100 hover:border-rose-500"
+                    title="Hapus Komentar"
+                  >
+                    <Trash2 class="w-4 h-4" />
+                  </button>
+                </div>
+
+                <!-- Decorative Background Element on Hover -->
+                <div class="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-rose-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
               </div>
             {/each}
           </div>
