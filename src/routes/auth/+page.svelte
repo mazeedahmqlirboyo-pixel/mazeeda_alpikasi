@@ -23,6 +23,44 @@
   let isSearchingNis = false;
   let searchNisMessage = { type: '', content: '' };
 
+  // Guest Feedback State
+  let showGuestFeedbackModal = false;
+  let guestFeedbackName = '';
+  let guestFeedbackMessage = '';
+  let isSubmittingGuestFeedback = false;
+  let guestFeedbackSuccess = false;
+  let guestFeedbackError = '';
+
+  async function submitGuestFeedback() {
+    if (!guestFeedbackName.trim() || !guestFeedbackMessage.trim()) return;
+    
+    isSubmittingGuestFeedback = true;
+    guestFeedbackError = '';
+    
+    try {
+      const { error } = await supabase.from('feedbacks').insert([{
+        user_name: guestFeedbackName.trim() + " (Tamu)",
+        message: guestFeedbackMessage.trim(),
+        user_id: null
+      }]);
+      
+      if (error) throw error;
+      
+      guestFeedbackSuccess = true;
+      guestFeedbackName = '';
+      guestFeedbackMessage = '';
+      setTimeout(() => {
+        showGuestFeedbackModal = false;
+        guestFeedbackSuccess = false;
+      }, 2500);
+    } catch (err) {
+      console.error("Gagal mengirim saran:", err);
+      guestFeedbackError = "Gagal mengirim masukan. Pastikan koneksi internet Anda stabil.";
+    } finally {
+      isSubmittingGuestFeedback = false;
+    }
+  }
+
   onMount(() => {
     const savedNis = localStorage.getItem('mazeeda_remembered_nis');
     if (savedNis) {
@@ -436,8 +474,7 @@
           <form on:submit|preventDefault={handleAuthSubmit} class="space-y-5">
             
             <!-- Input NIS -->
-            <div class="space-y-1.5 relative group" in:fly|global={{ y: 10, duration: 400, delay: 150 }}>
-              <label for="nis" class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">NIS</label>
+            <div class="relative group" in:fly|global={{ y: 10, duration: 400, delay: 150 }}>
               <div class="relative overflow-hidden rounded-xl transition-all duration-300 {focusedInput === 'nis' ? 'ring-2 ring-primary ring-offset-1 -translate-y-1 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]' : 'border border-slate-200 hover:border-slate-300'}">
                 <div class="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-slate-50 border-r border-slate-100 text-slate-400">
                   <Hash class="w-5 h-5 {focusedInput === 'nis' ? 'text-primary' : ''} transition-colors" />
@@ -445,8 +482,8 @@
                 <input 
                   id="nis" 
                   type="text" 
-                  class="w-full bg-white pl-16 pr-4 py-3.5 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-300 focus:bg-slate-50/50 transition-colors"
-                  placeholder="CONTOH: 220412" 
+                  class="w-full bg-white pl-16 pr-4 py-3.5 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 focus:bg-slate-50/50 transition-colors"
+                  placeholder="NIS: 220412" 
                   bind:value={nis} 
                   on:focus={() => focusedInput = 'nis'}
                   on:blur={() => focusedInput = ''}
@@ -457,8 +494,7 @@
             </div>
 
             <!-- Input Nama Ayah -->
-            <div class="space-y-1.5 relative group" in:fly|global={{ y: 10, duration: 400, delay: 250 }}>
-              <label for="namaAyah" class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">NAMA AYAH</label>
+            <div class="relative group mt-5" in:fly|global={{ y: 10, duration: 400, delay: 250 }}>
               <div class="relative overflow-hidden rounded-xl transition-all duration-300 {focusedInput === 'namaAyah' ? 'ring-2 ring-primary ring-offset-1 -translate-y-1 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]' : 'border border-slate-200 hover:border-slate-300'}">
                 <div class="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-slate-50 border-r border-slate-100 text-slate-400">
                   <User class="w-5 h-5 {focusedInput === 'namaAyah' ? 'text-primary' : ''} transition-colors" />
@@ -467,7 +503,7 @@
                   id="namaAyah" 
                   type={showPassword ? "text" : "password"} 
                   class="w-full bg-white pl-16 pr-12 py-3.5 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-300 focus:bg-slate-50/50 transition-colors uppercase"
-                  placeholder="Nama lengkap ayah kandung" 
+                  placeholder="Nama ayah sesuai KK" 
                   value={namaAyah} 
                   on:input={(e) => namaAyah = e.currentTarget.value}
                   on:focus={() => focusedInput = 'namaAyah'}
@@ -556,7 +592,9 @@
             </p>
             <p class="text-xs text-slate-400 font-medium pt-3 border-t border-slate-50/50">
               Mengalami masalah lain? <br class="lg:hidden" />
-              <a href="https://wa.me/6285111653232" target="_blank" class="text-slate-500 font-bold hover:text-primary transition-colors">Hubungi ADMIN MAZEEDA</a>
+              <a href="https://wa.me/6285111653232" target="_blank" class="text-slate-500 font-bold hover:text-primary transition-colors">Hubungi ADMIN</a>
+              <span class="mx-2 text-slate-300">•</span>
+              <button type="button" class="text-slate-500 font-bold hover:text-primary transition-colors" on:click={() => showGuestFeedbackModal = true}>Kotak Saran</button>
             </p>
           </div>
 
@@ -699,3 +737,90 @@
     100% { transform: translateX(-300px); opacity: 0; }
   }
 </style>
+
+<!-- Modal Kotak Saran (Guest) -->
+{#if showGuestFeedbackModal}
+  <div 
+    class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm"
+    transition:fade={{ duration: 200 }}
+    on:click={() => showGuestFeedbackModal = false}
+  >
+    <div 
+      class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+      transition:scale={{ duration: 200, start: 0.95 }}
+      on:click|stopPropagation
+    >
+      {#if !guestFeedbackSuccess}
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <MessageCircle class="w-5 h-5 text-primary" /> Kotak Saran
+          </h3>
+          <button 
+            on:click={() => showGuestFeedbackModal = false}
+            class="p-2 -mr-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors focus:outline-none"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+      {/if}
+
+      <div class="p-6">
+        {#if guestFeedbackSuccess}
+          <div class="text-center py-8" in:fade={{ duration: 200 }}>
+            <img src="/Success.svg" alt="Berhasil" class="w-48 h-48 mx-auto mb-4 object-contain scale-110" />
+            <h4 class="text-xl font-bold text-slate-800 mb-2">Terima Kasih!</h4>
+            <p class="text-sm text-slate-500">Saran dan masukan Anda telah terkirim dan akan sangat membantu kami mengembangkan aplikasi MAZEEDA.</p>
+          </div>
+        {:else}
+          <div class="space-y-4">
+            <p class="text-xs text-slate-500 leading-relaxed mb-4">Punya ide fitur baru, menemukan bug, atau sekadar memberi kritik dan saran? Tulis di sini.</p>
+            
+            {#if guestFeedbackError}
+              <div class="bg-rose-50/50 border border-rose-100 rounded-xl p-3 flex items-start gap-3 text-rose-600" in:fade={{duration: 200}}>
+                <AlertCircle class="w-5 h-5 shrink-0 mt-0.5" />
+                <p class="text-xs font-semibold leading-relaxed">{guestFeedbackError}</p>
+              </div>
+            {/if}
+
+            <div>
+              <label for="guestName" class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Nama Anda</label>
+              <input 
+                id="guestName" 
+                type="text"
+                placeholder="Masukkan nama lengkap" 
+                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                bind:value={guestFeedbackName}
+                on:input={() => guestFeedbackError = ""}
+              />
+            </div>
+
+            <div>
+              <label for="guestFeedback" class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Pesan Anda</label>
+              <textarea 
+                id="guestFeedback" 
+                rows="4" 
+                placeholder="Tuliskan saran Anda secara detail..." 
+                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-primary focus:bg-white resize-none transition-colors"
+                bind:value={guestFeedbackMessage}
+                on:input={() => guestFeedbackError = ""}
+              ></textarea>
+            </div>
+
+            <Button 
+              on:click={submitGuestFeedback} 
+              disabled={isSubmittingGuestFeedback || !guestFeedbackName.trim() || !guestFeedbackMessage.trim()}
+              class="w-full py-2.5 font-bold bg-primary hover:bg-primary/90 text-white rounded-xl shadow-soft-sm disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-4"
+            >
+              {#if isSubmittingGuestFeedback}
+                <div class="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Mengirim...
+              {:else}
+                Kirim Masukan
+              {/if}
+            </Button>
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
