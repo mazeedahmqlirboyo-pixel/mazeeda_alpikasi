@@ -81,7 +81,13 @@
     if (n.target_user) {
       const targetUser = n.target_user.trim().toLowerCase();
       const myName = ($authStore.user?.name || '').trim().toLowerCase();
-      if (targetUser !== myName) return false;
+      const myRole = $authStore.user?.role || '';
+      
+      if (targetUser === 'admin_role') {
+        if (myRole !== 'admin') return false;
+      } else if (targetUser !== myName) {
+        return false;
+      }
     }
 
     // Filter by type

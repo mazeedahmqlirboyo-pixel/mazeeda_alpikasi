@@ -51,7 +51,7 @@
       
       // Notify Admin
       await supabase.from('app_notifications').insert([{
-        target_user: 'ADMIN MAZEEDA',
+        target_user: 'admin_role',
         title: 'Saran Baru (Tamu)',
         message: `Ada saran baru dari ${userName}. Cek di Kotak Saran!`,
         type: 'info',
