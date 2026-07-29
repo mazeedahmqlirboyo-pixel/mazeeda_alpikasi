@@ -513,16 +513,21 @@
     }
   }
 
-  async function deleteFeedback(id: string) {
-    if (!confirm('Hapus saran ini secara permanen?')) return;
-    try {
-      const { error } = await supabase.from('feedbacks').delete().eq('id', id);
-      if (error) throw error;
-      feedbacksList = feedbacksList.filter(f => f.id !== id);
-      triggerAlert('Saran berhasil dihapus');
-    } catch (e) {
-      triggerAlert('Gagal menghapus saran', 'error');
-    }
+  function deleteFeedback(id: string) {
+    openConfirmModal(
+      'Hapus Saran?',
+      'Saran dan masukan ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.',
+      async () => {
+        try {
+          const { error } = await supabase.from('feedbacks').delete().eq('id', id);
+          if (error) throw error;
+          feedbacksList = feedbacksList.filter(f => f.id !== id);
+          triggerAlert('Saran berhasil dihapus');
+        } catch (e) {
+          triggerAlert('Gagal menghapus saran', 'error');
+        }
+      }
+    );
   }
 
   async function submitReply(feedback: any) {
