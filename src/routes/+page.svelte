@@ -83,6 +83,16 @@
       
       if (error) throw error;
       
+      // Notify Admin
+      await supabase.from('app_notifications').insert([{
+        target_user: 'ADMIN MAZEEDA',
+        title: 'Saran & Masukan Baru',
+        message: `Ada saran baru dari ${userName}. Cek di Kotak Saran!`,
+        type: 'info',
+        icon: 'MessageCircle',
+        is_active: true
+      }]);
+      
       feedbackSuccess = true;
       feedbackMessage = "";
       setTimeout(() => {

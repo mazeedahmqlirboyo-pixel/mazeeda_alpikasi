@@ -476,9 +476,6 @@
   let feedbacksList: any[] = [];
   let isLoadingFeedbacks = false;
   let feedbackFilter = 'all'; // 'all', 'unread', 'read'
-  let replyingToId: string | null = null;
-  let replyMessage = '';
-  let isReplying = false;
 
   async function fetchFeedbacks() {
     try {
@@ -522,42 +519,6 @@
       triggerAlert('Saran berhasil dihapus');
     } catch (e) {
       triggerAlert('Gagal menghapus saran', 'error');
-    }
-  }
-
-  async function submitReply(feedback: any) {
-    if (!replyMessage.trim()) return;
-    isReplying = true;
-    try {
-      // 1. Update feedback with admin's reply and mark as read
-      const { error: updateError } = await supabase.from('feedbacks').update({
-        admin_reply: replyMessage.trim(),
-        is_read: true
-      }).eq('id', feedback.id);
-      if (updateError) throw updateError;
-
-      // 2. Insert notification to app_notifications
-      if (feedback.user_name && !feedback.user_name.includes('(Tamu)')) {
-        const { error: notifError } = await supabase.from('app_notifications').insert([{
-          target_user: feedback.user_name,
-          title: "Balasan Saran & Masukan",
-          message: `Admin MAZEEDA membalas saran Anda: "${replyMessage.trim()}"`,
-          type: "success",
-          icon: "MessageCircle",
-          is_active: true
-        }]);
-        if (notifError) throw notifError;
-      }
-
-      feedbacksList = feedbacksList.map(f => f.id === feedback.id ? { ...f, admin_reply: replyMessage.trim(), is_read: true } : f);
-      triggerAlert('Balasan berhasil dikirim');
-      replyingToId = null;
-      replyMessage = '';
-    } catch (e) {
-      console.error(e);
-      triggerAlert('Gagal mengirim balasan', 'error');
-    } finally {
-      isReplying = false;
     }
   }
 
@@ -3252,44 +3213,6 @@
                     {/if}
                   </div>
                   <p class="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{item.message}</p>
-                  
-                  {#if item.admin_reply}
-                    <div class="mt-3 bg-indigo-50/50 rounded-lg p-3 border border-indigo-100/50">
-                      <p class="text-xs font-bold text-indigo-700 mb-1 flex items-center gap-1.5">
-                        <ShieldCheck class="w-3.5 h-3.5" /> Balasan Admin:
-                      </p>
-                      <p class="text-sm text-slate-700 whitespace-pre-wrap">{item.admin_reply}</p>
-                    </div>
-                  {/if}
-                  
-                  <!-- Reply Form -->
-                  {#if replyingToId === item.id}
-                    <div class="mt-4 bg-white border border-slate-200 rounded-xl p-3 shadow-soft-sm">
-                      <textarea 
-                        bind:value={replyMessage}
-                        placeholder="Ketik balasan Anda di sini..." 
-                        class="w-full text-sm border-none bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-400 rounded-lg p-2 resize-none outline-none mb-3"
-                        rows="3"
-                      ></textarea>
-                      <div class="flex items-center justify-end gap-2">
-                        <button 
-                          on:click={() => replyingToId = null}
-                          class="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-                        >Batal</button>
-                        <button 
-                          on:click={() => submitReply(item)}
-                          disabled={isReplying || !replyMessage.trim()}
-                          class="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors flex items-center disabled:opacity-50"
-                        >
-                          {#if isReplying}
-                            <RefreshCw class="w-3.5 h-3.5 mr-1.5 animate-spin" /> Mengirim...
-                          {:else}
-                            <MessageCircle class="w-3.5 h-3.5 mr-1.5" /> Kirim Balasan
-                          {/if}
-                        </button>
-                      </div>
-                    </div>
-                  {/if}
                 </div>
                 
                 <div class="flex sm:flex-col gap-2 shrink-0 justify-end sm:justify-start">
@@ -3309,16 +3232,6 @@
                     <Trash2 class="w-3.5 h-3.5 mr-1.5" />
                     Hapus
                   </button>
-                  
-                  {#if !item.admin_reply && replyingToId !== item.id}
-                    <button 
-                      on:click={() => { replyingToId = item.id; replyMessage = ''; }}
-                      class="flex items-center justify-center h-8 bg-indigo-50 text-indigo-600 hover:bg-indigo-500 hover:text-white border border-indigo-100 text-[11px] font-bold px-3 rounded-lg transition-colors"
-                    >
-                      <MessageCircle class="w-3.5 h-3.5 mr-1.5" />
-                      Balas
-                    </button>
-                  {/if}
                 </div>
               </div>
             {/each}

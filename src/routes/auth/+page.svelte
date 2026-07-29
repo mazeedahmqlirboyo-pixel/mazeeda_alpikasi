@@ -38,13 +38,26 @@
     guestFeedbackError = '';
     
     try {
+      const userName = guestFeedbackName.trim() + " (Tamu)";
+      const message = guestFeedbackMessage.trim();
+      
       const { error } = await supabase.from('feedbacks').insert([{
-        user_name: guestFeedbackName.trim() + " (Tamu)",
-        message: guestFeedbackMessage.trim(),
+        user_name: userName,
+        message: message,
         user_id: null
       }]);
       
       if (error) throw error;
+      
+      // Notify Admin
+      await supabase.from('app_notifications').insert([{
+        target_user: 'ADMIN MAZEEDA',
+        title: 'Saran Baru (Tamu)',
+        message: `Ada saran baru dari ${userName}. Cek di Kotak Saran!`,
+        type: 'info',
+        icon: 'MessageCircle',
+        is_active: true
+      }]);
       
       guestFeedbackSuccess = true;
       guestFeedbackName = '';
