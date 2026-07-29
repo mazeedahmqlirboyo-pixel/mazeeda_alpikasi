@@ -478,6 +478,15 @@
   let adminCommentsList: any[] = [];
   let isLoadingAdminComments = false;
   let adminUsersPhotoMap = new Map();
+  let adminCommentsSearch = '';
+  
+  $: filteredAdminComments = adminCommentsList.filter(c => {
+    if (!adminCommentsSearch.trim()) return true;
+    const search = adminCommentsSearch.toLowerCase();
+    const author = (c.user_name || c.author || 'Anonim').toLowerCase();
+    const text = (c.comment_text || c.text || c.message || '').toLowerCase();
+    return author.includes(search) || text.includes(search);
+  });
 
   async function fetchAdminComments() {
     isLoadingAdminComments = true;
@@ -3283,20 +3292,34 @@
         </button>
       </div>
 
-      <!-- Segmented Control for Comment Types -->
-      <div class="flex p-1 bg-slate-100/80 rounded-2xl w-full sm:w-fit backdrop-blur-sm shadow-inner">
-        {#each [
-          { value: 'timeline', label: 'Timeline' },
-          { value: 'mading_announcements', label: 'Pengumuman Mading' },
-          { value: 'mading_notes', label: 'Sticky Notes' }
-        ] as type}
-          <button 
-            on:click={() => { adminCommentsType = type.value; fetchAdminComments(); }}
-            class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 {adminCommentsType === type.value ? 'bg-white text-indigo-600 shadow-soft-sm scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 scale-95'}"
-          >
-            {type.label}
-          </button>
-        {/each}
+      <!-- Controls -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+        <!-- Segmented Control for Comment Types -->
+        <div class="flex p-1 bg-slate-100/80 rounded-2xl w-full sm:w-fit backdrop-blur-sm shadow-inner overflow-x-auto">
+          {#each [
+            { value: 'timeline', label: 'Timeline' },
+            { value: 'mading_announcements', label: 'Pengumuman Mading' },
+            { value: 'mading_notes', label: 'Sticky Notes' }
+          ] as type}
+            <button 
+              on:click={() => { adminCommentsType = type.value; fetchAdminComments(); }}
+              class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 whitespace-nowrap {adminCommentsType === type.value ? 'bg-white text-indigo-600 shadow-soft-sm scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 scale-95'}"
+            >
+              {type.label}
+            </button>
+          {/each}
+        </div>
+
+        <!-- Search Input -->
+        <div class="relative w-full sm:w-64 shrink-0">
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input 
+            type="text" 
+            bind:value={adminCommentsSearch}
+            placeholder="Cari user atau teks..." 
+            class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-soft-sm"
+          />
+        </div>
       </div>
 
       <!-- Comments List -->
@@ -3306,17 +3329,19 @@
             <div class="animate-spin h-8 w-8 border-3 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
             <p class="text-sm font-bold text-slate-500 animate-pulse">Memuat komentar...</p>
           </div>
-        {:else if adminCommentsList.length === 0}
+        {:else if filteredAdminComments.length === 0}
           <div class="p-16 text-center border-2 border-dashed border-slate-100 rounded-2xl m-4 bg-slate-50/50">
             <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageSquare class="w-8 h-8 text-slate-300" />
+              <Search class="w-8 h-8 text-slate-300" />
             </div>
             <p class="text-base font-bold text-slate-600">Tidak ada komentar</p>
-            <p class="text-sm text-slate-400 mt-1">Belum ada komentar di kategori ini.</p>
+            <p class="text-sm text-slate-400 mt-1">
+              {adminCommentsSearch ? 'Tidak ada komentar yang cocok dengan pencarian.' : 'Belum ada komentar di kategori ini.'}
+            </p>
           </div>
         {:else}
           <div class="divide-y divide-slate-100 max-h-[650px] overflow-y-auto custom-scrollbar pr-1">
-            {#each adminCommentsList as comment (comment.id)}
+            {#each filteredAdminComments as comment (comment.id)}
               {@const authorName = comment.user_name || comment.author || 'Anonim'}
               {@const isSelfAdmin = authorName === 'ADMIN MAZEEDA' || authorName === $authStore.user?.name}
               {@const authorPhotoUrl = isSelfAdmin ? $authStore.user?.foto_url : adminUsersPhotoMap.get(authorName)}
