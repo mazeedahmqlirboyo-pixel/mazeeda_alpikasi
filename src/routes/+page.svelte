@@ -84,13 +84,14 @@
       if (error) throw error;
       
       // Notify Admin
-      await supabase.from('app_notifications').insert([{
+      const { error: notifErr } = await supabase.from('app_notifications').insert([{
         target_user: 'admin_role',
         title: 'Saran & Masukan Baru',
         message: `Ada saran baru dari ${userName}. Cek di Kotak Saran!`,
         type: 'info',
         is_active: true
       }]);
+      if (notifErr) console.error("Gagal mengirim notif ke admin:", notifErr);
       
       feedbackSuccess = true;
       feedbackMessage = "";
