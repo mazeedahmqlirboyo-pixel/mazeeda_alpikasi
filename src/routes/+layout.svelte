@@ -32,7 +32,8 @@
     CheckCircle2,
     AlertCircle,
     X,
-    Clock
+    Clock,
+    MessageSquare
   } from 'lucide-svelte';
   import Card from '$lib/components/ui/card.svelte';
   import { isAudioPlayingGlobal } from '$lib/audioStore';
@@ -65,7 +66,8 @@
     { name: 'Galeri Kenangan', path: '/admin?tab=gallery_coverflow', icon: Image },
     { name: 'Momen Spesial', path: '/admin?tab=gallery_landscape', icon: Image },
     { name: 'Wajah MAZEEDA', path: '/admin?tab=gallery_marquee', icon: Image },
-    { name: 'Kotak Saran', path: '/admin?tab=feedbacks', icon: FileText }
+    { name: 'Kotak Saran', path: '/admin?tab=feedbacks', icon: FileText },
+    { name: 'Manajemen Komentar', path: '/admin?tab=comments', icon: MessageSquare }
   ];
 
   // Helper to check if a navigation item is active
