@@ -34,7 +34,9 @@
     X,
     Clock,
     MessageSquare,
-    ShieldAlert
+    ShieldAlert,
+    MoreVertical,
+    Share2
   } from 'lucide-svelte';
   import Card from '$lib/components/ui/card.svelte';
   import { isAudioPlayingGlobal } from '$lib/audioStore';
@@ -69,7 +71,9 @@
     { name: 'Wajah MAZEEDA', path: '/admin?tab=gallery_marquee', icon: Image },
     { name: 'Kotak Saran', path: '/admin?tab=feedbacks', icon: FileText },
     { name: 'Manajemen Komentar', path: '/admin?tab=comments', icon: MessageSquare },
-    { name: 'Laporan Pengguna', path: '/admin?tab=user_reports', icon: ShieldAlert }
+    { name: 'Laporan Pengguna', path: '/admin?tab=user_reports', icon: ShieldAlert,
+    MoreVertical,
+    Share2 }
   ];
 
   // Helper to check if a navigation item is active
@@ -222,6 +226,7 @@
 
   // Profile Overlay State & Helpers
   let showMyProfile = false;
+  let showLayoutMenu = false;
   let myProfileData: any = null;
   let isLoadingProfile = false;
   let customPhotos: any[] = [];
@@ -1466,7 +1471,7 @@
             <!-- MY DETAILED PROFILE VIEW -->
             <div class="space-y-6" transition:fade={{ duration: 150 }}>
               <!-- Back Button Header -->
-              <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-100 relative">
                 <button 
                   on:click={() => { showMyProfile = false; isEditingAdminProfile = false; }}
                   class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 hover:text-primary transition-colors -ml-2"
@@ -1474,17 +1479,46 @@
                   <ArrowLeft class="w-5 h-5" />
                 </button>
                 
-                <div class="flex items-center gap-2">
-                  {#if userRole === 'admin' && isOwnProfile && !isEditingAdminProfile}
-                    <button
-                      on:click={startEditAdminProfile}
-                      class="flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
-                    >
-                      <Edit class="h-3.5 w-3.5" />
-                      Edit Profil Admin
-                    </button>
+                <span class="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-400 font-bold uppercase tracking-wider block whitespace-nowrap">{isOwnProfile ? 'PROFIL SAYA' : 'PROFIL ANGGOTA'}</span>
+                
+                <div class="relative">
+                  <button on:click={() => showLayoutMenu = !showLayoutMenu} class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 transition-colors">
+                    <MoreVertical class="w-5 h-5" />
+                  </button>
+                  
+                  {#if showLayoutMenu}
+                    <div class="fixed inset-0 z-20" on:click={() => showLayoutMenu = false}></div>
+                    <div class="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden z-30 animate-in fade-in py-1">
+                      {#if userRole === 'admin' && isOwnProfile && !isEditingAdminProfile}
+                        <button
+                          on:click={() => { showLayoutMenu = false; startEditAdminProfile(); }}
+                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-indigo-600 hover:bg-indigo-50 flex items-center gap-2.5 transition-colors"
+                        >
+                          <Edit class="w-4 h-4" /> Edit Profil Admin
+                        </button>
+                        <div class="h-px bg-slate-100 my-1"></div>
+                      {/if}
+                      {#if isOwnProfile}
+                        <button
+                          on:click={() => { showLayoutMenu = false; handleLogout(); }}
+                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
+                        >
+                          <LogOut class="w-4 h-4" /> Log Keluar
+                        </button>
+                      {:else}
+                        <button
+                          on:click={() => { 
+                            showLayoutMenu = false;
+                            const url = `${window.location.origin}/squad?id=${myProfileData.id}`;
+                            navigator.clipboard.writeText(url).then(() => alert('Tautan profil disalin!'));
+                          }}
+                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                        >
+                          <Share2 class="w-4 h-4 text-indigo-500" /> Bagikan Profil
+                        </button>
+                      {/if}
+                    </div>
                   {/if}
-                  <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{isOwnProfile ? 'PROFIL SAYA' : 'PROFIL ANGGOTA'}</span>
                 </div>
               </div>
 
