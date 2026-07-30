@@ -2359,10 +2359,8 @@
       
       <div class="p-6 overflow-y-auto max-h-[60vh]">
         {#if blockedUsersList.length === 0}
-          <div class="text-center py-8">
-            <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
-              <ShieldBan class="w-8 h-8 text-slate-300" />
-            </div>
+          <div class="text-center py-8 flex flex-col items-center justify-center">
+            <img src="/empty-content.svg" alt="Kosong" class="h-32 w-32 opacity-80 mb-2" />
             <p class="text-slate-500 font-medium">Anda belum memblokir siapa pun.</p>
           </div>
         {:else}
