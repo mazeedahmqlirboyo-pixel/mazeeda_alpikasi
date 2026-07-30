@@ -40,6 +40,7 @@
   let blockedUsersList: string[] = [];
   let showBlockedUsersModal = false;
   let isBlocking = false;
+  let memberToBlock: any = null;
 
   // Selected member for inline detailed view (replaces popup)
   let selectedMember: any = null;
@@ -650,8 +651,14 @@
     showNotification('Kontak berhasil diunduh.', 'success');
   }
 
-  async function blockUser(member: any) {
-    if (!member || !confirm(`Apakah Anda yakin ingin memblokir ${member.nama_lengkap}? Mereka akan disembunyikan dari Squad dan komentar mereka di Timeline tidak akan terlihat.`)) return;
+  function blockUser(member: any) {
+    if (!member) return;
+    memberToBlock = member;
+    showSquadMenu = false;
+  }
+
+  async function confirmBlockUser() {
+    if (!memberToBlock) return;
     isBlocking = true;
     try {
       const blockerName = $authStore.user?.name;
@@ -659,24 +666,25 @@
       
       const { error } = await supabase.from('blocked_users').insert([{
         blocker_name: blockerName,
-        blocked_name: member.nama_lengkap
+        blocked_name: memberToBlock.nama_lengkap
       }]);
       if (error) throw error;
       
-      blockedUsersList = [...blockedUsersList, member.nama_lengkap];
-      showNotification(`${member.nama_lengkap} berhasil diblokir.`, 'success');
+      blockedUsersList = [...blockedUsersList, memberToBlock.nama_lengkap];
+      showNotification(`${memberToBlock.nama_lengkap} berhasil diblokir.`, 'success');
       
       // Remove from current view
-      members = members.filter(m => m.nama_lengkap !== member.nama_lengkap);
-      if (selectedMember?.id === member.id) {
+      members = members.filter(m => m.nama_lengkap !== memberToBlock.nama_lengkap);
+      if (selectedMember?.id === memberToBlock.id) {
         selectedMember = null;
         isImageLarge = false;
       }
-    } catch (e) {
-      showNotification('Gagal memblokir pengguna.', 'error');
+    } catch (e: any) {
+      console.error(e);
+      showNotification('Gagal memblokir pengguna. Pastikan tabel di database sudah diperbarui.', 'error');
     } finally {
       isBlocking = false;
-      showSquadMenu = false;
+      memberToBlock = null;
     }
   }
 
@@ -1606,6 +1614,43 @@
             {/each}
           </div>
         {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- MODAL KONFIRMASI BLOKIR -->
+{#if memberToBlock}
+  <div class="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+      <div class="p-6 text-center space-y-4">
+        <div class="w-16 h-16 rounded-full bg-orange-50 mx-auto flex items-center justify-center mb-2">
+          <ShieldBan class="w-8 h-8 text-orange-500" />
+        </div>
+        <h3 class="font-black text-slate-800 text-xl">Blokir Pengguna?</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          Apakah Anda yakin ingin memblokir <span class="font-bold text-slate-700">{memberToBlock.nama_lengkap}</span>? Mereka akan disembunyikan dari Squad dan komentar mereka di Timeline tidak akan terlihat lagi.
+        </p>
+      </div>
+      <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex gap-3 justify-end">
+        <button 
+          on:click={() => memberToBlock = null}
+          class="flex-1 py-2.5 text-slate-600 font-bold text-sm hover:bg-slate-200 bg-slate-100 rounded-xl transition-colors"
+          disabled={isBlocking}
+        >
+          Batal
+        </button>
+        <button 
+          on:click={confirmBlockUser}
+          disabled={isBlocking}
+          class="flex-1 py-2.5 bg-orange-500 text-white font-bold text-sm hover:bg-orange-600 rounded-xl transition-all shadow-md shadow-orange-200 disabled:opacity-50 flex justify-center items-center gap-2"
+        >
+          {#if isBlocking}
+            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          {:else}
+            Blokir
+          {/if}
+        </button>
       </div>
     </div>
   </div>

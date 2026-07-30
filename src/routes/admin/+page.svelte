@@ -666,13 +666,24 @@
     try {
       const { error } = await supabase.from('user_reports').update({ status: newStatus }).eq('id', id);
       if (error) throw error;
-      userReportsList = userReportsList.map(r => r.id === id ? { ...r, status: newStatus } : r);
-      if (userReportsFilter !== 'all') {
-        userReportsList = userReportsList.filter(r => r.status === userReportsFilter);
-      }
-      triggerAlert(`Laporan ditandai sebagai ${newStatus}`);
+      
+      showNotification('Status laporan berhasil diperbarui.', 'success');
+      fetchUserReports();
+    } catch (err) {
+      console.error(err);
+      showNotification('Gagal memperbarui status laporan.', 'error');
+    }
+  }
+
+  async function deleteReport(id: string) {
+    if (!confirm('Apakah Anda yakin ingin menghapus laporan ini? Tindakan ini tidak dapat dibatalkan.')) return;
+    try {
+      const { error } = await supabase.from('user_reports').delete().eq('id', id);
+      if (error) throw error;
+      showNotification('Laporan berhasil dihapus.', 'success');
+      fetchUserReports();
     } catch (e) {
-      triggerAlert('Gagal mengupdate status laporan', 'error');
+      showNotification('Gagal menghapus laporan.', 'error');
     }
   }
 
@@ -3513,10 +3524,8 @@
             <p class="text-sm font-bold text-slate-500 animate-pulse">Memuat laporan...</p>
           </div>
         {:else if userReportsList.length === 0}
-          <div class="p-16 text-center border-2 border-dashed border-slate-100 rounded-2xl m-4 bg-slate-50/50">
-            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <ShieldCheck class="w-8 h-8 text-slate-300" />
-            </div>
+          <div class="p-16 text-center border-2 border-dashed border-slate-100 rounded-2xl m-4 bg-slate-50/50 flex flex-col items-center justify-center">
+            <img src="/empty-content.svg" alt="Tidak ada data" class="h-40 w-40 opacity-80 mb-4" />
             <p class="text-base font-bold text-slate-600">Tidak ada laporan</p>
             <p class="text-sm text-slate-400 mt-1">Saat ini tidak ada laporan dengan status ini.</p>
           </div>
@@ -3558,6 +3567,16 @@
                       class="px-3 py-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center gap-1"
                     >
                       <Trash2 class="w-3.5 h-3.5" /> Hapus Akun
+                    </button>
+                  </div>
+                {/if}
+                {#if report.status !== 'pending'}
+                  <div class="flex gap-2 justify-end mt-2">
+                    <button 
+                      on:click={() => deleteReport(report.id)}
+                      class="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-rose-600 rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center gap-1"
+                    >
+                      <Trash2 class="w-3.5 h-3.5" /> Hapus Laporan
                     </button>
                   </div>
                 {/if}
