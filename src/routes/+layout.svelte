@@ -174,21 +174,28 @@
     }
   }
 
-  async function unblockUser(blockedName: string) {
-    if (!confirm(`Buka blokir untuk ${blockedName}?`)) return;
+  let userToUnblock = '';
+
+  function unblockUser(blockedName: string) {
+    userToUnblock = blockedName;
+  }
+
+  async function confirmUnblockUser() {
+    if (!userToUnblock) return;
     try {
       const blockerName = $authStore.user?.name;
       const { error } = await supabase.from('blocked_users')
         .delete()
         .eq('blocker_name', blockerName)
-        .eq('blocked_name', blockedName);
+        .eq('blocked_name', userToUnblock);
         
       if (error) throw error;
       
-      blockedUsersList = blockedUsersList.filter(name => name !== blockedName);
-      alert(`${blockedName} berhasil dibuka blokirnya.`);
+      blockedUsersList = blockedUsersList.filter(name => name !== userToUnblock);
     } catch (e) {
       alert('Gagal membuka blokir pengguna.');
+    } finally {
+      userToUnblock = '';
     }
   }
 
@@ -1536,7 +1543,7 @@
                       {#if isOwnProfile}
                         <button
                           on:click={() => { showLayoutMenu = false; showBlockedUsersModal = true; loadBlockedUsers(); }}
-                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-orange-600 hover:bg-orange-50 flex items-center gap-2.5 transition-colors"
+                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
                         >
                           <ShieldBan class="w-4 h-4" /> Daftar Blokir
                         </button>
@@ -1545,7 +1552,7 @@
                           on:click={() => { showLayoutMenu = false; handleLogout(); }}
                           class="w-full text-left px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
                         >
-                          <LogOut class="w-4 h-4" /> Log Keluar
+                          <LogOut class="w-4 h-4" /> Keluar
                         </button>
                       {:else}
                         <button
@@ -2374,6 +2381,37 @@
             {/each}
           </div>
         {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- MODAL KONFIRMASI BUKA BLOKIR -->
+{#if userToUnblock}
+  <div class="fixed inset-0 z-[1000000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+      <div class="p-6 text-center space-y-4">
+        <div class="w-16 h-16 rounded-full bg-slate-50 mx-auto flex items-center justify-center mb-2">
+          <ShieldBan class="w-8 h-8 text-slate-400" />
+        </div>
+        <h3 class="font-black text-slate-800 text-xl">Buka Blokir?</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          Apakah Anda yakin ingin membuka blokir untuk <span class="font-bold text-slate-700">{userToUnblock}</span>?
+        </p>
+      </div>
+      <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex gap-3 justify-end">
+        <button 
+          on:click={() => userToUnblock = ''}
+          class="flex-1 py-2.5 text-slate-600 font-bold text-sm hover:bg-slate-200 bg-slate-100 rounded-xl transition-colors"
+        >
+          Batal
+        </button>
+        <button 
+          on:click={confirmUnblockUser}
+          class="flex-1 py-2.5 bg-slate-800 text-white font-bold text-sm hover:bg-slate-900 rounded-xl transition-all shadow-md flex justify-center items-center gap-2"
+        >
+          Buka Blokir
+        </button>
       </div>
     </div>
   </div>
