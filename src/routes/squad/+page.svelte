@@ -13,7 +13,8 @@
     CheckCircle2,
     AlertCircle,
     X,
-    Flag
+    Flag,
+    MoreVertical
   } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
@@ -543,6 +544,7 @@
   let reportingMember: any = null;
   let isSubmittingReport = false;
   let reportOtherReason = '';
+  let showSquadMenu = false;
 
   function openReportModal(member: any) {
     reportingMember = member;
@@ -581,7 +583,7 @@
   <!-- INLINE PROFILE DETAIL VIEW (Replaces full screen popup) -->
   <div class="space-y-6 animate-in fade-in duration-300">
     <!-- Back Button Header -->
-    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+    <div class="flex items-center justify-between pb-2 border-b border-slate-100 relative">
       <button 
         on:click={() => { selectedMember = null; isImageLarge = false; }}
         class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 hover:text-primary transition-colors -ml-2"
@@ -589,13 +591,32 @@
         <ArrowLeft class="w-5 h-5" />
       </button>
       
-      <div class="flex items-center gap-3">
-        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider hidden sm:inline">MAZEEDA SQUAD PROFILE</span>
-        <button on:click={() => openReportModal(selectedMember)} class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-bold transition-colors">
-          <Flag class="w-3.5 h-3.5" /> Laporkan
+      <!-- Centered Text -->
+      <span class="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-400 font-bold uppercase tracking-wider hidden sm:block whitespace-nowrap">MAZEEDA SQUAD PROFILE</span>
+      
+      <!-- 3-dots Menu -->
+      <div class="relative">
+        <button on:click={() => showSquadMenu = !showSquadMenu} class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 transition-colors">
+          <MoreVertical class="w-5 h-5" />
         </button>
+        {#if showSquadMenu}
+          <!-- Invisible overlay to close dropdown -->
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div class="fixed inset-0 z-20" on:click={() => showSquadMenu = false}></div>
+          <div class="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden z-30 animate-in fade-in slide-in-from-top-2">
+            <button 
+              on:click={() => { showSquadMenu = false; openReportModal(selectedMember); }} 
+              class="w-full text-left px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
+            >
+              <Flag class="w-4 h-4" /> Laporkan User
+            </button>
+          </div>
+        {/if}
       </div>
-    </div>    <Card noPadding class="overflow-hidden border-slate-200/80 shadow-soft-sm">
+    </div>
+    
+    <Card noPadding class="overflow-hidden border-slate-200/80 shadow-soft-sm">
       <!-- Profile Header Banner -->
       {@const accent = getAccent(selectedMember.nama_lengkap)}
       <div class="h-32 sm:h-40 w-full bg-gradient-to-r {accent.gradient} relative overflow-hidden">

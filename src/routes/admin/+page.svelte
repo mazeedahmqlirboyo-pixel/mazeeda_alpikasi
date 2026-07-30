@@ -14,7 +14,7 @@
     Users, Megaphone, Image, Plus, Trash2, Edit, Save, CheckCircle,
     UserPlus, UploadCloud, FileText, Heart, Globe, Phone, Home, 
     Award, Music, X, Bell, Search, BookOpen, Info, Calendar, ChevronRight,
-    ChevronDown, ShieldCheck, UserX, UserCheck, RefreshCw, CheckCircle2, Filter, MessageCircle
+    ChevronDown, ShieldCheck, UserX, UserCheck, RefreshCw, CheckCircle2, Filter, MessageCircle, ShieldAlert
   } from 'lucide-svelte';
 
   // Current active management tab
