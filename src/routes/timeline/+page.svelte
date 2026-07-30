@@ -47,6 +47,7 @@
   // Lightbox Modal States
   let selectedMemory: MemoryItem | null = null;
   let activeComments: any[] = [];
+  let blockedUsersList: string[] = [];
 
   $: sortedActiveComments = (() => {
     const isMe = (name) => name === $authStore.user?.name;
@@ -287,7 +288,21 @@
     }
   }
 
+  async function loadBlockedUsers() {
+    const currentName = $authStore.user?.name;
+    if (!currentName) return;
+    try {
+      const { data } = await supabase.from('blocked_users').select('blocked_name').eq('blocker_name', currentName);
+      if (data) {
+        blockedUsersList = data.map(d => d.blocked_name);
+      }
+    } catch (e) {
+      console.error('Failed to load blocked users', e);
+    }
+  }
+
   onMount(() => {
+    loadBlockedUsers();
     // Initialize guest identity
     if (typeof window !== 'undefined') {
       let storedId = localStorage.getItem('mazeeda_guest_id');
@@ -311,7 +326,7 @@
         { event: "INSERT", schema: "public", table: "memory_comments" },
         (payload) => {
           if (selectedMemory && selectedMemory.id === payload.new.memory_id) {
-            if (!activeComments.some(c => c.id === payload.new.id)) {
+            if (!activeComments.some(c => c.id === payload.new.id) && !blockedUsersList.includes(payload.new.user_name)) {
               activeComments = [...activeComments, payload.new];
             }
           }
@@ -449,7 +464,7 @@
         .order('created_at', { ascending: true });
         
       if (error) throw error;
-      activeComments = data || [];
+      activeComments = (data || []).filter((c: any) => !blockedUsersList.includes(c.user_name));
     } catch (err) {
       console.error('Error loading comments:', err);
     } finally {

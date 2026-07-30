@@ -14,8 +14,13 @@
     AlertCircle,
     X,
     Flag,
-    MoreVertical
+    MoreVertical,
+    Share2,
+    Download,
+    ShieldBan,
+    UserMinus
   } from 'lucide-svelte';
+  import { page } from '$app/stores';
   import { slide } from 'svelte/transition';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
 
@@ -30,6 +35,11 @@
 
   // Warning modal state
   let showDeactivatedWarningFor: any = null;
+
+  // Blocked users state
+  let blockedUsersList: string[] = [];
+  let showBlockedUsersModal = false;
+  let isBlocking = false;
 
   // Selected member for inline detailed view (replaces popup)
   let selectedMember: any = null;
@@ -196,8 +206,23 @@
   // Unique daerah list from loaded members
   let uniqueDaerah = ['semua'];
   
+  async function loadBlockedUsers() {
+    const currentName = $authStore.user?.name;
+    if (!currentName) return;
+    try {
+      const { data } = await supabase.from('blocked_users').select('blocked_name').eq('blocker_name', currentName);
+      if (data) {
+        blockedUsersList = data.map(d => d.blocked_name);
+      }
+    } catch (e) {
+      console.error('Failed to load blocked users', e);
+    }
+  }
+
   onMount(async () => {
     try {
+      await loadBlockedUsers();
+      
       // Load unique categories and regions directly from the database
       const { data, error } = await supabase
         .from('allowed_alumni')
@@ -220,6 +245,15 @@
         const uniqueRegions = [...new Set(data.map(item => (item.daerah_santri || '').trim().toUpperCase()).filter(Boolean))].sort();
         if (uniqueRegions.length > 0) {
           uniqueDaerah = ['semua', ...uniqueRegions];
+        }
+      }
+      
+      // Check for share link (e.g. ?id=xxx)
+      const shareId = $page.url.searchParams.get('id');
+      if (shareId) {
+        const { data: memberData } = await supabase.from('allowed_alumni').select('*').eq('id', shareId).single();
+        if (memberData) {
+          openDetails(memberData);
         }
       }
     } catch (err) {
@@ -271,7 +305,8 @@
       const { data, error } = await query;
       if (error) throw error;
       
-      members = data || [];
+      // Filter out blocked users
+      members = (data || []).filter(m => !blockedUsersList.includes(m.nama_lengkap));
     } catch (err) {
       console.error('Failed to search allowed_alumni:', err);
       members = [];
@@ -577,6 +612,94 @@
       isSubmittingReport = false;
     }
   }
+  
+  // --- NEW FEATURES ---
+  async function shareProfile(member: any) {
+    if (!member) return;
+    const url = `${window.location.origin}/squad?id=${member.id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Profil ${member.nama_lengkap}`,
+          text: `Lihat profil ${member.nama_lengkap} di Mazeeda Squad!`,
+          url: url
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        showNotification('Tautan profil disalin ke clipboard!', 'success');
+      }
+    } catch (e) {
+      console.log('Share error', e);
+    }
+  }
+
+  function downloadVCard(member: any) {
+    if (!member) return;
+    const phone = member.no_whatsapp ? member.no_whatsapp.replace(/[^0-9+]/g, '') : '';
+    const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${member.nama_lengkap}\nORG:Mazeeda Squad\n${phone ? 'TEL;TYPE=CELL:' + phone + '\n' : ''}${member.email ? 'EMAIL:' + member.email + '\n' : ''}END:VCARD`;
+    
+    const blob = new Blob([vcard], { type: 'text/vcard' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${member.nama_lengkap.replace(/\s+/g, '_')}.vcf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showNotification('Kontak berhasil diunduh.', 'success');
+  }
+
+  async function blockUser(member: any) {
+    if (!member || !confirm(`Apakah Anda yakin ingin memblokir ${member.nama_lengkap}? Mereka akan disembunyikan dari Squad dan komentar mereka di Timeline tidak akan terlihat.`)) return;
+    isBlocking = true;
+    try {
+      const blockerName = $authStore.user?.name;
+      if (!blockerName) throw new Error("Anda harus login.");
+      
+      const { error } = await supabase.from('blocked_users').insert([{
+        blocker_name: blockerName,
+        blocked_name: member.nama_lengkap
+      }]);
+      if (error) throw error;
+      
+      blockedUsersList = [...blockedUsersList, member.nama_lengkap];
+      showNotification(`${member.nama_lengkap} berhasil diblokir.`, 'success');
+      
+      // Remove from current view
+      members = members.filter(m => m.nama_lengkap !== member.nama_lengkap);
+      if (selectedMember?.id === member.id) {
+        selectedMember = null;
+        isImageLarge = false;
+      }
+    } catch (e) {
+      showNotification('Gagal memblokir pengguna.', 'error');
+    } finally {
+      isBlocking = false;
+      showSquadMenu = false;
+    }
+  }
+
+  async function unblockUser(blockedName: string) {
+    if (!confirm(`Buka blokir untuk ${blockedName}?`)) return;
+    try {
+      const blockerName = $authStore.user?.name;
+      const { error } = await supabase.from('blocked_users')
+        .delete()
+        .eq('blocker_name', blockerName)
+        .eq('blocked_name', blockedName);
+        
+      if (error) throw error;
+      
+      blockedUsersList = blockedUsersList.filter(name => name !== blockedName);
+      showNotification(`${blockedName} berhasil dibuka blokirnya.`, 'success');
+      
+      // Refetch search to possibly include them again
+      performSearch();
+    } catch (e) {
+      showNotification('Gagal membuka blokir pengguna.', 'error');
+    }
+  }
 </script>
 
 {#if selectedMember}
@@ -604,10 +727,40 @@
           <!-- svelte-ignore a11y-click-events-have-key-events -->
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div class="fixed inset-0 z-20" on:click={() => showSquadMenu = false}></div>
-          <div class="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden z-30 animate-in fade-in slide-in-from-top-2">
+          <div class="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden z-30 animate-in fade-in slide-in-from-top-2 py-1">
+            {#if selectedMember.no_whatsapp}
+              <a 
+                href={getWhatsAppLink(selectedMember.no_whatsapp)} 
+                target="_blank" rel="noopener noreferrer"
+                class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                on:click={() => showSquadMenu = false}
+              >
+                <Phone class="w-4 h-4 text-emerald-500" /> WhatsApp
+              </a>
+            {/if}
+            <button 
+              on:click={() => { showSquadMenu = false; downloadVCard(selectedMember); }} 
+              class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+            >
+              <Download class="w-4 h-4 text-blue-500" /> Simpan Kontak
+            </button>
+            <button 
+              on:click={() => { showSquadMenu = false; shareProfile(selectedMember); }} 
+              class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+            >
+              <Share2 class="w-4 h-4 text-indigo-500" /> Bagikan Profil
+            </button>
+            <div class="h-px bg-slate-100 my-1"></div>
+            <button 
+              on:click={() => { showSquadMenu = false; blockUser(selectedMember); }} 
+              disabled={isBlocking}
+              class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors disabled:opacity-50"
+            >
+              <ShieldBan class="w-4 h-4 text-orange-500" /> Blokir User
+            </button>
             <button 
               on:click={() => { showSquadMenu = false; openReportModal(selectedMember); }} 
-              class="w-full text-left px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
+              class="w-full text-left px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
             >
               <Flag class="w-4 h-4" /> Laporkan User
             </button>
@@ -1411,6 +1564,48 @@
             Kirim Laporan
           {/if}
         </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- MODAL DAFTAR BLOKIR -->
+{#if showBlockedUsersModal}
+  <div class="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h3 class="font-black text-slate-800 text-lg flex items-center gap-2">
+          <ShieldBan class="w-5 h-5 text-orange-500" /> Daftar Blokir
+        </h3>
+        <button on:click={() => showBlockedUsersModal = false} class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+          <X class="w-5 h-5" />
+        </button>
+      </div>
+      
+      <div class="p-6 overflow-y-auto max-h-[60vh]">
+        {#if blockedUsersList.length === 0}
+          <div class="text-center py-8">
+            <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
+              <ShieldBan class="w-8 h-8 text-slate-300" />
+            </div>
+            <p class="text-slate-500 font-medium">Anda belum memblokir siapa pun.</p>
+          </div>
+        {:else}
+          <p class="text-sm text-slate-500 mb-4">Pengguna di bawah ini disembunyikan dari Squad dan komentar mereka tidak akan muncul di Timeline Anda.</p>
+          <div class="space-y-3">
+            {#each blockedUsersList as blockedName}
+              <div class="flex items-center justify-between p-3 border border-slate-100 rounded-xl bg-slate-50 hover:border-slate-200 transition-colors">
+                <span class="font-bold text-slate-700 text-sm">{blockedName}</span>
+                <button 
+                  on:click={() => unblockUser(blockedName)}
+                  class="text-xs font-bold px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 rounded-lg transition-colors"
+                >
+                  Buka Blokir
+                </button>
+              </div>
+            {/each}
+          </div>
+        {/if}
       </div>
     </div>
   </div>
