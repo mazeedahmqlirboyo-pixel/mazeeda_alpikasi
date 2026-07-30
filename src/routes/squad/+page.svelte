@@ -592,7 +592,7 @@
       </button>
       
       <!-- Centered Text -->
-      <span class="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-400 font-bold uppercase tracking-wider hidden sm:block whitespace-nowrap">MAZEEDA SQUAD PROFILE</span>
+      <span class="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-400 font-bold uppercase tracking-wider block whitespace-nowrap">MAZEEDA SQUAD PROFILE</span>
       
       <!-- 3-dots Menu -->
       <div class="relative">
@@ -1358,7 +1358,7 @@
         </button>
       </div>
       
-      <div class="p-6 space-y-5">
+      <div class="p-6 space-y-5 overflow-y-auto max-h-[65vh]">
         <div>
           <p class="text-sm font-medium text-slate-500 mb-1">Pengguna yang dilaporkan:</p>
           <div class="font-bold text-slate-800 px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl">

@@ -1177,7 +1177,7 @@
         </button>
       </div>
       
-      <div class="p-6 space-y-5">
+      <div class="p-6 space-y-5 overflow-y-auto max-h-[65vh]">
         <div>
           <p class="text-sm font-medium text-slate-500 mb-1">Pengguna yang dilaporkan:</p>
           <div class="font-bold text-slate-800 px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl">
