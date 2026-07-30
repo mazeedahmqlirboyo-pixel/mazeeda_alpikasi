@@ -8,7 +8,7 @@
   import { supabase } from '$lib/supabase';
   import { authStore, activeProfileStore } from '$lib/auth';
   import { 
-    Image as ImageIcon, MapPin, Calendar, Heart, MessageCircle, CloudUpload, Sparkles, X, Trash2, Pencil, AlertCircle, CheckCircle, LayoutGrid, Grid3X3, Filter
+    Image as ImageIcon, MapPin, Calendar, Heart, MessageCircle, CloudUpload, Sparkles, X, Trash2, Pencil, AlertCircle, CheckCircle, LayoutGrid, Grid3X3, Filter, Flag
   } from 'lucide-svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
 
@@ -627,6 +627,44 @@
     if (!name || name === 'Anonim' || name === 'Tamu' || name.startsWith('Tamu_')) return;
     activeProfileStore.set({ type: role, nameOrNis: name });
   }
+  // --- REPORT USER ---
+  let showReportModal = false;
+  let reportReason = '';
+  let reportingUserName = '';
+  let isSubmittingReport = false;
+  let reportOtherReason = '';
+
+  function openReportModal(userName: string) {
+    reportingUserName = userName;
+    reportReason = '';
+    reportOtherReason = '';
+    showReportModal = true;
+  }
+
+  async function submitReport() {
+    const finalReason = reportReason === 'Lainnya' ? reportOtherReason : reportReason;
+    if (!finalReason.trim()) {
+      showToastNotification('Pilih atau masukkan alasan pelaporan.', 'error');
+      return;
+    }
+    isSubmittingReport = true;
+    try {
+      const reporterName = $authStore.user?.name || 'Anonim';
+      const { error } = await supabase.from('user_reports').insert([{
+        reporter_name: reporterName,
+        reported_name: reportingUserName,
+        reason: finalReason.trim()
+      }]);
+      if (error) throw error;
+      showToastNotification('Laporan berhasil dikirim ke Admin.', 'success');
+      showReportModal = false;
+      reportingUserName = '';
+    } catch (e) {
+      showToastNotification('Gagal mengirim laporan.', 'error');
+    } finally {
+      isSubmittingReport = false;
+    }
+  }
 </script>
 
 <div class="space-y-6 pb-12">
@@ -947,6 +985,10 @@
                           class="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors ml-2 cursor-pointer">
                           Balas
                         </button>
+                        <button type="button" on:click|preventDefault|stopPropagation={() => openReportModal(comment.user_name)}
+                          class="text-[9px] font-bold text-slate-400 hover:text-rose-600 transition-colors ml-2 cursor-pointer flex items-center gap-0.5">
+                          <Flag class="w-2.5 h-2.5" /> Lapor
+                        </button>
                         <!-- Admin/Author Action Buttons -->
                         {#if isAdmin || comment.user_name === $authStore.user?.name}
                           <button
@@ -1116,6 +1158,77 @@
         </button>
         <button type="button" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold h-10 shadow-soft-sm transition-colors" on:click={confirmConfig.onConfirm}>
           Ya, Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- MODAL LAPORKAN PENGGUNA -->
+{#if showReportModal && reportingUserName}
+  <div class="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" style="z-index: 9999999;">
+    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-rose-50/50">
+        <h3 class="font-black text-slate-800 text-lg flex items-center gap-2">
+          <Flag class="w-5 h-5 text-rose-500" /> Laporkan Pengguna
+        </h3>
+        <button on:click={() => showReportModal = false} class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+          <X class="w-5 h-5" />
+        </button>
+      </div>
+      
+      <div class="p-6 space-y-5">
+        <div>
+          <p class="text-sm font-medium text-slate-500 mb-1">Pengguna yang dilaporkan:</p>
+          <div class="font-bold text-slate-800 px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl">
+            {reportingUserName}
+          </div>
+        </div>
+        
+        <div>
+          <p class="text-sm font-bold text-slate-700 mb-3">Pilih Alasan Pelaporan <span class="text-rose-500">*</span></p>
+          <div class="grid grid-cols-1 gap-2.5">
+            {#each ['Spam atau Iklan', 'Konten Tidak Pantas', 'Ujaran Kebencian', 'Penipuan', 'Lainnya'] as reason}
+              <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all {reportReason === reason ? 'border-rose-500 bg-rose-50 shadow-sm' : 'border-slate-200 hover:border-rose-300 hover:bg-slate-50'}">
+                <input type="radio" name="reportReason" value={reason} bind:group={reportReason} class="w-4 h-4 text-rose-600 focus:ring-rose-500 border-slate-300" />
+                <span class="text-sm font-medium {reportReason === reason ? 'text-rose-700' : 'text-slate-700'}">{reason}</span>
+              </label>
+            {/each}
+          </div>
+        </div>
+        
+        {#if reportReason === 'Lainnya'}
+          <div class="animate-in slide-in-from-top-2 duration-300">
+            <p class="text-sm font-bold text-slate-700 mb-2">Jelaskan Alasan Anda <span class="text-rose-500">*</span></p>
+            <textarea
+              bind:value={reportOtherReason}
+              rows="3"
+              class="w-full rounded-xl border-slate-200 shadow-sm focus:border-rose-500 focus:ring-rose-500 text-sm p-3 resize-none bg-slate-50 focus:bg-white transition-colors"
+              placeholder="Tuliskan detail pelanggaran di sini..."
+            ></textarea>
+          </div>
+        {/if}
+      </div>
+      
+      <div class="p-5 border-t border-slate-100 bg-slate-50/50 flex gap-3 justify-end">
+        <button 
+          on:click={() => showReportModal = false}
+          class="px-5 py-2.5 text-slate-600 font-bold text-sm hover:bg-slate-200 bg-slate-100 rounded-xl transition-colors"
+          disabled={isSubmittingReport}
+        >
+          Batal
+        </button>
+        <button 
+          on:click={submitReport}
+          disabled={isSubmittingReport || !reportReason || (reportReason === 'Lainnya' && !reportOtherReason.trim())}
+          class="px-5 py-2.5 bg-rose-600 text-white font-bold text-sm hover:bg-rose-700 rounded-xl transition-all shadow-md shadow-rose-200 disabled:opacity-50 flex items-center gap-2"
+        >
+          {#if isSubmittingReport}
+            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            Mengirim...
+          {:else}
+            Kirim Laporan
+          {/if}
         </button>
       </div>
     </div>
