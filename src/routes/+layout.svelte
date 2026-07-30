@@ -35,6 +35,7 @@
     Clock,
     MessageSquare,
     ShieldAlert,
+    ShieldBan,
     MoreVertical,
     Share2
   } from 'lucide-svelte';
@@ -72,6 +73,7 @@
     { name: 'Kotak Saran', path: '/admin?tab=feedbacks', icon: FileText },
     { name: 'Manajemen Komentar', path: '/admin?tab=comments', icon: MessageSquare },
     { name: 'Laporan Pengguna', path: '/admin?tab=user_reports', icon: ShieldAlert,
+    ShieldBan,
     MoreVertical,
     Share2 }
   ];
@@ -159,6 +161,37 @@
     }
   }
 
+    async function loadBlockedUsers() {
+    const currentName = $authStore.user?.name;
+    if (!currentName) return;
+    try {
+      const { data } = await supabase.from('blocked_users').select('blocked_name').eq('blocker_name', currentName);
+      if (data) {
+        blockedUsersList = data.map(d => d.blocked_name);
+      }
+    } catch (e) {
+      console.error('Failed to load blocked users', e);
+    }
+  }
+
+  async function unblockUser(blockedName: string) {
+    if (!confirm(`Buka blokir untuk ${blockedName}?`)) return;
+    try {
+      const blockerName = $authStore.user?.name;
+      const { error } = await supabase.from('blocked_users')
+        .delete()
+        .eq('blocker_name', blockerName)
+        .eq('blocked_name', blockedName);
+        
+      if (error) throw error;
+      
+      blockedUsersList = blockedUsersList.filter(name => name !== blockedName);
+      alert(`${blockedName} berhasil dibuka blokirnya.`);
+    } catch (e) {
+      alert('Gagal membuka blokir pengguna.');
+    }
+  }
+
   function handleLogout() {
     showLogoutModal = true;
   }
@@ -227,6 +260,8 @@
   // Profile Overlay State & Helpers
   let showMyProfile = false;
   let showLayoutMenu = false;
+  let showBlockedUsersModal = false;
+  let blockedUsersList: string[] = [];
   let myProfileData: any = null;
   let isLoadingProfile = false;
   let customPhotos: any[] = [];
@@ -1500,6 +1535,13 @@
                       {/if}
                       {#if isOwnProfile}
                         <button
+                          on:click={() => { showLayoutMenu = false; showBlockedUsersModal = true; loadBlockedUsers(); }}
+                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-orange-600 hover:bg-orange-50 flex items-center gap-2.5 transition-colors"
+                        >
+                          <ShieldBan class="w-4 h-4" /> Daftar Blokir
+                        </button>
+                        <div class="h-px bg-slate-100 my-1"></div>
+                        <button
                           on:click={() => { showLayoutMenu = false; handleLogout(); }}
                           class="w-full text-left px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
                         >
@@ -2294,3 +2336,45 @@
   {/if}
 
 </div>
+
+<!-- MODAL DAFTAR BLOKIR (Global) -->
+{#if showBlockedUsersModal}
+  <div class="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h3 class="font-black text-slate-800 text-lg flex items-center gap-2">
+          <ShieldBan class="w-5 h-5 text-orange-500" /> Daftar Blokir
+        </h3>
+        <button on:click={() => showBlockedUsersModal = false} class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+          <X class="w-5 h-5" />
+        </button>
+      </div>
+      
+      <div class="p-6 overflow-y-auto max-h-[60vh]">
+        {#if blockedUsersList.length === 0}
+          <div class="text-center py-8">
+            <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
+              <ShieldBan class="w-8 h-8 text-slate-300" />
+            </div>
+            <p class="text-slate-500 font-medium">Anda belum memblokir siapa pun.</p>
+          </div>
+        {:else}
+          <p class="text-sm text-slate-500 mb-4">Pengguna di bawah ini disembunyikan dari Squad dan komentar mereka tidak akan muncul di Timeline Anda.</p>
+          <div class="space-y-3">
+            {#each blockedUsersList as blockedName}
+              <div class="flex items-center justify-between p-3 border border-slate-100 rounded-xl bg-slate-50 hover:border-slate-200 transition-colors">
+                <span class="font-bold text-slate-700 text-sm">{blockedName}</span>
+                <button 
+                  on:click={() => unblockUser(blockedName)}
+                  class="text-xs font-bold px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 rounded-lg transition-colors"
+                >
+                  Buka Blokir
+                </button>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}

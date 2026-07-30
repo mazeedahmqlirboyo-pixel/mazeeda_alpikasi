@@ -1577,48 +1577,6 @@
   </div>
 {/if}
 
-<!-- MODAL DAFTAR BLOKIR -->
-{#if showBlockedUsersModal}
-  <div class="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-        <h3 class="font-black text-slate-800 text-lg flex items-center gap-2">
-          <ShieldBan class="w-5 h-5 text-orange-500" /> Daftar Blokir
-        </h3>
-        <button on:click={() => showBlockedUsersModal = false} class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-          <X class="w-5 h-5" />
-        </button>
-      </div>
-      
-      <div class="p-6 overflow-y-auto max-h-[60vh]">
-        {#if blockedUsersList.length === 0}
-          <div class="text-center py-8">
-            <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
-              <ShieldBan class="w-8 h-8 text-slate-300" />
-            </div>
-            <p class="text-slate-500 font-medium">Anda belum memblokir siapa pun.</p>
-          </div>
-        {:else}
-          <p class="text-sm text-slate-500 mb-4">Pengguna di bawah ini disembunyikan dari Squad dan komentar mereka tidak akan muncul di Timeline Anda.</p>
-          <div class="space-y-3">
-            {#each blockedUsersList as blockedName}
-              <div class="flex items-center justify-between p-3 border border-slate-100 rounded-xl bg-slate-50 hover:border-slate-200 transition-colors">
-                <span class="font-bold text-slate-700 text-sm">{blockedName}</span>
-                <button 
-                  on:click={() => unblockUser(blockedName)}
-                  class="text-xs font-bold px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 rounded-lg transition-colors"
-                >
-                  Buka Blokir
-                </button>
-              </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    </div>
-  </div>
-{/if}
-
 <!-- MODAL KONFIRMASI BLOKIR -->
 {#if memberToBlock}
   <div class="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
