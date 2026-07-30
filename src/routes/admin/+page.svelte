@@ -667,24 +667,29 @@
       const { error } = await supabase.from('user_reports').update({ status: newStatus }).eq('id', id);
       if (error) throw error;
       
-      showNotification('Status laporan berhasil diperbarui.', 'success');
+      triggerAlert('Status laporan berhasil diperbarui.');
       fetchUserReports();
     } catch (err) {
       console.error(err);
-      showNotification('Gagal memperbarui status laporan.', 'error');
+      triggerAlert('Gagal memperbarui status laporan.', 'error');
     }
   }
 
   async function deleteReport(id: string) {
-    if (!confirm('Apakah Anda yakin ingin menghapus laporan ini? Tindakan ini tidak dapat dibatalkan.')) return;
-    try {
-      const { error } = await supabase.from('user_reports').delete().eq('id', id);
-      if (error) throw error;
-      showNotification('Laporan berhasil dihapus.', 'success');
-      fetchUserReports();
-    } catch (e) {
-      showNotification('Gagal menghapus laporan.', 'error');
-    }
+    runWithConfirmation(
+      'Hapus Laporan',
+      'Apakah Anda yakin ingin menghapus laporan ini? Tindakan ini tidak dapat dibatalkan.',
+      async () => {
+        try {
+          const { error } = await supabase.from('user_reports').delete().eq('id', id);
+          if (error) throw error;
+          triggerAlert('Laporan berhasil dihapus.');
+          fetchUserReports();
+        } catch (e) {
+          triggerAlert('Gagal menghapus laporan.', 'error');
+        }
+      }
+    );
   }
 
   async function executeReportAction(reportId: string, reportedName: string, actionType: 'deactivate' | 'delete') {
