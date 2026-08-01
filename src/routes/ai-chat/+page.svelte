@@ -68,17 +68,28 @@
       }
     }
 
-    // Load squad context
+    // Load squad & asatidzah context
     const loadSquadContext = async () => {
       try {
-        const { data } = await supabase.from('allowed_alumni').select('nama_lengkap, nama_panggilan, daerah_santri, kamar_santri, kategori_mazeeda');
-        if (data && data.length > 0) {
-          squadContext = data.map(d => `- ${d.nama_lengkap} (Panggilan: ${d.nama_panggilan || '-'}, Daerah: ${d.daerah_santri || '-'}, Kategori: ${d.kategori_mazeeda || '-'}, Kamar: ${d.kamar_santri || '-'})`).join('\n');
+        const { data: squadData } = await supabase.from('allowed_alumni').select('nama_lengkap, nama_panggilan, daerah_santri, kamar_santri, kategori_mazeeda');
+        const { data: guruData } = await supabase.from('asatidzah').select('nama_lengkap, nama_panggilan, daerah_santri, kamar_santri, kategori_mazeeda');
+        
+        let contextText = '';
+        if (squadData && squadData.length > 0) {
+          contextText += 'Data MAZEEDA SQUAD (Santri/Alumni):\n' + squadData.map(d => `- ${d.nama_lengkap} (Panggilan: ${d.nama_panggilan || '-'}, Daerah: ${d.daerah_santri || '-'}, Kategori: ${d.kategori_mazeeda || '-'}, Kamar: ${d.kamar_santri || '-'})`).join('\n') + '\n\n';
+        }
+        
+        if (guruData && guruData.length > 0) {
+          contextText += 'Data GURUKU (Asatidzah/Pengajar):\n' + guruData.map(d => `- ${d.nama_lengkap} (Panggilan: ${d.nama_panggilan || '-'}, Daerah: ${d.daerah_santri || '-'}, Kategori: ${d.kategori_mazeeda || '-'}, Kamar: ${d.kamar_santri || '-'})`).join('\n');
+        }
+        
+        if (contextText) {
+          squadContext = contextText;
         } else {
-          squadContext = 'Saat ini belum ada data Squad yang terdaftar.';
+          squadContext = 'Saat ini belum ada data Squad atau Guruku yang terdaftar.';
         }
       } catch (e) {
-        console.error('Failed to load squad context:', e);
+        console.error('Failed to load squad/guru context:', e);
       }
     };
     loadSquadContext();
