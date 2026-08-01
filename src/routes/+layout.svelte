@@ -13,6 +13,8 @@
     LogIn,
     LogOut,
     UserCheck,
+    Check,
+    Trash2,
     ChevronRight,
     ArrowLeft,
     User,
@@ -37,12 +39,15 @@
     ShieldAlert,
     ShieldBan,
     MoreVertical,
-    Share2
+    Share2,
+    Palette
   } from 'lucide-svelte';
   import Card from '$lib/components/ui/card.svelte';
   import { isAudioPlayingGlobal } from '$lib/audioStore';
   import { supabase, uploadCustomProfilePhoto } from '$lib/supabase';
   import { deferredPrompt, showInstallBtn } from '$lib/pwaStore';
+  import Cropper from 'svelte-easy-crop';
+  import getCroppedImg from '$lib/cropImage';
 
   // Define navigation configuration
   const navItems = [
@@ -208,14 +213,17 @@
     await logout();
   }
 
-  // Sync profile photo for users who logged in before the update
-  $: if (browser && $authStore.user && $authStore.user.role === 'member' && !$authStore.user.foto_url) {
+  let hasSyncedPhoto = false;
+  // Sync profile photo on load to ensure custom photos are not stuck globally
+  $: if (browser && $authStore.user && $authStore.user.role === 'member' && !hasSyncedPhoto) {
+    hasSyncedPhoto = true;
     syncProfilePhoto();
   }
 
   async function syncProfilePhoto() {
     const currentUser = $authStore.user;
-    if (!currentUser || currentUser.foto_url) return;
+    // Force re-sync if they currently have a custom photo (Supabase URL) in their global avatar
+    if (!currentUser || (currentUser.foto_url && !currentUser.foto_url.includes('supabase.co'))) return;
     
     try {
       let { data, error } = await supabase
@@ -308,17 +316,18 @@
       
       customPhotos = visiblePhotos;
       
-      // Preserve only the first photo (which is the default drive photo) if it exists
-      const basePhoto = allProfilePhotos.length > 0 && allProfilePhotos[0].type !== 'custom' 
-        ? [allProfilePhotos[0]] 
+      // Safely preserve the original drive photo, avoiding async race conditions
+      const basePhoto = myProfileData?.foto_url 
+        ? [{ url: myProfileData.foto_url, type: 'admin', status: 'approved' }] 
         : [];
         
+      // Put base photo first so it remains the primary visible photo
       allProfilePhotos = [
         ...basePhoto,
-        ...visiblePhotos.map(p => ({ url: p.photo_url, type: 'custom', status: p.status }))
+        ...visiblePhotos.map(p => ({ id: p.id, url: p.photo_url, type: 'custom', status: p.status }))
       ];
     } catch (e) {
-      console.error(e);
+      console.error('Exception in fetchCustomPhotosForProfile:', e);
     }
   }
 
@@ -346,17 +355,77 @@
     showToast = true;
   }
 
-  // Photo Upload Logic
+  let showUploadWarning = false;
+  let dontShowWarningAgain = false;
+
+  function triggerPhotoUpload() {
+    if (customPhotos.length >= 3) {
+      showNotification('Maksimal hanya 3 foto opsional yang diizinkan.', 'error');
+      return;
+    }
+    
+    if (browser && localStorage.getItem('hidePhotoUploadWarning') === 'true') {
+      fileInputRef.click();
+    } else {
+      showUploadWarning = true;
+    }
+  }
+
+  function proceedWithUpload() {
+    if (dontShowWarningAgain && browser) {
+      localStorage.setItem('hidePhotoUploadWarning', 'true');
+    }
+    showUploadWarning = false;
+    fileInputRef.click();
+  }
+
+  function cancelUpload() {
+    showUploadWarning = false;
+  }
+
+  // Crop State
+  let showCropModal = false;
+  let cropImageSrc = '';
+  let crop = { x: 0, y: 0 };
+  let zoom = 1;
+  let croppedAreaPixels: any = null;
+  let currentFile: File | null = null;
+
+  function onCropComplete(e: any) {
+    croppedAreaPixels = e.detail.pixels;
+  }
+
   async function handlePhotoUpload(e: Event) {
     const target = e.target as HTMLInputElement;
     const file = target.files?.[0];
     if (!file || !myProfileData) return;
     
+    if (customPhotos.length >= 3) {
+      showNotification('Maksimal hanya 3 foto opsional yang diizinkan.', 'error');
+      target.value = '';
+      return;
+    }
+    
+    currentFile = file;
+    cropImageSrc = URL.createObjectURL(file);
+    showCropModal = true;
     target.value = '';
+  }
+
+  async function processCropAndUpload() {
+    if (!currentFile || !myProfileData || !croppedAreaPixels) return;
+    
     isUploadingPhoto = true;
+    showCropModal = false;
+    
     try {
-      const url = await uploadCustomProfilePhoto(file, myProfileData.nama_lengkap);
-      const newPhoto = { url, type: 'custom', status: 'pending' };
+      const croppedFile = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+      if (!croppedFile) throw new Error('Gagal memotong gambar.');
+      
+      const profileName = myProfileData.nama_lengkap || myProfileData.name;
+      const { url, id } = await uploadCustomProfilePhoto(croppedFile as File, profileName);
+      
+      const newPhoto = { id, url, type: 'custom', status: 'pending' };
       customPhotos = [...customPhotos, newPhoto];
       allProfilePhotos = [...allProfilePhotos, newPhoto];
       currentPhotoIndex = allProfilePhotos.length - 1;
@@ -365,6 +434,127 @@
       showNotification(`Gagal mengunggah foto: ${err.message}`, 'error');
     } finally {
       isUploadingPhoto = false;
+      currentFile = null;
+      if (cropImageSrc) {
+        URL.revokeObjectURL(cropImageSrc);
+        cropImageSrc = '';
+      }
+    }
+  }
+
+  // ===== PROFILE THEME LOGIC =====
+  import { profileThemes } from '$lib/profileThemes';
+  
+  let currentProfileTheme = profileThemes[0];
+  let showThemeModal = false;
+  let isSavingTheme = false;
+
+  async function fetchProfileTheme(name: string) {
+    if (!name) return;
+    try {
+      const { data, error } = await supabase
+        .from('profile_themes')
+        .select('theme_id')
+        .eq('user_name', name)
+        .maybeSingle();
+        
+      if (data && data.theme_id) {
+        const found = profileThemes.find(t => t.id === data.theme_id);
+        if (found) currentProfileTheme = found;
+      } else {
+        currentProfileTheme = profileThemes[0];
+      }
+    } catch (e) {
+      console.error('Error fetching profile theme:', e);
+      currentProfileTheme = profileThemes[0];
+    }
+  }
+
+  $: if (myProfileData && (myProfileData.nama_lengkap || myProfileData.name)) {
+    fetchProfileTheme(myProfileData.nama_lengkap || myProfileData.name);
+  }
+
+  async function selectTheme(themeId: string) {
+    const selected = profileThemes.find(t => t.id === themeId);
+    if (!selected) return;
+    
+    currentProfileTheme = selected; // apply optimistically locally
+    isSavingTheme = true;
+    
+    const finalProfileName = myProfileData.nama_lengkap || myProfileData.name;
+    try {
+      const { error } = await supabase
+        .from('profile_themes')
+        .upsert({ user_name: finalProfileName, theme_id: themeId }, { onConflict: 'user_name' });
+        
+      if (error) throw error;
+      showNotification('Tema profil berhasil diperbarui.', 'success');
+      showThemeModal = false;
+    } catch (err: any) {
+      console.error('Failed to save theme:', err);
+      showNotification('Gagal menyimpan tema profil. Pastikan tabel profile_themes sudah dibuat.', 'error');
+    } finally {
+      isSavingTheme = false;
+    }
+  }
+
+  // Delete Photo Logic
+  let isDeletingPhoto = false;
+  let showDeleteModal = false;
+  let photoToDelete: { id: number, url: string } | null = null;
+
+  function triggerDeletePhoto(photoId: number, photoUrl: string) {
+    photoToDelete = { id: photoId, url: photoUrl };
+    showDeleteModal = true;
+  }
+
+  async function confirmDeletePhoto() {
+    if (!photoToDelete) return;
+    const { id: photoId } = photoToDelete;
+    
+    isDeletingPhoto = true;
+    showDeleteModal = false;
+    
+    isDeletingPhoto = true;
+    try {
+      const { error } = await supabase
+        .from('custom_profile_photos')
+        .delete()
+        .eq('id', photoId);
+        
+      if (error) throw error;
+      
+      // Try to delete the actual file from storage
+      try {
+        if (photoToDelete.url) {
+          const urlObj = new URL(photoToDelete.url);
+          const pathParts = urlObj.pathname.split('/memories/');
+          if (pathParts.length > 1) {
+            // e.g. custom_profiles/randomname.jpg
+            const filePath = decodeURIComponent(pathParts[1]);
+            await supabase.storage.from('memories').remove([filePath]);
+          }
+        }
+      } catch (storageErr) {
+        console.error('Failed to delete file from storage:', storageErr);
+      }
+      
+      // Update local state
+      customPhotos = customPhotos.filter(p => p.id !== photoId);
+      allProfilePhotos = allProfilePhotos.filter(p => p.id !== photoId);
+      
+      // Adjust index
+      if (currentPhotoIndex >= allProfilePhotos.length) {
+        currentPhotoIndex = Math.max(0, allProfilePhotos.length - 1);
+      }
+      
+      showNotification('Foto berhasil dihapus.', 'success');
+      closeLightbox();
+    } catch (err: any) {
+      showNotification(`Gagal menghapus foto: ${err.message}`, 'error');
+    } finally {
+      isDeletingPhoto = false;
+      photoToDelete = null;
     }
   }
 
@@ -911,6 +1101,14 @@
       isLoadingProfile = true;
       myProfileData = loadAdminProfileFromCache();
       myProfileData = await fetchAdminProfileFromDB();
+      
+      customPhotos = [];
+      currentPhotoIndex = 0;
+      allProfilePhotos = [];
+      if (myProfileData.foto_url) {
+        allProfilePhotos.push({ url: myProfileData.foto_url, type: 'admin', status: 'approved' });
+      }
+      
       isLoadingProfile = false;
       return;
     }
@@ -953,11 +1151,30 @@
           nameData = asatidzahNameRes.data;
         }
 
-        if (nameError) throw nameError;
-        myProfileData = nameData || $authStore.user;
+        if (nameData) {
+          myProfileData = nameData;
+        } else {
+          myProfileData = $authStore.user;
+        }
       }
-    } catch (err) {
-      console.error('Failed to fetch full profile:', err);
+      
+      // Explicitly initialize photo arrays to avoid Svelte reactivity race conditions
+      customPhotos = [];
+      currentPhotoIndex = 0;
+      allProfilePhotos = [];
+      if (myProfileData.foto_url) {
+        allProfilePhotos.push({ url: myProfileData.foto_url, type: 'admin', status: 'approved' });
+      }
+
+      // Explicitly fetch custom photos after myProfileData is firmly established
+      // This avoids Svelte reactivity race conditions where allProfilePhotos might be cleared
+      const finalProfileName = myProfileData.nama_lengkap || myProfileData.name;
+      if (finalProfileName && finalProfileName !== 'ADMIN MAZEEDA') {
+        await fetchCustomPhotosForProfile(finalProfileName);
+      }
+      
+    } catch (e) {
+      console.error('Error fetching full profile:', e);
       myProfileData = $authStore.user;
     } finally {
       isLoadingProfile = false;
@@ -970,17 +1187,7 @@
     (myProfileData.nis === $authStore.user.nis)
   );
 
-  $: if (showMyProfile && myProfileData) {
-    customPhotos = [];
-    currentPhotoIndex = 0;
-    allProfilePhotos = [];
-    if (myProfileData.foto_url) {
-      allProfilePhotos.push({ url: myProfileData.foto_url, type: 'admin', status: 'approved' });
-    }
-    if (myProfileData.nama_lengkap) {
-      fetchCustomPhotosForProfile(myProfileData.nama_lengkap);
-    }
-  }
+
 
   // Close profile on route changes
   $: if (currentPath) {
@@ -1142,6 +1349,193 @@
   </div>
 {/if}
 
+<!-- ===== UPLOAD WARNING MODAL ===== -->
+{#if showUploadWarning}
+  <div class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" transition:fade={{ duration: 200 }}>
+    <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+      <div class="p-6">
+        <div class="w-12 h-12 bg-blue-100 text-primary rounded-full flex items-center justify-center mb-4">
+          <Camera class="w-6 h-6" />
+        </div>
+        <h3 class="text-xl font-black text-slate-800 mb-2">Unggah Foto Tambahan</h3>
+        <p class="text-sm text-slate-500 mb-4 leading-relaxed">
+          Anda akan menambahkan foto opsional ke profil Anda. Foto ini tidak akan langsung tampil, melainkan <b>menunggu persetujuan Admin (1x24 jam)</b>. 
+          <br><br>
+          Maksimal Anda bisa menambahkan <b>3 foto tambahan</b> selain foto utama.
+        </p>
+        
+        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+          <div class="relative flex items-start mt-0.5">
+            <input type="checkbox" bind:checked={dontShowWarningAgain} class="peer sr-only" />
+            <div class="w-5 h-5 border-2 border-slate-300 rounded peer-checked:bg-primary peer-checked:border-primary transition-colors flex items-center justify-center">
+              {#if dontShowWarningAgain}
+                <Check class="w-3 h-3 text-white" />
+              {/if}
+            </div>
+          </div>
+          <span class="text-xs font-medium text-slate-600 leading-tight">Jangan tampilkan pesan peringatan ini lagi saat saya mengunggah foto.</span>
+        </label>
+      </div>
+      
+      <div class="flex border-t border-slate-100">
+        <button on:click={cancelUpload} class="flex-1 py-3.5 text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors">
+          Batal
+        </button>
+        <div class="w-px bg-slate-100"></div>
+        <button on:click={proceedWithUpload} class="flex-1 py-3.5 text-sm font-black text-primary hover:bg-blue-50 transition-colors">
+          Pilih Foto
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- ===== CROP IMAGE MODAL ===== -->
+{#if showCropModal}
+  <div class="fixed inset-0 z-[100000] flex flex-col bg-slate-900 animate-in fade-in duration-300">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 bg-slate-900 z-10 border-b border-white/10">
+      <h3 class="text-white font-black">Sesuaikan Foto</h3>
+      <button 
+        on:click={() => { showCropModal = false; cropImageSrc = ''; currentFile = null; }}
+        class="bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-colors"
+      >
+        <X class="w-5 h-5" />
+      </button>
+    </div>
+
+    <!-- Cropper Area -->
+    <div class="relative flex-1 bg-black">
+      <Cropper
+        image={cropImageSrc}
+        bind:crop
+        bind:zoom
+        aspect={1}
+        cropShape="rect"
+        showGrid={true}
+        on:cropcomplete={onCropComplete}
+      />
+    </div>
+    
+    <!-- Footer / Actions -->
+    <div class="p-6 bg-slate-900 flex gap-3 pb-8">
+      <button 
+        on:click={() => { showCropModal = false; cropImageSrc = ''; currentFile = null; }}
+        class="flex-1 py-3.5 px-4 rounded-xl text-sm font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors"
+      >
+        Batal
+      </button>
+      <button 
+        on:click={processCropAndUpload}
+        class="flex-1 py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+      >
+        <Check class="w-4 h-4" /> Potong & Unggah
+      </button>
+    </div>
+  </div>
+{/if}
+
+<!-- ===== THEME SELECTION MODAL ===== -->
+{#if showThemeModal}
+  <div class="fixed inset-0 z-[100000] flex flex-col items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" on:click={() => showThemeModal = false}>
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh]" on:click|stopPropagation>
+      <!-- Header -->
+      <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+          <Palette class="w-5 h-5 text-blue-500" /> Pilih Tema Profil
+        </h3>
+        <button on:click={() => showThemeModal = false} class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
+          <X class="w-4 h-4" />
+        </button>
+      </div>
+
+      <!-- Theme Grid -->
+      <div class="p-6 overflow-y-auto custom-scrollbar">
+        <div class="grid grid-cols-2 gap-4">
+          {#each profileThemes as theme}
+            {#if !theme.isAdminOnly || userRole === 'admin'}
+              <button
+                on:click={() => selectTheme(theme.id)}
+                disabled={isSavingTheme}
+                class="relative group rounded-2xl overflow-hidden border-2 transition-all {currentProfileTheme.id === theme.id ? 'border-blue-500 shadow-md ring-2 ring-blue-500/20' : 'border-transparent hover:border-slate-200'}"
+              >
+                <!-- Preview Box -->
+                <div class="h-24 w-full {theme.class} transition-transform duration-500 group-hover:scale-105" style={theme.style || ''}>
+                  {#if currentProfileTheme.id === theme.id}
+                    <div class="absolute inset-0 bg-blue-500/20 flex items-center justify-center backdrop-blur-[1px]">
+                      <div class="bg-white rounded-full p-1.5 shadow-sm">
+                        <Check class="w-5 h-5 text-blue-600" />
+                      </div>
+                    </div>
+                  {/if}
+                  {#if theme.isAdminOnly}
+                    <div class="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent flex p-2">
+                      <div class="bg-black/60 backdrop-blur-md rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm h-fit">
+                        <span class="text-[9px] font-black tracking-wider text-amber-400 uppercase">Admin</span>
+                      </div>
+                    </div>
+                  {/if}
+                </div>
+                <!-- Label -->
+                <div class="bg-slate-50 py-2.5 px-3 text-center border-t border-slate-100 group-hover:bg-slate-100 transition-colors">
+                  <span class="text-[11px] font-bold {theme.isAdminOnly ? 'text-amber-600' : 'text-slate-700'}">{theme.name}</span>
+                </div>
+              </button>
+            {/if}
+          {/each}
+        </div>
+        
+        {#if isSavingTheme}
+          <div class="mt-6 flex items-center justify-center gap-3 text-blue-600">
+            <div class="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+            <span class="text-xs font-bold">Menyimpan tema...</span>
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- ===== DELETE CONFIRMATION MODAL ===== -->
+{#if showDeleteModal}
+  <div class="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" on:click={() => showDeleteModal = false}>
+    <div class="relative bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-sm p-6 space-y-5 animate-in zoom-in-95 duration-200" on:click|stopPropagation>
+      
+      <!-- Icon -->
+      <div class="flex items-center justify-center">
+        <div class="h-14 w-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center shadow-inner">
+          <Trash2 class="h-7 w-7 text-rose-500 animate-bounce" />
+        </div>
+      </div>
+
+      <!-- Text -->
+      <div class="text-center space-y-1.5">
+        <h3 class="text-lg font-black text-slate-800">Hapus Foto?</h3>
+        <p class="text-sm text-slate-500 leading-relaxed">Apakah Anda yakin ingin menghapus foto tambahan ini? Aksi ini tidak dapat dibatalkan.</p>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col sm:flex-row gap-2 pt-1">
+        <button
+          type="button"
+          on:click={() => showDeleteModal = false}
+          class="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+        >
+          Batal
+        </button>
+        <button
+          type="button"
+          on:click={confirmDeletePhoto}
+          class="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors flex items-center justify-center space-x-2"
+        >
+          <Trash2 class="h-4 w-4" />
+          <span>Ya, Hapus</span>
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
 <!-- ===== PHOTO LIGHTBOX MODAL ===== -->
 {#if showLightbox}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -1174,17 +1568,33 @@
         style="max-height: 80vh; object-fit: contain;"
         on:error={(e) => { closeLightbox(); }}
       />
+      
+      <!-- Delete Button inside Lightbox -->
+      {#if showMyProfile && isOwnProfile && allProfilePhotos[currentPhotoIndex]?.type === 'custom' && allProfilePhotos[currentPhotoIndex]?.id}
+        <div class="absolute top-4 right-4 z-[105]">
+          <button 
+            type="button" 
+            on:click={(e) => { 
+              e.stopPropagation(); 
+              triggerDeletePhoto(allProfilePhotos[currentPhotoIndex].id, allProfilePhotos[currentPhotoIndex].url); 
+            }}
+            class="bg-rose-500/90 hover:bg-rose-600 text-white p-2.5 rounded-full shadow-lg backdrop-blur-md transition-all active:scale-95 border border-rose-400/50"
+          >
+            <Trash2 class="h-5 w-5" />
+          </button>
+        </div>
+      {/if}
     </div>
   </div>
 {/if}
 
 <style>
   :global(.animate-jump-spin) {
-    animation: jump-spin 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: jump-spin 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   @keyframes jump-spin {
     0% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-12px) rotate(180deg) scale(1.1); }
+    50% { transform: translateY(-45px) rotate(180deg) scale(1.3); }
     100% { transform: translateY(0) rotate(360deg) scale(1); }
   }
 
@@ -1220,17 +1630,26 @@
     animation: wave-right 0.8s ease-in-out infinite;
     animation-delay: 1.6s;
   }
+
+  /* Animasi Logout Bouncing Arrow */
+  @keyframes bounce-right {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(4px); }
+  }
+  :global(.animate-bounce-right) {
+    animation: bounce-right 1.5s ease-in-out infinite;
+  }
 </style>
 
 <!-- ===== NOTIFICATION MODAL ===== -->
 {#if showToast}
   <div class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
     <div class="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full border border-slate-100 animate-in zoom-in-95 duration-300 relative flex flex-col items-center text-center p-6 sm:p-8 space-y-4">
-      <div class="w-20 h-20 rounded-full flex items-center justify-center {toastType === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'}">
+      <div class="flex items-center justify-center w-32 h-32 -mb-2 -mt-4">
         {#if toastType === 'success'}
-          <CheckCircle2 class="h-10 w-10" />
+          <img src="/Success.svg" alt="Success" class="w-full h-full object-contain drop-shadow-sm" />
         {:else}
-          <AlertCircle class="h-10 w-10" />
+          <img src="/images/error-fail-animation.svg" alt="Error" class="w-full h-full object-contain drop-shadow-sm" />
         {/if}
       </div>
       
@@ -1256,8 +1675,8 @@
 <!-- FULL SCREEN LOADING UNTUK UPLOAD -->
 {#if isUploadingPhoto}
   <div class="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300 p-4">
-    <div class="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-4 animate-bounce-slow">
-      <div class="h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+    <div class="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-4">
+      <img src="/loading.svg" alt="Loading..." class="h-20 w-20 object-contain drop-shadow-sm" />
       <div class="text-center">
         <p class="font-black text-slate-800 text-lg">Mengunggah Foto...</p>
         <p class="text-xs text-slate-500 font-medium">Mohon tunggu sebentar, sedang diproses.</p>
@@ -1542,12 +1961,39 @@
                       {/if}
                       {#if isOwnProfile}
                         <button
+                          on:click={() => { document.getElementById('custom-photo-upload')?.click(); showLayoutMenu = false; }}
+                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                        >
+                          <Camera class="w-4 h-4" /> Tambah Foto Profil
+                        </button>
+                        <div class="h-px bg-slate-100 my-1"></div>
+                        <button
+                          on:click={() => { showThemeModal = true; showLayoutMenu = false; }}
+                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                        >
+                          <Palette class="w-4 h-4" /> Pilih Tema Profil
+                        </button>
+                        <div class="h-px bg-slate-100 my-1"></div>
+                        <button
                           on:click={() => { showLayoutMenu = false; showBlockedUsersModal = true; loadBlockedUsers(); }}
                           class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
                         >
                           <ShieldBan class="w-4 h-4" /> Daftar Blokir
                         </button>
                         <div class="h-px bg-slate-100 my-1"></div>
+                        {#if myProfileData.nis}
+                          <button
+                            on:click={() => { 
+                              showLayoutMenu = false; 
+                              showMyProfile = false;
+                              window.location.href = `/nilai?nis=${myProfileData.nis}`;
+                            }}
+                            class="w-full text-left px-4 py-2.5 text-sm font-bold text-emerald-600 hover:bg-emerald-50 flex items-center gap-2.5 transition-colors"
+                          >
+                            <Award class="w-4 h-4" /> Rekam Akademik
+                          </button>
+                          <div class="h-px bg-slate-100 my-1"></div>
+                        {/if}
                         <button
                           on:click={() => { showLayoutMenu = false; handleLogout(); }}
                           class="w-full text-left px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
@@ -1559,7 +2005,7 @@
                           on:click={() => { 
                             showLayoutMenu = false;
                             const url = `${window.location.origin}/squad?id=${myProfileData.id}`;
-                            navigator.clipboard.writeText(url).then(() => alert('Tautan profil disalin!'));
+                            navigator.clipboard.writeText(url).then(() => showNotification('Tautan profil disalin!'));
                           }}
                           class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
                         >
@@ -1568,6 +2014,7 @@
                       {/if}
                     </div>
                   {/if}
+                  <input type="file" id="custom-photo-upload" accept="image/*" class="hidden" on:change={handlePhotoUpload} />
                 </div>
               </div>
 
@@ -1791,15 +2238,13 @@
               <!-- Details Card Container -->
               <Card noPadding class="overflow-hidden border-slate-200/80 shadow-soft-sm">
                 <!-- Profile Header Banner -->
-                <div class="h-32 sm:h-40 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative overflow-hidden">
-                  <!-- Decorative subtle background shapes -->
-                  <div class="absolute inset-0 opacity-20 overflow-hidden">
-                    <div class="absolute -top-10 -left-10 w-44 h-44 rounded-full bg-white blur-xl"></div>
-                    <div class="absolute -bottom-20 -right-20 w-64 h-64 rounded-full bg-white blur-2xl"></div>
-                    <div class="absolute top-1/2 left-1/3 w-32 h-32 rounded-full bg-white blur-xl animate-pulse" style="animation-duration: 6s;"></div>
-                  </div>
-                  <!-- Soft Gradient Fade to White -->
-                  <div class="absolute bottom-[-1px] left-0 right-0 h-16 sm:h-24 bg-gradient-to-t from-white to-transparent z-0"></div>
+                <div class="h-32 sm:h-40 w-full relative overflow-hidden transition-all duration-500 {currentProfileTheme.class}" style={currentProfileTheme.style || ''}>
+                  <!-- Pattern overlay for default gradient themes to keep texture -->
+                  {#if !currentProfileTheme.style}
+                    <div class="absolute inset-0 opacity-20 mix-blend-overlay" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+                  {/if}
+                  <!-- Smooth Curved Gradient Fade to White (bottom) -->
+                  <div class="absolute bottom-[-1px] left-0 right-0 h-24 sm:h-32 z-0 pointer-events-none" style="background: radial-gradient(ellipse 150% 100% at 50% 100%, white 0%, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.2) 60%, transparent 100%);"></div>
                 </div>
 
                 <!-- Content wrapper with negative margin to overlap avatar with banner -->
@@ -1865,9 +2310,9 @@
                     </div>
                     
                     <div class="text-center sm:text-left space-y-2 min-w-0 flex-1 pb-1">
-                      <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-tight py-1 truncate">
+                      <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-tight py-1 truncate relative inline-block max-w-full align-bottom">
                         {myProfileData.nama_lengkap} 
-                        <span class="text-[8px] opacity-10">[{allProfilePhotos?.length || 0}:{customPhotos?.length || 0}:{myProfileData.foto_url ? 1 : 0}:{rlsDebug}]</span>
+                        <span class="absolute top-1/2 -translate-y-1/2 -right-16 text-[8px] opacity-0 group-hover:opacity-10 pointer-events-none">[{allProfilePhotos?.length || 0}:{customPhotos?.length || 0}:{myProfileData.foto_url ? 1 : 0}:{rlsDebug}]</span>
                       </h2>
                       {#if myProfileData.nama_panggilan}
                         <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs font-bold">
@@ -2143,13 +2588,13 @@
                       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold relative z-10">
                         <div class="space-y-2">
                           <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Kesan</span>
-                          <p class="text-slate-700 font-normal leading-relaxed bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
+                          <p class="text-slate-700 font-normal leading-relaxed text-justify bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
                             {myProfileData.kesan || '-'}
                           </p>
                         </div>
                         <div class="space-y-2">
                           <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Pesan</span>
-                          <p class="text-slate-700 font-normal leading-relaxed bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
+                          <p class="text-slate-700 font-normal leading-relaxed text-justify bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
                             {myProfileData.pesan || '-'}
                           </p>
                         </div>
@@ -2157,6 +2602,30 @@
                     </div>
                   </div>
                 </div>
+
+                {#if myProfileData.nis}
+                  <!-- ======= NILAI AKADEMIK SECTION ======= -->
+                  <div class="px-4 sm:px-6 md:px-8 mt-2 pb-6">
+                    <a
+                      href="/nilai?nis={myProfileData.nis}"
+                      on:click={() => showMyProfile = false}
+                      class="group w-full flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:border-emerald-500/30 hover:shadow-md transition-all duration-300"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <img src="/exam_3403561.png" alt="Ikon Ujian" class="w-6 h-6 object-contain" />
+                        </div>
+                        <div class="flex flex-col">
+                          <span class="text-sm font-bold text-slate-800">Rekam Jejak Nilai Akademik</span>
+                          <span class="text-[11px] font-medium text-slate-500">Tamrin, Muhafadzoh, Ujian</span>
+                        </div>
+                      </div>
+                      <div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                        <ChevronRight class="h-4 w-4" />
+                      </div>
+                    </a>
+                  </div>
+                {/if}
 
                 <!-- LOGOUT BUTTON AT THE VERY BOTTOM -->
                 {#if isOwnProfile}
@@ -2188,7 +2657,7 @@
                       <!-- Icon -->
                       <div class="flex items-center justify-center">
                         <div class="h-14 w-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center shadow-inner">
-                          <LogOut class="h-7 w-7 text-rose-500" />
+                          <LogOut class="h-7 w-7 text-rose-500 animate-bounce-right" />
                         </div>
                       </div>
 

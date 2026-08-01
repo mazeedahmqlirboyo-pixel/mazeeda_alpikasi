@@ -7,10 +7,16 @@
   import Button from '$lib/components/ui/button.svelte';
   import { 
     Search, Mail, Phone, MapPin, Plus, ArrowLeft, Filter,
-    BookOpen, Heart, Music, Award, User, Globe, Route, Home, ChevronRight,
-    ExternalLink
+    BookOpen, Heart, Music, Award, User, Globe, Route, Home, ChevronRight, ChevronLeft,
+    ExternalLink,
+    MoreVertical,
+    Share2,
+    UserPlus,
+    Clock
   } from 'lucide-svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import { profileThemes } from '$lib/profileThemes';
+  import { authStore } from '$lib/auth';
 
   // State
   let searchQuery = '';
@@ -20,16 +26,68 @@
   let showFilter = false;
   let members: any[] = [];
   let isLoading = false;
+  let showCopyToast = false;
 
   // Warning modal state
   let showDeactivatedWarningFor: any = null;
 
   // Selected member for inline detailed view (replaces popup)
   let selectedMember: any = null;
+  let showAsatidzahMenu = false;
   let failedImages = new Set();
   
   // State for image lightbox/modal
   let isImageLarge = false;
+  
+  // Custom Profile Photos State
+  let customPhotos: any[] = [];
+  let allProfilePhotos: {url: string, type: string, status: string}[] = [];
+  let currentPhotoIndex = 0;
+
+  // Profile Theme State
+  let currentProfileTheme = profileThemes[0];
+  
+  async function fetchProfileTheme(name: string) {
+    if (!name) return;
+    try {
+      const { data, error } = await supabase
+        .from('profile_themes')
+        .select('theme_id')
+        .eq('user_name', name)
+        .maybeSingle();
+        
+      if (data && data.theme_id) {
+        const found = profileThemes.find(t => t.id === data.theme_id);
+        if (found) {
+           currentProfileTheme = found;
+           return;
+        }
+      }
+      currentProfileTheme = profileThemes[0];
+    } catch (e) {
+      console.error('Error fetching profile theme:', e);
+      currentProfileTheme = profileThemes[0];
+    }
+  }
+
+  $: if (selectedMember && selectedMember.nama_lengkap) {
+    fetchProfileTheme(selectedMember.nama_lengkap);
+  }
+
+  function nextPhoto(e: Event) {
+    e.stopPropagation();
+    if (allProfilePhotos.length > 1) {
+      currentPhotoIndex = (currentPhotoIndex + 1) % allProfilePhotos.length;
+    }
+  }
+
+  function prevPhoto(e: Event) {
+    e.stopPropagation();
+    if (allProfilePhotos.length > 1) {
+      currentPhotoIndex = (currentPhotoIndex - 1 + allProfilePhotos.length) % allProfilePhotos.length;
+    }
+  }
+
   
   // Category configuration
   let categories = [
@@ -43,6 +101,23 @@
   // Unique daerah list from loaded members
   let uniqueDaerah = ['semua'];
   
+
+
+  function downloadVCard(member: any) {
+    if (!member) return;
+    const phone = member.no_whatsapp ? member.no_whatsapp.replace(/[^0-9+]/g, '') : '';
+    const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${member.nama_lengkap}\nTEL;TYPE=CELL:${phone}\nEND:VCARD`;
+    const blob = new Blob([vcard], { type: 'text/vcard' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${member.nama_lengkap.replace(/\s+/g, '_')}_Mazeeda.vcf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   onMount(async () => {
     try {
       // Load unique categories and regions directly from the database
@@ -133,7 +208,45 @@
   // Open details inline
   async function openDetails(member: any) {
     selectedMember = member;
+    customPhotos = [];
+    currentPhotoIndex = 0;
+    
+    // Default admin photo (only if it hasn't previously failed)
+    allProfilePhotos = [];
+    if (member.foto_url && !failedImages.has(member.id)) {
+      allProfilePhotos.push({ url: member.foto_url, type: 'admin', status: 'approved' });
+    }
+
     await tick();
+    
+    // Fetch custom photos asynchronously without blocking UI render
+    supabase
+      .from('custom_profile_photos')
+      .select('*')
+      .eq('user_name', member.nama_lengkap)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Error fetching custom photos:', error);
+        }
+        if (data && data.length > 0) {
+          const isOwnOrAdmin = $authStore.user?.role === 'admin' || $authStore.user?.name === member.nama_lengkap;
+          
+          // Filter out pending photos for public, keep for owner/admin
+          const visiblePhotos = data.filter((p: any) => p.status?.toLowerCase() === 'approved' || (isOwnOrAdmin && p.status?.toLowerCase() === 'pending'));
+          
+          customPhotos = visiblePhotos;
+          
+          // Safely preserve the original drive photo, avoiding async race conditions
+          const basePhoto = member.foto_url && !failedImages.has(member.id) 
+            ? [{ url: member.foto_url, type: 'admin', status: 'approved' }] 
+            : [];
+            
+          allProfilePhotos = [
+            ...basePhoto,
+            ...visiblePhotos.map((p: any) => ({ url: p.photo_url, type: 'custom', status: p.status }))
+          ];
+        }
+      });
     
     const scrollToTop = () => {
       window.scrollTo(0, 0);
@@ -300,7 +413,7 @@
   <!-- INLINE PROFILE DETAIL VIEW (Replaces full screen popup) -->
   <div class="space-y-6 animate-in fade-in duration-300">
     <!-- Back Button Header -->
-    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+    <div class="flex items-center justify-between pb-2 border-b border-slate-100 relative">
       <button 
         on:click={() => { selectedMember = null; isImageLarge = false; }}
         class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 hover:text-primary transition-colors -ml-2"
@@ -308,19 +421,66 @@
         <ArrowLeft class="w-5 h-5" />
       </button>
       
-      <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">PROFIL ASATIDZAH</span>
-    </div>    <Card noPadding class="overflow-hidden border-slate-200/80 shadow-soft-sm">
+      <span class="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">PROFIL GURU</span>
+      
+      <!-- 3-dots Menu -->
+      <div class="relative">
+        <button on:click={() => showAsatidzahMenu = !showAsatidzahMenu} class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 transition-colors -mr-2">
+          <MoreVertical class="w-5 h-5" />
+        </button>
+        {#if showAsatidzahMenu}
+          <!-- Invisible overlay to close dropdown -->
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div class="fixed inset-0 z-20" on:click={() => showAsatidzahMenu = false}></div>
+          <div class="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden z-30 animate-in fade-in slide-in-from-top-2 py-1">
+            <button
+              on:click={() => { 
+                showAsatidzahMenu = false;
+                const url = `${window.location.origin}/asatidzah?id=${selectedMember.id}`;
+                navigator.clipboard.writeText(url).then(() => { showCopyToast = true; setTimeout(() => showCopyToast = false, 2500); });
+              }}
+              class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors border-b border-slate-50"
+            >
+              <Share2 class="w-4 h-4 text-indigo-500" /> Bagikan Profil
+            </button>
+            {#if selectedMember.no_whatsapp}
+              <a
+                href={getWhatsAppLink(selectedMember.no_whatsapp)} 
+                target="_blank" rel="noopener noreferrer"
+                on:click={() => showAsatidzahMenu = false}
+                class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-emerald-50 flex items-center gap-2.5 transition-colors border-b border-slate-50"
+              >
+                <Phone class="w-4 h-4 text-emerald-500" /> Kirim WhatsApp
+              </a>
+              <button
+                on:click={() => { showAsatidzahMenu = false; downloadVCard(selectedMember); }} 
+                class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+              >
+                <UserPlus class="w-4 h-4 text-blue-500" /> Simpan Kontak
+              </button>
+            {/if}
+          </div>
+        {/if}
+      </div>
+    </div>
+    
+    <Card noPadding class="overflow-hidden border-slate-200/80 shadow-soft-sm">
       <!-- Profile Header Banner -->
       {@const accent = getAccent(selectedMember.nama_lengkap)}
-      <div class="h-32 sm:h-40 w-full bg-gradient-to-r {accent.gradient} relative overflow-hidden">
+      <div class="h-32 sm:h-40 w-full relative overflow-hidden transition-all duration-500 {currentProfileTheme.class}" style={currentProfileTheme.style || ''}>
+        <!-- Pattern overlay for default gradient themes to keep texture -->
+        {#if !currentProfileTheme.style}
+          <div class="absolute inset-0 opacity-20 mix-blend-overlay" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+        {/if}
         <!-- Decorative subtle background shapes -->
         <div class="absolute inset-0 opacity-20 overflow-hidden">
           <div class="absolute -top-10 -left-10 w-44 h-44 rounded-full bg-white blur-xl"></div>
           <div class="absolute -bottom-20 -right-20 w-64 h-64 rounded-full bg-white blur-2xl"></div>
           <div class="absolute top-1/2 left-1/3 w-32 h-32 rounded-full bg-white blur-xl animate-pulse" style="animation-duration: 6s;"></div>
         </div>
-        <!-- Soft Gradient Fade to White -->
-        <div class="absolute bottom-[-1px] left-0 right-0 h-16 sm:h-24 bg-gradient-to-t from-white to-transparent z-0"></div>
+        <!-- Smooth Curved Gradient Fade to White (bottom) -->
+        <div class="absolute bottom-[-1px] left-0 right-0 h-24 sm:h-32 z-0 pointer-events-none" style="background: radial-gradient(ellipse 150% 100% at 50% 100%, white 0%, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.2) 60%, transparent 100%);"></div>
       </div>
 
       <!-- Content wrapper with negative margin to overlap avatar with banner -->
@@ -331,21 +491,45 @@
           <!-- svelte-ignore a11y-click-events-have-key-events -->
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div 
-            class="relative group/avatar h-28 w-28 rounded-3xl bg-white p-0.5 border-2 border-white flex items-center justify-center text-primary font-bold text-3xl shrink-0 overflow-hidden shadow-md transition-all duration-300 {selectedMember.foto_url ? 'cursor-zoom-in hover:scale-105 hover:shadow-lg' : ''}"
-            on:click={() => { if (selectedMember.foto_url) isImageLarge = true; }}
+            class="relative group/avatar h-28 w-28 rounded-3xl bg-white p-0.5 border-2 border-white flex items-center justify-center text-primary font-bold text-3xl shrink-0 overflow-hidden shadow-md transition-all duration-300 {allProfilePhotos.length > 0 ? 'cursor-zoom-in hover:scale-105 hover:shadow-lg' : ''}"
+            on:click={() => { if (allProfilePhotos.length > 0) isImageLarge = true; }}
           >
-            <div class="w-full h-full rounded-2xl overflow-hidden bg-blue-50/50 border border-slate-100 flex items-center justify-center relative">
+            <div class="w-full h-full rounded-2xl overflow-hidden bg-blue-50/50 border border-slate-100 flex items-center justify-center relative group/inner">
               <!-- Render EITHER photo OR initials, never both side-by-side -->
-              {#if selectedMember.foto_url && !failedImages.has(selectedMember.id)}
+              {#if allProfilePhotos.length > 0}
                 <img referrerpolicy="no-referrer" 
-                  src={convertDriveUrl(selectedMember.foto_url)} 
+                  src={convertDriveUrl(allProfilePhotos[currentPhotoIndex].url)} 
                   alt={selectedMember.nama_lengkap} 
-                  class="h-full w-full object-cover" 
+                  class="h-full w-full object-cover transition-opacity duration-300 {allProfilePhotos[currentPhotoIndex].status === 'pending' ? 'opacity-70 blur-[1px]' : ''}" 
                   on:error={() => { failedImages.add(selectedMember.id); failedImages = failedImages; }} 
                 />
-                <div 
-                  class="absolute inset-0 bg-black/20 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity duration-300 pointer-events-none"
-                >
+                
+                {#if allProfilePhotos[currentPhotoIndex].status === 'pending'}
+                  <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex flex-col items-center justify-center pointer-events-none z-20">
+                    <div class="bg-amber-500/95 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5 border border-amber-400">
+                      <Clock class="h-3 w-3 animate-pulse" />
+                      <span>Verifikasi Admin</span>
+                    </div>
+                  </div>
+                {/if}
+
+                {#if allProfilePhotos.length > 1}
+                  <button type="button" on:click={prevPhoto} class="absolute left-1 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 opacity-100 transition-opacity z-[100] shadow-md">
+                    <ChevronLeft class="h-4 w-4" />
+                  </button>
+                  <button type="button" on:click={nextPhoto} class="absolute right-1 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 opacity-100 transition-opacity z-[100] shadow-md">
+                    <ChevronRight class="h-4 w-4" />
+                  </button>
+                  
+                  <!-- Indicators -->
+                  <div class="absolute top-1 right-1 flex space-x-0.5 bg-black/20 rounded-full px-1 py-0.5 z-10">
+                    {#each allProfilePhotos as _, i}
+                      <div class="h-1 w-1 rounded-full {i === currentPhotoIndex ? 'bg-white' : 'bg-white/40'}"></div>
+                    {/each}
+                  </div>
+                {/if}
+
+                <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity duration-300 pointer-events-none z-10">
                   <Search class="h-5 w-5 text-white drop-shadow" />
                 </div>
               {:else}
@@ -632,13 +816,13 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold relative z-10">
               <div class="space-y-2">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Kesan</span>
-                <p class="text-slate-700 font-normal leading-relaxed bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
+                <p class="text-slate-700 font-normal leading-relaxed text-justify bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
                   {selectedMember.kesan || '-'}
                 </p>
               </div>
               <div class="space-y-2">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Pesan</span>
-                <p class="text-slate-700 font-normal leading-relaxed bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
+                <p class="text-slate-700 font-normal leading-relaxed text-justify bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
                   {selectedMember.pesan || '-'}
                 </p>
               </div>
@@ -857,7 +1041,7 @@
   </div>
 {/if}
 
-{#if isImageLarge && selectedMember && selectedMember.foto_url}
+{#if isImageLarge && selectedMember && allProfilePhotos.length > 0}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
   <div 
@@ -865,18 +1049,47 @@
     on:click={() => isImageLarge = false}
   >
     <div class="relative max-w-3xl w-full flex flex-col items-center justify-center">
-      <div class="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl bg-slate-900/40">
+      {#if allProfilePhotos.length > 1}
+        <!-- Navigation Buttons -->
+        <button type="button" on:click={prevPhoto} class="absolute left-0 md:-left-12 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3 backdrop-blur-md transition-all z-10 cursor-pointer">
+          <ChevronLeft class="h-6 w-6" />
+        </button>
+        <button type="button" on:click={nextPhoto} class="absolute right-0 md:-right-12 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3 backdrop-blur-md transition-all z-10 cursor-pointer">
+          <ChevronRight class="h-6 w-6" />
+        </button>
+      {/if}
+
+      <div class="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl bg-slate-900/40" on:click={(e) => e.stopPropagation()}>
         <img referrerpolicy="no-referrer" 
-          src={convertDriveUrl(selectedMember.foto_url)} 
+          src={convertDriveUrl(allProfilePhotos[currentPhotoIndex].url)} 
           alt={selectedMember.nama_lengkap} 
-          class="max-h-[75vh] md:max-h-[80vh] w-auto max-w-full object-contain select-none animate-in zoom-in-95 duration-300"
+          class="max-h-[75vh] md:max-h-[80vh] w-auto max-w-full object-contain select-none animate-in zoom-in-95 duration-300 {allProfilePhotos[currentPhotoIndex].status === 'pending' ? 'opacity-50 blur-sm grayscale-[50%]' : ''}"
         />
         
+        {#if allProfilePhotos[currentPhotoIndex].status === 'pending'}
+          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
+            <div class="bg-amber-500/95 backdrop-blur-md text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 border border-amber-400">
+              <Clock class="h-5 w-5 animate-pulse" />
+              <span>Menunggu Verifikasi Admin</span>
+            </div>
+            <p class="text-white/80 font-medium text-xs mt-3 bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm">Foto ini belum dapat dilihat oleh publik</p>
+          </div>
+        {/if}
+
         <!-- Info caption at the bottom of the photo -->
         <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent p-4 pt-12 text-white">
           <p class="font-black text-lg text-center leading-tight tracking-tight drop-shadow-md">{selectedMember.nama_lengkap}</p>
           {#if selectedMember.nama_panggilan}
             <p class="text-xs font-semibold text-slate-300 text-center mt-1 drop-shadow-md">{selectedMember.nama_panggilan}</p>
+          {/if}
+          
+          {#if allProfilePhotos.length > 1}
+            <!-- Dots Indicator in Lightbox -->
+            <div class="flex items-center justify-center gap-2 mt-4">
+              {#each allProfilePhotos as _, i}
+                <div class="w-2 h-2 rounded-full transition-all duration-300 {i === currentPhotoIndex ? 'bg-white scale-125' : 'bg-white/30'}"></div>
+              {/each}
+            </div>
           {/if}
         </div>
       </div>
@@ -920,6 +1133,18 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+{/if}
+
+<!-- CUSTOM TOAST NOTIFICATION -->
+{#if showCopyToast}
+  <div class="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] animate-in slide-in-from-top-4 fade-in duration-300">
+    <div class="bg-slate-800 text-white px-5 py-3 rounded-2xl shadow-xl shadow-slate-900/10 flex items-center gap-3 border border-slate-700/50">
+      <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+        <CheckCircle2 class="w-5 h-5" />
+      </div>
+      <p class="text-sm font-bold tracking-wide">Tautan profil disalin!</p>
     </div>
   </div>
 {/if}

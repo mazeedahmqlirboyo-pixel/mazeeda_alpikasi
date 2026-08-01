@@ -141,11 +141,11 @@ export const uploadCustomProfilePhoto = async (file: File, userName: string) => 
     .getPublicUrl(filePath);
     
   // Insert to custom_profile_photos table
-  const { error: dbError } = await supabase.from('custom_profile_photos').insert([{
+  const { data: dbData, error: dbError } = await supabase.from('custom_profile_photos').insert([{
     user_name: userName,
     photo_url: urlData.publicUrl,
     status: 'pending'
-  }]);
+  }]).select().single();
 
   if (dbError) throw dbError;
 
@@ -162,6 +162,6 @@ export const uploadCustomProfilePhoto = async (file: File, userName: string) => 
     console.error('Failed to send admin notification:', notifErr);
   }
 
-  return urlData.publicUrl;
+  return { url: urlData.publicUrl, id: dbData.id };
 };
 

@@ -102,7 +102,7 @@
       // 2. Fetch allowed_alumni to map photos
       const { data: alumniData } = await supabase
         .from('allowed_alumni')
-        .select('nama_lengkap, foto_url');
+        .select('id, nama_lengkap, foto_url');
         
       if (alumniData) {
         const tempMap: Record<string, any> = {};
@@ -123,9 +123,15 @@
     fetchData();
   });
 
-  // Open profile details in sidebar drawer using the global auth/activeProfileStore
+  // Open profile details in Squad page
   function viewProfile(name: string) {
-    activeProfileStore.set({ type: 'member', nameOrNis: name });
+    const key = name.trim().toLowerCase();
+    const alumni = alumniDataMap[key];
+    if (alumni && alumni.id) {
+      window.location.href = `/squad?id=${alumni.id}`;
+    } else {
+      alert('Profil detail tidak ditemukan di database alumni.');
+    }
   }
 
   // Convert Google Drive share link to direct image link

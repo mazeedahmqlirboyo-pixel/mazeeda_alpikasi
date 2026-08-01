@@ -1,19 +1,13 @@
 <script lang="ts">
   import { ChevronLeft, Quote } from "lucide-svelte";
+  import PageHeader from "$lib/components/ui/PageHeader.svelte";
   
   export let data: any;
   $: sambutan = data.sambutan;
 </script>
 
 <div class="min-h-screen bg-slate-50 pb-24">
-  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200">
-    <div class="px-4 h-16 flex items-center max-w-2xl mx-auto">
-      <a href="/khasanah" class="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors">
-        <ChevronLeft class="h-6 w-6 text-slate-700" />
-      </a>
-      <h1 class="font-bold text-lg text-slate-900 tracking-tight ml-2">Dawuh & Sambutan</h1>
-    </div>
-  </header>
+  <PageHeader noMargin={true} title="Dawuh & Sambutan" backTo="/khasanah" />
 
   <main class="max-w-2xl mx-auto px-4 py-8 space-y-12">
     {#each sambutan as item}

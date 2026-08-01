@@ -167,8 +167,9 @@ function createPrayerStore() {
         await getPrayerStoreInstance().fetchPrayerTimes();
       } catch (error: any) {
         console.error("Geolocation error:", error);
-        update(s => ({ ...s, isLoadingPrayers: false }));
-        // Could handle error alerts here or in component
+        // Fallback to default city if geolocation fails
+        update(s => ({ ...s, selectedCity: "Jakarta", cityTimezone: "WIB", timezoneOffset: 7 }));
+        await getPrayerStoreInstance().fetchPrayerTimes();
       }
     },
 
@@ -255,8 +256,29 @@ function createPrayerStore() {
         }
       } catch (e) {
         console.warn("API error, using offline prayer times fallback");
-        // Fallback implementation would go here, simplified for store
-        update(s => ({ ...s, isLoadingPrayers: false }));
+        // Fallback implementation to prevent UI from being stuck
+        const today = new Date();
+        const fallbackDate = today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const newState = {
+          prayerTimes: {
+            Subuh: "04:30",
+            Terbit: "05:45",
+            Dzuhur: "12:00",
+            Ashar: "15:15",
+            Maghrib: "18:00",
+            Isya: "19:15",
+            Isha: "19:15",
+          },
+          hijriDate: "1 Muharram (Offline)",
+          gregorianDate: fallbackDate,
+          isLoadingPrayers: false,
+          lastFetchedDate: today.toLocaleDateString('id-ID')
+        };
+        update(s => {
+          const updated = { ...s, ...newState };
+          saveToCache(updated);
+          return updated;
+        });
       }
     },
     

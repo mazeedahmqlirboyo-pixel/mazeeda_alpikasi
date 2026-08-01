@@ -6,46 +6,42 @@
     {
       title: "Filosofi Logo",
       desc: "Menyingkap makna mendalam di balik lambang kebesaran pesantren.",
-      icon: PenTool,
+      iconSrc: "/filosofi_ikon.jpg",
       href: "/khasanah/filosofi",
-      bgDeco: "bg-teal-50",
-      iconColor: "text-teal-600"
+      bgDeco: "bg-teal-50"
     },
     {
       title: "Mozaik Murobbi",
       desc: "Menelusuri biografi, perjuangan, dan keteladanan para pendiri & pengasuh.",
-      icon: Users,
+      iconSrc: "/mozaik_ikon.png",
       href: "/khasanah/mozaik",
-      bgDeco: "bg-amber-50",
-      iconColor: "text-amber-600"
+      bgDeco: "bg-amber-50"
     },
     {
       title: "Dawuh & Sambutan",
       desc: "Kumpulan pesan, nasihat, dan sambutan inspiratif dari para masyayikh.",
-      icon: BookOpen,
+      iconSrc: "/dawuh_ikon.png",
       href: "/khasanah/sambutan",
-      bgDeco: "bg-indigo-50",
-      iconColor: "text-indigo-600"
+      bgDeco: "bg-indigo-50"
     },
     {
       title: "Profil Unit",
       desc: "Mengenal lebih dekat berbagai lembaga dan unit pendidikan di bawah naungan pesantren.",
-      icon: Building2,
+      iconSrc: "/profilunit_ikon.png",
       href: "/khasanah/unit",
-      bgDeco: "bg-rose-50",
-      iconColor: "text-rose-600"
+      bgDeco: "bg-rose-50"
     }
   ];
 </script>
 
 <div class="min-h-screen bg-slate-50/50 pb-24 font-sans selection:bg-indigo-100">
   
-  <PageHeader title="Khasanah Lirboyo" backTo="/" />
+  <PageHeader noMargin={true} title="Khasanah Lirboyo" backTo="/" />
 
   <main class="max-w-2xl mx-auto px-4 py-8 space-y-10">
     <div class="text-center space-y-3 mb-8 px-4">
-      <div class="inline-flex items-center justify-center p-3 bg-indigo-50 rounded-2xl mb-2 ring-4 ring-white shadow-sm">
-        <BookOpen class="w-6 h-6 text-indigo-600" />
+      <div class="inline-flex items-center justify-center mb-4">
+        <img src="/Joining%20puzzle%20pieces.svg" alt="Jejak Sejarah" class="w-32 h-32 sm:w-40 sm:h-40 object-contain drop-shadow-sm" />
       </div>
       <h2 class="text-3xl font-black text-slate-800 tracking-tight">Jejak & Sejarah</h2>
       <p class="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed">Penyelaman mendalam ke dalam khasanah keilmuan, sejarah, dan keteladanan Pondok Pesantren Lirboyo.</p>
@@ -58,12 +54,12 @@
             
             <!-- Oversized background icon decoration -->
             <div class="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity duration-300 pointer-events-none transform group-hover:scale-110 group-hover:-rotate-6 transition-transform">
-              <svelte:component this={menu.icon} class="w-40 h-40" />
+              <img src={menu.iconSrc} alt={menu.title} class="w-40 h-40 object-contain grayscale" />
             </div>
 
             <!-- Icon Box -->
             <div class={`relative shrink-0 w-16 h-16 ${menu.bgDeco} rounded-[1.25rem] flex items-center justify-center mr-5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner border border-white`}>
-              <svelte:component this={menu.icon} class={`w-7 h-7 ${menu.iconColor}`} />
+              <img src={menu.iconSrc} alt={menu.title} class="w-9 h-9 object-contain drop-shadow-sm" />
             </div>
             
             <!-- Text Content -->

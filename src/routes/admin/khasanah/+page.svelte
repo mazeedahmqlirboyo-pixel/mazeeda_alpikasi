@@ -11,6 +11,7 @@
 
   let activeTab = 'mozaik';
   const tabs = [
+    { label: 'Filosofi Logo', value: 'filosofi' },
     { label: 'Mozaik Murobbi', value: 'mozaik' },
     { label: 'Sambutan', value: 'sambutan' },
     { label: 'Profil Unit', value: 'units' }
@@ -116,6 +117,8 @@
 
       if (activeTab === 'mozaik') {
         payload = { slug: formSlug, name: formName, title: formTitle, image_url: formImageUrl, short_desc: formShortDesc, content: formContent };
+      } else if (activeTab === 'filosofi') {
+        payload = { slug: formSlug, title: formName, description: formShortDesc, image_url: formImageUrl, content: formContent };
       } else if (activeTab === 'sambutan') {
         payload = { author: formName, title: formTitle, image_url: formImageUrl, signature_url: formSignatureUrl, quote: formShortDesc, content: formContent };
       } else if (activeTab === 'units') {
@@ -209,11 +212,11 @@
                       <img src={item.image_url} alt="" class="w-12 h-12 rounded object-cover border border-slate-200" />
                     </td>
                     <td class="px-4 py-3">
-                      <p class="font-bold text-slate-800">{item.name || item.author}</p>
-                      <p class="text-xs text-slate-500">{item.title || item.type}</p>
+                      <p class="font-bold text-slate-800">{item.name || item.author || item.title}</p>
+                      <p class="text-xs text-slate-500">{item.title !== (item.name || item.author || item.title) ? item.title : '' || item.type}</p>
                     </td>
                     <td class="px-4 py-3 text-slate-600">
-                      <span class="line-clamp-2">{item.short_desc || item.quote}</span>
+                      <span class="line-clamp-2">{item.short_desc || item.quote || item.description}</span>
                     </td>
                     <td class="px-4 py-3 text-right">
                       <div class="flex justify-end space-x-2">
@@ -251,14 +254,16 @@
             {/if}
 
             <div class="space-y-1">
-              <label class="text-xs font-semibold text-slate-600">Nama {activeTab === 'sambutan' ? 'Pemateri' : 'Lengkap'}</label>
+              <label class="text-xs font-semibold text-slate-600">{activeTab === 'filosofi' ? 'Nama Logo' : activeTab === 'sambutan' ? 'Pemateri' : 'Nama Lengkap'}</label>
               <Input bind:value={formName} required />
             </div>
 
+            {#if activeTab !== 'filosofi'}
             <div class="space-y-1">
               <label class="text-xs font-semibold text-slate-600">{activeTab === 'units' ? 'Tipe Unit' : 'Gelar / Judul'}</label>
               <Input bind:value={formTitle} required />
             </div>
+            {/if}
 
             <div class="space-y-1">
               <label class="text-xs font-semibold text-slate-600">

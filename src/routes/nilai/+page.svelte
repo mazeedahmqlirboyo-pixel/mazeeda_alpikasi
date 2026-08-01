@@ -385,12 +385,15 @@
     {@const accent = getAccent(selectedStudent.nama_lengkap)}
     <div class="space-y-2">
       <!-- Back header -->
-      <button
-        on:click={backToSearch}
-        class="flex items-center justify-center w-10 h-10 rounded-full text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-      >
-        <ArrowLeft class="h-5 w-5" />
-      </button>
+      <div class="relative flex items-center justify-center w-full mb-2 min-h-[40px]">
+        <button
+          on:click={backToSearch}
+          class="absolute left-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors z-10"
+        >
+          <ArrowLeft class="h-5 w-5" />
+        </button>
+        <span class="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-400 font-bold uppercase tracking-wider block whitespace-nowrap">AKADEMIK SISWI</span>
+      </div>
 
       <!-- Student profile header -->
       <div class="bg-white border border-slate-200 rounded-2xl shadow-soft-sm p-5 text-left focus:outline-none">
@@ -491,7 +494,7 @@
             >
               <div class="flex items-center gap-3">
                 <div class="p-2.5 bg-blue-50 rounded-xl border border-blue-100">
-                  <BookOpen class="h-5 w-5 text-blue-600" />
+                  <img src="/tamrin_ikon.png" alt="Tamrin" class="h-6 w-6 object-contain" />
                 </div>
                 <h3 class="text-base font-black text-slate-800 tracking-tight">Nilai Tamrin</h3>
               </div>
@@ -536,7 +539,7 @@
             >
               <div class="flex items-center gap-3">
                 <div class="p-2.5 bg-indigo-50 rounded-xl border border-indigo-100">
-                  <GraduationCap class="h-5 w-5 text-indigo-600" />
+                  <img src="/ujian_ikon.png" alt="Ujian" class="h-6 w-6 object-contain" />
                 </div>
                 <h3 class="text-base font-black text-slate-800 tracking-tight">Nilai Ujian Semester</h3>
               </div>
@@ -581,7 +584,7 @@
             >
               <div class="flex items-center gap-3">
                 <div class="p-2.5 bg-blue-50 rounded-xl border border-blue-100">
-                  <BookOpen class="h-5 w-5 text-blue-600" />
+                  <img src="/muhafadzoh_ikon.png" alt="Muhafadzoh" class="h-6 w-6 object-contain" />
                 </div>
                 <h3 class="text-base font-black text-slate-800 tracking-tight">Riwayat Muhafadzoh</h3>
               </div>
@@ -684,6 +687,7 @@
                 <div class="h-10 w-10 rounded-xl bg-gradient-to-br {accent.gradient} flex items-center justify-center text-white font-black text-xs shrink-0 shadow-sm overflow-hidden">
                   {#if student.foto_url && !failedImages.has(student.id)}
                     <img
+                      referrerpolicy="no-referrer"
                       src={convertDriveUrl(student.foto_url)}
                       alt={student.nama_lengkap}
                       class="w-full h-full object-cover"

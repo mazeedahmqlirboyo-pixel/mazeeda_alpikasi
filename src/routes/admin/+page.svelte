@@ -57,7 +57,8 @@
     { label: '🖼️ Momen Spesial', value: 'gallery_landscape' },
     { label: '🖼️ Wajah MAZEEDA', value: 'gallery_marquee' },
     { label: '📬 Kotak Saran', value: 'feedbacks' },
-    { label: '💬 Manajemen Komentar', value: 'comments' }
+    { label: '💬 Manajemen Komentar', value: 'comments' },
+    { label: '🚨 Laporan Pengguna', value: 'user_reports' }
   ];
 
   // Custom confirmation modal states
@@ -869,6 +870,15 @@
   // --- PERSETUJUAN FOTO PROFIL ---
   let pendingPhotos: any[] = [];
   let isLoadingPendingPhotos = false;
+  let customPhotoSearchQuery = "";
+  let customPhotoStatusFilter: 'all' | 'pending' | 'approved' = 'all';
+  let customPhotoFilterOpen = false;
+
+  $: filteredCustomPhotos = pendingPhotos.filter(photo => {
+    const matchSearch = photo.user_name.toLowerCase().includes(customPhotoSearchQuery.toLowerCase());
+    const matchStatus = customPhotoStatusFilter === 'all' || photo.status === customPhotoStatusFilter;
+    return matchSearch && matchStatus;
+  });
 
   async function fetchPendingPhotos() {
     isLoadingPendingPhotos = true;
@@ -876,7 +886,7 @@
       const { data, error } = await supabase
         .from('custom_profile_photos')
         .select('*')
-        .eq('status', 'pending')
+        .in('status', ['pending', 'approved'])
         .order('created_at', { ascending: false });
         
       if (error) throw error;
@@ -932,6 +942,30 @@
           await fetchPendingPhotos();
         } catch (err: any) {
           triggerAlert('Gagal menolak foto: ' + err.message, 'error');
+        } finally {
+          isSubmitting = false;
+        }
+      }
+    );
+  }
+
+  async function deleteCustomProfilePhoto(photo: any) {
+    runWithConfirmation(
+      'Hapus Foto',
+      `Yakin ingin menghapus foto dari ${photo.user_name}? Foto ini akan hilang dari profilnya.`,
+      async () => {
+        isSubmitting = true;
+        try {
+          const { error } = await supabase
+            .from('custom_profile_photos')
+            .update({ status: 'rejected' })
+            .eq('id', photo.id);
+            
+          if (error) throw error;
+          triggerAlert('Foto berhasil dihapus.', 'success');
+          await fetchPendingPhotos();
+        } catch (err: any) {
+          triggerAlert('Gagal menghapus foto: ' + err.message, 'error');
         } finally {
           isSubmitting = false;
         }
@@ -2067,6 +2101,7 @@
   
   // Custom dropdown states
   let showKepDropdown = false;
+  let showAdminKepYearFilterDropdown = false;
   let kepSearchQuery = '';
 
   let showDivisiDropdown = false;
@@ -2091,6 +2126,8 @@
   let kep_csvImportStatus = '';
   let kep_csvImportError = '';
 
+  let alumniPhotoMap: Record<string, any> = {};
+
   async function fetchKepengurusan() {
     try {
       isLoadingKepengurusan = true;
@@ -2100,6 +2137,17 @@
         .order('tahun_ajaran', { ascending: false });
       if (!error && data) {
         kepengurusanList = data;
+      }
+      
+      const { data: alumniData } = await supabase
+        .from('allowed_alumni')
+        .select('nama_lengkap, foto_url');
+      if (alumniData) {
+        const tempMap: Record<string, any> = {};
+        alumniData.forEach(item => {
+          tempMap[item.nama_lengkap.trim().toLowerCase()] = item;
+        });
+        alumniPhotoMap = tempMap;
       }
     } catch (err) {
       console.error('Failed to fetch kepengurusan:', err);
@@ -5201,44 +5249,66 @@
           </Button>
         </div>
 
-        <!-- Search Bar with Integrated Year Filter -->
-        <div class="relative w-full">
-          <div class="relative flex items-center w-full bg-slate-50 border border-slate-200 rounded-xl transition-all duration-300 h-10 overflow-hidden focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20">
-            <!-- Search Icon -->
-            <Search class="h-4 w-4 text-slate-400 ml-3.5 shrink-0 pointer-events-none" />
-            
-            <!-- Search Input -->
+        <!-- Search and Filter Bar -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full">
+          <!-- Search Input -->
+          <div class="relative flex-1 bg-white border border-slate-200 rounded-xl transition-all duration-300 h-10 overflow-hidden focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 shadow-sm">
+            <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             <input 
               type="text" 
               placeholder="Cari pengurus berdasarkan nama, jabatan, divisi..." 
-              class="flex-1 h-full bg-transparent pl-2.5 pr-2 text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none"
+              class="w-full h-full bg-transparent pl-10 pr-4 text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none"
               bind:value={kepengurusanSearchQuery}
             />
+          </div>
 
-            <!-- Divider -->
-            <div class="w-px h-5 bg-slate-200 shrink-0"></div>
-
-            <!-- Dropdown Filter inside search bar -->
-            <div class="relative shrink-0 flex items-center pr-2 h-full hover:bg-slate-100/50 transition-colors">
-              <Calendar class="absolute left-3 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-              <select
-                bind:value={kepengurusanYearFilter}
-                class="pl-8 pr-7 py-2 bg-transparent text-[11px] font-black text-slate-600 hover:text-slate-800 transition-colors appearance-none cursor-pointer focus:outline-none h-full"
-              >
-                <option value="all">Semua TA</option>
-                <option value="2026-2027">2026-2027</option>
-                <option value="2027-2028">2027-2028</option>
-                <option value="2028-2029">2028-2029</option>
-                <option value="2029-2030">2029-2030</option>
-                <option value="2030-2031">2030-2031</option>
-                <option value="2031-2032">2031-2032</option>
-              </select>
-              <div class="absolute right-3 pointer-events-none">
-                <svg class="h-2.5 w-2.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+          <!-- Custom Year Filter Dropdown -->
+          <div class="relative shrink-0 h-10 min-w-[140px]">
+            <button
+              type="button"
+              on:click={() => showAdminKepYearFilterDropdown = !showAdminKepYearFilterDropdown}
+              class="w-full h-full pl-9 pr-8 flex items-center bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-bold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-100/50 transition-all cursor-pointer focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+            >
+              <Calendar class="absolute left-3 h-4 w-4 text-indigo-500 pointer-events-none" />
+              <span class="truncate">{kepengurusanYearFilter === 'all' ? 'Semua TA' : kepengurusanYearFilter}</span>
+              <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                <svg class="h-4 w-4 text-indigo-500 transition-transform duration-200 {showAdminKepYearFilterDropdown ? 'rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
-            </div>
+            </button>
+
+            {#if showAdminKepYearFilterDropdown}
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <!-- svelte-ignore a11y-no-static-element-interactions -->
+              <div class="fixed inset-0 z-40" on:click={() => showAdminKepYearFilterDropdown = false}></div>
+              
+              <div class="absolute z-50 mt-1 right-0 w-40 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 py-1">
+                {#each [
+                  { value: 'all', label: 'Semua TA' },
+                  { value: '2026-2027', label: '2026-2027' },
+                  { value: '2027-2028', label: '2027-2028' },
+                  { value: '2028-2029', label: '2028-2029' },
+                  { value: '2029-2030', label: '2029-2030' },
+                  { value: '2030-2031', label: '2030-2031' },
+                  { value: '2031-2032', label: '2031-2032' }
+                ] as option}
+                  <button
+                    type="button"
+                    class="w-full text-left px-4 py-2.5 text-xs font-bold transition-colors hover:bg-slate-50 flex items-center justify-between {kepengurusanYearFilter === option.value ? 'bg-indigo-50/50 text-indigo-700' : 'text-slate-600'}"
+                    on:click={() => {
+                      kepengurusanYearFilter = option.value;
+                      showAdminKepYearFilterDropdown = false;
+                    }}
+                  >
+                    {option.label}
+                    {#if kepengurusanYearFilter === option.value}
+                      <CheckCircle2 class="h-3.5 w-3.5 text-indigo-600" />
+                    {/if}
+                  </button>
+                {/each}
+              </div>
+            {/if}
           </div>
         </div>
 
@@ -5267,7 +5337,7 @@
 
             {#if filteredKep.length > 0}
               {#each filteredKep as item}
-                {@const alumni = squadMap[item.nama_lengkap.trim().toLowerCase()]}
+                {@const alumni = alumniPhotoMap[item.nama_lengkap.trim().toLowerCase()]}
                 {@const profilePhoto = item.foto_custom_url || (alumni && alumni.foto_url)}
                 <Card noPadding class="border-slate-100 hover:shadow-soft-sm hover:border-indigo-100/80 transition-all duration-300">
                   <div class="p-3.5 flex items-center justify-between gap-4">
@@ -5339,19 +5409,62 @@
         </button>
       </div>
 
+      <Card class="p-3 overflow-visible">
+        <div class="relative w-full">
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+          <input 
+            type="text" 
+            placeholder="Cari nama pengunggah..." 
+            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-12 text-xs font-medium focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors"
+            bind:value={customPhotoSearchQuery}
+          />
+          <div class="absolute right-1.5 top-1/2 -translate-y-1/2">
+            <button 
+              type="button" 
+              class="flex items-center justify-center h-7 w-7 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-indigo-600 focus:outline-none text-slate-500 transition-colors relative shadow-sm" 
+              on:click={() => customPhotoFilterOpen = !customPhotoFilterOpen}
+              title="Filter Status"
+            >
+              <Filter class="h-3.5 w-3.5" />
+              {#if customPhotoStatusFilter !== 'all'}
+                <span class="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-indigo-500 ring-2 ring-white"></span>
+              {/if}
+            </button>
+            
+            {#if customPhotoFilterOpen}
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <!-- svelte-ignore a11y-no-static-element-interactions -->
+              <div class="fixed inset-0 z-40" on:click={() => customPhotoFilterOpen = false}></div>
+              <div class="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-lg z-50 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100">
+                <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 {customPhotoStatusFilter === 'all' ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600'} transition-colors" on:click={() => { customPhotoStatusFilter = 'all'; customPhotoFilterOpen = false; }}>
+                  Semua Foto
+                </button>
+                <div class="h-px bg-slate-100 w-full my-1"></div>
+                <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 {customPhotoStatusFilter === 'pending' ? 'text-amber-600 bg-amber-50/50' : 'text-slate-600'} transition-colors" on:click={() => { customPhotoStatusFilter = 'pending'; customPhotoFilterOpen = false; }}>
+                  Menunggu
+                </button>
+                <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 {customPhotoStatusFilter === 'approved' ? 'text-emerald-600 bg-emerald-50/50' : 'text-slate-600'} transition-colors" on:click={() => { customPhotoStatusFilter = 'approved'; customPhotoFilterOpen = false; }}>
+                  Disetujui
+                </button>
+              </div>
+            {/if}
+          </div>
+        </div>
+      </Card>
+
       {#if isLoadingPendingPhotos}
         <div class="py-16 text-center text-xs font-semibold text-slate-400">Memuat data foto...</div>
-      {:else if pendingPhotos.length === 0}
+      {:else if filteredCustomPhotos.length === 0}
         <div class="py-16 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 flex flex-col items-center">
           <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-3">
-            <CheckCircle2 class="h-8 w-8 text-emerald-400" />
+            <CheckCircle2 class="h-8 w-8 text-slate-400" />
           </div>
-          <h3 class="text-slate-700 font-bold">Semua Bersih!</h3>
-          <p class="text-slate-500 text-xs mt-1">Tidak ada foto baru yang menunggu persetujuan.</p>
+          <h3 class="text-slate-700 font-bold">Tidak ada foto</h3>
+          <p class="text-slate-500 text-xs mt-1">Coba sesuaikan filter atau kata kunci pencarian.</p>
         </div>
       {:else}
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-          {#each pendingPhotos as photo (photo.id)}
+          {#each filteredCustomPhotos as photo (photo.id)}
             <Card class="overflow-hidden flex flex-col bg-white border-slate-100 hover:shadow-soft-md transition-all">
               <div class="relative w-full aspect-square bg-slate-100 group">
                 <img referrerpolicy="no-referrer" src={convertDriveUrl(photo.photo_url)} alt={photo.user_name} class="w-full h-full object-cover" />
@@ -5361,18 +5474,29 @@
                   </a>
                 </div>
               </div>
-              <div class="p-4 flex flex-col gap-3 flex-1">
+              <div class="p-4 flex flex-col gap-3 flex-1 relative">
+                {#if photo.status === 'approved'}
+                  <div class="absolute top-0 right-0 -mt-2 -mr-2 bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">
+                    Disetujui
+                  </div>
+                {/if}
                 <div>
                   <h3 class="font-bold text-sm text-slate-800 line-clamp-1">{photo.user_name}</h3>
                   <p class="text-[10px] text-slate-400 font-medium mt-0.5">Diupload {new Date(photo.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})}</p>
                 </div>
                 <div class="flex items-center gap-2 mt-auto pt-2 border-t border-slate-50">
-                  <button on:click={() => rejectPhoto(photo)} class="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-lg transition-colors border border-rose-100 flex justify-center items-center gap-1.5" disabled={isSubmitting}>
-                    <X class="h-3.5 w-3.5" /> Tolak
-                  </button>
-                  <button on:click={() => approvePhoto(photo)} class="flex-1 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold text-xs rounded-lg transition-colors border border-emerald-100 flex justify-center items-center gap-1.5" disabled={isSubmitting}>
-                    <CheckCircle2 class="h-3.5 w-3.5" /> Setujui
-                  </button>
+                  {#if photo.status === 'pending'}
+                    <button on:click={() => rejectPhoto(photo)} class="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-lg transition-colors border border-rose-100 flex justify-center items-center gap-1.5" disabled={isSubmitting}>
+                      <X class="h-3.5 w-3.5" /> Tolak
+                    </button>
+                    <button on:click={() => approvePhoto(photo)} class="flex-1 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold text-xs rounded-lg transition-colors border border-emerald-100 flex justify-center items-center gap-1.5" disabled={isSubmitting}>
+                      <CheckCircle2 class="h-3.5 w-3.5" /> Setujui
+                    </button>
+                  {:else}
+                    <button on:click={() => deleteCustomProfilePhoto(photo)} class="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-lg transition-colors border border-rose-100 flex justify-center items-center gap-1.5" disabled={isSubmitting}>
+                      <Trash2 class="h-3.5 w-3.5" /> Hapus
+                    </button>
+                  {/if}
                 </div>
               </div>
             </Card>

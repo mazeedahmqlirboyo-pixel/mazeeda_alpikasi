@@ -98,8 +98,8 @@
               on:click={() => startGame('ula')}
               class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white border-2 border-emerald-100 hover:border-emerald-400 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
             >
-              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
-                <Medal class="w-6 h-6 sm:w-8 sm:h-8" />
+              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-emerald-200 rounded-full p-3 sm:p-4 flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
+                <img src="/images/grade ula.png?v=2" alt="Grade Ula" class="w-full h-full object-contain drop-shadow-sm opacity-90" />
               </div>
               <div>
                 <h3 class="font-black text-base sm:text-lg text-slate-800">Grade Ula</h3>
@@ -112,8 +112,8 @@
               on:click={() => startGame('wustha')}
               class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white border-2 border-amber-100 hover:border-amber-400 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
             >
-              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
-                <Award class="w-6 h-6 sm:w-8 sm:h-8" />
+              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-amber-200 rounded-full p-3 sm:p-4 flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
+                <img src="/images/grade wustha.png?v=2" alt="Grade Wustha" class="w-full h-full object-contain drop-shadow-sm opacity-90" />
               </div>
               <div>
                 <h3 class="font-black text-base sm:text-lg text-slate-800">Grade Wustha</h3>
@@ -126,8 +126,8 @@
               on:click={() => startGame('ulya')}
               class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white border-2 border-rose-100 hover:border-rose-400 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
             >
-              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
-                <Trophy class="w-6 h-6 sm:w-8 sm:h-8" />
+              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-rose-200 rounded-full p-3 sm:p-4 flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
+                <img src="/images/grade ulya.png?v=2" alt="Grade Ulya" class="w-full h-full object-contain drop-shadow-sm opacity-90" />
               </div>
               <div>
                 <h3 class="font-black text-base sm:text-lg text-slate-800">Grade Ulya</h3>
@@ -140,8 +140,8 @@
               on:click={() => startGame('hmq')}
               class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white border-2 border-indigo-100 hover:border-indigo-400 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
             >
-              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
-                <Crown class="w-6 h-6 sm:w-8 sm:h-8" />
+              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-indigo-200 rounded-full p-3 sm:p-4 flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
+                <img src="/images/grade hmq.png?v=2" alt="Grade HMQ" class="w-full h-full object-contain drop-shadow-sm opacity-90" />
               </div>
               <div>
                 <h3 class="font-black text-base sm:text-lg text-slate-800">Grade HMQ</h3>

@@ -49,7 +49,10 @@
     CheckCircle2,
     XCircle,
     PartyPopper,
-    Play
+    Play,
+    MessageSquare,
+    ShieldCheck,
+    FileText
   } from "lucide-svelte";
 
   import { fade, fly, scale } from "svelte/transition";
@@ -2528,14 +2531,21 @@
       </div>
       
       <!-- Tentang Aplikasi Link -->
-      <div class="mt-5 mb-2 flex items-center justify-center flex-wrap gap-3 text-[11px] font-semibold text-slate-400">
-        <a href="/tentang" class="hover:text-indigo-600 transition-colors">Tentang Aplikasi</a>
-        <span class="w-1 h-1 rounded-full bg-slate-300"></span>
-        <a href="/kebijakan-privasi" class="hover:text-indigo-600 transition-colors">Kebijakan Privasi</a>
-        <span class="w-1 h-1 rounded-full bg-slate-300"></span>
-        <a href="/syarat-ketentuan" class="hover:text-indigo-600 transition-colors">Syarat & Ketentuan</a>
-        <span class="w-1 h-1 rounded-full bg-slate-300"></span>
-        <button type="button" on:click={() => showFeedbackModal = true} class="hover:text-indigo-600 transition-colors cursor-pointer text-left focus:outline-none">Kirim Masukan</button>
+      <div class="mt-6 mb-2 flex flex-col items-center justify-center gap-2 sm:gap-3">
+        <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          <a href="/tentang" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-blue-50 text-slate-500 hover:text-blue-600 text-[10px] sm:text-[11px] font-bold transition-colors">
+            <Info class="w-3.5 h-3.5" /> Tentang Aplikasi
+          </a>
+          <a href="/kebijakan-privasi" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 text-[10px] sm:text-[11px] font-bold transition-colors">
+            <ShieldCheck class="w-3.5 h-3.5" /> Kebijakan Privasi
+          </a>
+          <a href="/syarat-ketentuan" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-amber-50 text-slate-500 hover:text-amber-600 text-[10px] sm:text-[11px] font-bold transition-colors">
+            <FileText class="w-3.5 h-3.5" /> Syarat & Ketentuan
+          </a>
+        </div>
+        <button type="button" on:click={() => showFeedbackModal = true} class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-purple-50 text-slate-500 hover:text-purple-600 text-[10px] sm:text-[11px] font-bold transition-colors focus:outline-none">
+          <MessageSquare class="w-3.5 h-3.5" /> Kirim Masukan
+        </button>
       </div>
     </div>
   </footer>

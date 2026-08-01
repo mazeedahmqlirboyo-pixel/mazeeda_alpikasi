@@ -11,9 +11,8 @@
 
 <div class="min-h-screen bg-[#F8FAFC] pb-24 font-sans selection:bg-amber-100 selection:text-amber-900">
   
-  <PageHeader title="Profil Murobbi" backTo="/khasanah/mozaik" />
-  
-  <div class="max-w-4xl mx-auto bg-white lg:rounded-3xl lg:shadow-xl lg:overflow-hidden relative border-slate-100 lg:border mt-0 lg:mt-8 mb-8 lg:mx-6">
+  <PageHeader noMargin={true} title="Profil Murobbi" backTo="/khasanah/mozaik" />
+  <div class="max-w-4xl mx-auto bg-white lg:rounded-3xl lg:shadow-xl lg:overflow-hidden relative border-slate-100 lg:border mt-0 lg:mt-8 mb-8">
 
     <!-- Hero Section with Premium feel -->
     <!-- svelte-ignore a11y-click-events-have-key-events -->

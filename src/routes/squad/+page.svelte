@@ -23,6 +23,7 @@
   import { page } from '$app/stores';
   import { slide } from 'svelte/transition';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import { profileThemes } from '$lib/profileThemes';
 
   // State
   let searchQuery = '';
@@ -70,6 +71,36 @@
   let currentPhotoIndex = 0;
   let isUploadingPhoto = false;
   let fileInputRef: HTMLInputElement;
+
+  // Profile Theme State
+  let currentProfileTheme = profileThemes[0];
+  
+  async function fetchProfileTheme(name: string) {
+    if (!name) return;
+    try {
+      const { data, error } = await supabase
+        .from('profile_themes')
+        .select('theme_id')
+        .eq('user_name', name)
+        .maybeSingle();
+        
+      if (data && data.theme_id) {
+        const found = profileThemes.find(t => t.id === data.theme_id);
+        if (found) {
+           currentProfileTheme = found;
+           return;
+        }
+      }
+      currentProfileTheme = profileThemes[0];
+    } catch (e) {
+      console.error('Error fetching profile theme:', e);
+      currentProfileTheme = profileThemes[0];
+    }
+  }
+
+  $: if (selectedMember && selectedMember.nama_lengkap) {
+    fetchProfileTheme(selectedMember.nama_lengkap);
+  }
 
   // --- Nilai Akademik State ---
   let showNilaiModal = false;
@@ -354,9 +385,9 @@
           
           customPhotos = visiblePhotos;
           
-          // Preserve only the first photo (which is the default drive photo) if it exists
-          const basePhoto = allProfilePhotos.length > 0 && allProfilePhotos[0].type !== 'custom' 
-            ? [allProfilePhotos[0]] 
+          // Safely preserve the original drive photo, avoiding async race conditions
+          const basePhoto = member.foto_url && !failedImages.has(member.id) 
+            ? [{ url: member.foto_url, type: 'admin', status: 'approved' }] 
             : [];
             
           allProfilePhotos = [
@@ -780,15 +811,19 @@
     <Card noPadding class="overflow-hidden border-slate-200/80 shadow-soft-sm">
       <!-- Profile Header Banner -->
       {@const accent = getAccent(selectedMember.nama_lengkap)}
-      <div class="h-32 sm:h-40 w-full bg-gradient-to-r {accent.gradient} relative overflow-hidden">
+      <div class="h-32 sm:h-40 w-full relative overflow-hidden transition-all duration-500 {currentProfileTheme.class}" style={currentProfileTheme.style || ''}>
+        <!-- Pattern overlay for default gradient themes to keep texture -->
+        {#if !currentProfileTheme.style}
+          <div class="absolute inset-0 opacity-20 mix-blend-overlay" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+        {/if}
         <!-- Decorative subtle background shapes -->
         <div class="absolute inset-0 opacity-20 overflow-hidden">
           <div class="absolute -top-10 -left-10 w-44 h-44 rounded-full bg-white blur-xl"></div>
           <div class="absolute -bottom-20 -right-20 w-64 h-64 rounded-full bg-white blur-2xl"></div>
           <div class="absolute top-1/2 left-1/3 w-32 h-32 rounded-full bg-white blur-xl animate-pulse" style="animation-duration: 6s;"></div>
         </div>
-        <!-- Soft Gradient Fade to White -->
-        <div class="absolute bottom-[-1px] left-0 right-0 h-16 sm:h-24 bg-gradient-to-t from-white to-transparent z-0"></div>
+        <!-- Smooth Curved Gradient Fade to White (bottom) -->
+        <div class="absolute bottom-[-1px] left-0 right-0 h-24 sm:h-32 z-0 pointer-events-none" style="background: radial-gradient(ellipse 150% 100% at 50% 100%, white 0%, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.2) 60%, transparent 100%);"></div>
       </div>
 
       <!-- Content wrapper with negative margin to overlap avatar with banner -->
@@ -1129,13 +1164,13 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold relative z-10">
               <div class="space-y-2">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Kesan</span>
-                <p class="text-slate-700 font-normal leading-relaxed bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
+                <p class="text-slate-700 font-normal leading-relaxed text-justify bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
                   {selectedMember.kesan || '-'}
                 </p>
               </div>
               <div class="space-y-2">
                 <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Pesan</span>
-                <p class="text-slate-700 font-normal leading-relaxed bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
+                <p class="text-slate-700 font-normal leading-relaxed text-justify bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
                   {selectedMember.pesan || '-'}
                 </p>
               </div>
@@ -1147,15 +1182,20 @@
         <div class="space-y-4 pt-2">
           <a
             href="/nilai?nis={selectedMember.nis}"
-            class="w-full flex items-center justify-between px-5 py-4 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-2xl shadow-lg shadow-teal-500/20 hover:shadow-teal-500/40 hover:from-teal-600 hover:to-emerald-600 transition-all duration-300 font-bold"
+            class="group w-full flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:border-emerald-500/30 hover:shadow-md transition-all duration-300"
           >
-            <span class="flex items-center gap-2 text-sm">
-              <Award class="h-5 w-5" />
-              📊 Lihat Transkrip Nilai Akademik
-            </span>
-            <span class="text-xs font-bold opacity-80 flex items-center gap-1">
-              Buka <ExternalLink class="h-3 w-3" />
-            </span>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <img src="/exam_3403561.png" alt="Ikon Ujian" class="w-6 h-6 object-contain" />
+              </div>
+              <div class="flex flex-col">
+                <span class="text-sm font-bold text-slate-800">Rekam Jejak Nilai Akademik</span>
+                <span class="text-[11px] font-medium text-slate-500">Tamrin, Muhafadzoh, Ujian</span>
+              </div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+              <ChevronRight class="h-4 w-4" />
+            </div>
           </a>
         </div>
   

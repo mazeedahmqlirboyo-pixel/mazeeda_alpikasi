@@ -469,7 +469,7 @@
       
       <!-- Search inside Mobile Selector -->
       <div class="relative my-3">
-        <Search class="absolute left-3 top-3 h-4.5 w-4.5 text-slate-400" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
         <input 
           type="text" 
           placeholder="Cari nama surah atau nomor..." 
@@ -528,7 +528,7 @@
 
       <!-- Search input -->
       <div class="relative my-3">
-        <Search class="absolute left-3 top-3 h-4.5 w-4.5 text-slate-400" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
         <input 
           type="text" 
           placeholder="Cari Surah atau nomor..." 
@@ -584,9 +584,9 @@
                 <div class="min-w-0 leading-tight">
                   <div class="flex items-center space-x-1.5">
                     <h3 class="text-sm font-bold truncate">{surah.namaLatin}</h3>
-                    <span class="text-[8px] px-1 rounded-full font-extrabold uppercase tracking-wider
-                      {surah.tempatTurun === 'Mekah' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}">
-                      {surah.tempatTurun[0]}
+                    <span class="text-[9px] px-1.5 py-0.5 rounded-full font-extrabold uppercase tracking-wider
+                      {surah.tempatTurun === 'Mekah' ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-amber-50 text-amber-700 border border-amber-100'}">
+                      {surah.tempatTurun}
                     </span>
                   </div>
                   <p class="text-[10px] text-slate-400 font-semibold truncate">{surah.arti} • {surah.jumlahAyat} Ayat</p>
