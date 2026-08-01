@@ -91,11 +91,18 @@ export const resizeImage = (file: File, maxWidth = 1200, maxHeight = 1200): Prom
           ctx.drawImage(img, 0, 0, width, height);
           canvas.toBlob((blob) => {
             if (blob) {
-              const newFile = new File([blob], file.name, {
-                type: 'image/jpeg',
-                lastModified: Date.now(),
-              });
-              resolve(newFile);
+              try {
+                const newFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                resolve(newFile);
+              } catch (e) {
+                const b: any = blob;
+                b.name = file.name || 'image.jpg';
+                b.lastModified = Date.now();
+                resolve(b as File);
+              }
             } else {
               reject(new Error('Canvas to Blob failed'));
             }

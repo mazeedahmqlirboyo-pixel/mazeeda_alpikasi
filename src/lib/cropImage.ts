@@ -93,7 +93,14 @@ export default async function getCroppedImg(
   return new Promise((resolve, reject) => {
     croppedCanvas.toBlob((file) => {
       if (file) {
-        resolve(new File([file], 'cropped_image.jpg', { type: 'image/jpeg' }))
+        try {
+          resolve(new File([file], 'cropped_image.jpg', { type: 'image/jpeg' }))
+        } catch (e) {
+          const blob: any = file;
+          blob.name = 'cropped_image.jpg';
+          blob.lastModified = Date.now();
+          resolve(blob as File);
+        }
       } else {
         reject(new Error('Canvas is empty'))
       }

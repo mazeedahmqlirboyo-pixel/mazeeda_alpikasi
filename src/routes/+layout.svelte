@@ -431,7 +431,8 @@
       currentPhotoIndex = allProfilePhotos.length - 1;
       showNotification('Foto berhasil diunggah dan sedang menunggu persetujuan Admin (1x24 jam).', 'success');
     } catch (err: any) {
-      showNotification(`Gagal mengunggah foto: ${err.message}`, 'error');
+      const errMsg = err?.message || typeof err === 'string' ? err : JSON.stringify(err);
+      showNotification(`Gagal mengunggah foto: ${errMsg}`, 'error');
     } finally {
       isUploadingPhoto = false;
       currentFile = null;
