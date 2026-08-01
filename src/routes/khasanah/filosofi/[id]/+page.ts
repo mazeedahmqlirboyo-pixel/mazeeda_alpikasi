@@ -1,6 +1,8 @@
 import { supabase } from '$lib/supabase';
 import { error } from '@sveltejs/kit';
 
+export const prerender = false;
+
 export const load = async ({ params }) => {
   const { data: filosofi, error: err } = await supabase
     .from('khasanah_filosofi')
