@@ -20,6 +20,12 @@ export const profileThemes = [
   { id: 'cherry_blossom', name: 'Cherry River 🌸', class: 'bg-cover bg-center', style: 'background-image: url(/images/theme_cherry_blossom.jpg);' },
   { id: 'fairy_lights', name: 'Fairy Forest ✨', class: 'bg-cover bg-center', style: 'background-image: url(/images/theme_fairy_lights.jpg);' },
   
+  // Tema Feminin Baru
+  { id: 'soft_peonies', name: 'Soft Peonies 🌺', class: 'bg-cover bg-center', style: 'background-image: url(/images/theme_soft_peonies.jpg);' },
+  { id: 'vintage_roses2', name: 'Vintage Roses II 🌹', class: 'bg-cover bg-center', style: 'background-image: url(/images/theme_vintage_roses.jpg);' },
+  { id: 'lavender_field', name: 'Lavender Dream 🪻', class: 'bg-cover bg-center', style: 'background-image: url(/images/theme_lavender_field.jpg);' },
+  { id: 'sparkling_petals', name: 'Sparkling Petals ✨', class: 'bg-cover bg-center', style: 'background-image: url(/images/theme_sparkling_petals.jpg);' },
+  
   // Tema Khusus Admin
   { id: 'admin_exclusive', name: 'Royal Rose Gold 👑', class: 'bg-cover bg-center', style: 'background-image: url(/images/theme_admin_exclusive_v2.jpg);', isAdminOnly: true }
 ];
