@@ -1,4 +1,14 @@
 <script lang="ts">
+  import { t, locale } from "svelte-i18n";
+
+  function formatNumberStr(num, loc) {
+    if (typeof num === "undefined" || num === null) return num;
+    if (loc === "ar") {
+      const idArabic = ["٠","١","٢","٣","٤","٥","٦","٧","٨","٩"];
+      return num.toString().replace(/[0-9]/g, w => idArabic[w]);
+    }
+    return num.toLocaleString(loc === "id" ? "id-ID" : loc);
+  }
   import { onMount, onDestroy } from 'svelte';
   import { fade, fly } from 'svelte/transition';
   import Card from '$lib/components/ui/card.svelte';
@@ -26,7 +36,8 @@
   let latitude: number | null = null;
   let longitude: number | null = null;
   let cityName = 'Mencari lokasi...';
-  let locationSource: 'gps' | 'city' | 'default' = 'default';
+  $: displayCityName = locationSource === 'gps' ? $t('kiblat.lokasi_saya_gps') || 'Lokasi Saya (GPS)' : locationSource === 'default' ? $t('kiblat.jakarta_default') || 'Jakarta (Default)' : locationSource === 'searching' ? $t('kiblat.mencari_lokasi') || 'Mencari lokasi...' : cityName;
+  let locationSource: 'gps' | 'city' | 'default' | 'searching' = 'searching';
   
   let heading = 0; // Degrees from North (device direction)
   let qiblaBearing = 295; // Qibla angle from North (default Jakarta)
@@ -128,6 +139,7 @@
           longitude = pos.coords.longitude;
           cityName = 'Lokasi Saya (GPS)';
           locationSource = 'gps';
+          locationSource = 'gps';
           updateQiblaCalculations(latitude, longitude);
         },
         (err) => {
@@ -146,6 +158,7 @@
     latitude = -6.2088;
     longitude = 106.8456;
     cityName = 'Jakarta (Default)';
+    locationSource = 'default';
     locationSource = 'default';
     updateQiblaCalculations(latitude, longitude);
   }
@@ -302,9 +315,9 @@
   });
 </script>
 
-<PageHeader title="Arah Kiblat" backText="Dashboard" transparent={true} />
+<PageHeader title={$t('kiblat.arah_kiblat') || 'Arah Kiblat'} backText="Dashboard" />
 
-<div class="space-y-6 pt-4 pb-12 max-w-xl mx-auto relative px-2">
+<div class="space-y-6 pt-0 pb-12 max-w-xl mx-auto relative px-2 -mt-2">
   <!-- Subtle premium ambient glow background -->
   <div class="absolute -z-10 w-80 h-80 bg-indigo-500/10 blur-[120px] rounded-full top-[25%] left-1/2 -translate-x-1/2 pointer-events-none"></div>
   <div class="absolute -z-10 w-80 h-80 bg-emerald-500/5 blur-[120px] rounded-full top-[45%] left-1/2 -translate-x-1/2 pointer-events-none"></div>
@@ -332,14 +345,14 @@
     <div class="space-y-4 z-10 relative">
       <div class="flex items-start justify-between">
         <div class="space-y-1.5">
-          <span class="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-300 shadow-soft-xs">
-            <MapPin class="h-3 w-3 text-emerald-400 shrink-0" />
-            <span>{cityName}</span>
+          <span class="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 shadow-soft-xs">
+            <MapPin class="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>{displayCityName}</span>
           </span>
-          <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider pt-2">Jarak ke Baitullah</p>
+          <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider pt-2">{$t('kiblat.jarak_ke_baitullah') || 'Jarak ke Baitullah'}</p>
           <div class="flex items-baseline gap-1.5">
             <h2 class="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-emerald-200">
-              {distanceToMecca.toLocaleString('id-ID')}
+              {formatNumberStr(distanceToMecca, $locale)}
             </h2>
             <span class="text-[10px] font-black text-emerald-300 uppercase tracking-widest">KM</span>
           </div>
@@ -356,19 +369,19 @@
 
       <div class="grid grid-cols-2 gap-4 pt-4 text-center text-xs border-t border-white/10">
         <div class="text-left">
-          <span class="text-slate-400 font-bold block text-[9px] uppercase tracking-widest">Koordinat Saya</span>
+          <span class="text-slate-400 font-bold block text-[9px] uppercase tracking-widest">{$t('kiblat.koordinat_saya') || 'Koordinat Saya'}</span>
           <span class="font-mono mt-0.5 block font-semibold text-slate-200">
             {#if latitude !== null && longitude !== null}
-              {latitude.toFixed(4)}°, {longitude.toFixed(4)}°
+              {formatNumberStr(latitude.toFixed(4), $locale)}°, {formatNumberStr(longitude.toFixed(4), $locale)}°
             {:else}
               Mencari...
             {/if}
           </span>
         </div>
         <div class="text-right">
-          <span class="text-slate-400 font-bold block text-[9px] uppercase tracking-widest">Sudut Kiblat</span>
+          <span class="text-slate-400 font-bold block text-[9px] uppercase tracking-widest">{$t('kiblat.sudut_kiblat') || 'Sudut Kiblat'}</span>
           <span class="font-mono mt-0.5 block font-black text-emerald-400 text-sm tracking-wide">
-            {qiblaBearing}° <span class="text-[9px] font-bold text-slate-300">Utara</span>
+            {formatNumberStr(qiblaBearing, $locale)}° <span class="text-[9px] font-bold text-slate-300">{$t('kiblat.utara') || 'Utara'}</span>
           </span>
         </div>
       </div>
@@ -376,7 +389,7 @@
   </Card>
 
   <!-- Compass Widget Card -->
-  <Card class="bg-white/90 border-slate-200/60 backdrop-blur-md flex flex-col items-center py-8 relative overflow-hidden shadow-lg p-4">
+  <Card class="bg-white/90 dark:bg-slate-900/90 border-slate-200/60 dark:border-slate-700/60 backdrop-blur-md flex flex-col items-center py-8 relative overflow-hidden shadow-lg dark:shadow-none p-4">
     <!-- Pulse glow background overlay when aligned -->
     {#if isAligned}
       <div class="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent animate-pulse duration-1000 pointer-events-none z-0"></div>
@@ -388,21 +401,21 @@
         <div class="inline-flex flex-col items-center justify-center space-y-1">
           <div class="inline-flex items-center space-x-1.5 bg-emerald-500 text-white font-extrabold text-[10px] px-5 py-2 rounded-full shadow-lg shadow-emerald-500/20 border border-emerald-400 uppercase tracking-widest animate-pulse">
             <span class="inline-block">✨</span>
-            <span>Kiblat Terbimbing</span>
+            <span>{$t('kiblat.kiblat_terbimbing') || 'Kiblat Terbimbing'}</span>
           </div>
-          <p class="text-[10px] text-emerald-600 font-black mt-1.5">Sempurna! Sudut hadap ponsel Anda sudah tepat mengarah ke Ka'bah</p>
+          <p class="text-[10px] text-emerald-600 font-black mt-1.5">{$t('kiblat.sempurna_kiblat') || 'Sempurna! Sudut hadap ponsel Anda sudah tepat mengarah ke Ka\'bah'}</p>
         </div>
       {:else}
         <div class="inline-flex flex-col items-center justify-center space-y-1">
-          <div class="inline-flex items-center space-x-1.5 bg-slate-100 border border-slate-200 text-slate-500 font-bold text-[10px] px-4.5 py-1.5 rounded-full uppercase tracking-wider">
+          <div class="inline-flex items-center space-x-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold text-[10px] px-4.5 py-1.5 rounded-full uppercase tracking-wider">
             <span>🧭</span>
-            <span>Arahkan Ponsel</span>
+            <span>{$t('kiblat.arahkan_ponsel') || 'Arahkan Ponsel'}</span>
           </div>
-          <p class="text-[10px] text-slate-500 font-bold mt-1.5">
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-1.5">
             {#if diff > 0}
-              Putar ke kanan <span class="text-indigo-600 font-black font-mono">{Math.round(diff)}°</span> lagi
+              {$t('kiblat.putar_ke_kanan') || 'Putar ke kanan'} <span class="text-indigo-600 font-black font-mono">{formatNumberStr(Math.round(diff), $locale)}°</span> {$t('kiblat.lagi') || 'lagi'}
             {:else}
-              Putar ke kiri <span class="text-indigo-600 font-black font-mono">{Math.round(Math.abs(diff))}°</span> lagi
+              {$t('kiblat.putar_ke_kiri') || 'Putar ke kiri'} <span class="text-indigo-600 font-black font-mono">{formatNumberStr(Math.round(Math.abs(diff)), $locale)}°</span> {$t('kiblat.lagi') || 'lagi'}
             {/if}
           </p>
         </div>
@@ -419,8 +432,8 @@
       on:touchmove|passive={onDragMove}
       on:mouseup={onDragEnd}
       on:touchend={onDragEnd}
-      class="relative w-72 h-72 mx-auto rounded-full bg-slate-50/50 border border-slate-200/80 shadow-md flex items-center justify-center cursor-grab select-none z-10 transition-all duration-300
-             {isAligned ? 'ring-10 ring-emerald-500/10 border-emerald-400 shadow-emerald-100/50' : 'active:cursor-grabbing hover:border-slate-300'}"
+      class="relative w-72 h-72 mx-auto rounded-full bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 shadow-md dark:shadow-none flex items-center justify-center cursor-grab select-none z-10 transition-all duration-300
+             {isAligned ? 'ring-10 ring-emerald-500/10 border-emerald-400 shadow-emerald-100/50' : 'active:cursor-grabbing hover:border-slate-300 dark:hover:border-slate-600'}"
     >
       <svg viewBox="0 0 200 200" class="w-full h-full p-1 drop-shadow-md">
         <!-- Definitions for styling gradients and filters -->
@@ -563,10 +576,10 @@
           {/each}
 
           <!-- Cardinal Labels (Indonesian) -->
-          <text x="100" y="24" font-size="10.5" font-weight="900" fill="#f43f5e" filter="url(#redGlow)" text-anchor="middle" transform="rotate(0 100 100)" style="user-select: none;">U</text>
-          <text x="100" y="22.5" font-size="8.5" font-weight="900" fill="#cbd5e1" text-anchor="middle" transform="rotate(90 100 100)" style="user-select: none;">T</text>
-          <text x="100" y="22.5" font-size="8.5" font-weight="900" fill="#cbd5e1" text-anchor="middle" transform="rotate(180 100 100)" style="user-select: none;">S</text>
-          <text x="100" y="22.5" font-size="8.5" font-weight="900" fill="#cbd5e1" text-anchor="middle" transform="rotate(270 100 100)" style="user-select: none;">B</text>
+          <text x="100" y="24" font-size="10.5" font-weight="900" fill="#f43f5e" filter="url(#redGlow)" text-anchor="middle" transform="rotate(0 100 100)" style="user-select: none;">{$t('kiblat.utara') ? $t('kiblat.utara')[0].toUpperCase() : 'U'}</text>
+          <text x="100" y="22.5" font-size="8.5" font-weight="900" fill="#cbd5e1" text-anchor="middle" transform="rotate(90 100 100)" style="user-select: none;">{$t('kiblat.timur') ? $t('kiblat.timur')[0].toUpperCase() : 'T'}</text>
+          <text x="100" y="22.5" font-size="8.5" font-weight="900" fill="#cbd5e1" text-anchor="middle" transform="rotate(180 100 100)" style="user-select: none;">{$t('kiblat.selatan') ? $t('kiblat.selatan')[0].toUpperCase() : 'S'}</text>
+          <text x="100" y="22.5" font-size="8.5" font-weight="900" fill="#cbd5e1" text-anchor="middle" transform="rotate(270 100 100)" style="user-select: none;">{$t('kiblat.barat') ? $t('kiblat.barat')[0].toUpperCase() : 'B'}</text>
 
           <!-- Elegant Gold 3D Compass Rose -->
           <g transform="translate(100, 100) scale(0.56)" opacity="0.8">
@@ -669,60 +682,60 @@
     <!-- Centered Dashboard Degree counter details (Fulfills request #7 perfectly) -->
     <div class="mt-6 flex justify-center items-center gap-5 text-center z-10 w-full max-w-xs mx-auto px-1">
       <!-- Hadap Ponsel Counter -->
-      <div class="flex-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-3 shadow-soft-xs relative overflow-hidden transition-all duration-300 {isAligned ? 'bg-emerald-50/20 border-emerald-100 ring-2 ring-emerald-500/10' : ''}">
+      <div class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl py-3 px-3 shadow-soft-xs relative overflow-hidden transition-all duration-300 {isAligned ? 'bg-emerald-50/20 border-emerald-100 ring-2 ring-emerald-500/10' : ''}">
         {#if isAligned}
           <div class="absolute -right-3 -top-3 w-8 h-8 bg-emerald-500/5 rounded-full pointer-events-none"></div>
         {/if}
-        <span class="text-[9px] font-black text-slate-400 block uppercase tracking-widest leading-none">Hadap Ponsel</span>
-        <span class="font-mono text-2xl font-black text-slate-800 block mt-1.5 transition-colors duration-300 {isAligned ? 'text-emerald-600' : ''}">
-          {Math.round(heading)}°
+        <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 block uppercase tracking-widest leading-none">{$t('kiblat.hadap_ponsel') || 'Hadap Ponsel'}</span>
+        <span class="font-mono text-2xl font-black text-slate-800 dark:text-slate-100 block mt-1.5 transition-colors duration-300 {isAligned ? 'text-emerald-600' : ''}">
+          {formatNumberStr(Math.round(heading), $locale)}°
         </span>
       </div>
       
       <!-- Center Compass Icon separator -->
-      <div class="flex-shrink-0 h-9 w-9 rounded-full bg-slate-100 border border-slate-200/50 flex items-center justify-center shadow-soft-xs text-slate-400">
+      <div class="flex-shrink-0 h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center shadow-soft-xs text-slate-400 dark:text-slate-500">
         <Compass class="h-4.5 w-4.5 animate-spin" style="animation-duration: 25s; animation-play-state: {isDragging ? 'running' : 'paused'}" />
       </div>
 
       <!-- Arah Ka'bah Target Counter -->
-      <div class="flex-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-3 shadow-soft-xs relative overflow-hidden transition-all duration-300 {isAligned ? 'bg-emerald-50/20 border-emerald-100 ring-2 ring-emerald-500/10' : ''}">
+      <div class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl py-3 px-3 shadow-soft-xs relative overflow-hidden transition-all duration-300 {isAligned ? 'bg-emerald-50/20 border-emerald-100 ring-2 ring-emerald-500/10' : ''}">
         {#if isAligned}
           <div class="absolute -right-3 -top-3 w-8 h-8 bg-emerald-500/5 rounded-full pointer-events-none"></div>
         {/if}
-        <span class="text-[9px] font-black text-slate-400 block uppercase tracking-widest leading-none">Arah Ka'bah</span>
+        <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 block uppercase tracking-widest leading-none">{$t('kiblat.arah_kabah') || 'Arah Ka\'bah'}</span>
         <span class="font-mono text-2xl font-black text-emerald-600 block mt-1.5">
-          {qiblaBearing}°
+          {formatNumberStr(qiblaBearing, $locale)}°
         </span>
       </div>
     </div>
 
     <!-- Manual City Selector Activation Button inside the main widget card -->
-    <div class="w-full border-t border-slate-100 mt-6 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left z-10 px-2">
+    <div class="w-full border-t border-slate-100 dark:border-slate-800 mt-6 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left z-10 px-2">
       <div class="space-y-0.5">
-        <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider">Lokasi Kurang Akurat?</h4>
-        <p class="text-[10px] text-slate-400 font-normal">Gunakan pilihan kota manual di seluruh Indonesia</p>
+        <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">{$t('kiblat.lokasi_kurang_akurat') || 'Lokasi Kurang Akurat?'}</h4>
+        <p class="text-[10px] text-slate-400 dark:text-slate-500 font-normal">{$t('kiblat.gunakan_pilihan_kota') || 'Gunakan pilihan kota manual di seluruh Indonesia'}</p>
       </div>
       <Button 
         on:click={() => isCityModalOpen = true}
         variant="outline" 
         size="sm"
-        class="border-slate-200 text-slate-600 hover:text-primary hover:border-primary/20 hover:bg-slate-50 font-extrabold text-[10px] uppercase h-9 rounded-xl px-4 flex items-center gap-1.5 cursor-pointer shadow-soft-xs"
+        class="border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-primary hover:border-primary/20 hover:bg-slate-50 dark:hover:bg-slate-800 font-extrabold text-[10px] uppercase h-9 rounded-xl px-4 flex items-center gap-1.5 cursor-pointer shadow-soft-xs"
       >
         <Navigation class="h-3 w-3 shrink-0" />
-        <span>Pilih Kota Manual</span>
+        <span>{$t('kiblat.pilih_kota_manual') || 'Pilih Kota Manual'}</span>
       </Button>
     </div>
   </Card>
 
   <!-- iOS Permission Trigger Card -->
   {#if isIOS && sensorStatus === 'loading'}
-    <Card class="bg-amber-50/80 border-amber-200/50 p-4.5 text-center space-y-3.5 shadow-md">
+    <Card class="bg-amber-50/80 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-900/50 p-4.5 text-center space-y-3.5 shadow-md">
       <div class="flex justify-center text-amber-500">
         <Smartphone class="h-6.5 w-6.5 animate-bounce" />
       </div>
       <div class="space-y-1">
-        <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">Aktivasi Sensor Gerak Apple</h3>
-        <p class="text-[10px] text-slate-500 leading-relaxed font-normal">
+        <h3 class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">{$t('kiblat.aktivasi_sensor') || 'Aktivasi Sensor Gerak Apple'}</h3>
+        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
           Perangkat Apple Safari/iOS memerlukan izin khusus agar kompas dapat memutar otomatis secara real-time saat Anda bergerak.
         </p>
       </div>
@@ -738,13 +751,13 @@
 
   <!-- Insecure Context Warning (HTTP on Mobile) -->
   {#if typeof window !== 'undefined' && !window.isSecureContext}
-    <Card class="bg-rose-50/80 border-rose-250/30 p-4.5 text-center space-y-3 shadow-md">
+    <Card class="bg-rose-50/80 dark:bg-rose-950/30 border-rose-200/50 dark:border-rose-900/50 p-4.5 text-center space-y-3 shadow-md">
       <div class="flex justify-center text-rose-500">
         <span class="text-2xl">⚠️</span>
       </div>
       <div class="space-y-1">
-        <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider text-rose-700">Koneksi Tidak Aman (HTTP)</h3>
-        <p class="text-[10px] text-slate-500 leading-relaxed font-normal">
+        <h3 class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider text-rose-700">{$t('kiblat.koneksi_tidak_aman') || 'Koneksi Tidak Aman (HTTP)'}</h3>
+        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
           Apple iOS (iPhone) memblokir akses sensor arah kompas pada koneksi <strong>HTTP biasa</strong>. Sensor hanya dapat aktif jika situs diakses melalui <strong>HTTPS (Koneksi Aman)</strong>. Silakan deploy situs ke hosting HTTPS (seperti Supabase/Vercel) untuk mencoba sensor otomatis.
         </p>
       </div>
@@ -755,23 +768,23 @@
   <div class="space-y-3">
     <div class="flex items-center space-x-2 px-1">
       <Info class="h-4 w-4 text-emerald-500" />
-      <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">Panduan Sighting Arah</h3>
+      <h3 class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">{$t('kiblat.panduan_sighting') || 'Panduan Sighting Arah'}</h3>
     </div>
 
     <div class="grid grid-cols-1 gap-2.5">
       {#each [
-        { step: '1', title: 'Posisikan HP Mendatar', desc: 'Taruh ponsel Anda mendatar sejajar dengan dada untuk hasil sensor magnetometer yang maksimal.' },
-        { step: '2', title: 'Jauhi Gangguan Elektromagnetik', desc: 'Hindari meletakkan HP di dekat benda logam, magnet, speaker besar, atau laptop karena dapat mengacaukan sensor.' },
-        { step: '3', title: 'Sesuaikan Dial Manual', desc: 'Jika sensor HP Anda mati/tidak didukung, geser dial kompas di layar secara manual memakai jari Anda.' },
-        { step: '4', title: 'Hadapkan Ujung Atas HP', desc: 'Putar badan Anda sampai jarum Kaaba selaras dengan garis penunjuk merah di atas (Glow Hijau menyala).' }
+        { step: '1', title: $t('kiblat.posisikan_hp') || 'Posisikan HP Mendatar', desc: $t('kiblat.posisikan_hp_desc') || 'Taruh ponsel Anda mendatar sejajar dengan dada untuk hasil sensor magnetometer yang maksimal.' },
+        { step: '2', title: $t('kiblat.jauhi_gangguan') || 'Jauhi Gangguan Elektromagnetik', desc: $t('kiblat.jauhi_gangguan_desc') || 'Hindari meletakkan HP di dekat benda logam, magnet, speaker besar, atau laptop karena dapat mengacaukan sensor.' },
+        { step: '3', title: $t('kiblat.sesuaikan_dial') || 'Sesuaikan Dial Manual', desc: $t('kiblat.sesuaikan_dial_desc') || 'Jika sensor HP Anda mati/tidak didukung, geser dial kompas di layar secara manual memakai jari Anda.' },
+        { step: '4', title: $t('kiblat.hadapkan_ujung') || 'Hadapkan Ujung Atas HP', desc: $t('kiblat.hadapkan_ujung_desc') || 'Putar badan Anda sampai jarum Kaaba selaras dengan garis penunjuk merah di atas (Glow Hijau menyala).' }
       ] as item}
-        <div class="bg-white/70 border border-slate-200/50 rounded-2xl p-4 flex gap-3.5 items-center hover:border-slate-300/80 transition-all duration-300 shadow-soft-xs">
+        <div class="bg-white/70 dark:bg-slate-800/70 border border-slate-200/50 dark:border-slate-700/50 rounded-2xl p-4 flex gap-3.5 items-center hover:border-slate-300/80 dark:hover:border-slate-600/80 transition-all duration-300 shadow-soft-xs dark:shadow-none">
           <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white font-extrabold text-xs flex items-center justify-center text-center leading-none shadow-emerald-100/50 shadow-md">
             {item.step}
           </div>
           <div class="space-y-0.5">
-            <h4 class="text-xs font-bold text-slate-800">{item.title}</h4>
-            <p class="text-[10px] text-slate-500 leading-relaxed font-normal">{item.desc}</p>
+            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">{item.title}</h4>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed font-normal">{item.desc}</p>
           </div>
         </div>
       {/each}
@@ -806,8 +819,8 @@
       <!-- Modal Header -->
       <div class="px-5 pt-2 pb-4 border-b border-slate-100 flex justify-between items-center">
         <div>
-          <h2 class="text-sm font-black text-slate-800 uppercase tracking-wider">Pilih Daerah Indonesia</h2>
-          <p class="text-[10px] text-slate-400 font-normal">Cari kelurahan, kecamatan, atau kota di Indonesia secara manual</p>
+          <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Pilih Daerah Indonesia</h2>
+          <p class="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Cari kelurahan, kecamatan, atau kota di Indonesia secara manual</p>
         </div>
         <button 
           on:click={() => isCityModalOpen = false}
@@ -868,7 +881,7 @@
               </div>
               <div class="space-y-1">
                 <span class="text-slate-600 font-bold block">Mulai Mencari</span>
-                <span class="text-[10px] text-slate-400 font-normal leading-relaxed max-w-[240px] block">
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-relaxed max-w-[240px] block">
                   Ketik nama kelurahan, kecamatan, kota, atau kabupaten di Indonesia untuk mencari koordinat otomatis secara online.
                 </span>
               </div>
@@ -883,7 +896,7 @@
               </div>
               <div class="space-y-1">
                 <span class="text-slate-600 font-bold block">Daerah Tidak Ditemukan</span>
-                <span class="text-[10px] text-slate-400 font-normal leading-relaxed max-w-[240px] block">
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-relaxed max-w-[240px] block">
                   Tidak dapat menemukan "{citySearchQuery}". Coba ketik nama kelurahan atau kecamatan yang lain.
                 </span>
               </div>

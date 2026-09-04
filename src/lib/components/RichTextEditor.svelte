@@ -131,7 +131,7 @@
       
       // Default to inserting a simple image if no layout is specifically triggered,
       // but here we just insert a standard full width image if they just clicked upload
-      insertHtmlAtCursor(`<img src="${url}" class="w-full h-auto rounded-2xl shadow-md my-4" />&nbsp;`);
+      insertHtmlAtCursor(`<img src="${url}" class="w-full h-auto rounded-2xl shadow-md dark:shadow-none my-4" />&nbsp;`);
     } catch (err: any) {
       alert("Gagal mengupload gambar: " + err.message);
     } finally {
@@ -207,44 +207,44 @@
   }
 </script>
 
-<div class="border border-slate-200/80 rounded-2xl overflow-hidden shadow-soft-sm bg-white focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all duration-200 flex flex-col relative">
+<div class="border border-slate-200 dark:border-slate-700/80 rounded-2xl overflow-hidden shadow-soft-sm bg-white dark:bg-slate-900 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all duration-200 flex flex-col relative">
   
   {#if isUploading}
-    <div class="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex items-center justify-center">
-      <div class="bg-white p-4 rounded-xl shadow-lg flex items-center space-x-3 border border-slate-100">
+    <div class="absolute inset-0 bg-white dark:bg-slate-900/60 backdrop-blur-[2px] z-50 flex items-center justify-center">
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg flex items-center space-x-3 border border-slate-100 dark:border-slate-800">
         <RefreshCw class="animate-spin text-primary h-5 w-5" />
-        <span class="text-sm font-bold text-slate-800">Mengupload Foto...</span>
+        <span class="text-sm font-bold text-slate-800 dark:text-slate-100">Mengupload Foto...</span>
       </div>
     </div>
   {/if}
 
   <!-- Toolbar -->
-  <div class="bg-slate-50 border-b border-slate-200/60 p-2 flex flex-wrap gap-1 items-center sticky top-0 z-40">
+  <div class="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700/60 p-2 flex flex-wrap gap-1 items-center sticky top-0 z-40">
     
     <!-- Formatting buttons -->
-    <div class="flex items-center bg-white border border-slate-200/80 rounded-lg p-0.5 shadow-soft-sm">
-      <button type="button" on:click={() => execCommand('bold')} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Tebal"><Bold class="h-4 w-4" /></button>
-      <button type="button" on:click={() => execCommand('italic')} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Miring"><Italic class="h-4 w-4" /></button>
-      <button type="button" on:click={() => execCommand('underline')} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Garis Bawah"><Underline class="h-4 w-4" /></button>
+    <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-lg p-0.5 shadow-soft-sm">
+      <button type="button" on:click={() => execCommand('bold')} class="p-1.5 rounded-md hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" title="Tebal"><Bold class="h-4 w-4" /></button>
+      <button type="button" on:click={() => execCommand('italic')} class="p-1.5 rounded-md hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" title="Miring"><Italic class="h-4 w-4" /></button>
+      <button type="button" on:click={() => execCommand('underline')} class="p-1.5 rounded-md hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" title="Garis Bawah"><Underline class="h-4 w-4" /></button>
     </div>
 
     <!-- Alignments -->
-    <div class="flex items-center bg-white border border-slate-200/80 rounded-lg p-0.5 shadow-soft-sm">
-      <button type="button" on:click={() => execCommand('justifyLeft')} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Kiri"><AlignLeft class="h-4 w-4" /></button>
-      <button type="button" on:click={() => execCommand('justifyCenter')} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Tengah"><AlignCenter class="h-4 w-4" /></button>
-      <button type="button" on:click={() => execCommand('justifyRight')} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Kanan"><AlignRight class="h-4 w-4" /></button>
-      <button type="button" on:click={() => execCommand('justifyFull')} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Rata Kiri Kanan"><AlignJustify class="h-4 w-4" /></button>
+    <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-lg p-0.5 shadow-soft-sm">
+      <button type="button" on:click={() => execCommand('justifyLeft')} class="p-1.5 rounded-md hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" title="Kiri"><AlignLeft class="h-4 w-4" /></button>
+      <button type="button" on:click={() => execCommand('justifyCenter')} class="p-1.5 rounded-md hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" title="Tengah"><AlignCenter class="h-4 w-4" /></button>
+      <button type="button" on:click={() => execCommand('justifyRight')} class="p-1.5 rounded-md hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" title="Kanan"><AlignRight class="h-4 w-4" /></button>
+      <button type="button" on:click={() => execCommand('justifyFull')} class="p-1.5 rounded-md hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" title="Rata Kiri Kanan"><AlignJustify class="h-4 w-4" /></button>
     </div>
 
     <!-- Colors & Font Size -->
-    <div class="flex items-center bg-white border border-slate-200/80 rounded-lg p-0.5 shadow-soft-sm gap-0.5">
+    <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-lg p-0.5 shadow-soft-sm gap-0.5">
       <!-- Font Size -->
       <div class="relative">
-        <button type="button" on:click={() => { showSizes = !showSizes; showColors = false; }} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Ukuran Font"><Type class="h-4 w-4" /></button>
+        <button type="button" on:click={() => { showSizes = !showSizes; showColors = false; }} class="p-1.5 rounded-md hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" title="Ukuran Font"><Type class="h-4 w-4" /></button>
         {#if showSizes}
-          <div class="absolute top-9 left-0 z-50 bg-white border border-slate-200 rounded-xl shadow-lg p-2 flex flex-col gap-1 w-36">
+          <div class="absolute top-9 left-0 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg p-2 flex flex-col gap-1 w-36">
             {#each fontSizes as size}
-              <button type="button" on:click={() => { execCommand('fontSize', size.value); showSizes = false; }} class="text-left px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-50 text-slate-700">
+              <button type="button" on:click={() => { execCommand('fontSize', size.value); showSizes = false; }} class="text-left px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
                 {size.name}
               </button>
             {/each}
@@ -254,11 +254,11 @@
 
       <!-- Colors -->
       <div class="relative">
-        <button type="button" on:click={() => { showColors = !showColors; showSizes = false; }} class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600" title="Warna Teks"><Palette class="h-4 w-4" /></button>
+        <button type="button" on:click={() => { showColors = !showColors; showSizes = false; }} class="p-1.5 rounded-md hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" title="Warna Teks"><Palette class="h-4 w-4" /></button>
         {#if showColors}
-          <div class="absolute top-9 left-0 z-50 bg-white border border-slate-200 rounded-xl shadow-lg p-2 flex flex-col gap-1 w-40">
+          <div class="absolute top-9 left-0 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg p-2 flex flex-col gap-1 w-40">
             {#each colors as color}
-              <button type="button" on:click={() => { execCommand('foreColor', color.value); showColors = false; }} class="flex items-center space-x-2 w-full p-1.5 rounded-lg text-left text-xs font-semibold hover:bg-slate-50">
+              <button type="button" on:click={() => { execCommand('foreColor', color.value); showColors = false; }} class="flex items-center space-x-2 w-full p-1.5 rounded-lg text-left text-xs font-semibold hover:bg-slate-50 dark:bg-slate-800">
                 <span class="w-3.5 h-3.5 rounded-full" style="background-color: {color.value}"></span>
                 <span>{color.name}</span>
               </button>
@@ -273,7 +273,7 @@
     <!-- NEW: Khasanah Specific Tools -->
     
     <!-- Direct Upload -->
-    <div class="flex items-center bg-white border border-slate-200/80 rounded-lg p-0.5 shadow-soft-sm">
+    <div class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-lg p-0.5 shadow-soft-sm">
       <input type="file" bind:this={fileInput} on:change={handleImageUpload} accept="image/*" class="hidden" />
       <button type="button" on:click={() => fileInput.click()} class="flex items-center space-x-1 p-1.5 px-2 rounded-md hover:bg-blue-50 text-blue-600 font-semibold text-xs transition-colors" title="Upload Gambar dari HP/PC">
         <ImagePlus class="h-4 w-4" />
@@ -283,7 +283,7 @@
 
     <!-- Smart Delete Button (Only shows when something is selected) -->
     {#if selectedElement}
-      <button type="button" on:click={deleteSelected} class="ml-auto flex items-center space-x-1 p-1.5 px-3 rounded-md bg-rose-500 text-white font-bold text-xs hover:bg-rose-600 shadow-md animate-pulse">
+      <button type="button" on:click={deleteSelected} class="ml-auto flex items-center space-x-1 p-1.5 px-3 rounded-md bg-rose-500 text-white font-bold text-xs hover:bg-rose-600 shadow-md dark:shadow-none animate-pulse">
         <Trash2 class="h-4 w-4" />
         <span>Hapus Pilihan</span>
       </button>
@@ -294,7 +294,7 @@
   <!-- Editable Field -->
   <div class="relative flex-1 min-h-[400px] flex">
     {#if !value || value === '<br>' || value === '<div><br></div>'}
-      <div class="absolute inset-0 pointer-events-none text-slate-400 text-xs p-4 leading-relaxed select-none">
+      <div class="absolute inset-0 pointer-events-none text-slate-400 dark:text-slate-500 text-xs p-4 leading-relaxed select-none">
         {placeholder}
       </div>
     {/if}
@@ -308,7 +308,7 @@
       on:paste={handlePaste}
       on:click={handleEditorClick}
       on:keydown={handleEditorKeyDown}
-      class="flex-1 p-6 text-slate-800 text-sm leading-relaxed outline-none min-h-full overflow-y-auto font-sans"
+      class="flex-1 p-6 text-slate-800 dark:text-slate-100 text-sm leading-relaxed outline-none min-h-full overflow-y-auto font-sans"
       style="user-select: text; -webkit-user-select: text;"
     ></div>
   </div>

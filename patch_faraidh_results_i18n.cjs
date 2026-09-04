@@ -1,0 +1,292 @@
+const fs = require('fs');
+const path = require('path');
+
+const pagePath = path.join(__dirname, 'src/routes/zakat-faraidh/+page.svelte');
+let content = fs.readFileSync(pagePath, 'utf8');
+
+// Dictionary for translations
+const translations = {
+    id: {
+        "istri_ke": "Istri ke-",
+        "anak_pr_ke": "Anak Pr ke-",
+        "cucu_pr_ke": "Cucu Pr ke-",
+        "saudari_ke": "Saudari ke-",
+        "anak_lk_ke": "Anak Lk ke-",
+        "cucu_lk_ke": "Cucu Lk ke-",
+        "saudara_ke": "Saudara ke-",
+        "suami": "Suami",
+        "istri": "Istri",
+        "ibu": "Ibu",
+        "nenek_ayah": "Nenek (Pihak Ayah)",
+        "nenek_ibu": "Nenek (Pihak Ibu)",
+        "saudari_kandung": "Saudari Kandung",
+        "saudara_kandung_laki": "Saudara Kandung Laki",
+        "ayah": "Ayah",
+        "kakek": "Kakek",
+        
+        "ada_keturunan": "Pewaris memiliki keturunan.",
+        "tidak_ada_keturunan": "Pewaris tidak memiliki keturunan.",
+        "ada_keturunan_saudara": "Pewaris memiliki keturunan atau beberapa saudara.",
+        "tidak_ada_keturunan_saudara": "Pewaris tidak memiliki keturunan dan saudara < 2.",
+        "dibagi_nenek_ibu": "Mendapat 1/6 (dibagi rata dengan nenek pihak ibu).",
+        "dibagi_nenek_ayah": "Mendapat 1/6 (dibagi rata dengan nenek pihak ayah).",
+        "fardh_tanpa_anak_lk": "Bagian Fardh (tidak ada anak laki-laki).",
+        "fardh_ganti_anak": "Bagian Fardh karena menggantikan kedudukan anak.",
+        "bagian_fardh": "Bagian Fardh.",
+        "sisa_bersama_anak_pr": "Sisa harta bersama anak perempuan (2:1).",
+        "ditarik_anak_lk": "Sisa harta ditarik asabah oleh anak laki-laki.",
+        "sisa_asabah": "Sisa harta sebagai asabah.",
+        "ditarik_cucu_lk": "Sisa harta ditarik asabah oleh cucu laki-laki.",
+        "ditarik_saudara_lk": "Sisa harta ditarik asabah oleh saudara laki-laki.",
+        "asabah_maal_ghair": "Asabah menyusul adanya keturunan perempuan (Ma'al Ghair).",
+        "sisa_fardh_tanpa_anak_lk": "Mendapat sisa harta setelah fardh karena tidak ada keturunan laki-laki.",
+        "fardh_ada_keturunan_lk": "Bagian Fardh karena ada keturunan laki-laki.",
+        "kakek_ganti_ayah": "Kakek menempati kedudukan ayah."
+    },
+    en: {
+        "istri_ke": "Wife ",
+        "anak_pr_ke": "Daughter ",
+        "cucu_pr_ke": "Granddaughter ",
+        "saudari_ke": "Sister ",
+        "anak_lk_ke": "Son ",
+        "cucu_lk_ke": "Grandson ",
+        "saudara_ke": "Brother ",
+        "suami": "Husband",
+        "istri": "Wife",
+        "ibu": "Mother",
+        "nenek_ayah": "Grandmother (Paternal)",
+        "nenek_ibu": "Grandmother (Maternal)",
+        "saudari_kandung": "Full Sister",
+        "saudara_kandung_laki": "Full Brother",
+        "ayah": "Father",
+        "kakek": "Grandfather",
+        
+        "ada_keturunan": "Deceased has descendants.",
+        "tidak_ada_keturunan": "Deceased has no descendants.",
+        "ada_keturunan_saudara": "Deceased has descendants or multiple siblings.",
+        "tidak_ada_keturunan_saudara": "Deceased has no descendants and < 2 siblings.",
+        "dibagi_nenek_ibu": "Gets 1/6 (shared equally with maternal grandmother).",
+        "dibagi_nenek_ayah": "Gets 1/6 (shared equally with paternal grandmother).",
+        "fardh_tanpa_anak_lk": "Fardh share (no sons).",
+        "fardh_ganti_anak": "Fardh share for replacing child's position.",
+        "bagian_fardh": "Fardh share.",
+        "sisa_bersama_anak_pr": "Remaining estate shared with daughters (2:1).",
+        "ditarik_anak_lk": "Pulled into Asabah by son.",
+        "sisa_asabah": "Remaining estate as Asabah.",
+        "ditarik_cucu_lk": "Pulled into Asabah by grandson.",
+        "ditarik_saudara_lk": "Pulled into Asabah by brother.",
+        "asabah_maal_ghair": "Asabah due to female descendants (Ma'al Ghair).",
+        "sisa_fardh_tanpa_anak_lk": "Gets remaining estate after Fardh (no male descendants).",
+        "fardh_ada_keturunan_lk": "Fardh share (has male descendants).",
+        "kakek_ganti_ayah": "Grandfather takes the position of father."
+    },
+    ar: {
+        "istri_ke": "زوجة ",
+        "anak_pr_ke": "ابنة ",
+        "cucu_pr_ke": "حفيدة ",
+        "saudari_ke": "أخت ",
+        "anak_lk_ke": "ابن ",
+        "cucu_lk_ke": "حفيد ",
+        "saudara_ke": "أخ ",
+        "suami": "الزوج",
+        "istri": "الزوجة",
+        "ibu": "الأم",
+        "nenek_ayah": "الجدة (من الأب)",
+        "nenek_ibu": "الجدة (من الأم)",
+        "saudari_kandung": "الأخت الشقيقة",
+        "saudara_kandung_laki": "الأخ الشقيق",
+        "ayah": "الأب",
+        "kakek": "الجد",
+        
+        "ada_keturunan": "للميت فرع وارث.",
+        "tidak_ada_keturunan": "ليس للميت فرع وارث.",
+        "ada_keturunan_saudara": "للميت فرع وارث أو إخوة.",
+        "tidak_ada_keturunan_saudara": "ليس للميت فرع وارث والإخوة أقل من 2.",
+        "dibagi_nenek_ibu": "تحصل على السدس (مقسم مع الجدة من الأم).",
+        "dibagi_nenek_ayah": "تحصل على السدس (مقسم مع الجدة من الأب).",
+        "fardh_tanpa_anak_lk": "نصيب الفرض (لا يوجد أبناء ذكور).",
+        "fardh_ganti_anak": "نصيب الفرض كبديل عن الابن.",
+        "bagian_fardh": "نصيب الفرض.",
+        "sisa_bersama_anak_pr": "الباقي تعصيباً مع البنات (للذكر مثل حظ الأنثيين).",
+        "ditarik_anak_lk": "تعصيب بالغير لوجود الابن.",
+        "sisa_asabah": "الباقي تعصيباً.",
+        "ditarik_cucu_lk": "تعصيب بالغير لوجود الحفيد.",
+        "ditarik_saudara_lk": "تعصيب بالغير لوجود الأخ.",
+        "asabah_maal_ghair": "تعصيب مع الغير لوجود إناث.",
+        "sisa_fardh_tanpa_anak_lk": "الباقي بعد الفروض لعدم وجود فرع وارث ذكر.",
+        "fardh_ada_keturunan_lk": "نصيب الفرض لوجود فرع وارث ذكر.",
+        "kakek_ganti_ayah": "الجد يقوم مقام الأب."
+    },
+    zh: {
+        "istri_ke": "妻子 ",
+        "anak_pr_ke": "女儿 ",
+        "cucu_pr_ke": "孙女 ",
+        "saudari_ke": "姐妹 ",
+        "anak_lk_ke": "儿子 ",
+        "cucu_lk_ke": "孙子 ",
+        "saudara_ke": "兄弟 ",
+        "suami": "丈夫",
+        "istri": "妻子",
+        "ibu": "母亲",
+        "nenek_ayah": "祖母",
+        "nenek_ibu": "外祖母",
+        "saudari_kandung": "同胞姐妹",
+        "saudara_kandung_laki": "同胞兄弟",
+        "ayah": "父亲",
+        "kakek": "祖父",
+        
+        "ada_keturunan": "死者有后代。",
+        "tidak_ada_keturunan": "死者没有后代。",
+        "ada_keturunan_saudara": "死者有后代或多个兄弟姐妹。",
+        "tidak_ada_keturunan_saudara": "死者没有后代且兄弟姐妹少于 2 人。",
+        "dibagi_nenek_ibu": "获得 1/6（与外祖母平分）。",
+        "dibagi_nenek_ayah": "获得 1/6（与祖母平分）。",
+        "fardh_tanpa_anak_lk": "法定份额（无儿子）。",
+        "fardh_ganti_anak": "法定份额（替代子女位置）。",
+        "bagian_fardh": "法定份额。",
+        "sisa_bersama_anak_pr": "与女儿分享剩余遗产（2:1）。",
+        "ditarik_anak_lk": "被儿子拉入 Asabah（剩余继承）。",
+        "sisa_asabah": "作为 Asabah 继承剩余遗产。",
+        "ditarik_cucu_lk": "被孙子拉入 Asabah。",
+        "ditarik_saudara_lk": "被兄弟拉入 Asabah。",
+        "asabah_maal_ghair": "因女性后代成为 Asabah（Ma'al Ghair）。",
+        "sisa_fardh_tanpa_anak_lk": "在分配法定份额后获得剩余遗产（无男性后代）。",
+        "fardh_ada_keturunan_lk": "法定份额（有男性后代）。",
+        "kakek_ganti_ayah": "祖父取代父亲的位置。"
+    },
+    ja: {
+        "istri_ke": "妻 ",
+        "anak_pr_ke": "娘 ",
+        "cucu_pr_ke": "孫娘 ",
+        "saudari_ke": "姉妹 ",
+        "anak_lk_ke": "息子 ",
+        "cucu_lk_ke": "孫息子 ",
+        "saudara_ke": "兄弟 ",
+        "suami": "夫",
+        "istri": "妻",
+        "ibu": "母",
+        "nenek_ayah": "祖母 (父方)",
+        "nenek_ibu": "祖母 (母方)",
+        "saudari_kandung": "実の姉妹",
+        "saudara_kandung_laki": "実の兄弟",
+        "ayah": "父",
+        "kakek": "祖父",
+        
+        "ada_keturunan": "故人に子孫がいる。",
+        "tidak_ada_keturunan": "故人に子孫がいない。",
+        "ada_keturunan_saudara": "故人に子孫または複数の兄弟姉妹がいる。",
+        "tidak_ada_keturunan_saudara": "故人に子孫がなく、兄弟姉妹が 2 人未満。",
+        "dibagi_nenek_ibu": "1/6 を取得 (母方の祖母と等分)。",
+        "dibagi_nenek_ayah": "1/6 を取得 (父方の祖母と等分)。",
+        "fardh_tanpa_anak_lk": "法廷相続分 (息子なし)。",
+        "fardh_ganti_anak": "子供の地位に代わる法廷相続分。",
+        "bagian_fardh": "法廷相続分。",
+        "sisa_bersama_anak_pr": "娘と残りの遺産を分ける (2:1)。",
+        "ditarik_anak_lk": "息子によってアサバ (残余相続) に引き込まれる。",
+        "sisa_asabah": "アサバとして残りの遺産を相続する。",
+        "ditarik_cucu_lk": "孫息子によってアサバに引き込まれる。",
+        "ditarik_saudara_lk": "兄弟によってアサバに引き込まれる。",
+        "asabah_maal_ghair": "女性の子孫によるアサバ (マアル・ガイル)。",
+        "sisa_fardh_tanpa_anak_lk": "法廷相続後、残りの遺産を取得 (男性の子孫なし)。",
+        "fardh_ada_keturunan_lk": "法廷相続分 (男性の子孫あり)。",
+        "kakek_ganti_ayah": "祖父が父の地位に代わる。"
+    },
+    ko: {
+        "istri_ke": "아내 ",
+        "anak_pr_ke": "딸 ",
+        "cucu_pr_ke": "손녀 ",
+        "saudari_ke": "자매 ",
+        "anak_lk_ke": "아들 ",
+        "cucu_lk_ke": "손자 ",
+        "saudara_ke": "형제 ",
+        "suami": "남편",
+        "istri": "아내",
+        "ibu": "어머니",
+        "nenek_ayah": "할머니 (친가)",
+        "nenek_ibu": "할머니 (외가)",
+        "saudari_kandung": "친자매",
+        "saudara_kandung_laki": "친형제",
+        "ayah": "아버지",
+        "kakek": "할아버지",
+        
+        "ada_keturunan": "고인에게 자손이 있습니다.",
+        "tidak_ada_keturunan": "고인에게 자손이 없습니다.",
+        "ada_keturunan_saudara": "고인에게 자손 또는 여러 형제자매가 있습니다.",
+        "tidak_ada_keturunan_saudara": "고인에게 자손이 없고 형제자매가 2명 미만입니다.",
+        "dibagi_nenek_ibu": "1/6을 받습니다 (외할머니와 균등 분할).",
+        "dibagi_nenek_ayah": "1/6을 받습니다 (친할머니와 균등 분할).",
+        "fardh_tanpa_anak_lk": "법정 상속분 (아들 없음).",
+        "fardh_ganti_anak": "자녀의 위치를 대신하는 법정 상속분.",
+        "bagian_fardh": "법정 상속분.",
+        "sisa_bersama_anak_pr": "딸과 남은 유산을 나눕니다 (2:1).",
+        "ditarik_anak_lk": "아들에 의해 아사바(잔여 상속)로 편입됨.",
+        "sisa_asabah": "아사바로서 남은 유산을 상속함.",
+        "ditarik_cucu_lk": "손자에 의해 아사바로 편입됨.",
+        "ditarik_saudara_lk": "형제에 의해 아사바로 편입됨.",
+        "asabah_maal_ghair": "여성 자손으로 인한 아사바 (마알 가이르).",
+        "sisa_fardh_tanpa_anak_lk": "법정 상속 후 남은 유산을 받음 (남성 자손 없음).",
+        "fardh_ada_keturunan_lk": "법정 상속분 (남성 자손 있음).",
+        "kakek_ganti_ayah": "할아버지가 아버지의 위치를 대신합니다."
+    }
+};
+
+// 1. Inject translations into JSON files
+const langs = ['id', 'en', 'ar', 'zh', 'ja', 'ko'];
+langs.forEach(lang => {
+    const jsonPath = path.join(__dirname, `src/lib/i18n/${lang}.json`);
+    let data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+    if (!data.faraidh) data.faraidh = {};
+    if (!data.faraidh.results) data.faraidh.results = {};
+    
+    for (const [key, val] of Object.entries(translations[lang])) {
+        data.faraidh.results[key] = val;
+    }
+    
+    fs.writeFileSync(jsonPath, JSON.stringify(data, null, 2), 'utf8');
+});
+
+// 2. Replace hardcoded strings in +page.svelte
+const replacements = [
+    [/pushResult\("Suami"/g, 'pushResult($t("faraidh.results.suami") || "Suami"'],
+    [/pushResult\(\"Ibu\"/g, 'pushResult($t("faraidh.results.ibu") || "Ibu"'],
+    [/pushResult\(\"Nenek \(Pihak Ayah\)\"/g, 'pushResult($t("faraidh.results.nenek_ayah") || "Nenek (Pihak Ayah)"'],
+    [/pushResult\(\"Nenek \(Pihak Ibu\)\"/g, 'pushResult($t("faraidh.results.nenek_ibu") || "Nenek (Pihak Ibu)"'],
+    [/pushResult\(\"Ayah\"/g, 'pushResult($t("faraidh.results.ayah") || "Ayah"'],
+    [/pushResult\(\"Kakek\"/g, 'pushResult($t("faraidh.results.kakek") || "Kakek"'],
+    [/\"Saudari Kandung\"/g, '$t("faraidh.results.saudari_kandung") || "Saudari Kandung"'],
+    [/\"Saudara Kandung Laki\"/g, '$t("faraidh.results.saudara_kandung_laki") || "Saudara Kandung Laki"'],
+    
+    [/\`Istri ke-\$\{i\}\`/g, '`${$t("faraidh.results.istri_ke") || "Istri ke-"}${i}`'],
+    [/\`Anak Pr ke-\$\{i\}\`/g, '`${$t("faraidh.results.anak_pr_ke") || "Anak Pr ke-"}${i}`'],
+    [/\`Cucu Pr ke-\$\{i\}\`/g, '`${$t("faraidh.results.cucu_pr_ke") || "Cucu Pr ke-"}${i}`'],
+    [/\`Saudari ke-\$\{i\}\`/g, '`${$t("faraidh.results.saudari_ke") || "Saudari ke-"}${i}`'],
+    [/\`Anak Lk ke-\$\{i\}\`/g, '`${$t("faraidh.results.anak_lk_ke") || "Anak Lk ke-"}${i}`'],
+    [/\`Cucu Lk ke-\$\{i\}\`/g, '`${$t("faraidh.results.cucu_lk_ke") || "Cucu Lk ke-"}${i}`'],
+    [/\`Saudara ke-\$\{i\}\`/g, '`${$t("faraidh.results.saudara_ke") || "Saudara ke-"}${i}`'],
+    
+    [/"Pewaris memiliki keturunan\."/g, '$t("faraidh.results.ada_keturunan") || "Pewaris memiliki keturunan."'],
+    [/"Pewaris tidak memiliki keturunan\."/g, '$t("faraidh.results.tidak_ada_keturunan") || "Pewaris tidak memiliki keturunan."'],
+    [/"Pewaris memiliki keturunan atau beberapa saudara\."/g, '$t("faraidh.results.ada_keturunan_saudara") || "Pewaris memiliki keturunan atau beberapa saudara."'],
+    [/"Pewaris tidak memiliki keturunan dan saudara < 2\."/g, '$t("faraidh.results.tidak_ada_keturunan_saudara") || "Pewaris tidak memiliki keturunan dan saudara < 2."'],
+    [/"Mendapat 1\/6 \(dibagi rata dengan nenek pihak ibu\)\."/g, '$t("faraidh.results.dibagi_nenek_ibu") || "Mendapat 1/6 (dibagi rata dengan nenek pihak ibu)."'],
+    [/"Mendapat 1\/6 \(dibagi rata dengan nenek pihak ayah\)\."/g, '$t("faraidh.results.dibagi_nenek_ayah") || "Mendapat 1/6 (dibagi rata dengan nenek pihak ayah)."'],
+    [/"Bagian Fardh \(tidak ada anak laki-laki\)\."/g, '$t("faraidh.results.fardh_tanpa_anak_lk") || "Bagian Fardh (tidak ada anak laki-laki)."'],
+    [/"Bagian Fardh karena menggantikan kedudukan anak\."/g, '$t("faraidh.results.fardh_ganti_anak") || "Bagian Fardh karena menggantikan kedudukan anak."'],
+    [/"Bagian Fardh\."/g, '$t("faraidh.results.bagian_fardh") || "Bagian Fardh."'],
+    [/"Sisa harta bersama anak perempuan \(2:1\)\."/g, '$t("faraidh.results.sisa_bersama_anak_pr") || "Sisa harta bersama anak perempuan (2:1)."'],
+    [/"Sisa harta ditarik asabah oleh anak laki-laki\."/g, '$t("faraidh.results.ditarik_anak_lk") || "Sisa harta ditarik asabah oleh anak laki-laki."'],
+    [/"Sisa harta sebagai asabah\."/g, '$t("faraidh.results.sisa_asabah") || "Sisa harta sebagai asabah."'],
+    [/"Sisa harta ditarik asabah oleh cucu laki-laki\."/g, '$t("faraidh.results.ditarik_cucu_lk") || "Sisa harta ditarik asabah oleh cucu laki-laki."'],
+    [/"Sisa harta ditarik asabah oleh saudara laki-laki\."/g, '$t("faraidh.results.ditarik_saudara_lk") || "Sisa harta ditarik asabah oleh saudara laki-laki."'],
+    [/"Asabah menyusul adanya keturunan perempuan \(Ma'al Ghair\)\."/g, '$t("faraidh.results.asabah_maal_ghair") || "Asabah menyusul adanya keturunan perempuan (Ma\'al Ghair)."'],
+    [/"Mendapat sisa harta setelah fardh karena tidak ada keturunan laki-laki\."/g, '$t("faraidh.results.sisa_fardh_tanpa_anak_lk") || "Mendapat sisa harta setelah fardh karena tidak ada keturunan laki-laki."'],
+    [/"Bagian Fardh karena ada keturunan laki-laki\."/g, '$t("faraidh.results.fardh_ada_keturunan_lk") || "Bagian Fardh karena ada keturunan laki-laki."'],
+    [/"Kakek menempati kedudukan ayah\."/g, '$t("faraidh.results.kakek_ganti_ayah") || "Kakek menempati kedudukan ayah."']
+];
+
+for (const [regex, replacement] of replacements) {
+    content = content.replace(regex, replacement);
+}
+
+fs.writeFileSync(pagePath, content, 'utf8');
+console.log("Translation injection complete.");

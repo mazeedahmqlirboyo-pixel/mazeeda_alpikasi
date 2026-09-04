@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { t, locale } from "svelte-i18n";
   import Card from "$lib/components/ui/card.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import BirthdayWidget from "$lib/components/BirthdayWidget.svelte";
@@ -279,8 +280,8 @@
         name: "Pagi",
         bgClass: "bg-gradient-to-br from-indigo-200 via-sky-200 to-amber-100",
         badgeClass:
-          "text-amber-800 bg-white/60 border-white/50 backdrop-blur-md shadow-sm",
-        textColor: "text-slate-800",
+          "text-amber-800 dark:text-white bg-white/70 dark:bg-slate-900/60 border-white/50 backdrop-blur-md shadow-sm dark:shadow-none",
+        textColor: "text-slate-800 dark:text-slate-100",
         badge: "🌅 Pagi",
         sunPosition:
           "bottom-[-10px] left-8 w-24 h-24 bg-gradient-to-t from-amber-400 to-yellow-200 rounded-full blur-md opacity-80",
@@ -291,8 +292,8 @@
         name: "Siang",
         bgClass: "bg-gradient-to-br from-blue-400 via-sky-300 to-sky-100",
         badgeClass:
-          "text-sky-900 bg-white/60 border-white/50 backdrop-blur-md shadow-sm",
-        textColor: "text-slate-900",
+          "text-sky-900 dark:text-white bg-white/70 dark:bg-slate-900/60 border-white/50 backdrop-blur-md shadow-sm dark:shadow-none",
+        textColor: "text-slate-900 dark:text-white",
         badge: "☀️ Siang",
         sunPosition:
           "top-2 right-12 w-16 h-16 bg-yellow-100 rounded-full shadow-[0_0_40px_15px_rgba(253,224,71,0.6)] animate-pulse",
@@ -303,8 +304,8 @@
         name: "Sore",
         bgClass: "bg-gradient-to-br from-blue-400 via-orange-300 to-rose-300",
         badgeClass:
-          "text-orange-900 bg-white/60 border-white/50 backdrop-blur-md shadow-sm",
-        textColor: "text-slate-900",
+          "text-orange-900 dark:text-white bg-white/70 dark:bg-slate-900/60 border-white/50 backdrop-blur-md shadow-sm dark:shadow-none",
+        textColor: "text-slate-900 dark:text-white",
         badge: "🌇 Sore",
         sunPosition:
           "bottom-[-20px] right-10 w-28 h-28 bg-gradient-to-t from-orange-500 to-amber-300 rounded-full shadow-[0_0_50px_20px_rgba(249,115,22,0.4)]",
@@ -315,7 +316,7 @@
         name: "Malam",
         bgClass: "bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-900",
         badgeClass:
-          "text-indigo-100 bg-white/10 border-white/10 backdrop-blur-md shadow-sm",
+          "text-indigo-100 bg-white/20 dark:bg-slate-900/30 border-white/10 backdrop-blur-md shadow-sm dark:shadow-none",
         textColor: "text-white",
         badge: "🌙 Malam",
         sunPosition:
@@ -334,6 +335,71 @@
   $: prayerTimes = $prayerStore.prayerTimes;
   $: hijriDate = $prayerStore.hijriDate;
   $: gregorianDate = $prayerStore.gregorianDate;
+
+  function toArabicNumerals(str: string) {
+    const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return str.replace(/[0-9]/g, w => arabicNumbers[parseInt(w, 10)]);
+  }
+  
+  function translateGregorian(dateStr: string, tFunc: any, loc: string | null | undefined) {
+    if (!dateStr || dateStr.includes("MEMUAT") || dateStr.includes("Offline")) return dateStr || "MEMUAT TANGGAL...";
+    const match = dateStr.match(/^([^,]+),\s*(\d{1,2})\s+([A-Z]+)\s+(\d{4})\s*M\.$/i);
+    if (match) {
+      const day = match[1].toUpperCase();
+      let date = match[2];
+      const month = match[3].toUpperCase();
+      let year = match[4];
+      if (loc === 'ar') {
+        date = toArabicNumerals(date);
+        year = toArabicNumerals(year);
+      }
+      return `${tFunc('days.' + day) || day}, ${date} ${tFunc('months.' + month) || month} ${year} ${tFunc('common.masehi') || 'M.'}`;
+    }
+    return dateStr;
+  }
+
+  function translateHijri(dateStr: string, tFunc: any, loc: string | null | undefined) {
+    if (!dateStr || dateStr.includes("MEMUAT") || dateStr.includes("Offline")) return dateStr;
+    const match = dateStr.match(/^(\d{1,2})\s+(.+)\s+(\d{4})\s*H\.$/i);
+    if (match) {
+      let date = match[1];
+      const month = match[2].toUpperCase().trim();
+      let year = match[3];
+      if (loc === 'ar') {
+        date = toArabicNumerals(date);
+        year = toArabicNumerals(year);
+      }
+      return `${date} ${tFunc('hijri_months.' + month) || month} ${year} ${tFunc('common.hijri') || 'H.'}`;
+    }
+    return dateStr;
+  }
+
+  function translatePrayerName(name: string, tFunc: any) {
+    if (!name) return "";
+    const isBesok = name.includes("(Besok)");
+    const baseName = name.replace(" (Besok)", "").toLowerCase();
+    const translatedName = tFunc('prayer_times.' + baseName) || baseName;
+    if (isBesok) {
+      return `${translatedName} (${tFunc('prayer_times.tomorrow') || 'Besok'})`;
+    }
+    return translatedName;
+  }
+
+  function translateCountdown(countdown: string, tFunc: any, loc: string | null | undefined) {
+    if (!countdown) return "";
+    const matchH = countdown.match(/(\d+)j/);
+    const matchM = countdown.match(/(\d+)m/);
+    const h = matchH ? matchH[1] : null;
+    const m = matchM ? matchM[1] : null;
+    let out = "";
+    if (h) out += `${loc === 'ar' ? toArabicNumerals(h) : h}\n
+  
+${tFunc('prayer_times.hour_short') || 'j'} `;
+    if (m) out += `${loc === 'ar' ? toArabicNumerals(m) : m}${tFunc('prayer_times.minute_short') || 'm'} `;
+    out += tFunc('prayer_times.remaining') || 'lagi';
+    return out.trim();
+  }
+
   $: isLoadingPrayers = $prayerStore.isLoadingPrayers;
   $: hasGPSCoords = $prayerStore.hasGPSCoords;
   $: gpsLatitude = $prayerStore.gpsLatitude;
@@ -935,9 +1001,8 @@
         id: item.id,
         title: item.title,
         category: item.category,
-        date: new Date(item.created_at).toLocaleDateString("id-ID", {
-          day: "numeric", month: "long", year: "numeric",
-        }),
+        date: new Date(item.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }),
+        rawDate: item.created_at,
         excerpt: item.content.length > 150 ? item.content.substring(0, 150) + "..." : item.content,
         author: item.author,
       };
@@ -950,9 +1015,8 @@
       const item = d.memData[0];
       recentMemory = {
         title: item.title,
-        date: new Date(item.date).toLocaleDateString("id-ID", {
-          day: "numeric", month: "long", year: "numeric",
-        }),
+        date: new Date(item.date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }),
+        rawDate: item.date,
         location: item.location,
         likes: (item.memory_likes || []).length,
         image_url: item.image_url,
@@ -1039,9 +1103,9 @@
   // Stats Grid Definition
   $: stats = [
     {
-      name: "Guruku",
-      value: asatidzahCount,
-      description: "Mustahiq | Mustahiqoh | Munawwib | Munawibah",
+      name: $t('ikhtisar.guruku_title') || 'Guruku',
+      value: formatNumberStr(asatidzahCount.replace('Pengajar', $t('ikhtisar.pengajar') || 'Pengajar'), $locale),
+      description: $t('ikhtisar.guruku_desc') || 'Mustahiq | Mustahiqoh | Munawwib | Munawibah',
       icon: Users,
       image: "/images/asatidzah_icon_v3.png",
       color: "text-purple-600 bg-purple-50/50 border-purple-100",
@@ -1049,9 +1113,9 @@
       href: "/asatidzah",
     },
     {
-      name: "Mazeeda Squad",
-      value: membersCount,
-      description: "Alumni | Alumnus",
+      name: $t('ikhtisar.squad_title') || 'Mazeeda Squad',
+      value: formatNumberStr(membersCount.replace('Anggota', $t('ikhtisar.anggota') || 'Anggota'), $locale),
+      description: $t('ikhtisar.squad_desc') || 'Alumni | Alumnus',
       icon: Users,
       image: "/images/squad_icon_v3.png",
       color: "text-blue-600 bg-blue-50/50 border-blue-100",
@@ -1059,9 +1123,9 @@
       href: "/squad",
     },
     {
-      name: "Time Line",
-      value: madingCount,
-      description: "Foto kenangan | album memori",
+      name: $t('ikhtisar.timeline_title') || 'Time Line',
+      value: formatNumberStr(madingCount.replace('Momen', $t('ikhtisar.momen') || 'Momen'), $locale),
+      description: $t('ikhtisar.timeline_desc') || 'Foto kenangan | album memori',
       icon: ImageIcon,
       image: "/images/timeline_icon.png",
       color: "text-amber-600 bg-amber-50/50 border-amber-100",
@@ -1069,9 +1133,9 @@
       href: "/timeline",
     },
     {
-      name: "Sangu | Wirid",
-      value: sanguCount,
-      description: "Koleksi doa | sholawat | nadzom",
+      name: $t('ikhtisar.sangu_title') || 'Sangu | Wirid',
+      value: formatNumberStr(sanguCount.replace('Berkas', $t('ikhtisar.berkas') || 'Berkas'), $locale),
+      description: $t('ikhtisar.sangu_desc') || 'Koleksi doa | sholawat | nadzom',
       icon: Wallet,
       image: "/images/sangu_icon.png",
       color: "text-emerald-600 bg-emerald-50/50 border-emerald-100",
@@ -1079,9 +1143,9 @@
       href: "/sangu",
     },
     {
-      name: "Al-Qur'an Progress",
-      value: quranProgress,
-      description: quranDescription,
+      name: $t('ikhtisar.quran_title') || "Al-Qur'an Progress",
+      value: translateSurahName(quranProgress, $locale),
+      description: formatNumberStr(quranDescription.replace('Ayat - Terakhir Dibaca', $t('ikhtisar.quran_ayat') || 'Ayat - Terakhir Dibaca').replace('Surah Terakhir', $t('ikhtisar.quran_surah') || 'Surah Terakhir').replace('Surah Pertama', $t('ikhtisar.quran_surah') || 'Surah Pertama'), $locale),
       icon: BookOpen,
       image: "/images/quran_icon.png",
       color: "text-indigo-600 bg-indigo-50/50 border-indigo-100",
@@ -1089,9 +1153,9 @@
       href: "/quran",
     },
     {
-      name: "MAZEEDA AI",
-      value: "Tanya AI",
-      description: "Teman curhat & asisten cerdas",
+      name: $t('ikhtisar.ai_title') || 'MAZEEDA AI',
+      value: $t('ikhtisar.ai_tanya') || 'Tanya AI',
+      description: $t('ikhtisar.ai_desc') || 'Teman curhat & asisten cerdas',
       icon: Bot,
       image: "/merak.png",
       color: "text-rose-600 bg-rose-50/50 border-rose-100",
@@ -1099,9 +1163,9 @@
       href: "/ai-chat",
     },
     {
-      name: "Riwayat Akademik",
-      value: "Daftar Nilai",
-      description: "Cari | lihat daftar nilai siswi",
+      name: $t('ikhtisar.akademik_title') || 'Riwayat Akademik',
+      value: $t('ikhtisar.akademik_nilai') || 'Daftar Nilai',
+      description: $t('ikhtisar.akademik_desc') || 'Cari | lihat daftar nilai siswi',
       icon: Award,
       image: "/images/nilai_icon.png",
       color: "text-teal-600 bg-teal-50/50 border-teal-100",
@@ -1109,6 +1173,84 @@
       href: "/nilai",
     },
   ];
+
+  // --- Arabic Format Helpers ---
+  function formatNumberStr(numStr, loc) {
+    if (!numStr) return numStr;
+    if (loc === 'ar') {
+      const arabicNumbers = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+      return String(numStr).replace(/[0-9]/g, w => arabicNumbers[+w]);
+    }
+    return String(numStr);
+  }
+
+  function translateSurahName(surahStr, loc) {
+    if (!surahStr) return surahStr;
+    if (loc === 'ar') {
+      const mappings = {
+        'Al-Fatihah': 'الفاتحة', 'Al-Baqarah': 'البقرة', 'Ali \'Imran': 'آل عمران',
+        'An-Nisa\'': 'النساء', 'Al-Ma\'idah': 'المائدة', 'Al-An\'am': 'الأنعام',
+        'Al-A\'raf': 'الأعراف', 'Al-Anfal': 'الأنفال', 'At-Taubah': 'التوبة',
+        'Yunus': 'يونس', 'Hud': 'هود', 'Yusuf': 'يوسف', 'Ar-Ra\'d': 'الرعد',
+        'Ibrahim': 'إبراهيم', 'Al-Hijr': 'الحجر', 'An-Nahl': 'النحل', 'Al-Isra\'': 'الإسراء',
+        'Al-Kahf': 'الكهف', 'Maryam': 'مريم', 'Taha': 'طه', 'Al-Anbiya\'': 'الأنبياء',
+        'Al-Hajj': 'الحج', 'Al-Mu\'minun': 'المؤمنون', 'An-Nur': 'النور', 'Al-Furqan': 'الفرقان',
+        'Asy-Syu\'ara\'': 'الشعراء', 'An-Naml': 'النمل', 'Al-Qasas': 'القصص',
+        'Al-\'Ankabut': 'العنكبوت', 'Ar-Rum': 'الروم', 'Luqman': 'لقمان',
+        'As-Sajdah': 'السجدة', 'Al-Ahzab': 'الأحزاب', 'Saba\'': 'سبأ', 'Fatir': 'فاطر',
+        'Yasin': 'يس', 'As-Saffat': 'الصافات', 'Sad': 'ص', 'Az-Zumar': 'الزمر',
+        'Ghafir': 'غافر', 'Fussilat': 'فصلت', 'Asy-Syura': 'الشورى', 'Az-Zukhruf': 'الزخرف',
+        'Ad-Dukhan': 'الدخان', 'Al-Jasiyah': 'الجاثية', 'Al-Ahqaf': 'الأحقاف', 'Muhammad': 'محمد',
+        'Al-Fath': 'الفتح', 'Al-Hujurat': 'الحجرات', 'Qaf': 'ق', 'Az-Zariyat': 'الذاريات',
+        'At-Tur': 'الطور', 'An-Najm': 'النجم', 'Al-Qamar': 'القمر', 'Ar-Rahman': 'الرحمن',
+        'Al-Waqi\'ah': 'الواقعة', 'Al-Hadid': 'الحديد', 'Al-Mujadalah': 'المجادلة',
+        'Al-Hasyr': 'الحشر', 'Al-Mumtahanah': 'الممتحنة', 'As-Saff': 'الصف', 'Al-Jumu\'ah': 'الجمعة',
+        'Al-Munafiqun': 'المنافقون', 'At-Tagabun': 'التغابن', 'At-Talaq': 'الطلاق',
+        'At-Tahrim': 'التحريم', 'Al-Mulk': 'الملك', 'Al-Qalam': 'القلم', 'Al-Haqqah': 'الحاقة',
+        'Al-Ma\'arij': 'المعارج', 'Nuh': 'نوح', 'Al-Jinn': 'الجن', 'Al-Muzzammil': 'المزمل',
+        'Al-Muddassir': 'المدثر', 'Al-Qiyamah': 'القيامة', 'Al-Insan': 'الإنسان', 'Al-Mursalat': 'المرسلات',
+        'An-Naba\'': 'النبأ', 'An-Nazi\'at': 'النازعات', 'Abasa': 'عبس', 'At-Takwir': 'التكوير',
+        'Al-Infitar': 'الانفطار', 'Al-Mutaffifin': 'المطففين', 'Al-Insyiqaq': 'الانشقاق', 'Al-Buruj': 'البروج',
+        'At-Tariq': 'الطارق', 'Al-A\'la': 'الأعلى', 'Al-Gasyiyah': 'الغاشية', 'Al-Fajr': 'الفجر',
+        'Al-Balad': 'البلد', 'Asy-Syams': 'الشمس', 'Al-Lail': 'الليل', 'Ad-Duha': 'الضحى',
+        'Asy-Syarh': 'الشرح', 'At-Tin': 'التين', 'Al-\'Alaq': 'العلق', 'Al-Qadr': 'القدر',
+        'Al-Bayyinah': 'البينة', 'Az-Zalzalah': 'الزلزلة', 'Al-\'Adiyat': 'العاديات', 'Al-Qari\'ah': 'القارعة',
+        'At-Takasur': 'التكاثر', 'Al-\'Asr': 'العصر', 'Al-Humazah': 'الهمزة', 'Al-Fil': 'الفيل',
+        'Quraisy': 'قريش', 'Al-Ma\'un': 'الماعون', 'Al-Kausar': 'الكوثر', 'Al-Kafirun': 'الكافرون',
+        'An-Nasr': 'النصر', 'Al-Lahab': 'المسد', 'Al-Ikhlas': 'الإخلاص', 'Al-Falaq': 'الفلق', 'An-Nas': 'الناس'
+      };
+      
+      let res = String(surahStr).replace('QS. ', '');
+      for (const [key, val] of Object.entries(mappings)) {
+         if (res.includes(key)) {
+            res = res.replace(key, val);
+         }
+      }
+      return 'سورة ' + res;
+    }
+    return String(surahStr);
+  }
+
+
+  function formatDateStr(dateStr, loc) {
+    if (!dateStr) return '';
+    try {
+      const map = { ar: 'ar-SA', id: 'id-ID', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', ko: 'ko-KR' };
+      const bcp = map[loc] || 'id-ID';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString(bcp, { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch(e) {
+      return dateStr;
+    }
+  }
+
+  function displayNumber(num: number | undefined | null, currentLocale: string | null = null) {
+    const n = Number(num || 0);
+    if (isNaN(n)) return '0';
+    if (currentLocale === 'ar') return n.toLocaleString('ar-EG');
+    return String(n);
+  }
 </script>
 
 <div class="space-y-6 pb-12">
@@ -1123,7 +1265,7 @@
       class="bg-gradient-to-r from-blue-600 via-indigo-600 to-primary text-white rounded-3xl p-5 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-300"
     >
       <div class="flex items-center space-x-4">
-        <div class="p-3 bg-white/10 rounded-2xl">
+        <div class="p-3 bg-white dark:bg-slate-900/10 rounded-2xl">
           <Smartphone class="h-6 w-6 text-blue-200" />
         </div>
         <div class="space-y-1 text-center sm:text-left">
@@ -1138,7 +1280,7 @@
       </div>
       <button
         on:click={triggerInstallPrompt}
-        class="w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 bg-white text-primary font-bold text-xs px-5 py-2.5 rounded-xl hover:bg-blue-50 transition-colors shadow-soft-sm cursor-pointer"
+        class="w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 bg-white dark:bg-slate-900 text-primary font-bold text-xs px-5 py-2.5 rounded-xl hover:bg-blue-50 transition-colors shadow-soft-sm cursor-pointer"
         style="min-height: 40px;"
       >
         <Download class="h-4 w-4" />
@@ -1192,10 +1334,10 @@
                 class="inline-flex items-center space-x-1.5 bg-primary/80 border border-primary/30 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
               >
                 <Compass class="h-3 w-3" />
-                <span>Berita Utama</span>
+                <span>{$t('dashboard.headline') || 'Berita Utama'}</span>
               </span>
               <h2
-                class="text-lg sm:text-2xl md:text-3xl font-black leading-tight tracking-tight drop-shadow-md"
+                class="text-lg sm:text-2xl md:text-3xl font-black leading-tight tracking-tight drop-shadow-md dark:shadow-none"
               >
                 {slide.title}
               </h2>
@@ -1212,7 +1354,7 @@
                       size="sm"
                       class="font-extrabold text-xs flex items-center space-x-1"
                     >
-                      <span>Lihat Selengkapnya</span>
+                      <span>{$t('dashboard.see_more') || 'Lihat Selengkapnya'}</span>
                       <ArrowRight class="h-3.5 w-3.5" />
                     </Button>
                   </a>
@@ -1252,8 +1394,8 @@
             }}
             class="h-2 rounded-full transition-all duration-300 cursor-pointer {index ===
             currentSlideIndex
-              ? 'w-6 bg-white'
-              : 'w-2 bg-white/40 hover:bg-white/60'}"
+              ? 'w-6 bg-white dark:bg-slate-900'
+              : 'w-2 bg-white dark:bg-slate-900/40 hover:bg-white dark:bg-slate-900/60'}"
             aria-label="Slide ke {index + 1}"
           ></button>
         {/each}
@@ -1262,26 +1404,32 @@
   </section>
 
   <!-- ==================== PARTNERS MARQUEE ==================== -->
-  <section class="border-y border-slate-200/60 bg-white py-2 overflow-hidden relative">
+  <section class="border-y border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 py-2 overflow-hidden relative">
     <!-- Optional gradient masks -->
-    <div class="absolute left-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-r from-white to-transparent pointer-events-none"></div>
-    <div class="absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
+    <div class="absolute left-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-r from-white dark:from-slate-900 to-transparent pointer-events-none"></div>
+    <div class="absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-white dark:from-slate-900 to-transparent pointer-events-none"></div>
 
     <div class="flex w-max animate-marquee-right items-center opacity-85 hover:opacity-100 transition-opacity duration-300">
       <!-- Duplicate the items for seamless loop -->
       {#each [1, 2, 3, 4] as _}
         <div class="flex items-center space-x-10 sm:space-x-16 px-5 sm:px-8">
           <div class="flex items-center justify-center h-10 w-24 sm:h-12 sm:w-36 grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer relative">
-            <img src="/images/logo_emabror.png" alt="emabror" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply scale-[1.8] hover:scale-[2]" />
+            <img src="/images/logoslide/logo1.png" alt="Logo 1" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal dark:invert transition-transform hover:scale-110" />
           </div>
           <div class="flex items-center justify-center h-10 w-24 sm:h-12 sm:w-36 grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer relative">
-            <img src="/images/logo_alimaf.png" alt="Alimaf" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply scale-[1.8] hover:scale-[2]" />
+            <img src="/images/logoslide/logo2.png" alt="Logo 2" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal dark:invert transition-transform hover:scale-110" />
           </div>
           <div class="flex items-center justify-center h-10 w-24 sm:h-12 sm:w-36 grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer relative">
-            <img src="/images/logo_rayhar.png" alt="Rayhar" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply scale-[1.8] hover:scale-[2]" />
+            <img src="/images/logoslide/logo3.png" alt="Logo 3" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal dark:invert transition-transform hover:scale-110" />
           </div>
           <div class="flex items-center justify-center h-10 w-24 sm:h-12 sm:w-36 grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer relative">
-            <img src="/images/logo_wepose.png" alt="WEPOSE" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply scale-[1.8] hover:scale-[2]" />
+            <img src="/images/logoslide/logo4.png" alt="Logo 4" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal dark:invert transition-transform hover:scale-110" />
+          </div>
+          <div class="flex items-center justify-center h-10 w-24 sm:h-12 sm:w-36 grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer relative">
+            <img src="/images/logoslide/logo5.png" alt="Logo 5" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal dark:invert transition-transform hover:scale-110" />
+          </div>
+          <div class="flex items-center justify-center h-10 w-24 sm:h-12 sm:w-36 grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer relative">
+            <img src="/images/logoslide/logo6.png" alt="Logo 6" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal dark:invert transition-transform hover:scale-110" />
           </div>
         </div>
       {/each}
@@ -1292,11 +1440,11 @@
   <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
     <!-- Timezone Clocks Card (8 columns) -->
     <Card
-      class="lg:col-span-7 bg-slate-50 border-slate-200 shadow-soft-sm relative overflow-hidden flex flex-col justify-between"
+      class="lg:col-span-7 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-soft-sm relative overflow-hidden flex flex-col justify-between"
     >
       <!-- Scenic Header -->
       <div
-        class="relative -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 rounded-t-2xl transition-all duration-1000 ease-in-out {timePeriod.bgClass} overflow-hidden flex items-center p-4 sm:px-5 sm:py-4 border-b border-slate-100 shadow-inner"
+        class="relative -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 rounded-t-2xl transition-all duration-1000 ease-in-out {timePeriod.bgClass} overflow-hidden flex items-center p-4 sm:px-5 sm:py-4 border-b border-slate-100 dark:border-slate-800 shadow-inner"
       >
         <!-- Decorative Elements Container -->
         <div class="absolute inset-0 z-0 pointer-events-none">
@@ -1308,40 +1456,40 @@
           <!-- Clouds (Only visible during day/morning/evening) -->
           {#if timePeriod.name !== "Malam"}
             <div
-              class="absolute top-6 left-6 w-16 h-4 bg-white/40 rounded-full blur-[2px] {timePeriod.cloudOpacity} transition-all duration-1000"
+              class="absolute top-6 left-6 w-16 h-4 bg-white dark:bg-slate-900/40 rounded-full blur-[2px] {timePeriod.cloudOpacity} transition-all duration-1000"
             ></div>
             <div
-              class="absolute top-10 left-12 w-12 h-3 bg-white/30 rounded-full blur-[2px] {timePeriod.cloudOpacity} transition-all duration-1000"
+              class="absolute top-10 left-12 w-12 h-3 bg-white dark:bg-slate-900/30 rounded-full blur-[2px] {timePeriod.cloudOpacity} transition-all duration-1000"
             ></div>
             <div
-              class="absolute top-4 right-1/3 w-24 h-5 bg-white/40 rounded-full blur-[3px] {timePeriod.cloudOpacity} transition-all duration-1000"
+              class="absolute top-4 right-1/3 w-24 h-5 bg-white dark:bg-slate-900/40 rounded-full blur-[3px] {timePeriod.cloudOpacity} transition-all duration-1000"
             ></div>
             <div
-              class="absolute bottom-4 right-1/4 w-14 h-3 bg-white/20 rounded-full blur-[2px] {timePeriod.cloudOpacity} transition-all duration-1000"
+              class="absolute bottom-4 right-1/4 w-14 h-3 bg-white dark:bg-slate-900/20 rounded-full blur-[2px] {timePeriod.cloudOpacity} transition-all duration-1000"
             ></div>
           {:else}
             <!-- Stars for Night -->
             <div
-              class="absolute top-4 left-1/4 w-1 h-1 bg-white rounded-full animate-pulse"
+              class="absolute top-4 left-1/4 w-1 h-1 bg-white dark:bg-slate-900 rounded-full animate-pulse"
             ></div>
             <div
-              class="absolute top-8 left-10 w-1.5 h-1.5 bg-white/80 rounded-full animate-pulse"
+              class="absolute top-8 left-10 w-1.5 h-1.5 bg-white dark:bg-slate-900/80 rounded-full animate-pulse"
               style="animation-delay: 1s;"
             ></div>
             <div
-              class="absolute top-12 left-1/2 w-1 h-1 bg-white/60 rounded-full animate-pulse"
+              class="absolute top-12 left-1/2 w-1 h-1 bg-white dark:bg-slate-900/60 rounded-full animate-pulse"
               style="animation-delay: 0.5s;"
             ></div>
             <div
-              class="absolute top-6 right-1/4 w-2 h-2 bg-white/90 rounded-full animate-pulse"
+              class="absolute top-6 right-1/4 w-2 h-2 bg-white dark:bg-slate-900/90 rounded-full animate-pulse"
               style="animation-delay: 1.5s; filter: blur(1px);"
             ></div>
             <div
-              class="absolute top-16 right-12 w-1 h-1 bg-white/70 rounded-full animate-pulse"
+              class="absolute top-16 right-12 w-1 h-1 bg-white dark:bg-slate-900/70 rounded-full animate-pulse"
               style="animation-delay: 2s;"
             ></div>
             <div
-              class="absolute top-10 right-2 w-1 h-1 bg-white/50 rounded-full animate-pulse"
+              class="absolute top-10 right-2 w-1 h-1 bg-white dark:bg-slate-900/50 rounded-full animate-pulse"
               style="animation-delay: 0.8s;"
             ></div>
           {/if}
@@ -1355,7 +1503,7 @@
         <!-- Header Content -->
         <div class="relative z-10 flex items-start justify-between w-full">
           <div
-            class="flex items-center space-x-2 {timePeriod.textColor} drop-shadow-sm"
+            class="flex items-center space-x-2 {timePeriod.textColor} drop-shadow-sm dark:shadow-none"
           >
             {#if timePeriod.name === "Pagi"}
               <Sunrise class="h-5 w-5" />
@@ -1367,13 +1515,13 @@
               <Moon class="h-5 w-5" />
             {/if}
             <h2 class="text-sm font-black uppercase tracking-widest">
-              Waktu Indonesia
+              {$t('dashboard.time_indonesia') || 'Waktu Indonesia'}
             </h2>
           </div>
           <span
             class="text-[10px] font-extrabold px-3 py-1 rounded-full border uppercase tracking-wider transition-all duration-500 {timePeriod.badgeClass}"
           >
-            {timePeriod.badge}
+            {timePeriod.badge.split(' ')[0]} {$t('dashboard.' + (timePeriod.name === 'Pagi' ? 'morning' : timePeriod.name === 'Siang' ? 'noon' : timePeriod.name === 'Sore' ? 'afternoon' : 'night')) || timePeriod.name}
           </span>
         </div>
       </div>
@@ -1382,39 +1530,39 @@
       <div class="overflow-x-auto py-4 z-10">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="border-b border-slate-100">
+            <tr class="border-b border-slate-100 dark:border-slate-600">
               <th
-                class="py-2.5 px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center"
-                >Zona</th
+                class="py-2.5 px-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center"
+                >{$t('dashboard.zone') || 'Zona'}</th
               >
               <th
-                class="py-2.5 px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center"
-                >Waktu Realtime</th
+                class="py-2.5 px-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center"
+                >{$t('dashboard.realtime') || 'Waktu Realtime'}</th
               >
               <th
-                class="py-2.5 px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center hidden sm:table-cell"
-                >Selisih</th
+                class="py-2.5 px-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center hidden sm:table-cell"
+                >{$t('dashboard.selisih') || 'Selisih'}</th
               >
 
               <th
-                class="py-2.5 px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center"
-                >Status</th
+                class="py-2.5 px-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center"
+                >{$t('dashboard.status') || 'Status'}</th
               >
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-50">
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-600 border-b border-slate-100 dark:divide-slate-600">
             {#each timezoneOrder as tz}
               {@const isActive = tz.code === cityTimezone}
               {@const isWIS = tz.code === "WIS"}
               <tr
                 class="transition-colors duration-150 {isActive || isWIS
-                  ? 'bg-slate-50/60 font-medium'
-                  : 'hover:bg-slate-50/30'}"
+                  ? 'bg-slate-50 dark:bg-slate-800/60 font-medium'
+                  : 'hover:bg-slate-50 dark:bg-slate-800/30'}"
               >
                 <!-- Zona Waktu -->
                 <td class="py-2.5 px-3 text-center">
                   <span
-                    class="inline-block text-[10px] font-black px-2 py-0.5 rounded-md border uppercase tracking-wider text-slate-600 bg-slate-100 border-slate-200"
+                    class="inline-block text-[10px] font-black px-2 py-0.5 rounded-md border uppercase tracking-wider text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
                   >
                     {tz.shortLabel}
                   </span>
@@ -1423,7 +1571,7 @@
                 <!-- Waktu Realtime -->
                 <td class="py-2.5 px-3 text-center">
                   <span
-                    class="text-base sm:text-lg font-black font-mono tracking-tight text-slate-800"
+                    class="text-base sm:text-lg font-black font-mono tracking-tight text-slate-800 dark:text-slate-100"
                   >
                     {tz.time}
                   </span>
@@ -1431,7 +1579,7 @@
 
                 <!-- Selisih -->
                 <td
-                  class="py-2.5 px-3 text-xs text-slate-500 font-semibold hidden sm:table-cell text-center"
+                  class="py-2.5 px-3 text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 font-semibold hidden sm:table-cell text-center"
                 >
                   {tz.offset}
                 </td>
@@ -1442,13 +1590,13 @@
                     <span
                       class="inline-flex items-center text-[9px] text-white font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse shadow-soft-xs bg-primary"
                     >
-                      Aktif
+                      {$t('dashboard.active') || 'Aktif'}
                     </span>
                   {:else}
                     <span
-                      class="inline-flex items-center text-[9px] bg-slate-100 text-slate-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"
+                      class="inline-flex items-center text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"
                     >
-                      Pendukung
+                      {$t('dashboard.support') || 'Pendukung'}
                     </span>
                   {/if}
                 </td>
@@ -1460,52 +1608,54 @@
 
       <!-- Quick Date Footer -->
       <div
-        class="flex flex-col sm:flex-row justify-between items-center bg-white border border-slate-200 rounded-2xl p-3 gap-2 mt-2"
+        class="date-widget flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 gap-2 mt-2"
       >
         <div class="flex items-center space-x-2">
-          <Calendar class="h-4.5 w-4.5 text-slate-400" />
+          <Calendar class="h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
           <span
-            class="text-xs font-bold text-slate-600 uppercase tracking-wider"
-            >{gregorianDate || "MEMUAT TANGGAL..."}</span
+            dir="auto"
+            class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider"
+            >{translateGregorian(gregorianDate, $t, $locale)}</span
           >
         </div>
         <div
-          class="text-xs font-black text-primary bg-blue-50 border border-blue-100 px-3 py-1 rounded-full uppercase tracking-wider"
+          dir="auto"
+          class="text-xs font-black text-primary bg-blue-50 border border-blue-100 dark:bg-slate-800 dark:border-slate-700 px-3 py-1 rounded-full uppercase tracking-wider"
         >
-          🌙 {hijriDate || "MEMUAT KALENDER HIJRIYAH..."}
+          🌙 {translateHijri(hijriDate, $t, $locale) || "MEMUAT KALENDER HIJRIYAH..."}
         </div>
       </div>
     </Card>
 
     <!-- Prayer Times Card (5 columns) -->
     <Card
-      class="lg:col-span-5 bg-white border-slate-200 shadow-soft-sm flex flex-col justify-between"
+      class="jadwal-sholat-widget lg:col-span-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-soft-sm flex flex-col justify-between"
     >
       <div
-        class="relative -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 rounded-t-2xl bg-gradient-to-r from-emerald-50 via-teal-50/50 to-cyan-50 p-4 sm:px-5 sm:py-4 flex items-center justify-start border-b border-emerald-100/60 shadow-inner mb-4"
+        class="relative -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 rounded-t-2xl bg-gradient-to-r from-emerald-50 via-teal-50/50 to-cyan-50 dark:from-slate-800 dark:via-slate-800/80 dark:to-slate-900 p-4 sm:px-5 sm:py-4 flex items-center justify-start border-b border-emerald-100/60 dark:border-slate-800 shadow-inner mb-4"
       >
         <!-- Dekorasi Background -->
         <div
           class="absolute inset-0 overflow-hidden rounded-t-2xl pointer-events-none z-0"
         >
           <div
-            class="absolute inset-0 opacity-[0.35] bg-[url('/images/makkah_bg.png')] bg-cover bg-[position:center_55%] bg-no-repeat mix-blend-multiply"
+            class="absolute inset-0 opacity-[0.35] dark:opacity-[0.2] bg-[url('/images/makkah_bg.png')] bg-cover bg-[position:center_55%] bg-no-repeat mix-blend-multiply dark:mix-blend-normal"
           ></div>
           <div
-            class="absolute right-0 top-0 w-32 h-32 bg-emerald-400/20 rounded-full blur-2xl -mt-10 -mr-10"
+            class="absolute right-0 top-0 w-32 h-32 bg-emerald-400/20 dark:bg-emerald-500/10 rounded-full blur-2xl -mt-10 -mr-10"
           ></div>
           <div
-            class="absolute left-10 bottom-0 w-24 h-24 bg-cyan-400/20 rounded-full blur-xl -mb-10"
+            class="absolute left-10 bottom-0 w-24 h-24 bg-cyan-400/20 dark:bg-cyan-500/10 rounded-full blur-xl -mb-10"
           ></div>
         </div>
 
         <div
-          class="relative z-10 bg-white/70 backdrop-blur-md border border-emerald-200/50 px-3 py-1.5 rounded-full shadow-sm flex items-center space-x-1.5"
+          class="relative z-10 bg-white dark:bg-slate-800/90 backdrop-blur-md border border-emerald-200/50 dark:border-slate-700 px-3 py-1.5 rounded-full shadow-sm dark:shadow-none flex items-center space-x-1.5"
         >
           <span class="text-xs">🕌</span>
           <span
-            class="text-[9px] text-emerald-700 font-black uppercase tracking-widest"
-            >Jadwal Sholat</span
+            class="text-[9px] text-emerald-700 dark:text-white font-black uppercase tracking-widest"
+            >{$t('prayer_times.jadwal_sholat') || 'Jadwal Sholat'}</span
           >
         </div>
       </div>
@@ -1520,26 +1670,26 @@
           <button
             on:click|stopPropagation={() =>
               (isCityDropdownOpen = !isCityDropdownOpen)}
-            class="inline-flex items-center justify-center space-x-1.5 text-[13px] font-bold text-slate-600 hover:text-primary transition-colors focus:outline-none cursor-pointer py-1 px-3 rounded-full hover:bg-slate-50"
+            class="inline-flex items-center justify-center space-x-1.5 text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors focus:outline-none cursor-pointer py-1 px-3 rounded-full hover:bg-slate-50 dark:bg-slate-800"
           >
             <MapPin class="h-3.5 w-3.5 text-primary" />
             <span
               class="whitespace-normal leading-tight text-center break-words max-w-[85vw] sm:max-w-[500px]"
               >{selectedCity === "Lokasi Saya" ? "Lokasi Saya" : selectedCity}
               <span
-                class="text-slate-400 ml-0.5 font-semibold text-[11px] whitespace-nowrap"
+                class="text-slate-400 dark:text-slate-500 ml-0.5 font-semibold text-[11px] whitespace-nowrap"
                 >({cityTimezone})</span
               ></span
             >
             <span
-              class="text-slate-400 text-[10px] transform transition-transform duration-200 ml-1"
+              class="text-slate-400 dark:text-slate-500 text-[10px] transform transition-transform duration-200 ml-1"
               class:rotate-180={isCityDropdownOpen}>▼</span
             >
           </button>
 
           {#if isCityDropdownOpen}
             <div
-              class="absolute left-1/2 -translate-x-1/2 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-2 animate-in fade-in-50 slide-in-from-top-2 duration-150 origin-top"
+              class="absolute left-1/2 -translate-x-1/2 mt-2 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl z-50 p-3 space-y-2 animate-in fade-in-50 slide-in-from-top-2 duration-150 origin-top"
             >
               <!-- Search Input -->
               <div class="relative">
@@ -1547,11 +1697,11 @@
                   type="text"
                   bind:value={citySearchQuery}
                   placeholder="Cari daerah / kota..."
-                  class="w-full bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 rounded-xl py-2 pl-8 pr-3 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium"
+                  class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 rounded-xl py-2 pl-8 pr-3 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:bg-slate-900 transition-all font-medium"
                   on:click|stopPropagation={() => {}}
                 />
                 <svg
-                  class="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400"
+                  class="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 dark:text-slate-500"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -1568,7 +1718,7 @@
               <!-- Use GPS Location Button -->
               <button
                 on:click={requestGeolocation}
-                class="w-full flex items-center justify-center space-x-2 p-2 rounded-xl text-xs font-bold text-primary bg-blue-50 border border-blue-100/50 hover:bg-blue-100 transition-colors cursor-pointer"
+                class="w-full flex items-center justify-center space-x-2 p-2 rounded-xl text-xs font-bold text-primary bg-blue-50 border border-blue-100 dark:bg-slate-800 dark:border-slate-700/50 hover:bg-blue-100 transition-colors cursor-pointer"
               >
                 <span class="text-xs">📍</span>
                 <span>Gunakan Lokasi Saya (GPS)</span>
@@ -1581,11 +1731,11 @@
                 {#each filteredCities as city}
                   <button
                     on:click={() => selectCity(city)}
-                    class="w-full text-left py-2 px-2.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-primary rounded-lg transition-colors flex justify-between items-center cursor-pointer"
+                    class="w-full text-left py-2 px-2.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:bg-slate-800 hover:text-primary rounded-lg transition-colors flex justify-between items-center cursor-pointer"
                   >
                     <span class="font-bold">{city.name}</span>
                     <span
-                      class="text-[9px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded uppercase tracking-wider"
+                      class="text-[9px] font-black text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded uppercase tracking-wider"
                       >{city.timezone}</span
                     >
                   </button>
@@ -1609,7 +1759,7 @@
 
                 {#if filteredCities.length === 0 && citySearchQuery.trim() === ""}
                   <div
-                    class="text-center py-4 text-xs text-slate-400 font-medium"
+                    class="text-center py-4 text-xs text-slate-400 dark:text-slate-500 font-medium"
                   >
                     Kota tidak ditemukan
                   </div>
@@ -1624,93 +1774,83 @@
       <div class="py-4 text-center">
         {#if isLoadingPrayers}
           <div
-            class="h-8 flex items-center justify-center text-slate-400 font-semibold text-xs animate-pulse"
+            class="h-8 flex items-center justify-center text-slate-400 dark:text-slate-500 font-semibold text-xs animate-pulse"
           >
             Menyelaraskan waktu...
           </div>
         {:else if nextPrayer.name}
           <p
-            class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
-          >
-            Sholat Berikutnya
-          </p>
+            class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"
+          > {$t('prayer_times.next_prayer') || 'Sholat Berikutnya'} </p>
           <h3 class="text-2xl font-black text-primary tracking-tight mt-1">
-            {nextPrayer.name} ({nextPrayer.time})
+            {translatePrayerName(nextPrayer.name, $t)} ({$locale === 'ar' ? toArabicNumerals(nextPrayer.time) : nextPrayer.time})
           </h3>
           <p
-            class="text-xs text-slate-500 font-extrabold mt-0.5 bg-blue-50 border border-blue-100/50 px-3 py-0.5 rounded-full inline-block"
+            class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 font-extrabold mt-0.5 bg-blue-50 border border-blue-100 dark:bg-slate-800 dark:border-slate-700/50 px-3 py-0.5 rounded-full inline-block"
           >
-            ⏳ {nextPrayer.countdown}
+            ⏳ {translateCountdown(nextPrayer.countdown, $t, $locale)}
           </p>
         {/if}
       </div>
 
       <!-- Daily times grid -->
-      <div class="grid grid-cols-5 gap-1.5 border-t border-slate-100 pt-3">
+      <div class="grid grid-cols-5 gap-1.5 border-t border-slate-100 dark:border-slate-800 pt-3">
         {#if prayerTimes}
           <div
-            class="text-center p-1.5 rounded-xl bg-slate-50 border border-slate-100"
+            class="text-center p-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800"
           >
             <p
-              class="text-[9px] text-slate-400 font-black uppercase tracking-wider"
-            >
-              Subuh
-            </p>
-            <p class="text-xs font-black text-slate-800 font-mono mt-0.5">
-              {prayerTimes.Subuh}
+              class="text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider"
+            > {$t('prayer_times.subuh') || 'Subuh'} </p>
+            <p class="text-xs font-black text-slate-800 dark:text-slate-100 font-mono mt-0.5">
+              {$locale === 'ar' ? toArabicNumerals(prayerTimes.Subuh) : prayerTimes.Subuh}
             </p>
           </div>
           <div
-            class="text-center p-1.5 rounded-xl bg-slate-50 border border-slate-100"
+            class="text-center p-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800"
           >
             <p
-              class="text-[9px] text-slate-400 font-black uppercase tracking-wider"
+              class="text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider"
             >
-              {isFridayLocal ? "Jum'at" : "Dzuhur"}
+              {isFridayLocal ? ($t('prayer_times.jumat') || "Jum'at") : ($t('prayer_times.dzuhur') || "Dzuhur")}
             </p>
-            <p class="text-xs font-black text-slate-800 font-mono mt-0.5">
-              {prayerTimes.Dzuhur}
+            <p class="text-xs font-black text-slate-800 dark:text-slate-100 font-mono mt-0.5">
+              {$locale === 'ar' ? toArabicNumerals(prayerTimes.Dzuhur) : prayerTimes.Dzuhur}
             </p>
           </div>
           <div
-            class="text-center p-1.5 rounded-xl bg-slate-50 border border-slate-100"
+            class="text-center p-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800"
           >
             <p
-              class="text-[9px] text-slate-400 font-black uppercase tracking-wider"
-            >
-              Ashar
-            </p>
-            <p class="text-xs font-black text-slate-800 font-mono mt-0.5">
-              {prayerTimes.Ashar}
+              class="text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider"
+            > {$t('prayer_times.ashar') || 'Ashar'} </p>
+            <p class="text-xs font-black text-slate-800 dark:text-slate-100 font-mono mt-0.5">
+              {$locale === 'ar' ? toArabicNumerals(prayerTimes.Ashar) : prayerTimes.Ashar}
             </p>
           </div>
           <div
-            class="text-center p-1.5 rounded-xl bg-slate-50 border border-slate-100"
+            class="text-center p-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800"
           >
             <p
-              class="text-[9px] text-slate-400 font-black uppercase tracking-wider"
-            >
-              Maghrib
-            </p>
-            <p class="text-xs font-black text-slate-800 font-mono mt-0.5">
-              {prayerTimes.Maghrib}
+              class="text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider"
+            > {$t('prayer_times.maghrib') || 'Maghrib'} </p>
+            <p class="text-xs font-black text-slate-800 dark:text-slate-100 font-mono mt-0.5">
+              {$locale === 'ar' ? toArabicNumerals(prayerTimes.Maghrib) : prayerTimes.Maghrib}
             </p>
           </div>
           <div
-            class="text-center p-1.5 rounded-xl bg-slate-50 border border-slate-100"
+            class="text-center p-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800"
           >
             <p
-              class="text-[9px] text-slate-400 font-black uppercase tracking-wider"
-            >
-              Isya
-            </p>
-            <p class="text-xs font-black text-slate-800 font-mono mt-0.5">
-              {prayerTimes.Isya}
+              class="text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider"
+            > {$t('prayer_times.isya') || 'Isya'} </p>
+            <p class="text-xs font-black text-slate-800 dark:text-slate-100 font-mono mt-0.5">
+              {$locale === 'ar' ? toArabicNumerals(prayerTimes.Isya) : prayerTimes.Isya}
             </p>
           </div>
         {:else}
           <div
-            class="col-span-5 text-center text-xs text-slate-400 py-3 font-semibold"
+            class="col-span-5 text-center text-xs text-slate-400 dark:text-slate-500 py-3 font-semibold"
           >
             Mengambil jadwal...
           </div>
@@ -1721,8 +1861,8 @@
 
   <!-- ==================== FITUR ISLAMI WIDGET ==================== -->
   <section class="space-y-4">
-    <h2 class="text-lg font-bold text-slate-800 tracking-tight">
-      Fitur Islami
+    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+      {$t('islamic_features.title') || 'Fitur Islami'}
     </h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       <!-- Card 1: Qibla Compass -->
@@ -1731,34 +1871,39 @@
         class="group block transition-all hover:-translate-y-1.5 duration-300"
       >
         <div
-          class="relative overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/40 via-white to-white hover:border-indigo-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+          class="relative overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/40 via-white to-white dark:from-slate-800 dark:via-slate-800/95 dark:to-slate-900 dark:border-slate-700 hover:border-indigo-300 hover:shadow-soft-md text-slate-800 dark:text-slate-100 p-5 h-44 flex flex-col justify-between transition-all duration-300"
         >
           <!-- Dekorasi AI -->
           <div
-            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
-            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply dark:mix-blend-normal"
+            
           >
             <img
               src="/images/kiblat_bg.png"
               alt="Arah Kiblat"
-              class="w-full h-full object-contain"
+              class="w-full h-full object-contain dark:hidden"
+            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);">
+              <img
+              src="/images/kiblat_bg_dark.png"
+              alt="Arah Kiblat"
+              class="w-full h-full object-contain hidden dark:block"
             />
           </div>
           <div class="space-y-1.5 z-10">
             <span
-              class="inline-flex items-center space-x-1.5 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600 leading-none"
+              class="inline-flex items-center space-x-1.5 bg-indigo-50 border border-indigo-100 dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600 leading-none"
             >
-              🧭 Kompas Arah
+              {$t('islamic_features.qibla_badge') || '🧭 Kompas Arah'}
             </span>
             <h3
-              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800"
+              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800 dark:text-slate-100"
             >
-              Arah Kiblat
+              {$t('islamic_features.qibla_title') || 'Arah Kiblat'}
             </h3>
             <p
-              class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
+              class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed font-normal max-w-xs"
             >
-              Cari arah kiblat sholat secara real-time dengan HP atau GPS.
+              {$t('islamic_features.qibla_desc') || 'Cari arah kiblat sholat secara real-time dengan HP atau GPS.'}
             </p>
           </div>
         </div>
@@ -1770,34 +1915,39 @@
         class="group block transition-all hover:-translate-y-1.5 duration-300"
       >
         <div
-          class="relative overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/40 via-white to-white hover:border-emerald-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+          class="relative overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/40 via-white to-white dark:from-slate-800 dark:via-slate-800/95 dark:to-slate-900 dark:border-slate-700 hover:border-emerald-300 hover:shadow-soft-md text-slate-800 dark:text-slate-100 p-5 h-44 flex flex-col justify-between transition-all duration-300"
         >
           <!-- Dekorasi AI -->
           <div
-            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
-            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply dark:mix-blend-normal"
+            
           >
             <img
               src="/images/zakat_bg.png"
               alt="Hitung Zakat"
-              class="w-full h-full object-contain"
+              class="w-full h-full object-contain dark:hidden"
+            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);">
+              <img
+              src="/images/zakat_bg_dark.png"
+              alt="Hitung Zakat"
+              class="w-full h-full object-contain hidden dark:block"
             />
           </div>
           <div class="space-y-1.5 z-10">
             <span
-              class="inline-flex items-center space-x-1.5 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-emerald-600 leading-none"
+              class="inline-flex items-center space-x-1.5 bg-emerald-50 border border-emerald-100 dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-emerald-600 leading-none"
             >
-              🧮 Hitung Zakat
+              {$t('islamic_features.zakat_badge') || '🧮 Hitung Zakat'}
             </span>
             <h3
-              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800"
+              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800 dark:text-slate-100"
             >
-              Kalkulator Zakat
+              {$t('islamic_features.zakat_title') || 'Kalkulator Zakat'}
             </h3>
             <p
-              class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
+              class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed font-normal max-w-xs"
             >
-              Hitung Zakat Penghasilan, Maal, Emas, Peternakan, Saham, dll.
+              {$t('islamic_features.zakat_desc') || 'Hitung Zakat Penghasilan, Maal, Emas, Peternakan, Saham, dll.'}
             </p>
           </div>
         </div>
@@ -1809,34 +1959,39 @@
         class="group block transition-all hover:-translate-y-1.5 duration-300"
       >
         <div
-          class="relative overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50/40 via-white to-white hover:border-amber-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+          class="relative overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50/40 via-white to-white dark:from-slate-800 dark:via-slate-800/95 dark:to-slate-900 dark:border-slate-700 hover:border-amber-300 hover:shadow-soft-md text-slate-800 dark:text-slate-100 p-5 h-44 flex flex-col justify-between transition-all duration-300"
         >
           <!-- Dekorasi AI -->
           <div
-            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
-            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply dark:mix-blend-normal"
+            
           >
             <img
               src="/images/faraidh_bg.png"
               alt="Kalkulator Waris"
-              class="w-full h-full object-contain"
+              class="w-full h-full object-contain dark:hidden"
+            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);">
+              <img
+              src="/images/faraidh_bg_dark.png"
+              alt="Kalkulator Waris"
+              class="w-full h-full object-contain hidden dark:block"
             />
           </div>
           <div class="space-y-1.5 z-10">
             <span
-              class="inline-flex items-center space-x-1.5 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-amber-600 leading-none"
+              class="inline-flex items-center space-x-1.5 bg-amber-50 border border-amber-100 dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-amber-600 leading-none"
             >
-              ⚖️ Pembagian Waris
+              {$t('islamic_features.faraidh_badge') || '⚖️ Pembagian Waris'}
             </span>
             <h3
-              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800"
+              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800 dark:text-slate-100"
             >
-              Kalkulator Faraidh
+              {$t('islamic_features.faraidh_title') || 'Kalkulator Faraidh'}
             </h3>
             <p
-              class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
+              class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed font-normal max-w-xs"
             >
-              Hitung pembagian waris secara syariat Islam dengan mudah.
+              {$t('islamic_features.faraidh_desc') || 'Hitung pembagian waris secara syariat Islam dengan mudah.'}
             </p>
           </div>
         </div>
@@ -1848,35 +2003,39 @@
         class="group block transition-all hover:-translate-y-1.5 duration-300"
       >
         <div
-          class="relative overflow-hidden rounded-2xl border border-green-200 bg-gradient-to-br from-green-50/40 via-white to-white hover:border-green-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+          class="relative overflow-hidden rounded-2xl border border-green-200 bg-gradient-to-br from-green-50/40 via-white to-white dark:from-slate-800 dark:via-slate-800/95 dark:to-slate-900 dark:border-slate-700 hover:border-green-300 hover:shadow-soft-md text-slate-800 dark:text-slate-100 p-5 h-44 flex flex-col justify-between transition-all duration-300"
         >
           <!-- Dekorasi AI -->
           <div
-            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
-            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply dark:mix-blend-normal"
+            
           >
             <img
               src="/images/kalender_bg.png"
               alt="Kalender Hijriah"
-              class="w-full h-full object-contain scale-125 translate-x-2 translate-y-2"
+              class="w-full h-full object-contain scale-125 translate-x-2 translate-y-2 dark:hidden"
+            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);">
+              <img
+              src="/images/kalender_bg_dark.png"
+              alt="Kalender Hijriah"
+              class="w-full h-full object-contain scale-125 translate-x-2 translate-y-2 hidden dark:block"
             />
           </div>
           <div class="space-y-1.5 z-10">
             <span
-              class="inline-flex items-center space-x-1.5 bg-green-50 border border-green-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-green-600 leading-none"
+              class="inline-flex items-center space-x-1.5 bg-green-50 border border-green-100 dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-green-600 leading-none"
             >
-              📅 Kalender
+              {$t('islamic_features.calendar_badge') || '📅 Kalender'}
             </span>
             <h3
-              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800"
+              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800 dark:text-slate-100"
             >
-              Masehi & Hijriah
+              {$t('islamic_features.calendar_title') || 'Masehi & Hijriah'}
             </h3>
             <p
-              class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
+              class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed font-normal max-w-xs"
             >
-              Lihat penanggalan Masehi dan Hijriah secara interaktif dalam satu
-              layar.
+              {$t('islamic_features.calendar_desc') || 'Lihat penanggalan Masehi dan Hijriah secara interaktif dalam satu layar.'}
             </p>
           </div>
         </div>
@@ -1887,34 +2046,39 @@
         class="group block transition-all hover:-translate-y-1.5 duration-300"
       >
         <div
-          class="relative overflow-hidden rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50/40 via-white to-white hover:border-teal-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+          class="relative overflow-hidden rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50/40 via-white to-white dark:from-slate-800 dark:via-slate-800/95 dark:to-slate-900 dark:border-slate-700 hover:border-teal-300 hover:shadow-soft-md text-slate-800 dark:text-slate-100 p-5 h-44 flex flex-col justify-between transition-all duration-300"
         >
           <!-- Dekorasi AI -->
           <div
-            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
-            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply dark:mix-blend-normal"
+            
           >
             <img
               src="/images/tasbih_icon.png"
               alt="Tasbih Digital"
-              class="w-full h-full object-contain scale-110 translate-x-2 translate-y-2"
+              class="w-full h-full object-contain scale-110 translate-x-2 translate-y-2 dark:hidden"
+            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);">
+              <img
+              src="/images/tasbih_icon_dark.png"
+              alt="Tasbih Digital"
+              class="w-full h-full object-contain scale-110 translate-x-2 translate-y-2 hidden dark:block"
             />
           </div>
           <div class="space-y-1.5 z-10">
             <span
-              class="inline-flex items-center space-x-1.5 bg-teal-50 border border-teal-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-teal-600 leading-none"
+              class="inline-flex items-center space-x-1.5 bg-teal-50 border border-teal-100 dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-teal-600 leading-none"
             >
-              📿 Zikir Pintar
+              {$t('islamic_features.tasbih_badge') || '📿 Zikir Pintar'}
             </span>
             <h3
-              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800"
+              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800 dark:text-slate-100"
             >
-              Tasbih Digital
+              {$t('islamic_features.tasbih_title') || 'Tasbih Digital'}
             </h3>
             <p
-              class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
+              class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed font-normal max-w-xs"
             >
-              Hitung dan simpan zikir harianmu secara otomatis.
+              {$t('islamic_features.tasbih_desc') || 'Hitung dan simpan zikir harianmu secara otomatis.'}
             </p>
           </div>
         </div>
@@ -1926,30 +2090,31 @@
         class="group block transition-all hover:-translate-y-1.5 duration-300"
       >
         <div
-          class="relative overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/40 via-white to-white hover:border-blue-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+          class="relative overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/40 via-white to-white dark:from-slate-800 dark:via-slate-800/95 dark:to-slate-900 dark:border-slate-700 hover:border-blue-300 hover:shadow-soft-md text-slate-800 dark:text-slate-100 p-5 h-44 flex flex-col justify-between transition-all duration-300"
         >
           <!-- Dekorasi AI -->
           <div
-            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply flex items-center justify-center text-blue-100"
-            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply dark:mix-blend-normal flex items-center justify-center text-blue-100"
+            
           >
-            <img src="/images/cashflow_icon.png" alt="Cash Flow" class="w-full h-full object-contain drop-shadow-sm scale-110 translate-x-2 translate-y-2 opacity-80" />
+            <img src="/images/cashflow_icon.png" alt="Cash Flow" class="w-full h-full object-contain drop-shadow-sm dark:shadow-none scale-110 translate-x-2 translate-y-2 opacity-80 dark:hidden" style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);">
+              <img src="/images/cashflow_icon_dark.png" alt="Cash Flow" class="w-full h-full object-contain drop-shadow-sm dark:shadow-none scale-110 translate-x-2 translate-y-2 opacity-80 hidden dark:block" />
           </div>
           <div class="space-y-1.5 z-10">
             <span
-              class="inline-flex items-center space-x-1.5 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-blue-600 leading-none"
+              class="inline-flex items-center space-x-1.5 bg-blue-50 border border-blue-100 dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-blue-600 leading-none"
             >
-              💳 Manajemen Uang
+              {$t('islamic_features.cashflow_badge') || '💳 Manajemen Uang'}
             </span>
             <h3
-              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800"
+              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800 dark:text-slate-100"
             >
-              Cash Flow
+              {$t('islamic_features.cashflow_title') || 'Cash Flow'}
             </h3>
             <p
-              class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
+              class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed font-normal max-w-xs"
             >
-              Catat Cash Flow harianmu dengan mudah dan aman sebagaimana isyarat QS. Al-Baqarah: 282.
+              {$t('islamic_features.cashflow_desc') || 'Catat Cash Flow harianmu dengan mudah dan aman sebagaimana isyarat QS. Al-Baqarah: 282.'}
             </p>
           </div>
         </div>
@@ -1961,30 +2126,31 @@
         class="group block transition-all hover:-translate-y-1.5 duration-300"
       >
         <div
-          class="relative overflow-hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50/40 via-white to-white hover:border-rose-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+          class="relative overflow-hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50/40 via-white to-white dark:from-slate-800 dark:via-slate-800/95 dark:to-slate-900 dark:border-slate-700 hover:border-rose-300 hover:shadow-soft-md text-slate-800 dark:text-slate-100 p-5 h-44 flex flex-col justify-between transition-all duration-300"
         >
           <!-- Dekorasi AI -->
           <div
-            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply flex items-center justify-center text-rose-100"
-            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+            class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply dark:mix-blend-normal flex items-center justify-center text-rose-100"
+            
           >
-            <img src="/images/kas_angkatan_icon.jpg" alt="Kas Angkatan" class="w-full h-full object-cover drop-shadow-sm scale-110 translate-x-2 translate-y-2 opacity-80 rounded-full" />
+            <img src="/images/kas_angkatan_icon.jpg" alt="Kas Angkatan" class="w-full h-full object-cover drop-shadow-sm dark:shadow-none scale-110 translate-x-2 translate-y-2 opacity-80 rounded-full dark:hidden" style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);">
+              <img src="/images/kas_angkatan_icon_dark.png" alt="Kas Angkatan" class="w-full h-full object-cover drop-shadow-sm dark:shadow-none scale-110 translate-x-2 translate-y-2 opacity-80 rounded-full hidden dark:block" />
           </div>
           <div class="space-y-1.5 z-10">
             <span
-              class="inline-flex items-center space-x-1.5 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-rose-600 leading-none"
+              class="inline-flex items-center space-x-1.5 bg-rose-50 border border-rose-100 dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-rose-600 leading-none"
             >
-              🤝 Donasi / Kas
+              {$t('islamic_features.kas_badge') || '🤝 Donasi / Kas'}
             </span>
             <h3
-              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800"
+              class="text-lg font-extrabold tracking-tight mt-1 text-slate-800 dark:text-slate-100"
             >
-              Kas Angkatan
+              {$t('islamic_features.kas_title') || 'Kas Angkatan'}
             </h3>
             <p
-              class="text-xs text-slate-500 leading-relaxed font-normal max-w-xs"
+              class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed font-normal max-w-xs"
             >
-              Dukung kemaslahatan bersama melalui kontribusi Kas Angkatan.
+              {$t('islamic_features.kas_desc') || 'Dukung kemaslahatan bersama melalui kontribusi Kas Angkatan.'}
             </p>
           </div>
         </div>
@@ -1994,39 +2160,40 @@
 
   <!-- ==================== KUIS CERDAS CERMAT WIDGET ==================== -->
   <section class="space-y-4">
-    <h2 class="text-lg font-bold text-slate-800 tracking-tight">
-      Uji Pengetahuanmu
+    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+      {$t('extra_features.quiz_section') || 'Uji Pengetahuanmu'}
     </h2>
     <a
       href="/kuis"
       class="group block transition-all hover:-translate-y-1.5 duration-300"
     >
       <div
-        class="relative overflow-hidden rounded-2xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50/40 via-white to-white hover:border-fuchsia-300 hover:shadow-soft-md text-slate-800 p-5 sm:p-6 min-h-[11rem] flex flex-col justify-between transition-all duration-300"
+        class="relative overflow-hidden rounded-2xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50/40 via-white to-white dark:from-slate-800 dark:via-slate-800/95 dark:to-slate-900 dark:border-slate-700 hover:border-fuchsia-300 hover:shadow-soft-md text-slate-800 dark:text-slate-100 p-5 sm:p-6 min-h-[11rem] flex flex-col justify-between transition-all duration-300"
       >
         <!-- Dekorasi AI -->
         <div
           class="absolute -right-4 -bottom-4 w-40 h-40 sm:w-48 sm:h-48 opacity-100 pointer-events-none group-hover:scale-110 transition-transform duration-500 flex items-center justify-center"
-          style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
+          
         >
-          <img src="/images/quiz_icon.png" alt="Quiz Cerdas Cermat" class="w-full h-full object-contain drop-shadow-md scale-110 translate-x-2 translate-y-2 opacity-90 group-hover:opacity-100 transition-opacity" />
+          <img src="/images/quiz_icon.png" alt="Quiz Cerdas Cermat" class="w-full h-full object-contain drop-shadow-md dark:shadow-none scale-110 translate-x-2 translate-y-2 opacity-90 group-hover:opacity-100 transition-opacity dark:hidden" style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);">
+              <img src="/images/quiz_icon_dark.png" alt="Quiz Cerdas Cermat" class="w-full h-full object-contain drop-shadow-md dark:shadow-none scale-110 translate-x-2 translate-y-2 opacity-90 group-hover:opacity-100 transition-opacity hidden dark:block" />
         </div>
         
         <div class="space-y-2 z-10 w-[70%] sm:w-2/3">
           <span
-            class="inline-flex items-center space-x-1.5 bg-fuchsia-50 border border-fuchsia-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 leading-none"
+            class="inline-flex items-center space-x-1.5 bg-fuchsia-50 border border-fuchsia-100 dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 leading-none"
           >
-            🎉 Mini Game Baru!
+            {$t('extra_features.quiz_badge') || '🎉 Mini Game Baru!'}
           </span>
           <h3
-            class="text-lg sm:text-xl font-extrabold tracking-tight mt-1 text-slate-800"
+            class="text-lg sm:text-xl font-extrabold tracking-tight mt-1 text-slate-800 dark:text-slate-100"
           >
-            Kuis Cerdas Cermat Islami
+            {$t('extra_features.quiz_title') || 'Kuis Cerdas Cermat Islami'}
           </h3>
           <p
-            class="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal max-w-sm"
+            class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed font-normal max-w-sm"
           >
-            Uji seberapa jauh pengetahuan agamamu! Ada pertanyaan seputar Fiqih, Nahwu, dan Sejarah.
+            {$t('extra_features.quiz_desc') || 'Uji seberapa jauh pengetahuan agamamu! Ada pertanyaan seputar Fiqih, Nahwu, dan Sejarah.'}
           </p>
         </div>
       </div>
@@ -2035,38 +2202,34 @@
 
   <!-- ==================== KHASANAH LIRBOYO BANNER ==================== -->
   <section class="space-y-4">
-    <h2 class="text-lg font-bold text-slate-800 tracking-tight">
-      Khasanah Lirboyo
+    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+      {$t('extra_features.khasanah_section') || 'Khasanah Lirboyo'}
     </h2>
     <a
       href="/khasanah"
       class="group block transition-all hover:-translate-y-1.5 duration-300"
     >
       <div
-        class="relative overflow-hidden rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50/40 via-white to-white hover:border-teal-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+        class="relative overflow-hidden rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50/40 via-white to-white dark:from-slate-800 dark:via-slate-800/95 dark:to-slate-900 dark:border-slate-700 hover:border-teal-300 hover:shadow-soft-md text-slate-800 dark:text-slate-100 p-5 h-44 flex flex-col justify-between transition-all duration-300"
       >
         <!-- Dekorasi Background -->
-        <div
-          class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply flex items-center justify-center text-teal-100"
-          style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
-        >
-          <div class="text-8xl scale-125 translate-x-2 translate-y-2 opacity-30 drop-shadow-md">
-            🕌
-          </div>
+        <div class="absolute -right-12 -bottom-4 w-52 h-52 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500">
+            <img src="/images/khasanah_bg.png" alt="Khasanah Lirboyo" class="w-full h-full object-contain dark:hidden mix-blend-multiply" style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);" />
+            <img src="/images/khasanah_bg_dark.png" alt="Khasanah Lirboyo" class="w-full h-full object-contain hidden dark:block" />
         </div>
         <div class="space-y-1.5 z-10">
           <span
-            class="inline-flex items-center space-x-1.5 bg-teal-50 border border-teal-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-teal-700 leading-none"
+            class="inline-flex items-center space-x-1.5 bg-teal-50 border border-teal-100 dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-teal-700 leading-none"
           >
-            📖 Profil & Sejarah
+            {$t('extra_features.khasanah_badge') || '📖 Profil & Sejarah'}
           </span>
-          <h3 class="text-lg font-extrabold tracking-tight mt-1 text-slate-800">
-            Jejak Lirboyo & Mozaik Murobbi
+          <h3 class="text-lg font-extrabold tracking-tight mt-1 text-slate-800 dark:text-slate-100">
+            {$t('extra_features.khasanah_title') || 'Jejak Lirboyo & Mozaik Murobbi'}
           </h3>
           <p
-            class="text-xs text-slate-500 leading-relaxed font-normal max-w-xl"
+            class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed font-normal max-w-xl"
           >
-            Selami nilai-nilai sejarah, filosofi, dan profil lengkap Pondok Pesantren Lirboyo beserta pesan-pesan Masyayikh.
+            {$t('extra_features.khasanah_desc') || 'Selami nilai-nilai sejarah, filosofi, dan profil lengkap Pondok Pesantren Lirboyo beserta pesan-pesan Masyayikh.'}
           </p>
         </div>
       </div>
@@ -2075,41 +2238,42 @@
 
   <!-- ==================== KABINET KEPENGURUSAN BANNER ==================== -->
   <section class="space-y-4">
-    <h2 class="text-lg font-bold text-slate-800 tracking-tight">
-      Kepengurusan
+    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+      {$t('extra_features.pengurus_section') || 'Kepengurusan'}
     </h2>
     <a
       href="/kepengurusan"
       class="group block transition-all hover:-translate-y-1.5 duration-300"
     >
       <div
-        class="relative overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/40 via-white to-white hover:border-blue-300 hover:shadow-soft-md text-slate-800 p-5 h-44 flex flex-col justify-between transition-all duration-300"
+        class="relative overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/40 via-white to-white dark:from-slate-800 dark:via-slate-800/95 dark:to-slate-900 dark:border-slate-700 hover:border-blue-300 hover:shadow-soft-md text-slate-800 dark:text-slate-100 p-5 h-44 flex flex-col justify-between transition-all duration-300"
       >
         <!-- Dekorasi AI -->
-        <div
-          class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
-          style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);"
-        >
+                <div class="absolute -right-4 -bottom-4 w-40 h-40 opacity-90 pointer-events-none group-hover:scale-110 transition-transform duration-500 mix-blend-multiply dark:mix-blend-normal">
           <img
             src="/images/kepengurusan_bg.png"
             alt="Kepengurusan"
-            class="w-full h-full object-contain"
+            class="w-full h-full object-contain dark:hidden"
+            style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);" />
+          <img
+            src="/images/kepengurusan_bg_dark.png"
+            alt="Kepengurusan"
+            class="w-full h-full object-contain hidden dark:block dark:invert dark:hue-rotate-180 dark:brightness-125 dark:contrast-125 dark:drop-shadow-[0_0_10px_rgba(125,211,252,0.4)]"
           />
         </div>
         <div class="space-y-1.5 z-10">
           <span
-            class="inline-flex items-center space-x-1.5 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-blue-600 leading-none"
+            class="inline-flex items-center space-x-1.5 bg-blue-50 border border-blue-100 dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-blue-600 leading-none"
           >
-            👥 Kepengurusan Santri
+            {$t('extra_features.pengurus_badge') || '👥 Kepengurusan Santri'}
           </span>
-          <h3 class="text-lg font-extrabold tracking-tight mt-1 text-slate-800">
-            Kenangan Kepengurusan Santri
+          <h3 class="text-lg font-extrabold tracking-tight mt-1 text-slate-800 dark:text-slate-100">
+            {$t('extra_features.pengurus_title') || 'Kenangan Kepengurusan Santri'}
           </h3>
           <p
-            class="text-xs text-slate-500 leading-relaxed font-normal max-w-xl"
+            class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed font-normal max-w-xl"
           >
-            Jelajahi rekam jejak kepengurusan siswi yang pernah menjabat pada
-            periode tahun ajaran 2026 - 2032.
+            {$t('extra_features.pengurus_desc') || 'Jelajahi rekam jejak kepengurusan siswi yang pernah menjabat pada periode tahun ajaran 2026 - 2032.'}
           </p>
         </div>
       </div>
@@ -2118,8 +2282,8 @@
 
   <!-- ==================== QUICK STATS GRID ==================== -->
   <section class="space-y-4">
-    <h2 class="text-lg font-bold text-slate-800 tracking-tight">
-      Ikhtisar MAZEEDA
+    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+      {$t('ikhtisar.title') || 'Ikhtisar MAZEEDA'}
     </h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       {#each stats as stat}
@@ -2131,22 +2295,22 @@
             <div class="flex items-start justify-between">
               <div class="space-y-2">
                 <p
-                  class="text-xs font-semibold text-slate-400 uppercase tracking-wider"
+                  class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider"
                 >
                   {stat.name}
                 </p>
                 <h3
-                  class="text-2xl font-black text-slate-800 tracking-tight leading-none mt-1"
+                  class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none mt-1"
                 >
                   {#if isLoadingStats}
                     <span
-                      class="inline-block animate-pulse bg-slate-200 rounded w-16 h-7"
+                      class="inline-block animate-pulse bg-slate-200 dark:bg-slate-700 rounded w-16 h-7"
                     ></span>
                   {:else}
                     {stat.value}
                   {/if}
                 </h3>
-                <p class="text-xs text-slate-500 font-medium">
+                <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium">
                   {stat.description}
                 </p>
               </div>
@@ -2158,7 +2322,7 @@
                   <img
                     src={stat.image}
                     alt={stat.name}
-                    class="w-full h-full object-contain mix-blend-multiply drop-shadow-md scale-110 relative z-10"
+                    class="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal drop-shadow-md dark:shadow-none scale-110 relative z-10"
                   />
                 </div>
               {:else}
@@ -2181,19 +2345,20 @@
         <Card class="h-full relative overflow-hidden group border border-indigo-100 hover:border-indigo-300 hover:shadow-xl transition-all">
           <div class="flex items-start justify-between relative z-10">
             <div class="space-y-2">
-              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Jejak MAZEEDA
+              <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                {$t('ikhtisar.jejak_title') || 'Jejak MAZEEDA'}
               </p>
-              <h3 class="text-2xl font-black text-slate-800 tracking-tight leading-none mt-1 transition-colors">
-                Perjalanan Kami
+              <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none mt-1 transition-colors">
+                {$t('ikhtisar.jejak_perjalanan') || 'Perjalanan Kami'}
               </h3>
-              <p class="text-xs text-slate-500 font-medium">
-                2023 — 2032 · Eksplorasi Kenangan
+              <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium">
+                {$t('ikhtisar.jejak_desc') || '2023 - 2032 · Eksplorasi Kenangan'}
               </p>
             </div>
 
-            <div class="h-20 w-20 sm:h-24 sm:w-24 rounded-[1.25rem] bg-gradient-to-br from-indigo-50 to-white border border-slate-100 shadow-inner overflow-hidden flex items-center justify-center p-2 shrink-0 group-hover:scale-110 group-hover:-rotate-2 transition-transform duration-300 relative">
-              <img src="/images/journey_compass.png" alt="Jejak MAZEEDA" class="w-full h-full object-contain mix-blend-multiply drop-shadow-sm scale-110 relative z-10" />
+            <div class="h-20 w-20 sm:h-24 sm:w-24 rounded-[1.25rem] bg-gradient-to-br from-indigo-50 to-white border border-slate-100 dark:border-slate-800 shadow-inner overflow-hidden flex items-center justify-center p-2 shrink-0 group-hover:scale-110 group-hover:-rotate-2 transition-transform duration-300 relative">
+              <img src="/images/journey_compass.png" alt="Jejak MAZEEDA" class="w-full h-full object-contain mix-blend-multiply  drop-shadow-sm dark:shadow-none scale-110 relative z-10 dark:hidden" style="mask-image: radial-gradient(circle at center, black 30%, transparent 65%); -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 65%);">
+              <img src="/images/journey_compass_dark.png" alt="Jejak MAZEEDA" class="w-full h-full object-contain   drop-shadow-sm dark:shadow-none scale-110 relative z-10 hidden dark:block" />
             </div>
           </div>
         </Card>
@@ -2206,14 +2371,14 @@
     <!-- Left Column: Mading Highlight -->
     <section class="lg:col-span-7 space-y-4">
       <div class="flex items-center justify-between">
-        <h2 class="text-lg font-bold text-slate-800 tracking-tight">
-          Mading Terkini
+        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+          {$t('mading.mading_terkini') || 'Mading Terkini'}
         </h2>
         <a
           href="/mading"
           class="text-xs font-bold text-primary hover:underline flex items-center space-x-1"
         >
-          <span>Semua Mading</span>
+          <span>{$t('mading.semua_mading') || 'Semua Mading'}</span>
           <ArrowRight class="h-3.5 w-3.5" />
         </a>
       </div>
@@ -2224,23 +2389,23 @@
             <span
               class="px-2.5 py-1 text-xs font-bold bg-blue-50 text-primary border border-blue-100 rounded-full"
             >
-              {recentAnnouncement.category}
+              {recentAnnouncement.category === 'Informasi' ? ($t('mading.informasi') || 'Informasi') : recentAnnouncement.category}
             </span>
             <div
-              class="flex items-center text-slate-400 text-xs font-semibold space-x-1.5"
+              class="flex items-center text-slate-400 dark:text-slate-500 text-xs font-semibold space-x-1.5"
             >
               <Calendar class="h-3.5 w-3.5" />
-              <span>{recentAnnouncement.date}</span>
+              <span>{formatDateStr(recentAnnouncement.rawDate || recentAnnouncement.date, $locale)}</span>
             </div>
           </div>
 
           <div class="space-y-3 mt-4">
             <h3
-              class="text-xl font-bold text-slate-800 hover:text-primary transition-colors"
+              class="text-xl font-bold text-slate-800 dark:text-slate-100 hover:text-primary transition-colors"
             >
               <a href="/mading">{recentAnnouncement.title}</a>
             </h3>
-            <p class="text-sm text-slate-500 leading-relaxed font-normal">
+            <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed font-normal">
               {recentAnnouncement.excerpt}
             </p>
           </div>
@@ -2249,8 +2414,8 @@
             slot="footer"
             class="w-full flex items-center justify-between pt-2"
           >
-            <span class="text-xs font-semibold text-slate-400"
-              >Diposting oleh: <strong class="text-slate-600"
+            <span class="text-xs font-semibold text-slate-400 dark:text-slate-500"
+              >{$t('mading.diposting_oleh') || 'Diposting oleh:'} <strong class="text-slate-600 dark:text-slate-300"
                 >{recentAnnouncement.author &&
                 recentAnnouncement.author.toUpperCase() === "ADMIN MAZEEDA"
                   ? "ADMIN MAZEEDA"
@@ -2263,7 +2428,7 @@
                 size="sm"
                 class="text-primary flex items-center space-x-1.5"
               >
-                <span>Selengkapnya</span>
+                <span>{$t('mading.selengkapnya') || 'Selengkapnya'}</span>
                 <ArrowRight class="h-4 w-4" />
               </Button>
             </a>
@@ -2271,16 +2436,16 @@
         </Card>
       {:else}
         <Card
-          class="p-6 flex flex-col items-center justify-center text-center py-10 border border-dashed border-slate-200"
+          class="p-6 flex flex-col items-center justify-center text-center py-10 border border-dashed border-slate-200 dark:border-slate-700"
         >
           <Megaphone
             class="h-8 w-8 text-slate-350 mb-2 text-primary/40 animate-bounce"
           />
-          <h3 class="text-xs font-extrabold text-slate-700">
+          <h3 class="text-xs font-extrabold text-slate-700 dark:text-slate-200">
             Belum Ada Momen
           </h3>
           <p
-            class="text-[10px] text-slate-400 mt-1 max-w-[250px] leading-relaxed"
+            class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 max-w-[250px] leading-relaxed"
           >
             Tidak ada mading terbaru saat ini. Silakan masuk ke Panel Admin
             untuk membuat kenangan pertama!
@@ -2297,14 +2462,14 @@
     <!-- Right Column: Timeline Highlight -->
     <section class="lg:col-span-5 space-y-4">
       <div class="flex items-center justify-between">
-        <h2 class="text-lg font-bold text-slate-800 tracking-tight">
-          Memori Terkini
+        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+          {$t('mading.memori_terkini') || 'Memori Terkini'}
         </h2>
         <a
           href="/timeline"
           class="text-xs font-bold text-primary hover:underline flex items-center space-x-1"
         >
-          <span>Semua Galeri</span>
+          <span>{$t('mading.semua_galeri') || 'Semua Galeri'}</span>
           <ArrowRight class="h-3.5 w-3.5" />
         </a>
       </div>
@@ -2344,36 +2509,35 @@
             </div>
           </div>
 
-          <div class="p-5 space-y-3 bg-white">
+          <div class="p-5 space-y-3 bg-white dark:bg-slate-900">
             <div
-              class="flex items-center justify-between text-xs text-slate-400 font-semibold"
+              class="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-semibold"
             >
-              <span>Diunggah pada: {recentMemory.date}</span>
+              <span>{$t('mading.diunggah_pada') || 'Diunggah pada:'} {formatDateStr(recentMemory.rawDate || recentMemory.date, $locale)}</span>
               <div
                 class="flex items-center space-x-1 text-rose-500 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-100/50"
               >
                 <Heart class="h-3.5 w-3.5 fill-current" />
-                <span>{recentMemory.likes}</span>
+                <span>{displayNumber(recentMemory.likes, $locale)}</span>
               </div>
             </div>
-            <p class="text-xs text-slate-500 font-normal leading-relaxed">
-              Bagian dari lembar sejarah dan kenangan manis perjalanan
-              kebersamaan MAZEEDA Squad.
+            <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 font-normal leading-relaxed">
+              {$t('mading.memori_desc') || 'Bagian dari lembar sejarah dan kenangan manis perjalanan kebersamaan MAZEEDA Squad...'}
             </p>
           </div>
         </Card>
       {:else}
         <Card
-          class="p-6 flex flex-col items-center justify-center text-center py-10 border border-dashed border-slate-200"
+          class="p-6 flex flex-col items-center justify-center text-center py-10 border border-dashed border-slate-200 dark:border-slate-700"
         >
           <ImageIcon
             class="h-8 w-8 text-slate-350 mb-2 text-primary/40 animate-pulse"
           />
-          <h3 class="text-xs font-extrabold text-slate-700">
+          <h3 class="text-xs font-extrabold text-slate-700 dark:text-slate-200">
             Belum Ada Foto Memori
           </h3>
           <p
-            class="text-[10px] text-slate-400 mt-1 max-w-[250px] leading-relaxed"
+            class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 max-w-[250px] leading-relaxed"
           >
             Belum ada dokumentasi momen perjalanan kebersamaan MAZEEDA Squad.
             Unggah foto pertamamu di Direktori Timeline!
@@ -2382,7 +2546,7 @@
             <Button
               variant="outline"
               size="sm"
-              class="text-[10px] font-bold h-8 px-4 border-slate-200"
+              class="text-[10px] font-bold h-8 px-4 border-slate-200 dark:border-slate-700"
               >Buka Timeline</Button
             >
           </a>
@@ -2401,24 +2565,24 @@
   </div>
 
   <!-- ==================== COVERFLOW CAROUSEL (ALBUM MEMORI) ==================== -->
-  <section class="mt-8 pt-8 border-t border-slate-200/50 w-full overflow-hidden">
+  <section class="mt-8 pt-8 border-t border-slate-200 dark:border-slate-700/50 w-full overflow-hidden">
     <div class="flex items-center justify-center mb-2">
-      <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Galeri Kenangan</h2>
+      <h2 class="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{$t('mading.galeri_kenangan') || 'Galeri Kenangan'}</h2>
     </div>
     <CoverflowCarousel images={coverflowImages} on:imageClick={openLightbox} />
     
     <!-- Landscape Image Carousel -->
-    <div class="mt-2 border-t border-slate-100 pt-4">
-      <div class="flex items-center justify-center mb-0">
-        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Momen Spesial</h3>
+    <div class="mt-8 border-t border-slate-100 dark:border-slate-800 pt-10">
+      <div class="flex items-center justify-center -mb-8 relative z-20 pointer-events-none">
+        <h3 class="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{$t('footer.momen_spesial') || 'Momen Spesial'}</h3>
       </div>
       <LandscapeCarousel images={landscapeImages} on:imageClick={openLightbox} />
     </div>
 
     <!-- Infinite Avatar Marquee -->
-    <div class="mt-2 border-t border-slate-100 pt-4">
+    <div class="mt-2 border-t border-slate-100 dark:border-slate-800 pt-4">
       <div class="flex items-center justify-center mb-2">
-        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Wajah-wajah MAZEEDA Squad</h3>
+        <h3 class="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{$t('footer.wajah_squad') || 'Wajah-wajah MAZEEDA Squad'}</h3>
       </div>
       <AvatarMarquee images={marqueeImages} on:imageClick={openLightbox} />
     </div>
@@ -2426,11 +2590,11 @@
 
   <!-- ==================== PREMIUM FOOTER SECTION ==================== -->
   <footer
-    class="mt-12 -mx-4 -mb-12 sm:-mx-8 md:-mx-8 border-t border-slate-200 bg-slate-50/50"
+    class="mt-12 -mx-4 -mb-12 sm:-mx-8 md:-mx-8 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
   >
     <!-- Top Part: Google Play Store Button -->
     <div
-      class="py-8 px-4 flex flex-col items-center justify-center border-b border-slate-200/40"
+      class="py-8 px-4 flex flex-col items-center justify-center border-b border-slate-200 dark:border-slate-700/40"
     >
       <a
         href="https://play.google.com/store/apps/details?id=com.miHoYo.GenshinImpact"
@@ -2447,9 +2611,9 @@
     </div>
 
     <!-- Bottom Part: Copyright & Social Accounts -->
-    <div class="bg-slate-100/70 py-8 px-4 text-center space-y-5">
-      <p class="text-xs font-bold text-slate-500 tracking-wide">
-        © 2026 MAZEEDA | MA HMQ LIRBOYO
+    <div class="bg-slate-100 dark:bg-slate-800/70 py-8 px-4 text-center space-y-5">
+      <p class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 tracking-wide">
+        {$t('footer.copyright') || 'Hak Cipta ©'} {formatNumberStr('2026', $locale)} MAZEEDA | MA HMQ LIRBOYO
       </p>
 
       <!-- Social Media Buttons -->
@@ -2495,7 +2659,7 @@
           <img
             src="/twitter.png"
             alt="Twitter"
-            class="h-full w-full object-contain scale-[0.87] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]"
+            class="h-full w-full object-contain scale-[0.87] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)] dark:brightness-200 dark:contrast-150"
           />
         </a>
 
@@ -2533,19 +2697,15 @@
       <!-- Tentang Aplikasi Link -->
       <div class="mt-6 mb-2 flex flex-col items-center justify-center gap-2 sm:gap-3">
         <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-          <a href="/tentang" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-blue-50 text-slate-500 hover:text-blue-600 text-[10px] sm:text-[11px] font-bold transition-colors">
-            <Info class="w-3.5 h-3.5" /> Tentang Aplikasi
-          </a>
-          <a href="/kebijakan-privasi" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 text-[10px] sm:text-[11px] font-bold transition-colors">
-            <ShieldCheck class="w-3.5 h-3.5" /> Kebijakan Privasi
-          </a>
-          <a href="/syarat-ketentuan" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-amber-50 text-slate-500 hover:text-amber-600 text-[10px] sm:text-[11px] font-bold transition-colors">
-            <FileText class="w-3.5 h-3.5" /> Syarat & Ketentuan
-          </a>
+          <a href="/tentang" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-blue-600 text-[10px] sm:text-[11px] font-bold transition-colors">
+            <Info class="w-3.5 h-3.5" /> {$t('footer.tentang_aplikasi') || 'Tentang Aplikasi'}</a>
+          <a href="/kebijakan-privasi" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-emerald-600 text-[10px] sm:text-[11px] font-bold transition-colors">
+            <ShieldCheck class="w-3.5 h-3.5" /> {$t('footer.kebijakan_privasi') || 'Kebijakan Privasi'}</a>
+          <a href="/syarat-ketentuan" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-amber-50 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-amber-600 text-[10px] sm:text-[11px] font-bold transition-colors">
+            <FileText class="w-3.5 h-3.5" /> {$t('footer.syarat_ketentuan') || 'Syarat & Ketentuan'}</a>
         </div>
-        <button type="button" on:click={() => showFeedbackModal = true} class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-purple-50 text-slate-500 hover:text-purple-600 text-[10px] sm:text-[11px] font-bold transition-colors focus:outline-none">
-          <MessageSquare class="w-3.5 h-3.5" /> Kirim Masukan
-        </button>
+        <button type="button" on:click={() => showFeedbackModal = true} class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-purple-50 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-purple-600 text-[10px] sm:text-[11px] font-bold transition-colors focus:outline-none">
+          <MessageSquare class="w-3.5 h-3.5" /> {$t('footer.kirim_masukan') || 'Kirim Masukan'}</button>
       </div>
     </div>
   </footer>
@@ -2561,16 +2721,16 @@
     on:click={() => showFeedbackModal = false}
   >
     <div 
-      class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+      class="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
       transition:scale={{ duration: 200, start: 0.95 }}
       on:click|stopPropagation
     >
       {#if !feedbackSuccess}
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <h3 class="text-lg font-bold text-slate-800">Saran & Masukan</h3>
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Saran & Masukan</h3>
           <button 
             on:click={() => showFeedbackModal = false}
-            class="p-2 -mr-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors focus:outline-none"
+            class="p-2 -mr-2 rounded-xl text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-50 transition-colors focus:outline-none"
           >
             <XCircle class="w-5 h-5" />
           </button>
@@ -2582,8 +2742,8 @@
         {#if feedbackSuccess}
           <div class="text-center py-8" in:fade={{ duration: 200 }}>
             <img src="/Success.svg" alt="Berhasil" class="w-48 h-48 mx-auto mb-4 object-contain scale-110" />
-            <h4 class="text-xl font-bold text-slate-800 mb-2">Terima Kasih!</h4>
-            <p class="text-sm text-slate-500">Saran dan masukan Anda telah terkirim dan akan sangat membantu kami mengembangkan aplikasi MAZEEDA.</p>
+            <h4 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Terima Kasih!</h4>
+            <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500">Saran dan masukan Anda telah terkirim dan akan sangat membantu kami mengembangkan aplikasi MAZEEDA.</p>
           </div>
         {:else}
           <div class="space-y-4">
@@ -2594,12 +2754,12 @@
               </div>
             {/if}
             <div>
-              <label for="feedback" class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Pesan Anda</label>
+              <label for="feedback" class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-2 uppercase tracking-wider">Pesan Anda</label>
               <textarea 
                 id="feedback" 
                 rows="5" 
                 placeholder="Punya ide fitur baru, menemukan bug, atau sekadar memberi kritik dan saran? Tulis di sini..." 
-                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white resize-none transition-colors"
+                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900 resize-none transition-colors"
                 bind:value={feedbackMessage}
                 on:input={() => feedbackError = ""}
               ></textarea>
@@ -2636,5 +2796,12 @@
 
   .animate-marquee-right {
     animation: marqueeRight 35s linear infinite;
+  }
+
+  :global(html.font-amiri .jadwal-sholat-widget),
+  :global(html.font-amiri .jadwal-sholat-widget *),
+  :global(html.font-amiri .date-widget),
+  :global(html.font-amiri .date-widget *) {
+    font-family: 'Amiri', serif !important;
   }
 </style>

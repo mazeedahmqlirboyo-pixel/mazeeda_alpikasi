@@ -2,8 +2,10 @@
   import { onMount, tick, onDestroy } from 'svelte';
   import { fade, slide, fly } from 'svelte/transition';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import { Send, Bot, User, Loader2, Sparkles, AlertCircle, Trash2, StopCircle, MoreVertical, History, Plus, MessageSquare } from 'lucide-svelte';
+  import { ArrowLeft, Send, Bot, User, Loader2, Sparkles, AlertCircle, Trash2, StopCircle, MoreVertical, History, Plus, MessageSquare } from 'lucide-svelte';
   import { authStore } from '$lib/auth';
+  import { t, locale } from 'svelte-i18n';
+  import { get } from 'svelte/store';
   import { supabase } from '$lib/supabase';
 
   interface Message {
@@ -104,7 +106,7 @@
     messages = [{
       id: Date.now().toString(),
       role: 'model',
-      content: `Assalamu'alaikum ${$authStore.user?.name ? 'Kak **' + $authStore.user.name + '**' : 'Kak'}! 👋 Saya **MAZEEDA AI**, asisten cerdas yang siap menemani hari-harimu.\n\nMau nanya seputar aplikasi, ngobrol santai, curhat, atau minta **buatkan gambar**? Ketik aja di bawah ya! Satset saya jawab. 😊`
+      content: `${get(t)('ai_chat.welcome_prefix')} ${$authStore.user?.name ? '**' + $authStore.user.name + '**' : ''}! 👋 ${get(t)('ai_chat.welcome_suffix')}`
     }];
     saveCurrentChat();
     showDropdown = false;
@@ -125,7 +127,7 @@
   function saveCurrentChat() {
     if (!currentChatId || typeof window === 'undefined') return;
     
-    let title = 'Obrolan Baru';
+    let title = get(t)('ai_chat.new_chat') || 'Obrolan Baru';
     const firstUserMsg = messages.find(m => m.role === 'user');
     if (firstUserMsg) {
       title = firstUserMsg.content.slice(0, 30) + (firstUserMsg.content.length > 30 ? '...' : '');
@@ -227,9 +229,9 @@
     if (!text) return '';
     // Images
     let formatted = text.replace(/!\[(.*?)\]\((.*?)\)/g, 
-      `<div class="my-3 rounded-2xl overflow-hidden border border-slate-200/60 shadow-sm bg-slate-50/50 relative min-h-[240px] flex items-center justify-center group cursor-pointer">
+      `<div class="my-3 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/60 shadow-sm dark:shadow-none bg-slate-50 dark:bg-slate-800/50 relative min-h-[240px] flex items-center justify-center group cursor-pointer">
         <!-- Loading State -->
-        <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2.5 bg-slate-50 z-0">
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 gap-2.5 bg-slate-50 dark:bg-slate-800 z-0">
           <svg class="animate-spin h-7 w-7 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
           <span class="text-xs font-bold tracking-wide animate-pulse">MAZEEDA SEDANG MELUKIS...</span>
         </div>
@@ -237,7 +239,7 @@
         <img src="$2" alt="$1" class="w-full h-auto object-cover relative z-10 transition-opacity duration-700 downloadable-image" loading="lazy" style="opacity: 0;" onload="this.style.opacity=1; this.previousElementSibling.style.display='none'; this.nextElementSibling.style.display='flex';" onerror="this.previousElementSibling.innerHTML='<span class=\\'text-rose-500 text-xs font-medium\\'>Gagal memuat gambar</span>'" />
         <!-- Download Overlay -->
         <div class="absolute inset-0 bg-slate-900/40 z-20 hidden flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-          <div class="bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-full text-slate-700 font-bold text-sm shadow-xl flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+          <div class="bg-white dark:bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-full text-slate-700 dark:text-slate-200 font-bold text-sm shadow-xl flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
             Perbesar Gambar
           </div>
@@ -297,7 +299,7 @@
       const userName = $authStore.user?.name || 'Anonim';
       const userRole = $authStore.user?.role === 'admin' ? 'Admin' : 'Santri/Alumni';
 
-      const systemInstruction = `Kamu adalah MAZEEDA AI, asisten virtual super cerdas, ramah, Islami, dan gaul untuk pengguna aplikasi MAZEEDA. MAZEEDA adalah aplikasi santri kekinian yang memiliki fitur Quran, Wirid/Sangu, Timeline (Galeri), Mading, dan database Squad. Kamu harus selalu menjawab menggunakan bahasa Indonesia yang santai, sopan, kadang diselingi salam atau kalimat thoyyibah yang pas, namun tetap terlihat keren dan modern (satset). Panggil pengguna dengan sebutan akrab seperti "Sobat", "Kak", atau "Abang". Jangan pernah bilang kamu hanya AI buatan OpenAI, karena kamu adalah MAZEEDA AI.
+      const systemInstruction = `Kamu adalah MAZEEDA AI, asisten virtual super cerdas, ramah, Islami, dan gaul untuk pengguna aplikasi MAZEEDA. MAZEEDA adalah aplikasi santri kekinian yang memiliki fitur Quran, Wirid/Sangu, Timeline (Galeri), Mading, dan database Squad. Kamu harus selalu menjawab menggunakan bahasa Indonesia yang santai, sopan, kadang diselingi salam atau kalimat thoyyibah yang pas, namun tetap terlihat keren dan modern (satset). Panggil pengguna dengan sebutan akrab seperti "Sobat", "Kak", atau "Abang". Jangan pernah bilang kamu hanya AI buatan OpenAI, karena kamu adalah MAZEEDA AI.\n\n[CRITICAL INSTRUCTION]: You MUST reply to the user using the language specified by this ISO code: ${get(locale)}. All your responses, explanations, greetings, and jokes must be in this language.
 
 INFO PENGGUNA SAAT INI:
 Nama pengguna yang sedang bicara denganmu adalah: ${userName}. (Peran/Status: ${userRole}).
@@ -395,14 +397,23 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
   <title>MAZEEDA AI</title>
 </svelte:head>
 
-<div class="fixed inset-0 z-[70] flex flex-col bg-slate-50 overflow-hidden">
+<div class="fixed inset-0 z-[70] flex flex-col bg-slate-50 dark:bg-slate-900 overflow-hidden">
   
   <!-- Header -->
-  <PageHeader title="MAZEEDA AI" backTo="/">
-    <div slot="right" class="relative">
+  <header class="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 shadow-sm dark:shadow-none mb-0 py-2 px-4 sm:px-6">
+    <div class="flex items-center justify-between relative w-full">
+      <a href="/" class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:text-indigo-600 transition-colors shrink-0">
+        <ArrowLeft class="w-5 h-5" />
+      </a>
+      
+      <h1 class="absolute left-1/2 -translate-x-1/2 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-semibold whitespace-nowrap pointer-events-none">
+        {$t('ai_chat.title') || 'MAZEEDA AI'}
+      </h1>
+      
+      <div class="flex items-center justify-end shrink-0 w-10 h-10 relative">
       <button 
         on:click={() => showDropdown = !showDropdown}
-        class="p-2 text-slate-400 hover:text-indigo-500 rounded-full hover:bg-indigo-50 transition-colors"
+        class="p-2 text-slate-400 dark:text-slate-500 hover:text-indigo-500 rounded-full hover:bg-indigo-50 transition-colors"
       >
         <MoreVertical class="h-5 w-5" />
       </button>
@@ -413,35 +424,36 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
         <div class="fixed inset-0 z-40" on:click={() => showDropdown = false}></div>
         
         <div 
-          class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 origin-top-right"
+          class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-2 z-50 origin-top-right"
           transition:fly={{ y: -10, duration: 200 }}
         >
           <button 
             on:click={startNewChat}
-            class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 transition-colors font-medium"
+            class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 transition-colors font-medium"
           >
-            <Plus class="h-4 w-4" /> Obrolan Baru
+            <Plus class="h-4 w-4" /> {$t('ai_chat.new_chat')}
           </button>
           <button 
             on:click={() => { showHistoryModal = true; showDropdown = false; }}
-            class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 transition-colors font-medium"
+            class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 transition-colors font-medium"
           >
-            <History class="h-4 w-4" /> Riwayat
+            <History class="h-4 w-4" /> {$t('ai_chat.history')}
           </button>
-          <div class="h-px bg-slate-100 my-1"></div>
+          <div class="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
           <button 
             on:click={() => { showClearModal = true; showDropdown = false; }}
             class="w-full text-left px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors font-medium"
           >
-            <Trash2 class="h-4 w-4" /> Hapus Obrolan Ini
+            <Trash2 class="h-4 w-4" /> {$t('ai_chat.delete_chat')}
           </button>
         </div>
       {/if}
+      </div>
     </div>
-  </PageHeader>
+  </header>
 
   <!-- Background Decoration (Premium Animated Glass) -->
-  <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden bg-slate-50/50">
+  <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden bg-slate-50 dark:bg-slate-900">
     <div class="absolute top-[-10%] right-[-5%] w-[40rem] h-[40rem] bg-gradient-to-br from-blue-300/20 to-indigo-400/20 rounded-full blur-[80px] animate-pulse" style="animation-duration: 8s;"></div>
     <div class="absolute bottom-[-10%] left-[-10%] w-[35rem] h-[35rem] bg-gradient-to-tr from-cyan-300/20 to-blue-400/20 rounded-full blur-[80px] animate-pulse" style="animation-duration: 10s; animation-delay: 2s;"></div>
     <div class="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
@@ -460,7 +472,7 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
       
       <!-- Date stamp -->
       <div class="flex justify-center mb-6">
-        <span class="text-[10px] font-bold text-slate-400 bg-white/60 backdrop-blur-sm border border-slate-200/50 px-3 py-1 rounded-full">Hari Ini</span>
+        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200 dark:border-slate-700/50 px-3 py-1 rounded-full">{$t('ai_chat.today') || 'Hari Ini'}</span>
       </div>
 
       {#each messages as message (message.id)}
@@ -473,7 +485,7 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
             <!-- Avatar -->
             <div class="shrink-0 mt-auto">
               {#if message.role === 'user'}
-                <div class="h-8 w-8 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center border border-white overflow-hidden shadow-sm ring-2 ring-blue-50">
+                <div class="h-8 w-8 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center border border-white overflow-hidden shadow-sm dark:shadow-none ring-2 ring-blue-50">
                   {#if $authStore.user?.foto_url}
                     <img referrerpolicy="no-referrer" src={convertDriveUrl($authStore.user.foto_url)} alt="You" class="h-full w-full object-cover" on:error={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user text-blue-600"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'; }} />
                   {:else}
@@ -481,7 +493,7 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
                   {/if}
                 </div>
               {:else}
-                <div class="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-md relative group border border-slate-200 overflow-hidden">
+                <div class="h-8 w-8 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center shadow-md dark:shadow-none relative group border border-slate-200 dark:border-slate-700 overflow-hidden">
                   <img src="/merak.png" alt="MAZEEDA AI" class="w-full h-full object-cover p-0.5" />
                 </div>
               {/if}
@@ -489,15 +501,15 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
 
             <!-- Chat Bubble -->
             <div class="flex flex-col {message.role === 'user' ? 'items-end' : 'items-start'}">
-              <span class="text-[9px] font-bold text-slate-400 px-1 mb-1 tracking-wider uppercase">
+              <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 px-1 mb-1 tracking-wider uppercase">
                 {message.role === 'user' ? ($authStore.user?.name || 'Kamu') : 'MAZEEDA AI'}
               </span>
               
               <div 
-                class="px-4 py-3 rounded-[1.25rem] text-[13px] md:text-sm leading-relaxed relative group transition-all duration-300 shadow-sm
+                class="px-4 py-3 rounded-[1.25rem] text-[13px] md:text-sm leading-relaxed relative group transition-all duration-300 shadow-sm dark:shadow-none
                   {message.role === 'user' 
                     ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-br-sm shadow-blue-500/20' 
-                    : 'bg-white/90 backdrop-blur-md text-slate-800 rounded-bl-sm border border-slate-200/60 shadow-slate-200/50'}"
+                    : 'bg-white dark:bg-slate-900/90 backdrop-blur-md text-slate-800 dark:text-slate-100 rounded-bl-sm border border-slate-200 dark:border-slate-700/60 shadow-slate-200/50'}"
               >
                 <!-- Render markdown/line breaks safely -->
                 {#if !message.content && message.role === 'model' && isLoading}
@@ -522,18 +534,18 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
   </main>
 
   <!-- Input Area (Sticky at Bottom) -->
-  <div class="absolute bottom-0 left-0 right-0 bg-white/70 backdrop-blur-2xl border-t border-slate-200/50 p-3 pb-safe z-20 shadow-[0_-20px_40px_rgba(0,0,0,0.02)]">
+  <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900/70 backdrop-blur-2xl border-t border-slate-200 dark:border-slate-700/50 p-3 pb-safe z-20 shadow-[0_-20px_40px_rgba(0,0,0,0.02)]">
     <div class="max-w-3xl mx-auto flex items-end gap-2.5 relative">
       
       <!-- Input Field -->
-      <div class="relative flex-1 bg-white/80 backdrop-blur-sm rounded-[1.25rem] border border-slate-200/80 transition-all duration-300 focus-within:border-indigo-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100/50 overflow-hidden flex items-end shadow-sm hover:shadow-md">
+      <div class="relative flex-1 bg-white dark:bg-slate-900/80 backdrop-blur-sm rounded-[1.25rem] border border-slate-200 dark:border-slate-700/80 transition-all duration-300 focus-within:border-indigo-400 focus-within:bg-white dark:bg-slate-900 focus-within:ring-4 focus-within:ring-indigo-100/50 overflow-hidden flex items-end shadow-sm dark:shadow-none hover:shadow-md dark:shadow-none">
         <textarea
           bind:this={inputElement}
           bind:value={currentMessage}
           on:keydown={handleKeydown}
           on:input={handleInput}
-          placeholder="Tanya apa saja ke MAZEEDA AI..."
-          class="w-full max-h-[150px] bg-transparent border-none focus:outline-none focus:ring-0 resize-none py-3.5 pl-4 pr-12 text-sm text-slate-700 placeholder-slate-400 font-medium"
+          placeholder={$t('ai_chat.placeholder')}
+          class="w-full max-h-[150px] bg-transparent border-none focus:outline-none focus:ring-0 resize-none py-3.5 pl-4 pr-12 text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 font-medium"
           style="height: 48px;"
           disabled={isStreaming && !isLoading}
         ></textarea>
@@ -544,7 +556,7 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
         <button
           type="button"
           on:click={stopGeneration}
-          class="shrink-0 h-12 w-12 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-600 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:scale-105 active:scale-95 border border-rose-200/50"
+          class="shrink-0 h-12 w-12 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-600 flex items-center justify-center transition-all duration-300 shadow-sm dark:shadow-none hover:shadow-md dark:shadow-none hover:scale-105 active:scale-95 border border-rose-200/50"
           title="Hentikan Jawaban"
         >
           <StopCircle class="h-5 w-5" />
@@ -557,7 +569,7 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
           class="shrink-0 h-12 w-12 rounded-full flex items-center justify-center transition-all duration-300
             {currentMessage.trim() && !isLoading
               ? 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:via-purple-400 hover:to-pink-400 text-white shadow-[0_4px_15px_rgba(99,102,241,0.4)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.6)] scale-100 hover:scale-105 active:scale-95 border-none'
-              : 'bg-slate-100 text-slate-300 border border-slate-200 shadow-inner scale-95 cursor-not-allowed'}"
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-300 border border-slate-200 dark:border-slate-700 shadow-inner scale-95 cursor-not-allowed'}"
         >
           {#if isLoading && !isStreaming}
             <Loader2 class="h-5 w-5 animate-spin" />
@@ -577,13 +589,13 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
 <!-- History Modal -->
 {#if showHistoryModal}
   <div class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" transition:fade={{ duration: 200 }}>
-    <div class="bg-white rounded-3xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl relative overflow-hidden" transition:fly={{ y: 20, duration: 300 }}>
-      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl relative overflow-hidden" transition:fly={{ y: 20, duration: 300 }}>
+      <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+        <h3 class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
           <History class="h-5 w-5 text-indigo-500" />
-          Riwayat Percakapan
+          {$t('ai_chat.history_title')}
         </h3>
-        <button on:click={() => showHistoryModal = false} class="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm border border-slate-200">
+        <button on:click={() => showHistoryModal = false} class="p-2 bg-white dark:bg-slate-900 rounded-full text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 shadow-sm dark:shadow-none border border-slate-200 dark:border-slate-700">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
       </div>
@@ -592,21 +604,21 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
         {#if chatSessions.length === 0}
           <div class="text-center py-10 px-4">
             <MessageSquare class="h-10 w-10 text-slate-200 mx-auto mb-3" />
-            <p class="text-slate-500 text-sm font-medium">Belum ada riwayat percakapan.</p>
+            <p class="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-sm font-medium">{$t('ai_chat.no_history')}</p>
           </div>
         {:else}
           <div class="space-y-1">
             {#each chatSessions as session}
-              <div class="flex items-center gap-2 p-2 rounded-xl hover:bg-slate-50 group border border-transparent hover:border-slate-100 transition-colors">
+              <div class="flex items-center gap-2 p-2 rounded-xl hover:bg-slate-50 dark:bg-slate-800 group border border-transparent hover:border-slate-100 dark:border-slate-800 transition-colors">
                 <button 
                   on:click={() => loadChat(session.id)}
                   class="flex-1 text-left"
                 >
-                  <p class="text-sm font-bold truncate {currentChatId === session.id ? 'text-indigo-600' : 'text-slate-700'}">
-                    {session.title || 'Obrolan Tanpa Judul'}
+                  <p class="text-sm font-bold truncate {currentChatId === session.id ? 'text-indigo-600' : 'text-slate-700 dark:text-slate-200'}">
+                    {session.title || $t('ai_chat.untitled_chat')}
                   </p>
-                  <p class="text-[10px] font-semibold text-slate-400">
-                    {new Date(session.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  <p class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                    {new Date(session.updatedAt).toLocaleDateString($locale || 'id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </button>
                 <button
@@ -628,29 +640,29 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
   <!-- Clear History Modal -->
 {#if showClearModal}
   <div class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" transition:fade={{ duration: 200 }}>
-    <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative overflow-hidden text-center" transition:fly={{ y: 20, duration: 300 }}>
+    <div class="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-sm p-6 shadow-2xl relative overflow-hidden text-center" transition:fly={{ y: 20, duration: 300 }}>
       <!-- Icon -->
       <div class="mx-auto w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mb-4">
         <Trash2 class="h-8 w-8 text-rose-500" />
       </div>
       <!-- Text -->
-      <h3 class="text-xl font-bold text-slate-800 mb-2">Hapus Riwayat?</h3>
-      <p class="text-slate-500 text-sm mb-6">
-        Semua percakapan kamu dengan MAZEEDA AI akan dihapus permanen dan tidak bisa dikembalikan.
+      <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">{$t('ai_chat.clear_title')}</h3>
+      <p class="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-sm mb-6">
+        {$t('ai_chat.clear_desc')}
       </p>
       <!-- Buttons -->
       <div class="flex flex-col gap-3">
         <button 
           on:click={clearHistory}
-          class="w-full py-3.5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white font-bold rounded-xl transition-colors shadow-sm shadow-rose-200"
+          class="w-full py-3.5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white font-bold rounded-xl transition-colors shadow-sm dark:shadow-none shadow-rose-200"
         >
-          Ya, Hapus
+          {$t('ai_chat.clear_confirm')}
         </button>
         <button 
           on:click={() => showClearModal = false}
-          class="w-full py-3.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-bold rounded-xl transition-colors"
+          class="w-full py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 active:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-colors"
         >
-          Batal
+          {$t('ai_chat.clear_cancel') || 'Batal'}
         </button>
       </div>
     </div>
@@ -669,13 +681,13 @@ Jika pengguna memintamu menggambar, membuatkan gambar, atau semacamnya, kamu BIS
     <div class="flex items-center justify-between p-4 relative z-10">
       <button 
         on:click={() => selectedImage = null}
-        class="p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+        class="p-2.5 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-full text-white transition-colors"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       <button 
         on:click={() => downloadImage(selectedImage)}
-        class="p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+        class="p-2.5 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-full text-white transition-colors"
         title="Unduh Gambar"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>

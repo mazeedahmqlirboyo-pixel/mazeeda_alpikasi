@@ -94,8 +94,8 @@
 
 <div class="w-full overflow-hidden py-6 relative select-none">
   <!-- Optional gradient masks on edges for a fading effect -->
-  <div class="absolute left-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-r from-slate-50 to-transparent pointer-events-none"></div>
-  <div class="absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
+  <div class="absolute left-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-r from-slate-50 dark:from-slate-900 to-transparent pointer-events-none"></div>
+  <div class="absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-slate-50 dark:from-slate-900 to-transparent pointer-events-none"></div>
 
   <!-- The scrolling container -->
   <div 
@@ -111,7 +111,7 @@
       <!-- svelte-ignore a11y-no-static-element-interactions -->
       <!-- svelte-ignore a11y-click-events-have-key-events -->
       <div 
-        class="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-full overflow-hidden border-2 border-white shadow-md transition-transform hover:scale-110 cursor-pointer"
+        class="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-full overflow-hidden border-2 border-white shadow-md dark:shadow-none transition-transform hover:scale-110 cursor-pointer"
         on:dragstart|preventDefault
         on:click={() => {
           if (!hasDragged) dispatch('imageClick', img);

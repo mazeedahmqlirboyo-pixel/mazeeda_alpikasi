@@ -1,0 +1,1 @@
+const fs = require('fs'); let s = fs.readFileSync('src/routes/+page.svelte', 'utf8'); s = s.replace('if (typeof window !== \"undefined\") return;', 'if (typeof window === \"undefined\") return;'); fs.writeFileSync('src/routes/+page.svelte', s);

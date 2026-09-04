@@ -12,7 +12,8 @@
     Medal,
     Trophy,
     Crown,
-    ArrowLeft
+    ArrowLeft,
+    BookOpen
   } from "lucide-svelte";
   
   let selectedGrade: 'ula' | 'wustha' | 'ulya' | null = null;
@@ -75,11 +76,11 @@
   <title>Kuis Cerdas Cermat Islami - MAZEEDA</title>
 </svelte:head>
 
-<div class="min-h-screen bg-slate-50 pb-24" in:fade={{ duration: 200 }}>
+<div class="min-h-screen bg-slate-50 dark:bg-slate-900 pb-24" in:fade={{ duration: 200 }}>
   <PageHeader title="Kuis Cerdas Cermat" backTo="/" />
 
   <div class="p-4 sm:p-6 flex justify-center mt-4">
-    <div class="bg-white w-full max-w-2xl rounded-3xl shadow-xl overflow-hidden relative flex flex-col min-h-[70vh] sm:min-h-[60vh]">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-xl overflow-hidden relative flex flex-col min-h-[70vh] sm:min-h-[60vh]">
       
 
 
@@ -89,63 +90,63 @@
         <!-- Grade Selection Screen -->
         <div class="text-center space-y-8 py-4" in:fly={{ y: 20, duration: 400 }}>
           <div class="space-y-2">
-            <h2 class="text-2xl sm:text-3xl font-black text-slate-800">Pilih Tingkat Kesulitan</h2>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100">Pilih Tingkat Kesulitan</h2>
           </div>
           
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <!-- Grade Ula -->
             <button 
               on:click={() => startGame('ula')}
-              class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white border-2 border-emerald-100 hover:border-emerald-400 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
+              class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white dark:bg-slate-900 border-2 border-blue-100 hover:border-blue-400 dark:border-blue-500/30 dark:hover:border-blue-500 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
             >
-              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-emerald-200 rounded-full p-3 sm:p-4 flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
-                <img src="/images/grade ula.png?v=2" alt="Grade Ula" class="w-full h-full object-contain drop-shadow-sm opacity-90" />
+              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-blue-200 dark:bg-blue-500/20 rounded-full p-3 sm:p-4 flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
+                <img src="/images/grade ula.png?v=2" alt="Grade Ula" class="w-full h-full object-contain drop-shadow-sm dark:shadow-none opacity-90 dark:invert" />
               </div>
               <div>
-                <h3 class="font-black text-base sm:text-lg text-slate-800">Grade Ula</h3>
-                <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-2">Dasar Sejarah, Fiqih, & Tauhid</p>
+                <h3 class="font-black text-base sm:text-lg text-slate-800 dark:text-slate-100">Grade Ula</h3>
+                <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5 sm:mt-2">Dasar Sejarah, Fiqih, & Tauhid</p>
               </div>
             </button>
 
             <!-- Grade Wustha -->
             <button 
               on:click={() => startGame('wustha')}
-              class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white border-2 border-amber-100 hover:border-amber-400 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
+              class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white dark:bg-slate-900 border-2 border-blue-100 hover:border-blue-400 dark:border-blue-500/30 dark:hover:border-blue-500 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
             >
-              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-amber-200 rounded-full p-3 sm:p-4 flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
-                <img src="/images/grade wustha.png?v=2" alt="Grade Wustha" class="w-full h-full object-contain drop-shadow-sm opacity-90" />
+              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-blue-200 dark:bg-blue-500/20 rounded-full p-3 sm:p-4 flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
+                <img src="/images/grade wustha.png?v=2" alt="Grade Wustha" class="w-full h-full object-contain drop-shadow-sm dark:shadow-none opacity-90 dark:invert" />
               </div>
               <div>
-                <h3 class="font-black text-base sm:text-lg text-slate-800">Grade Wustha</h3>
-                <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-2">Fiqih Menengah & Shorof</p>
+                <h3 class="font-black text-base sm:text-lg text-slate-800 dark:text-slate-100">Grade Wustha</h3>
+                <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5 sm:mt-2">Fiqih Menengah & Shorof</p>
               </div>
             </button>
 
             <!-- Grade Ulya -->
             <button 
               on:click={() => startGame('ulya')}
-              class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white border-2 border-rose-100 hover:border-rose-400 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
+              class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white dark:bg-slate-900 border-2 border-blue-100 hover:border-blue-400 dark:border-blue-500/30 dark:hover:border-blue-500 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
             >
-              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-rose-200 rounded-full p-3 sm:p-4 flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
-                <img src="/images/grade ulya.png?v=2" alt="Grade Ulya" class="w-full h-full object-contain drop-shadow-sm opacity-90" />
+              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-blue-200 dark:bg-blue-500/20 rounded-full p-3 sm:p-4 flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
+                <img src="/images/grade ulya.png?v=2" alt="Grade Ulya" class="w-full h-full object-contain drop-shadow-sm dark:shadow-none opacity-90 dark:invert" />
               </div>
               <div>
-                <h3 class="font-black text-base sm:text-lg text-slate-800">Grade Ulya</h3>
-                <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-2">Ushul Fiqih, Alfiyah & Lanjutan</p>
+                <h3 class="font-black text-base sm:text-lg text-slate-800 dark:text-slate-100">Grade Ulya</h3>
+                <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5 sm:mt-2">Ushul Fiqih, Alfiyah & Lanjutan</p>
               </div>
             </button>
 
             <!-- Grade HMQ / MAZEEDA -->
             <button 
               on:click={() => startGame('hmq')}
-              class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white border-2 border-indigo-100 hover:border-indigo-400 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
+              class="flex flex-row sm:flex-col items-center p-4 sm:p-6 text-left sm:text-center bg-white dark:bg-slate-900 border-2 border-blue-100 hover:border-blue-400 dark:border-blue-500/30 dark:hover:border-blue-500 rounded-2xl hover:shadow-xl transition-all duration-300 group gap-4 sm:gap-0"
             >
-              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-indigo-200 rounded-full p-3 sm:p-4 flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
-                <img src="/images/grade hmq.png?v=2" alt="Grade HMQ" class="w-full h-full object-contain drop-shadow-sm opacity-90" />
+              <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 bg-blue-200 dark:bg-blue-500/20 rounded-full p-3 sm:p-4 flex items-center justify-center sm:mb-4 group-hover:scale-110 transition-transform">
+                <img src="/images/grade hmq.png?v=2" alt="Grade HMQ" class="w-full h-full object-contain drop-shadow-sm dark:shadow-none opacity-90 dark:invert" />
               </div>
               <div>
-                <h3 class="font-black text-base sm:text-lg text-slate-800">Grade HMQ</h3>
-                <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-2">Sejarah HMQ & MAZEEDA</p>
+                <h3 class="font-black text-base sm:text-lg text-slate-800 dark:text-slate-100">Grade HMQ</h3>
+                <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5 sm:mt-2">Sejarah HMQ & MAZEEDA</p>
               </div>
             </button>
           </div>
@@ -155,18 +156,18 @@
         <!-- Progress Bar -->
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-3">
-            <button on:click={() => { selectedGrade = null; }} class="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors" title="Kembali ke Pilihan Grade">
+            <button on:click={() => { selectedGrade = null; }} class="p-1.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 rounded-full transition-colors" title="Kembali ke Pilihan Grade">
               <ArrowLeft class="w-4 h-4" />
             </button>
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               Pertanyaan {currentQuestionIndex + 1} / {activeQuestions.length}
             </span>
           </div>
-          <div class="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-widest">
+          <div class="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold uppercase tracking-widest">
             {selectedGrade}
           </div>
         </div>
-        <div class="w-full bg-slate-100 h-2 rounded-full mb-8 overflow-hidden">
+        <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full mb-8 overflow-hidden">
           <div 
             class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-500" 
             style="width: {((currentQuestionIndex + 1) / activeQuestions.length) * 100}%"
@@ -175,7 +176,7 @@
 
         <!-- Question Content -->
         <div class="space-y-6">
-          <h2 class="text-xl sm:text-2xl font-black text-slate-800 leading-tight">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 leading-tight">
             {activeQuestions[currentQuestionIndex].question}
           </h2>
 
@@ -185,7 +186,7 @@
               {@const isSelected = userAnswers[currentQuestionIndex] === idx}
               {@const statusClass = isSelected 
                   ? "border-indigo-500 bg-indigo-50 text-indigo-800 ring-2 ring-indigo-500/20" 
-                  : (isAnswerChecked ? "border-slate-100 text-slate-400 opacity-50" : "border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600")}
+                  : (isAnswerChecked ? "border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 opacity-50" : "border-slate-200 dark:border-blue-500/30 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 dark:text-slate-300")}
               
               <button
                 type="button"
@@ -204,25 +205,29 @@
       {:else}
         <!-- Result Screen -->
         <div class="text-center space-y-6 py-8" in:fly={{ y: 20, duration: 400 }}>
-          <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-yellow-100 text-yellow-500 mb-2 ring-8 ring-yellow-50 relative">
-            <Award class="w-12 h-12" />
+          <div class="inline-flex items-center justify-center w-32 h-32 mb-2 relative">
+            <img 
+              src={quizScore < 40 ? "/images/Crying Lolo.svg" : (quizScore < 80 ? "/images/Like a boss Lolo.svg" : "/images/Yesss Lolo.svg")} 
+              alt="Result Mascot" 
+              class="w-full h-full object-contain drop-shadow-md"
+            />
             <!-- Confetti dots for result -->
-            <span class="absolute top-0 right-0 w-3 h-3 bg-rose-400 rounded-full animate-ping"></span>
+            <span class="absolute top-4 right-0 w-3 h-3 bg-rose-400 rounded-full animate-ping"></span>
             <span class="absolute bottom-4 -left-2 w-2 h-2 bg-blue-400 rounded-full animate-ping" style="animation-delay: 300ms;"></span>
           </div>
 
           <div>
-            <h2 class="text-3xl font-black text-slate-800">Skor Akhir: {quizScore}</h2>
+            <h2 class="text-3xl font-black text-slate-800 dark:text-slate-100">Skor Akhir: {quizScore}</h2>
             <p class="text-lg font-bold text-indigo-600 mt-2">{getPredikat(quizScore)}</p>
           </div>
           
-          <p class="text-slate-500 text-sm max-w-sm mx-auto">
+          <p class="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-sm max-w-sm mx-auto">
             Terima kasih telah mencoba Kuis Cerdas Cermat Islami. Tetap semangat mengaji dan menuntut ilmu!
           </p>
 
           <!-- Pembahasan Section -->
-          <div class="mt-10 text-left bg-slate-50 p-5 sm:p-6 rounded-2xl border border-slate-200">
-            <h3 class="font-black text-xl text-slate-800 mb-6 flex items-center gap-2">
+          <div class="mt-10 text-left bg-slate-50 dark:bg-slate-800 p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-blue-500/30">
+            <h3 class="font-black text-xl text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
               <BookOpen class="w-5 h-5 text-indigo-600" />
               Kunci Jawaban & Pembahasan
             </h3>
@@ -230,14 +235,14 @@
             <div class="space-y-6">
               {#each activeQuestions as q, idx}
                 {@const isCorrect = userAnswers[idx] === q.correct}
-                <div class="pb-6 border-b border-slate-200 last:border-0 last:pb-0">
-                  <p class="font-bold text-slate-800 text-sm sm:text-base mb-3 leading-relaxed">
-                    <span class="text-slate-400 mr-1">{idx + 1}.</span> {q.question}
+                <div class="pb-6 border-b border-slate-200 dark:border-blue-500/30 last:border-0 last:pb-0">
+                  <p class="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base mb-3 leading-relaxed">
+                    <span class="text-slate-400 dark:text-slate-500 mr-1">{idx + 1}.</span> {q.question}
                   </p>
                   
                   <div class="flex flex-col gap-2 mb-3">
                     <div class="flex items-start gap-2 text-sm">
-                      <span class="font-bold min-w-[100px] text-slate-500">Jawaban Anda:</span>
+                      <span class="font-bold min-w-[100px] text-slate-500 dark:text-slate-400 dark:text-slate-500">Jawaban Anda:</span>
                       <span class="font-bold {isCorrect ? 'text-emerald-600' : 'text-rose-600'}">
                         {userAnswers[idx] !== undefined ? q.options[userAnswers[idx]] : '-'}
                         {#if !isCorrect}
@@ -250,7 +255,7 @@
                     
                     {#if !isCorrect}
                     <div class="flex items-start gap-2 text-sm">
-                      <span class="font-bold min-w-[100px] text-slate-500">Jawaban Benar:</span>
+                      <span class="font-bold min-w-[100px] text-slate-500 dark:text-slate-400 dark:text-slate-500">Jawaban Benar:</span>
                       <span class="font-bold text-emerald-600">
                         {q.options[q.correct]}
                         <CheckCircle2 class="w-4 h-4 inline ml-1 align-text-bottom" />
@@ -275,14 +280,14 @@
 
     <!-- Footer Action -->
     {#if selectedGrade}
-      <div class="p-4 sm:p-6 border-t border-slate-100 bg-slate-50 flex justify-end shrink-0">
+      <div class="p-4 sm:p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 flex justify-end shrink-0">
         {#if !isQuizFinished}
           {#if userAnswers[currentQuestionIndex] !== undefined}
             <Button on:click={nextQuestion} class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl h-12 px-8">
               {currentQuestionIndex < activeQuestions.length - 1 ? 'Lanjut ke Soal Berikutnya' : 'Lihat Hasil Akhir'}
             </Button>
           {:else}
-            <Button disabled class="w-full sm:w-auto bg-slate-200 text-slate-400 font-bold rounded-xl h-12 px-8">
+            <Button disabled class="w-full sm:w-auto bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 font-bold rounded-xl h-12 px-8">
               Pilih Jawaban Dulu
             </Button>
           {/if}

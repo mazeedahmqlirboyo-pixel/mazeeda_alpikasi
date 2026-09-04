@@ -1,4 +1,92 @@
 <script lang="ts">
+  import { t, locale } from "svelte-i18n";
+
+  $: localizeDateString = (dateStr) => {
+    if (!dateStr) return "";
+    let str = formatNumberDisplay(dateStr); // apply number format first
+
+    // Replace Masehi months
+    const masehiMap = {
+      "januari": $t('calendar.months.jan') || "Januari",
+      "februari": $t('calendar.months.feb') || "Februari",
+      "maret": $t('calendar.months.mar') || "Maret",
+      "april": $t('calendar.months.apr') || "April",
+      "mei": $t('calendar.months.may') || "Mei",
+      "juni": $t('calendar.months.jun') || "Juni",
+      "juli": $t('calendar.months.jul') || "Juli",
+      "agustus": $t('calendar.months.aug') || "Agustus",
+      "september": $t('calendar.months.sep') || "September",
+      "oktober": $t('calendar.months.oct') || "Oktober",
+      "november": $t('calendar.months.nov') || "November",
+      "desember": $t('calendar.months.dec') || "Desember"
+    };
+
+    // Replace Hijri months
+    const hijriMap = {
+      "muharram": $t('calendar.hijri_months.m1') || "Muharram",
+      "safar": $t('calendar.hijri_months.m2') || "Safar",
+      "rabi'ul awal": $t('calendar.hijri_months.m3') || "Rabi'ul Awal",
+      "rabi'ul akhir": $t('calendar.hijri_months.m4') || "Rabi'ul Akhir",
+      "jumadil awal": $t('calendar.hijri_months.m5') || "Jumadil Awal",
+      "jumadil akhir": $t('calendar.hijri_months.m6') || "Jumadil Akhir",
+      "rajab": $t('calendar.hijri_months.m7') || "Rajab",
+      "sya'ban": $t('calendar.hijri_months.m8') || "Sya'ban",
+      "ramadhan": $t('calendar.hijri_months.m9') || "Ramadhan",
+      "syawal": $t('calendar.hijri_months.m10') || "Syawal",
+      "dzulqa'dah": $t('calendar.hijri_months.m11') || "Dzulqa'dah",
+      "dzulhijjah": $t('calendar.hijri_months.m12') || "Dzulhijjah",
+      
+      // Additional edge cases for text in Hari Penting
+      "rabiul awal": $t('calendar.hijri_months.m3') || "Rabi'ul Awal",
+      "rabiul akhir": $t('calendar.hijri_months.m4') || "Rabi'ul Akhir",
+      "zulhijah": $t('calendar.hijri_months.m12') || "Dzulhijjah",
+      "muharam": $t('calendar.hijri_months.m1') || "Muharram"
+    };
+
+    const combinedMap = { ...masehiMap, ...hijriMap };
+    
+    // Replace whole words (case insensitive matching)
+    for (const [key, value] of Object.entries(combinedMap)) {
+      const regex = new RegExp("\\b" + key + "\\b", "gi");
+      str = str.replace(regex, value);
+    }
+    
+    return str;
+  };
+
+  $: localizeHijriMonth = (hijriStr) => {
+    if (!hijriStr) return "";
+    const map = {
+      "muharram": $t('calendar.hijri_months.m1') || "Muharram",
+      "safar": $t('calendar.hijri_months.m2') || "Safar",
+      "rabi'ul awal": $t('calendar.hijri_months.m3') || "Rabi'ul Awal",
+      "rabi'ul akhir": $t('calendar.hijri_months.m4') || "Rabi'ul Akhir",
+      "jumadil awal": $t('calendar.hijri_months.m5') || "Jumadil Awal",
+      "jumadil akhir": $t('calendar.hijri_months.m6') || "Jumadil Akhir",
+      "rajab": $t('calendar.hijri_months.m7') || "Rajab",
+      "sya'ban": $t('calendar.hijri_months.m8') || "Sya'ban",
+      "ramadhan": $t('calendar.hijri_months.m9') || "Ramadhan",
+      "syawal": $t('calendar.hijri_months.m10') || "Syawal",
+      "dzulqa'dah": $t('calendar.hijri_months.m11') || "Dzulqa'dah",
+      "dzulhijjah": $t('calendar.hijri_months.m12') || "Dzulhijjah"
+    };
+    
+    // Hijri string could be "Safar" or "Safar - Rabi'ul Awal"
+    const parts = hijriStr.split(" - ");
+    const localized = parts.map(p => map[p.toLowerCase()] || p);
+    return localized.join(" - ");
+  };
+
+  $: formatNumberDisplay = (num) => {
+    let str = (num ?? "").toString();
+    if ($locale === 'ar') {
+      const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+      return str.replace(/[0-9]/g, function (w) {
+        return arabicNumbers[+w];
+      });
+    }
+    return str;
+  };
   import { onMount } from "svelte";
   import { fade, scale } from "svelte/transition";
   import {
@@ -48,7 +136,7 @@
         desember: "12",
       };
       const month = monthMap[monthStr] || "01";
-      return `${year}-${month}-${day}`;
+      return `${formatNumberDisplay(year)}-${month}-${day}`;
     }
     return null;
   }
@@ -124,28 +212,28 @@
     const zodiac = getZodiac(d.getDate(), d.getMonth());
     const shioObj = getShio(d.getFullYear());
 
-    const daysName = [
-      "Minggu",
-      "Senin",
-      "Selasa",
-      "Rabu",
-      "Kamis",
-      "Jumat",
-      "Sabtu",
+    $: daysName = [
+      $t('calendar.days.sun') || "Ahad",
+      $t('calendar.days.mon') || "Senin",
+      $t('calendar.days.tue') || "Selasa",
+      $t('calendar.days.wed') || "Rabu",
+      $t('calendar.days.thu') || "Kamis",
+      $t('calendar.days.fri') || "Jumat",
+      $t('calendar.days.sat') || "Sabtu",
     ];
-    const monthsName = [
-      "Januari",
-      "Februari",
-      "Maret",
-      "April",
-      "Mei",
-      "Juni",
-      "Juli",
-      "Agustus",
-      "September",
-      "Oktober",
-      "November",
-      "Desember",
+    $: monthsName = [
+      $t('calendar.months.jan') || "Januari",
+      $t('calendar.months.feb') || "Februari",
+      $t('calendar.months.mar') || "Maret",
+      $t('calendar.months.apr') || "April",
+      $t('calendar.months.may') || "Mei",
+      $t('calendar.months.jun') || "Juni",
+      $t('calendar.months.jul') || "Juli",
+      $t('calendar.months.aug') || "Agustus",
+      $t('calendar.months.sep') || "September",
+      $t('calendar.months.oct') || "Oktober",
+      $t('calendar.months.nov') || "November",
+      $t('calendar.months.dec') || "Desember",
     ];
 
     const wetonName = jInfo
@@ -155,7 +243,7 @@
 
     birthResult = {
       masehi: `${daysName[d.getDay()]}, ${d.getDate()} ${monthsName[d.getMonth()]} ${d.getFullYear()}`,
-      hijri: `${hInfo.day} ${hInfo.month} ${hInfo.year} H`,
+      hijri: `${hInfo.day} ${localizeHijriMonth(hInfo.month)} ${hInfo.year} H`,
       weton: wetonName || "-",
       neptu: jInfo ? jInfo.weton.neptu : "-",
       watak: wetonName
@@ -217,29 +305,29 @@
   let allPeringatan: any[] = [];
   let currentMonthPeringatan: any[] = [];
 
-  const masehiMonths = [
-    "Januari",
-    "Februari",
-    "Maret",
-    "April",
-    "Mei",
-    "Juni",
-    "Juli",
-    "Agustus",
-    "September",
-    "Oktober",
-    "November",
-    "Desember",
+  $: masehiMonths = [
+    $t('calendar.months.jan') || "Januari",
+    $t('calendar.months.feb') || "Februari",
+    $t('calendar.months.mar') || "Maret",
+    $t('calendar.months.apr') || "April",
+    $t('calendar.months.may') || "Mei",
+    $t('calendar.months.jun') || "Juni",
+    $t('calendar.months.jul') || "Juli",
+    $t('calendar.months.aug') || "Agustus",
+    $t('calendar.months.sep') || "September",
+    $t('calendar.months.oct') || "Oktober",
+    $t('calendar.months.nov') || "November",
+    $t('calendar.months.dec') || "Desember",
   ];
 
-  const weekDays = [
-    "Ahad",
-    "Senin",
-    "Selasa",
-    "Rabu",
-    "Kamis",
-    "Jum'at",
-    "Sabtu",
+  $: weekDays = [
+    $t('calendar.days.sun') || "Ahad",
+    $t('calendar.days.mon') || "Senin",
+    $t('calendar.days.tue') || "Selasa",
+    $t('calendar.days.wed') || "Rabu",
+    $t('calendar.days.thu') || "Kamis",
+    $t('calendar.days.fri') || "Jum'at",
+    $t('calendar.days.sat') || "Sabtu",
   ];
 
   // Modal State
@@ -266,7 +354,7 @@
     // compared to Intl.DateTimeFormat with u-ca-islamic which sometimes returns Masehi months.
     const wd = date.getDay();
     const dd = date.getDate();
-    const mm = date.getMonth();
+    const mm = date.getMonth() + 1; // FIX: Kuwaiti algorithm expects 1-12
     const yy = date.getFullYear();
     const mpart = (mm - 11) / 12;
     let jd = Math.floor((1461 * (yy + 4800 + Math.floor(mpart))) / 4) +
@@ -396,6 +484,8 @@
     }
   }
 
+  $: if ($locale) generateCalendar();
+
   function generateCalendar() {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -481,12 +571,15 @@
     if (allPeringatan.length === 0) return;
     currentMonthPeringatan = allPeringatan.filter((p) => {
       const t = p.tanggal.toLowerCase();
-      const m1 = masehiMonthName.toLowerCase();
+      const idMasehiMonths = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
+      const m1 = idMasehiMonths[currentDate.getMonth()];
       if (t.includes(m1)) return true;
 
-      const hMonths = dominantHijriMonth.toLowerCase().split(/[ -]+/);
-      for (let hm of hMonths) {
-        if (hm.length > 3 && t.includes(hm)) return true;
+      const hMonths = dominantHijriMonth.toLowerCase().split(' - ');
+            for (let hm of hMonths) {
+        const hmClean = hm.replace(/'/g, "");
+        const tClean = t.replace(/'/g, "");
+        if (hmClean.length > 3 && tClean.includes(hmClean)) return true;
         if (hm === "dzulhijjah" && t.includes("zulhijah")) return true;
         if (hm === "muharram" && t.includes("muharam")) return true;
       }
@@ -562,12 +655,12 @@
   <title>Kalender Interaktif | MAZEEDA</title>
 </svelte:head>
 
-<PageHeader title="Kalender" backText="Dashboard" />
+<PageHeader title={$t('calendar.title') || 'Kalender'} backText={$t('common.dashboard') || 'Dashboard'} />
 
 <div class="space-y-6 animate-in fade-in duration-500 pb-10 pt-4 px-4">
   <!-- Header / Nav -->
   <div
-    class="bg-gradient-to-r from-green-50/50 via-teal-50/20 to-white border border-green-100/50 shadow-sm relative rounded-2xl"
+    class="bg-gradient-to-r from-green-50/50 via-teal-50/20 to-white dark:from-slate-900 dark:via-slate-800/80 dark:to-slate-900 border border-green-100/50 dark:border-slate-700/80 shadow-sm relative rounded-2xl"
   >
     <div
       class="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none"
@@ -582,7 +675,7 @@
       <!-- Date Info -->
       <div class="flex items-center gap-4 sm:gap-5 w-full md:w-auto">
         <div
-          class="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-white shadow-soft-sm flex items-center justify-center border border-green-100/60 shrink-0 relative overflow-hidden group"
+          class="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-white dark:bg-slate-900 shadow-soft-sm dark:shadow-none flex items-center justify-center border border-green-100/60 shrink-0 relative overflow-hidden group"
         >
           <div
             class="absolute inset-0 bg-gradient-to-br from-green-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -595,20 +688,20 @@
         </div>
         <div class="flex flex-col justify-center">
           <h1
-            class="text-2xl sm:text-4xl font-black text-slate-800 tracking-tight leading-tight"
+            class="text-2xl sm:text-4xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-tight"
           >
             {masehiMonthName}
             <span
               class="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-teal-500"
-              >{masehiYear}</span
+              >{formatNumberDisplay(masehiYear)}</span
             >
           </h1>
           <p
-            class="text-[11px] sm:text-sm font-bold text-slate-500 mt-1 sm:mt-1.5 flex items-center gap-1.5"
+            class="text-[11px] sm:text-sm font-bold text-slate-500 dark:text-slate-400 mt-1 sm:mt-1.5 flex items-center gap-1.5"
           >
             <MoonStar class="w-3.5 h-3.5 text-green-500" />
-            {dominantHijriMonth}
-            {dominantHijriYear} H
+            {localizeHijriMonth(dominantHijriMonth)}
+            {formatNumberDisplay(dominantHijriYear)} H
           </p>
         </div>
       </div>
@@ -620,7 +713,7 @@
         >
           <!-- Custom Pickers -->
           <div
-            class="flex items-center bg-white/80 backdrop-blur-md rounded-2xl shadow-soft-sm border border-slate-200/80 p-1.5 shrink-0 w-full sm:w-auto relative z-50"
+            class="flex items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl shadow-soft-sm dark:shadow-none border border-slate-200/80 p-1.5 shrink-0 w-full sm:w-auto relative z-50"
           >
             {#if showMonthDropdown || showYearDropdown}
               <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -641,8 +734,8 @@
                   showMonthDropdown = !showMonthDropdown;
                   showYearDropdown = false;
                 }}
-                class="flex items-center justify-between w-full bg-transparent border-none text-sm font-bold text-slate-700 py-2 pl-3 sm:pl-4 pr-3 sm:pr-4 rounded-xl hover:bg-green-50 transition-colors focus:outline-none {showMonthDropdown
-                  ? 'bg-green-50'
+                class="flex items-center justify-between w-full bg-transparent border-none text-sm font-bold text-slate-700 dark:text-slate-200 py-2 pl-3 sm:pl-4 pr-3 sm:pr-4 rounded-xl hover:bg-green-50 dark:bg-slate-800 transition-colors focus:outline-none {showMonthDropdown
+                  ? 'bg-green-50 dark:bg-slate-800'
                   : ''}"
               >
                 <span class="mr-2">{masehiMonths[currentDate.getMonth()]}</span>
@@ -655,7 +748,7 @@
 
               {#if showMonthDropdown}
                 <div
-                  class="absolute top-full left-0 right-0 mt-2 w-full bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden py-2"
+                  class="absolute top-full left-0 right-0 mt-2 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-xl dark:shadow-none border border-slate-100 dark:border-slate-800 overflow-hidden py-2"
                   transition:fade={{ duration: 150 }}
                 >
                   <div class="max-h-60 overflow-y-auto custom-scrollbar">
@@ -663,8 +756,8 @@
                       <button
                         class="w-full text-left px-4 py-2 text-sm font-bold {currentDate.getMonth() ===
                         i
-                          ? 'bg-green-50 text-green-700'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'} transition-colors whitespace-nowrap"
+                          ? 'bg-green-50 dark:bg-slate-800 text-green-700 dark:text-green-400'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900/50 hover:text-slate-900'} transition-colors whitespace-nowrap"
                         on:click={() => selectMonth(i)}
                       >
                         {month}
@@ -684,11 +777,11 @@
                   showYearDropdown = !showYearDropdown;
                   showMonthDropdown = false;
                 }}
-                class="flex items-center justify-between w-full bg-transparent border-none text-sm font-bold text-slate-700 py-2 pl-3 sm:pl-4 pr-3 sm:pr-4 rounded-xl hover:bg-green-50 transition-colors focus:outline-none {showYearDropdown
-                  ? 'bg-green-50'
+                class="flex items-center justify-between w-full bg-transparent border-none text-sm font-bold text-slate-700 dark:text-slate-200 py-2 pl-3 sm:pl-4 pr-3 sm:pr-4 rounded-xl hover:bg-green-50 dark:bg-slate-800 transition-colors focus:outline-none {showYearDropdown
+                  ? 'bg-green-50 dark:bg-slate-800'
                   : ''}"
               >
-                <span class="mr-2">{currentDate.getFullYear()}</span>
+                <span class="mr-2">{formatNumberDisplay(currentDate.getFullYear())}</span>
                 <ChevronDown
                   class="w-4 h-4 text-slate-400 transition-transform {showYearDropdown
                     ? 'rotate-180 text-green-600'
@@ -698,7 +791,7 @@
 
               {#if showYearDropdown}
                 <div
-                  class="absolute top-full left-0 right-0 mt-2 w-full bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden py-2"
+                  class="absolute top-full left-0 right-0 mt-2 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-xl dark:shadow-none border border-slate-100 dark:border-slate-800 overflow-hidden py-2"
                   transition:fade={{ duration: 150 }}
                 >
                   <div class="max-h-60 overflow-y-auto custom-scrollbar">
@@ -706,8 +799,8 @@
                       <button
                         class="w-full text-left px-4 py-2 text-sm font-bold {currentDate.getFullYear() ===
                         yr
-                          ? 'bg-green-50 text-green-700'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'} transition-colors whitespace-nowrap"
+                          ? 'bg-green-50 dark:bg-slate-800 text-green-700 dark:text-green-400'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900/50 hover:text-slate-900'} transition-colors whitespace-nowrap"
                         on:click={() => selectYear(yr)}
                       >
                         {yr}
@@ -721,11 +814,11 @@
 
           <!-- Arrows & Today -->
           <div
-            class="flex items-center bg-white/80 backdrop-blur-md rounded-2xl shadow-soft-sm border border-slate-200/80 p-1.5 shrink-0 w-full sm:w-auto justify-between sm:justify-start"
+            class="flex items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl shadow-soft-sm dark:shadow-none border border-slate-200/80 p-1.5 shrink-0 w-full sm:w-auto justify-between sm:justify-start"
           >
             <button
               on:click={prevMonth}
-              class="flex items-center justify-center h-10 w-12 sm:h-11 sm:w-12 hover:bg-green-50 rounded-xl text-slate-500 hover:text-green-600 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-100"
+              class="flex items-center justify-center h-10 w-12 sm:h-11 sm:w-12 hover:bg-green-50 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 hover:text-green-600 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-100"
             >
               <ChevronLeft class="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
@@ -734,16 +827,14 @@
 
             <button
               on:click={resetToToday}
-              class="flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 text-sm sm:text-base font-bold text-slate-600 hover:bg-green-50 hover:text-green-700 rounded-xl transition-all active:scale-95 mx-1 focus:outline-none focus:ring-2 focus:ring-green-100"
-            >
-              Hari Ini
-            </button>
+              class="flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 hover:bg-green-50 dark:bg-slate-800 hover:text-green-700 dark:text-green-400 rounded-xl transition-all active:scale-95 mx-1 focus:outline-none focus:ring-2 focus:ring-green-100"
+            >{$t('calendar.hari_ini') || 'Hari Ini'}</button>
 
             <div class="w-[1px] h-6 bg-slate-200/60 mx-1"></div>
 
             <button
               on:click={nextMonth}
-              class="flex items-center justify-center h-10 w-12 sm:h-11 sm:w-12 hover:bg-green-50 rounded-xl text-slate-500 hover:text-green-600 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-100"
+              class="flex items-center justify-center h-10 w-12 sm:h-11 sm:w-12 hover:bg-green-50 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 hover:text-green-600 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-100"
             >
               <ChevronRight class="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
@@ -756,27 +847,26 @@
             document
               .getElementById("astrologi-section")
               ?.scrollIntoView({ behavior: "smooth" })}
-          class="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 px-4 py-2 sm:py-2.5 text-sm sm:text-sm font-bold text-indigo-600 bg-indigo-50/80 hover:bg-indigo-100 hover:text-indigo-700 rounded-xl transition-all active:scale-95 focus:outline-none shadow-sm border border-indigo-100/50"
+          class="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 px-4 py-2 sm:py-2.5 text-sm sm:text-sm font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-slate-800 hover:bg-indigo-100 dark:hover:bg-slate-700 hover:text-indigo-700 dark:hover:text-indigo-300 rounded-xl transition-all active:scale-95 focus:outline-none shadow-sm border border-indigo-100/50 dark:border-slate-700/80"
         >
-          <MoonStar class="w-4 h-4" /> Cek Astrologi Kamu
-        </button>
+          <MoonStar class="w-4 h-4" />{$t('calendar.cek_astrologi') || 'Cek Astrologi Kamu'}</button>
       </div>
     </div>
   </div>
 
   <!-- Calendar Grid -->
   <div
-    class="bg-white rounded-3xl border border-slate-200/80 shadow-soft-md overflow-hidden"
+    class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 shadow-soft-md dark:shadow-none overflow-hidden"
   >
     <!-- Days Header -->
-    <div class="grid grid-cols-7 bg-slate-50 border-b border-slate-100">
+    <div class="grid grid-cols-7 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
       {#each weekDays as day, i}
-        <div class="text-center py-4 border-r border-slate-100 last:border-r-0">
+        <div class="text-center py-4 border-r border-slate-100 dark:border-slate-800 last:border-r-0">
           <span
             class="text-[11px] sm:text-sm font-black uppercase tracking-widest {i ===
             0
               ? 'text-rose-500'
-              : 'text-slate-500'}"
+              : 'text-slate-500 dark:text-slate-400'}"
           >
             {day}
           </span>
@@ -785,14 +875,14 @@
     </div>
 
     <!-- Days Grid -->
-    <div class="grid grid-cols-7 bg-slate-100 gap-[1px]">
+    <div class="grid grid-cols-7 bg-slate-100 dark:bg-slate-800 gap-[1px]">
       {#each calendarDays as day}
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <div
-          class="relative flex flex-col justify-center items-center h-24 sm:h-32 bg-white transition-all duration-200 group hover:z-10 hover:shadow-soft-md hover:scale-[1.02] p-1
-            {day.isCurrentMonth ? '' : 'bg-slate-50 opacity-60'}
+          class="relative flex flex-col justify-center items-center h-24 sm:h-32 bg-white dark:bg-slate-900 transition-all duration-200 group hover:z-10 hover:shadow-soft-md dark:shadow-none hover:scale-[1.02] p-1
+            {day.isCurrentMonth ? '' : 'bg-slate-50 dark:bg-slate-900/50 opacity-60'}
             {day.isToday
-            ? 'ring-2 ring-inset ring-green-500 bg-green-50/20'
+            ? 'ring-2 ring-inset ring-green-500 bg-green-50 dark:bg-slate-800/20'
             : 'hover:ring-1 hover:ring-inset hover:ring-green-300'}
           "
         >
@@ -803,9 +893,9 @@
                 ? 'text-green-600'
                 : day.dateObj.getDay() === 0
                   ? 'text-rose-500'
-                  : 'text-slate-800'}"
+                  : 'text-slate-800 dark:text-slate-100'}"
             >
-              {day.masehiDay}
+              {formatNumberDisplay(day.masehiDay)}
             </span>
             {#if day.jawa}
               <span
@@ -822,15 +912,15 @@
           >
             <span
               class="text-[11px] sm:text-xs font-bold leading-none {day.isToday
-                ? 'text-green-700'
-                : 'text-slate-600'}"
+                ? 'text-green-700 dark:text-green-400'
+                : 'text-slate-600 dark:text-slate-300'}"
             >
-              {day.hijriDay}
+              {formatNumberDisplay(day.hijriDay)}
             </span>
             <span
               class="text-[8px] sm:text-[9px] font-medium text-slate-400 leading-[1.1] whitespace-normal mt-0.5"
             >
-              {day.hijriMonth}
+              {localizeHijriMonth(day.hijriMonth)}
             </span>
           </div>
         </div>
@@ -841,7 +931,7 @@
   <!-- Hari Penting Section -->
   {#if currentMonthPeringatan.length > 0}
     <div
-      class="mt-10 bg-gradient-to-br from-white via-green-50/20 to-white rounded-3xl border border-green-100/50 shadow-soft-lg overflow-hidden relative"
+      class="mt-10 bg-gradient-to-br from-white via-green-50/20 to-white dark:from-slate-900 dark:via-slate-800/80 dark:to-slate-900 rounded-3xl border border-green-100/50 dark:border-slate-700/80 shadow-soft-lg dark:shadow-none overflow-hidden relative"
     >
       <!-- Decorative background blur -->
       <div
@@ -851,14 +941,14 @@
       <div class="p-6 sm:p-8">
         <div class="text-center mb-8">
           <div
-            class="inline-flex items-center justify-center p-3 bg-gradient-to-br from-green-100 to-green-50 rounded-2xl mb-4 shadow-sm border border-green-100/50"
+            class="inline-flex items-center justify-center p-3 bg-gradient-to-br from-green-100 to-green-50 dark:from-slate-800 dark:to-slate-800 rounded-2xl mb-4 shadow-sm border border-green-100/50 dark:border-slate-700/80"
           >
             <Info class="h-7 w-7 text-green-600" />
           </div>
           <h2
-            class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight mb-3"
+            class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight mb-3"
           >
-            Hari Penting <span
+            {$t('calendar.hari_penting') || 'Hari Penting'} <span
               class="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-teal-500"
               >Se-Indonesia</span
             >
@@ -869,18 +959,18 @@
             class="flex items-center justify-center gap-3 text-[11px] font-bold tracking-wider uppercase"
           >
             <div
-              class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-100/50 shadow-soft-sm"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-100/50 shadow-soft-sm dark:shadow-none"
             >
               <span
                 class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse-slow"
               ></span>
-              <span class="text-rose-700">Libur Nasional</span>
+              <span class="text-rose-700">{$t('calendar.libur_nasional') || 'Libur Nasional'}</span>
             </div>
             <div
-              class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 border border-green-100/50 shadow-soft-sm"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 dark:bg-slate-800 border border-green-100/50 dark:border-slate-700/80 shadow-soft-sm dark:shadow-none"
             >
-              <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
-              <span class="text-green-700">Tidak Libur</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-green-50 dark:bg-slate-8000"></span>
+              <span class="text-green-700 dark:text-green-400">{$t('calendar.tidak_libur') || 'Tidak Libur'}</span>
             </div>
           </div>
         </div>
@@ -890,9 +980,9 @@
         >
           {#each currentMonthPeringatan as p}
             <div
-              class="relative overflow-hidden p-5 rounded-2xl bg-white border {p.isHoliday
+              class="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-slate-900 border {p.isHoliday
                 ? 'border-rose-100 hover:border-rose-300 hover:shadow-rose-100/50'
-                : 'border-green-100 hover:border-green-300 hover:shadow-green-100/50'} shadow-soft-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group"
+                : 'border-green-100 hover:border-green-300 hover:shadow-green-100/50'} shadow-soft-sm dark:shadow-none hover:shadow-md dark:shadow-none hover:-translate-y-1 transition-all duration-300 group"
             >
               <!-- Left accent line -->
               <div
@@ -908,10 +998,10 @@
                     : 'text-green-600'} flex items-center gap-2"
                 >
                   <CalendarIcon class="w-4 h-4" />
-                  {p.tanggal}
+                  {localizeDateString(p.tanggal)}
                 </span>
                 <p
-                  class="text-sm font-semibold text-slate-700 mt-2.5 leading-relaxed"
+                  class="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-2.5 leading-relaxed"
                 >
                   {p.peringatan}
                 </p>
@@ -926,7 +1016,7 @@
   <!-- Cek Kelahiran & Weton Section -->
   <div
     id="astrologi-section"
-    class="mt-10 bg-gradient-to-br from-indigo-50/50 via-white to-sky-50/30 rounded-3xl border border-indigo-100/50 shadow-soft-lg p-6 sm:p-8 relative overflow-hidden"
+    class="mt-10 bg-gradient-to-br from-indigo-50/50 via-white to-sky-50/30 dark:from-slate-900 dark:via-slate-800/80 dark:to-slate-900 rounded-3xl border border-indigo-100/50 dark:border-slate-700/80 shadow-soft-lg dark:shadow-none p-6 sm:p-8 relative overflow-hidden"
   >
     <!-- Decor -->
     <div
@@ -938,59 +1028,54 @@
 
     <div class="text-center mb-8">
       <div
-        class="inline-flex items-center justify-center p-3 bg-gradient-to-br from-green-100 to-emerald-50 rounded-2xl mb-4 shadow-sm border border-green-100/50"
+        class="inline-flex items-center justify-center p-3 bg-gradient-to-br from-green-100 to-emerald-50 dark:from-slate-800 dark:to-slate-800 rounded-2xl mb-4 shadow-sm border border-green-100/50 dark:border-slate-700/80"
       >
         <Info class="h-7 w-7 text-green-600" />
       </div>
       <h2
-        class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight mb-3"
+        class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight mb-3"
       >
-        Astrologi <span
+        {$t('calendar.astrologi') || 'Astrologi'} <span
           class="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500"
           >Lahir & Weton</span
         >
       </h2>
-      <p class="text-sm font-medium text-slate-500 max-w-lg mx-auto">
-        Ketahui watak Masehi, Zodiak Tiongkok, hingga weton Jawa Anda secara
-        komprehensif.
+      <p class="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-lg mx-auto">
+        {$t('calendar.ketahui_watak') || 'Ketahui watak Masehi, Zodiak Tiongkok, hingga weton Jawa Anda secara komprehensif.'}
       </p>
     </div>
 
     <div class="flex flex-col items-center justify-center gap-4 mb-8">
       <!-- Custom Date Input -->
       <div
-        class="flex items-center w-full sm:w-auto bg-white rounded-2xl shadow-soft-sm border border-slate-200 p-1.5 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all"
+        class="flex items-center w-full sm:w-auto bg-white dark:bg-slate-900 rounded-2xl shadow-soft-sm dark:shadow-none border border-slate-200 dark:border-slate-700 p-1.5 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all"
       >
         <input
           type="date"
           bind:value={birthDateInput}
-          class="bg-transparent border-none px-4 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-0 w-full sm:w-auto"
+          class="bg-transparent border-none px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-0 w-full sm:w-auto"
         />
         <button
           on:click={checkCustomBirthDate}
           disabled={!birthDateInput}
-          class="ml-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 font-bold text-sm rounded-xl transition-colors"
-        >
-          Cek Manual
-        </button>
+          class="ml-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl transition-colors"
+        >{$t('calendar.cek_manual') || 'Cek Manual'}</button>
       </div>
 
       <!-- Fast Check Button -->
       {#if $authStore.user?.tahun_lahir}
         <button
           on:click={checkMyBirthDate}
-          class="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 mt-2"
+          class="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold rounded-2xl shadow-lg dark:shadow-none shadow-indigo-200 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 mt-2"
         >
-          <MoonStar class="w-5 h-5" />
-          Berikut Adalah Astrologi Mu
-        </button>
+          <MoonStar class="w-5 h-5" />{$t('calendar.berikut_astrologi') || 'Berikut Adalah Astrologi Mu'}</button>
       {/if}
     </div>
 
     <!-- Result Card -->
     {#if showBirthResult && birthResult}
       <div
-        class="bg-white rounded-2xl border border-indigo-100 shadow-md p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+        class="bg-white dark:bg-slate-900 rounded-2xl border border-indigo-100 shadow-md dark:shadow-none p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
       >
         <!-- Result Data Card -->
         <div
@@ -1007,11 +1092,9 @@
               <div>
                 <p
                   class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1"
-                >
-                  Tanggal Lahir (Masehi)
-                </p>
-                <p class="text-base sm:text-lg font-black text-slate-800">
-                  {birthResult.masehi}
+                >{$t('calendar.tanggal_lahir_masehi') || 'Tanggal Lahir (Masehi)'}</p>
+                <p class="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100">
+                  {formatNumberDisplay(birthResult.masehi)}
                 </p>
               </div>
             </div>
@@ -1026,8 +1109,8 @@
                 >
                   Umur Saat Ini
                 </p>
-                <p class="text-base sm:text-lg font-black text-slate-800">
-                  {birthResult.ageStr}
+                <p class="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100">
+                  {formatNumberDisplay(birthResult.ageStr)}
                 </p>
               </div>
             </div>
@@ -1056,12 +1139,12 @@
           <!-- Kolom 2 -->
           <div class="relative h-full">
             <div
-              class="hidden md:block absolute left-[-20px] top-0 bottom-0 w-[1px] bg-slate-100"
+              class="hidden md:block absolute left-[-20px] top-0 bottom-0 w-[1px] bg-slate-100 dark:bg-slate-800"
             ></div>
 
             <div class="space-y-5">
               <div class="flex items-start gap-4">
-                <div class="p-2.5 bg-green-50 rounded-xl text-green-600 shrink-0">
+                <div class="p-2.5 bg-green-50 dark:bg-slate-800 rounded-xl text-green-600 shrink-0">
                   <MoonStar class="w-5 h-5" />
                 </div>
               <div>
@@ -1070,8 +1153,8 @@
                 >
                   Kelahiran Hijriyah
                 </p>
-                <p class="text-base sm:text-lg font-black text-green-700">
-                  {birthResult.hijri}
+                <p class="text-base sm:text-lg font-black text-green-700 dark:text-green-400">
+                  {formatNumberDisplay(birthResult.hijri)}
                 </p>
               </div>
             </div>
@@ -1086,13 +1169,13 @@
                 >
                   Primbon Jawa
                 </p>
-                <p class="text-base sm:text-lg font-black text-slate-800">
-                  {birthResult.weton}
+                <p class="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100">
+                  {formatNumberDisplay(birthResult.weton)}
                   <span class="text-slate-400 font-medium text-sm ml-1"
-                    >(Neptu {birthResult.neptu})</span
+                    >(Neptu {formatNumberDisplay(birthResult.neptu)})</span
                   >
                 </p>
-                <p class="text-xs font-semibold text-slate-500 mt-1">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">
                   Wuku: {birthResult.wuku} • Warsa: {birthResult.warsa}
                 </p>
               </div>
@@ -1114,7 +1197,7 @@
                 >
                   Shio (Zodiak Tiongkok)
                 </p>
-                <p class="text-base sm:text-lg font-black text-slate-800">
+                <p class="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100">
                   {birthResult.shio.nama}
                 </p>
               </div>
@@ -1125,7 +1208,7 @@
 
         <!-- Watak Section -->
         <div
-          class="mt-6 pt-6 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8"
+          class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8"
         >
           <div class="flex items-start gap-4">
             <div class="p-2.5 bg-purple-50 rounded-xl text-purple-600 shrink-0">
@@ -1137,7 +1220,7 @@
               >
                 Watak (Weton Jawa)
               </p>
-              <p class="text-sm font-semibold text-slate-700 leading-relaxed">
+              <p class="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-relaxed">
                 {birthResult.watak}
               </p>
             </div>
@@ -1145,7 +1228,7 @@
 
           <div class="flex items-start gap-4 relative">
             <div
-              class="hidden md:block absolute left-[-20px] top-0 bottom-0 w-[1px] bg-slate-100"
+              class="hidden md:block absolute left-[-20px] top-0 bottom-0 w-[1px] bg-slate-100 dark:bg-slate-800"
             ></div>
             <div class="p-2.5 bg-rose-50 rounded-xl text-rose-500 shrink-0">
               <AstrologyIcon
@@ -1160,7 +1243,7 @@
               >
                 Watak (Zodiak Masehi)
               </p>
-              <p class="text-sm font-semibold text-slate-700 leading-relaxed">
+              <p class="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-relaxed">
                 {birthResult.watakZodiak}
               </p>
             </div>
@@ -1168,7 +1251,7 @@
 
           <div class="flex items-start gap-4 relative">
             <div
-              class="hidden md:block absolute left-[-20px] top-0 bottom-0 w-[1px] bg-slate-100"
+              class="hidden md:block absolute left-[-20px] top-0 bottom-0 w-[1px] bg-slate-100 dark:bg-slate-800"
             ></div>
             <div class="p-2.5 bg-orange-50 rounded-xl text-orange-500 shrink-0">
               <AstrologyIcon
@@ -1183,7 +1266,7 @@
               >
                 Watak (Shio Tiongkok)
               </p>
-              <p class="text-sm font-semibold text-slate-700 leading-relaxed">
+              <p class="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-relaxed">
                 {birthResult.shio.watak}
               </p>
             </div>

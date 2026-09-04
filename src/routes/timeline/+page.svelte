@@ -11,6 +11,7 @@
     Image as ImageIcon, MapPin, Calendar, Heart, MessageCircle, CloudUpload, Sparkles, X, Trash2, Pencil, AlertCircle, CheckCircle, LayoutGrid, Grid3X3, Filter, Flag
   } from 'lucide-svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import { t } from 'svelte-i18n';
 
   interface MemoryItem {
     id: string;
@@ -251,7 +252,7 @@
     allUserNames.forEach(name => {
       const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`(^|\\s)@(${escapedName})(?=\\s|[.,!?]|$)`, 'gi');
-      formattedText = formattedText.replace(regex, `$1<button type="button" class="mention-btn text-indigo-600 font-bold bg-indigo-50 px-1 rounded hover:underline cursor-pointer" data-name="$2">@$2</button>`);
+      formattedText = formattedText.replace(regex, `$1<button type="button" class="mention-btn text-indigo-600 dark:text-indigo-400 font-bold hover:underline cursor-pointer" data-name="$2">@$2</button>`);
     });
     return formattedText;
   }
@@ -642,6 +643,12 @@
     if (!name || name === 'Anonim' || name === 'Tamu' || name.startsWith('Tamu_')) return;
     activeProfileStore.set({ type: role, nameOrNis: name });
   }
+
+  function hideImageError(e: Event) {
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.display = 'none';
+    }
+  }
   // --- REPORT USER ---
   let showReportModal = false;
   let reportReason = '';
@@ -683,12 +690,12 @@
 </script>
 
 <div class="space-y-6 pb-12">
-  <PageHeader title="Timeline" backTo="/">
+  <PageHeader title={$t('timeline.title') || 'Timeline'} backTo="/">
     <svelte:fragment slot="right">
-      <div class="flex items-center bg-white/60 backdrop-blur-sm rounded-lg border border-slate-200 p-1 shadow-sm mr-2 sm:mr-0 gap-0.5">
-        <button on:click={() => viewMode = 'medium'} class="p-1.5 rounded-md transition-colors {viewMode === 'medium' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}" title="Tampilan Sedang"><LayoutGrid class="w-3.5 h-3.5 sm:w-4 sm:h-4"/></button>
-        <button on:click={() => viewMode = 'small'} class="p-1.5 rounded-md transition-colors {viewMode === 'small' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}" title="Tampilan Kecil"><Grid3X3 class="w-3.5 h-3.5 sm:w-4 sm:h-4"/></button>
-        <div class="w-[1px] h-4 bg-slate-200 mx-1"></div>
+      <div class="flex items-center bg-white/60 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-200 dark:border-slate-700 p-1 shadow-sm mr-2 sm:mr-0 gap-0.5">
+        <button on:click={() => viewMode = 'medium'} class="p-1.5 rounded-md transition-colors {viewMode === 'medium' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}" title="Tampilan Sedang"><LayoutGrid class="w-3.5 h-3.5 sm:w-4 sm:h-4"/></button>
+        <button on:click={() => viewMode = 'small'} class="p-1.5 rounded-md transition-colors {viewMode === 'small' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}" title="Tampilan Kecil"><Grid3X3 class="w-3.5 h-3.5 sm:w-4 sm:h-4"/></button>
+        <div class="w-[1px] h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>
         <div class="relative">
           <button 
             on:click={() => showFilterDropdown = !showFilterDropdown}
@@ -704,15 +711,15 @@
             <div class="fixed inset-0 z-40" on:click={() => showFilterDropdown = false}></div>
             <div 
               transition:fade={{duration: 150}}
-              class="absolute right-0 top-full mt-2 w-64 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-slate-200/60 z-50 overflow-hidden py-1.5 flex flex-col"
+              class="absolute right-0 top-full mt-2 w-64 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-xl shadow-xl border border-slate-200/60 dark:border-slate-700 z-50 overflow-hidden py-1.5 flex flex-col"
             >
-              <div class="px-3 py-1.5 mb-1 border-b border-slate-100">
+              <div class="px-3 py-1.5 mb-1 border-b border-slate-100 dark:border-slate-700">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Filter Kategori</span>
               </div>
               <div class="max-h-64 overflow-y-auto">
                 {#each availableCategories as cat}
                   <button 
-                    class="w-full text-left px-3 py-2 text-xs font-semibold transition-colors flex flex-row items-center justify-between gap-2 {selectedCategory === cat ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}"
+                    class="w-full text-left px-3 py-2 text-xs font-semibold transition-colors flex flex-row items-center justify-between gap-2 {selectedCategory === cat ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'}"
                     on:click={() => { selectedCategory = cat; showFilterDropdown = false; }}
                   >
                     <span class="break-words leading-relaxed flex-1">{cat}</span>
@@ -784,7 +791,7 @@
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div 
           on:click={() => openLightbox(memory)}
-          class="group bg-white border border-slate-200/60 hover:border-primary/20 hover:shadow-soft-md {viewMode === 'small' ? 'rounded-xl' : 'rounded-2xl'} overflow-hidden transition-premium flex flex-col h-full cursor-pointer relative"
+          class="group bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 hover:border-primary/20 dark:hover:border-primary/40 hover:shadow-soft-md {viewMode === 'small' ? 'rounded-xl' : 'rounded-2xl'} overflow-hidden transition-premium flex flex-col h-full cursor-pointer relative"
         >
           <!-- Image Area -->
           <div class="w-full relative overflow-hidden bg-slate-950 flex items-center justify-center {viewMode === 'small' ? 'h-32 sm:h-40' : 'h-56'}">
@@ -803,7 +810,7 @@
             
             <!-- Category Badge -->
             {#if viewMode !== 'small'}
-              <div class="absolute top-3 left-3 z-20 bg-white/95 backdrop-blur-sm border border-slate-200/40 rounded-lg px-2.5 py-0.5 shadow-soft-sm">
+              <div class="absolute top-3 left-3 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border border-slate-200/40 dark:border-slate-800 rounded-lg px-2.5 py-0.5 shadow-soft-sm">
                 <span class="text-[10px] font-bold text-primary tracking-wide uppercase">{memory.category}</span>
               </div>
             {/if}
@@ -812,7 +819,7 @@
           <!-- Card Info Body -->
           {#if viewMode === 'small'}
              <div class="p-3">
-               <h3 class="font-extrabold text-slate-800 text-[11px] truncate leading-snug group-hover:text-primary transition-colors">
+               <h3 class="font-extrabold text-slate-800 dark:text-slate-100 text-[11px] truncate leading-snug group-hover:text-primary transition-colors">
                  {memory.title}
                </h3>
                <div class="flex items-center space-x-3 mt-1.5 text-[10px] text-slate-400 font-bold">
@@ -842,27 +849,27 @@
               </div>
               
               <!-- Title -->
-              <h3 class="font-extrabold text-slate-800 text-base leading-snug group-hover:text-primary transition-colors line-clamp-2">
+              <h3 class="font-extrabold text-slate-800 dark:text-slate-100 text-base leading-snug group-hover:text-primary transition-colors line-clamp-2">
                 {memory.title}
               </h3>
               
               <!-- Description -->
               {#if memory.description}
-                <p class="text-xs text-slate-500 font-normal line-clamp-2 leading-relaxed bg-slate-50/60 p-2.5 rounded-xl border border-slate-100">
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-normal line-clamp-2 leading-relaxed bg-slate-50/60 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                   {memory.description}
                 </p>
               {/if}
             </div>
 
             <!-- Actions Row -->
-            <div class="flex items-center justify-between border-t border-slate-100 pt-3 relative z-20">
+            <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3 relative z-20">
               <button 
                 type="button"
                 on:click|preventDefault|stopPropagation={() => toggleLike(memory)}
                 class="inline-flex items-center justify-center space-x-1.5 text-xs font-bold transition-colors py-2 px-3 rounded-lg border border-transparent
                   {memory.has_liked 
-                    ? 'text-rose-600 bg-rose-50 border-rose-100/40 hover:bg-rose-100/50' 
-                    : 'text-slate-500 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-100/30'}"
+                    ? 'text-rose-600 hover:text-rose-700' 
+                    : 'text-slate-500 hover:text-rose-500'}"
                 style="min-height: 40px;"
               >
                 <Heart class="h-4.5 w-4.5 {memory.has_liked ? 'fill-current text-rose-500' : 'text-slate-400'}" />
@@ -872,7 +879,7 @@
               <button 
                 type="button"
                 on:click|preventDefault|stopPropagation={() => openLightbox(memory)}
-                class="inline-flex items-center justify-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-primary transition-colors py-2 px-3 rounded-lg hover:bg-blue-50 border border-transparent hover:border-blue-100/30"
+                class="inline-flex items-center justify-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-primary transition-colors py-2 px-3 rounded-lg border border-transparent"
                 style="min-height: 40px;"
               >
                 <MessageCircle class="h-4.5 w-4.5 text-slate-400" />
@@ -921,12 +928,12 @@
       </div>
 
       <!-- Right: Details & Comments (5 cols on desktop, fills remaining height on mobile) -->
-      <div class="md:col-span-5 flex flex-col flex-1 overflow-hidden bg-slate-50 border-t md:border-t-0 md:border-l border-slate-200/60">
+      <div class="md:col-span-5 flex flex-col flex-1 overflow-hidden bg-slate-50 dark:bg-slate-900 border-t md:border-t-0 md:border-l border-slate-200/60 dark:border-slate-800">
         <!-- Scrollable Details & Comments Wrapper -->
         <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           <!-- Header (Title & Location & Description) -->
-          <div class="space-y-2.5 pb-4 border-b border-slate-200/60 bg-white -mx-4 -mt-4 p-4 sm:-mx-5 sm:-mt-5 sm:p-5">
-            <h3 class="font-extrabold text-slate-800 text-base md:text-lg leading-tight">{selectedMemory.title}</h3>
+          <div class="space-y-2.5 pb-4 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 -mx-4 -mt-4 p-4 sm:-mx-5 sm:-mt-5 sm:p-5">
+            <h3 class="font-extrabold text-slate-800 dark:text-slate-100 text-base md:text-lg leading-tight">{selectedMemory.title}</h3>
             <div class="flex items-center space-x-2 text-slate-400 text-xs font-semibold">
               <MapPin class="h-3.5 w-3.5 text-slate-400" />
               <span class="truncate">{selectedMemory.location}</span>
@@ -937,7 +944,7 @@
             </div>
             
             {#if selectedMemory.description}
-              <div class="text-xs text-slate-600 font-medium leading-relaxed mt-3 break-words bg-slate-50 p-3 rounded-2xl border border-slate-150 max-h-40 overflow-y-auto">
+              <div class="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed mt-3 break-words bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-150 dark:border-slate-700 max-h-40 overflow-y-auto">
                 {selectedMemory.description}
               </div>
             {/if}
@@ -957,9 +964,8 @@
                 {@const isAdminComment = comment.user_name && (comment.user_name.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.user_name.toUpperCase() === 'ADMIN MAZEEDA' || comment.user_name.toUpperCase() === 'ADMIN')}
                 {@const avatarUrl = resolveCommentAvatar(comment)}
                 {@const isEditing = editingCommentId === comment.id}
-                <div class="flex items-start space-x-3 bg-white p-3 rounded-xl border border-slate-200/40 shadow-soft-sm relative {comment.parent_id ? 'ml-8 border-l-4 border-l-indigo-300' : ''}
-                  {isAdmin ? 'group/tc' : ''}
-                  {isAdminComment ? 'border-indigo-100/50 bg-gradient-to-r from-indigo-50/30 to-white' : ''}">
+                <div class="flex items-start space-x-3 bg-white dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200/40 dark:border-slate-700 shadow-soft-sm relative {comment.parent_id ? 'ml-8 border-l-4 border-l-indigo-300 dark:border-l-indigo-500' : ''}
+                  {isAdmin ? 'group/tc' : ''}">
                   <!-- User Avatar -->
                   <button
                     type="button"
@@ -971,7 +977,7 @@
                   >
                     {#if avatarUrl}
                       <img referrerpolicy="no-referrer" src={avatarUrl} alt={comment.user_name} class="h-full w-full object-cover"
-                        on:error={(e) => { e.currentTarget.style.display = 'none'; }} />
+                        on:error={hideImageError} />
                     {:else}
                       {getInitials(comment.user_name)}
                     {/if}
@@ -982,41 +988,42 @@
                         <button
                           type="button"
                           on:click={() => handleOpenProfile(isAdminComment ? 'admin' : 'member', comment.user_name)}
-                          class="text-xs font-extrabold truncate hover:underline text-left cursor-pointer bg-transparent p-0 border-none outline-none
-                            {isAdminComment ? 'text-indigo-700' : 'text-slate-700'}"
+                          class="text-xs font-extrabold truncate hover:underline text-left cursor-pointer bg-transparent p-0 border-none outline-none text-slate-700 dark:text-slate-300"
                         >
                           {isAdminComment ? (adminName || 'ADMIN MAZEEDA') : comment.user_name}
                         </button>
                         {#if isAdminComment}
-                          <span class="px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-full text-[8px] font-black border border-indigo-200 shrink-0">ADMIN</span>
+                          <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full text-[8px] font-black border border-slate-200 dark:border-slate-600 shrink-0">ADMIN</span>
                         {/if}
                       </div>
                       <div class="flex items-center gap-1 shrink-0">
-                        <span class="text-[9px] text-slate-400 font-bold">
+                        <span class="text-[9px] text-slate-400 font-bold mr-1">
                           {new Date(comment.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}
                         </span>
                         <!-- Actions -->
                         <button type="button" on:click|preventDefault|stopPropagation={() => { replyingToCommentId = comment.id; replyingToCommentAuthor = comment.user_name; }}
-                          class="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors ml-2 cursor-pointer">
-                          Balas
+                          class="p-1 rounded-md text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors cursor-pointer"
+                          title="Balas">
+                          <MessageCircle class="w-3.5 h-3.5" />
                         </button>
                         <button type="button" on:click|preventDefault|stopPropagation={() => openReportModal(comment.user_name)}
-                          class="text-[9px] font-bold text-slate-400 hover:text-rose-600 transition-colors ml-2 cursor-pointer flex items-center gap-0.5">
-                          <Flag class="w-2.5 h-2.5" /> Lapor
+                          class="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors cursor-pointer"
+                          title="Lapor">
+                          <Flag class="w-3.5 h-3.5" />
                         </button>
                         <!-- Admin/Author Action Buttons -->
                         {#if isAdmin || comment.user_name === $authStore.user?.name}
                           <button
                             type="button"
                             on:click|preventDefault|stopPropagation={() => { editingCommentId = comment.id; editingCommentText = comment.comment_text; }}
-                            class="p-1.5 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all cursor-pointer"
+                            class="p-1 rounded-md text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all cursor-pointer"
                             title="Edit komentar">
                             <Pencil class="h-3.5 w-3.5" />
                           </button>
                           <button 
                             type="button"
-                            on:click|preventDefault|stopPropagation={() => deleteComment(comment.id, selectedMemory.id)}
-                            class="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                            on:click|preventDefault|stopPropagation={() => selectedMemory && deleteComment(comment.id, selectedMemory.id)}
+                            class="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-all cursor-pointer"
                             title="Hapus Komentar">
                             <Trash2 class="h-3.5 w-3.5" />
                           </button>
@@ -1045,13 +1052,13 @@
                     {:else}
                       <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
                       <!-- svelte-ignore a11y-click-events-have-key-events -->
-                      <p class="text-xs text-slate-500 font-normal mt-1 leading-relaxed break-words" on:click={handleDelegatedMentionClick}>{@html formatMentions(comment.comment_text)}</p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400 font-normal mt-1 leading-relaxed break-words" on:click={handleDelegatedMentionClick}>{@html formatMentions(comment.comment_text)}</p>
                     {/if}
                   </div>
                 </div>
               {/each}
             {:else}
-              <div class="py-8 text-center border-2 border-dashed border-slate-200/60 rounded-2xl bg-white">
+              <div class="py-8 text-center border-2 border-dashed border-slate-200/60 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-800/20">
                 <MessageCircle class="h-7 w-7 text-slate-300 mx-auto mb-1 animate-pulse" />
                 <p class="text-xs font-bold text-slate-500">Belum Ada Komentar</p>
                 <p class="text-[9px] text-slate-400 mt-0.5">Jadilah yang pertama menulis tanggapan!</p>
@@ -1061,16 +1068,16 @@
         </div>
 
         <!-- Add Comment Input Form (Pinned at bottom, accounting for phone home indicator) -->
-        <div class="p-4 bg-white border-t border-slate-200/60 shrink-0" style="padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));">
+        <div class="p-4 bg-white dark:bg-slate-900 border-t border-slate-200/60 dark:border-slate-800 shrink-0" style="padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));">
           {#if replyingToCommentId}
-            <div class="flex items-center justify-between bg-indigo-50/50 px-3 py-2 rounded-t-xl border border-indigo-100 border-b-0 -mb-2 relative z-0">
-              <span class="text-[10px] font-bold text-indigo-700">Membalas @{replyingToCommentAuthor}</span>
+            <div class="flex items-center justify-between bg-indigo-50/50 dark:bg-indigo-900/20 px-3 py-2 rounded-t-xl border border-indigo-100 dark:border-indigo-800 border-b-0 -mb-2 relative z-0">
+              <span class="text-[10px] font-bold text-indigo-700 dark:text-indigo-300">Membalas @{replyingToCommentAuthor}</span>
               <button on:click={() => { replyingToCommentId = null; replyingToCommentAuthor = ''; }} class="text-indigo-400 hover:text-rose-500 cursor-pointer">
                 <X class="h-3.5 w-3.5" />
               </button>
             </div>
           {/if}
-          <form on:submit|preventDefault={() => submitComment(selectedMemory.id)} class="space-y-2.5 relative z-10 bg-white {replyingToCommentId ? 'pt-2' : ''}">
+          <form on:submit|preventDefault={() => submitComment(selectedMemory.id)} class="space-y-2.5 relative z-10 bg-white dark:bg-slate-900 {replyingToCommentId ? 'pt-2' : ''}">
             <!-- Guest Name Input if not logged in -->
             {#if !$authStore.user}
               <div class="flex items-center space-x-2">
@@ -1078,7 +1085,7 @@
                 <input 
                   type="text" 
                   placeholder="e.g. Ahmad" 
-                  class="flex-1 h-7 border border-slate-200 rounded-lg text-xs px-2.5 bg-slate-50 text-slate-700 outline-none focus:border-primary focus:bg-white"
+                  class="flex-1 h-7 border border-slate-200 dark:border-slate-700 rounded-lg text-xs px-2.5 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none focus:border-primary focus:bg-white dark:focus:bg-slate-700"
                   bind:value={guestName}
                   required
                 />
@@ -1091,7 +1098,7 @@
                 <div class="h-8 w-8 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-[10px] font-black
                   {$authStore.user.role === 'admin' ? 'bg-gradient-to-br from-primary to-indigo-600 text-white' : 'bg-primary/10 text-primary border border-primary/20'}">
                   {#if myAvatar}
-                    <img referrerpolicy="no-referrer" src={myAvatar} alt="Saya" class="h-full w-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                    <img referrerpolicy="no-referrer" src={myAvatar} alt="Saya" class="h-full w-full object-cover" on:error={hideImageError} />
                   {:else}
                     {getInitials($authStore.user.name)}
                   {/if}
@@ -1099,11 +1106,11 @@
               {/if}
               <div class="flex-1 relative">
                 {#if showMentionDropdown && filteredUsers.length > 0}
-                  <div class="absolute bottom-full left-0 mb-2 w-full max-h-48 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-xl z-[1000] py-1">
+                  <div class="absolute bottom-full left-0 mb-2 w-full max-h-48 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[1000] py-1">
                     {#each filteredUsers as user}
                       <button 
                         type="button" 
-                        class="flex w-full items-center gap-2 px-3 py-2 hover:bg-indigo-50 border-b border-slate-100 last:border-b-0 transition-colors cursor-pointer"
+                        class="flex w-full items-center gap-2 px-3 py-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 border-b border-slate-100 dark:border-slate-700 last:border-b-0 transition-colors cursor-pointer"
                         on:click={() => insertMention(user.name)}
                       >
                         {#if user.avatar}
@@ -1111,14 +1118,14 @@
                             <div class="absolute inset-0 flex items-center justify-center text-slate-600 font-bold text-[8px]">
                               {getInitials(user.name)}
                             </div>
-                            <img src={convertDriveUrl(user.avatar)} alt={user.name} class="absolute inset-0 w-full h-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
+                            <img src={convertDriveUrl(user.avatar)} alt={user.name} class="absolute inset-0 w-full h-full object-cover" on:error={hideImageError} />
                           </div>
                         {:else}
                           <div class="w-6 h-6 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 font-bold text-[8px] shrink-0">
                             {getInitials(user.name)}
                           </div>
                         {/if}
-                        <span class="text-[11px] font-bold text-slate-700 truncate">{user.name}</span>
+                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">{user.name}</span>
                       </button>
                     {/each}
                   </div>
@@ -1126,7 +1133,7 @@
                 <input 
                   type="text" 
                   placeholder={replyingToCommentId ? `Balas komentar...` : "Tulis komentar berharga Anda..."} 
-                  class="w-full h-10 border border-slate-200 rounded-xl text-xs px-3 bg-slate-50 text-slate-700 outline-none focus:border-primary focus:bg-white"
+                  class="w-full h-10 border border-slate-200 dark:border-slate-700 rounded-xl text-xs px-3 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none focus:border-primary focus:bg-white dark:focus:bg-slate-700"
                   bind:value={newCommentText}
                   bind:this={inputElement}
                   on:input={handleCommentInput}

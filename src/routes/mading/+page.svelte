@@ -6,7 +6,16 @@
   import Input from "$lib/components/ui/input.svelte";
   import { supabase } from "$lib/supabase";
   import { authStore, activeProfileStore } from "$lib/auth";
+  import { t, locale } from "svelte-i18n";
+  import { get } from "svelte/store";
   import { fade, slide } from "svelte/transition";
+
+  function displayNumber(num: number | undefined | null, currentLocale: string | null = null) {
+    const n = Number(num || 0);
+    if (isNaN(n)) return '0';
+    if (currentLocale === 'ar') return n.toLocaleString('ar-EG');
+    return String(n);
+  }
   import {
     Megaphone,
     Calendar,
@@ -522,7 +531,7 @@
                     id: payload.new.id,
                     author: payload.new.author,
                     text: payload.new.text,
-                    date: "Baru saja",
+                    date: get(t)("mading.just_now") || "Baru saja",
                   };
                   return {
                     ...post,
@@ -541,7 +550,7 @@
                       id: payload.new.id,
                       author: payload.new.author,
                       text: payload.new.text,
-                      date: "Baru saja",
+                      date: get(t)("mading.just_now") || "Baru saja",
                       parent_id: payload.new.parent_id
                     }]
                   };
@@ -633,7 +642,7 @@
                   author: c.author,
                   text: c.text,
                   parent_id: c.parent_id || null,
-                  date: new Date(c.created_at).toLocaleDateString("id-ID", {
+                  date: new Date(c.created_at).toLocaleDateString(get(locale) || "id-ID", {
                     day: "numeric",
                     month: "short",
                   }),
@@ -645,7 +654,7 @@
             title: item.title,
             category: item.category,
             content: item.content,
-            date: new Date(item.created_at).toLocaleDateString("id-ID", {
+            date: new Date(item.created_at).toLocaleDateString(get(locale) || "id-ID", {
               day: "numeric",
               month: "long",
               year: "numeric",
@@ -780,7 +789,7 @@
       id: Date.now(),
       author: userName,
       text: text,
-      date: "Baru saja",
+      date: get(t)("mading.just_now") || "Baru saja",
     };
 
     announcements = announcements.map((post) => {
@@ -821,7 +830,7 @@
               id: data[0].id,
               author: data[0].author,
               text: data[0].text,
-              date: "Hari ini",
+              date: get(t)("mading.today") || "Hari ini",
             };
             return { ...post, comments: [...cleanComments, savedComment] };
           }
@@ -847,7 +856,7 @@
       id: Date.now(),
       author: userName,
       text: text,
-      date: "Baru saja",
+      date: get(t)("mading.just_now") || "Baru saja",
       parent_id: parentId
     };
 
@@ -908,7 +917,7 @@
           id: data[0].id,
           author: data[0].author,
           text: data[0].text,
-          date: "Hari ini",
+          date: get(t)("mading.today") || "Hari ini",
           parent_id: data[0].parent_id
         };
         announcements = announcements.map((post) => {
@@ -1303,7 +1312,7 @@
 </svelte:head>
 
 <div class="space-y-6 pb-24">
-  <PageHeader title="Mading MAZEEDA" backTo="/" />
+  <PageHeader title={$t("mading.page_title") || "Mading MAZEEDA"} backTo="/" />
 
   <!-- Alert / Toast Banner (Floating Toast) -->
   {#if alertMessage}
@@ -1324,29 +1333,29 @@
 
   <!-- Dual-Board Tab Navigator -->
   <div
-    class="flex border-b border-slate-100 p-0.5 bg-slate-100/50 rounded-xl max-w-max mx-auto"
+    class="flex border-b border-slate-100 dark:border-slate-800 p-0.5 bg-slate-100 dark:bg-slate-800/50 rounded-xl max-w-max mx-auto"
   >
     <button
       on:click={() => (activeTab = "pengumuman")}
       class="px-5 py-2.5 text-xs font-bold rounded-lg transition-all duration-200 flex items-center space-x-2
         {activeTab === 'pengumuman'
-        ? 'bg-white text-primary shadow-soft-sm'
-        : 'text-slate-500 hover:text-slate-700'}"
+        ? 'bg-white dark:bg-slate-900 text-primary shadow-soft-sm'
+        : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200'}"
       style="min-height: 40px;"
     >
       <Megaphone class="h-4 w-4" />
-      <span> Papan Pengumuman</span>
+      <span>{$t("mading.tab_announcement") || "Papan Pengumuman"}</span>
     </button>
     <button
       on:click={() => (activeTab = "aspirasi")}
       class="px-5 py-2.5 text-xs font-bold rounded-lg transition-all duration-200 flex items-center space-x-2
         {activeTab === 'aspirasi'
-        ? 'bg-white text-primary shadow-soft-sm'
-        : 'text-slate-500 hover:text-slate-700'}"
+        ? 'bg-white dark:bg-slate-900 text-primary shadow-soft-sm'
+        : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200'}"
       style="min-height: 40px;"
     >
       <Pin class="h-4 w-4" />
-      <span> Dinding Aspirasi</span>
+      <span>{$t("mading.tab_aspiration") || "Dinding Aspirasi"}</span>
     </button>
   </div>
 
@@ -1358,11 +1367,11 @@
         <div class="flex items-center space-x-2 relative">
           <!-- Search input -->
           <div class="relative flex-1">
-            <Search class="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
+            <Search class="absolute left-4 top-3.5 h-5 w-5 text-slate-400 dark:text-slate-500" />
             <Input
               type="text"
-              placeholder="Cari pengumuman..."
-              class="pl-12 w-full bg-slate-50/50 hover:bg-slate-50 focus:bg-white transition-colors duration-200 border-slate-200/80 rounded-xl"
+              placeholder={$t("mading.search_announcement_placeholder") || "Cari pengumuman..."}
+              class="pl-12 w-full bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-50 dark:bg-slate-800 focus:bg-white dark:bg-slate-900 transition-colors duration-200 border-slate-200 dark:border-slate-700/80 rounded-xl"
               bind:value={searchQuery}
             />
           </div>
@@ -1373,7 +1382,7 @@
               type="button"
               class="relative p-3 rounded-xl border transition-all duration-200 {showFilter
                 ? 'bg-primary text-white border-primary shadow-soft-sm'
-                : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-600'}"
+                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}"
               on:click={() => (showFilter = !showFilter)}
             >
               <Filter class="h-5 w-5" />
@@ -1396,14 +1405,14 @@
               ></button>
 
               <div
-                class="absolute right-0 top-[calc(100%+8px)] z-20 w-60 bg-white border border-slate-200/80 rounded-2xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-1 duration-150 origin-top-right"
+                class="absolute right-0 top-[calc(100%+8px)] z-20 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-1 duration-150 origin-top-right"
               >
                 <!-- Kategori -->
                 <div class="px-3 pt-3 pb-2">
                   <p
-                    class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5"
+                    class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
                   >
-                    Kategori
+                    {$t("mading.filter_category") || "Kategori"}
                   </p>
                   <div class="flex flex-wrap gap-1">
                     <!-- Semua -->
@@ -1413,8 +1422,8 @@
                       class="px-2.5 py-1 text-[10px] font-bold rounded-full transition-all duration-150
                         {activeFilter === 'all'
                         ? 'bg-primary text-white'
-                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}"
-                      >Semua</button
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:bg-slate-700'}"
+                      >{$t("mading.filter_all") || "Semua"}</button
                     >
 
                     {#if dynamicCategories.length > 0}
@@ -1425,12 +1434,12 @@
                           class="px-2.5 py-1 text-[10px] font-bold rounded-full transition-all duration-150
                             {activeFilter === cat
                             ? 'bg-primary text-white'
-                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}"
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:bg-slate-700'}"
                           >{cat}</button
                         >
                       {/each}
                     {:else}
-                      <span class="text-[10px] text-slate-400 italic"
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 italic"
                         >Belum ada kategori</span
                       >
                     {/if}
@@ -1439,7 +1448,7 @@
 
                 <!-- Reset -->
                 {#if activeFilterCount > 0}
-                  <div class="border-t border-slate-100 px-3 py-2">
+                  <div class="border-t border-slate-100 dark:border-slate-800 px-3 py-2">
                     <button
                       type="button"
                       on:click={() => {
@@ -1461,7 +1470,7 @@
         <div class="space-y-6">
           {#each filteredAnnouncements as post (post.id)}
             <Card
-              class="hover:border-primary/25 transition-premium border-slate-200/80 overflow-hidden 
+              class="hover:border-primary/25 transition-premium border-slate-200 dark:border-slate-700/80 overflow-hidden 
               {post.is_priority
                 ? 'border-primary/45 bg-gradient-to-tr from-blue-50/15 via-white to-indigo-50/10 shadow-soft border-l-4 border-l-primary'
                 : ''}"
@@ -1469,7 +1478,7 @@
               <!-- Header -->
               <div
                 slot="header"
-                class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4"
+                class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-4"
               >
                 <div class="flex flex-wrap items-center gap-2">
                   {#if post.is_priority}
@@ -1487,14 +1496,14 @@
                     {post.category}
                   </span>
                   <h2
-                    class="font-extrabold text-slate-800 text-base sm:text-lg leading-snug"
+                    class="font-extrabold text-slate-800 dark:text-slate-100 text-base sm:text-lg leading-snug"
                   >
                     {post.title}
                   </h2>
                 </div>
 
                 <div
-                  class="flex items-center text-[10px] font-bold text-slate-400 space-x-3 mt-1 sm:mt-0 uppercase tracking-wider"
+                  class="flex items-center text-[10px] font-bold text-slate-400 dark:text-slate-500 space-x-3 mt-1 sm:mt-0 uppercase tracking-wider"
                 >
                   <span class="flex items-center space-x-1">
                     <Calendar class="h-3.5 w-3.5" />
@@ -1503,9 +1512,9 @@
                   <button
                     type="button"
                     on:click={() => handleOpenProfile(post.author && post.author.toUpperCase() === 'ADMIN MAZEEDA' ? 'admin' : 'member', post.author)}
-                    class="flex items-center space-x-1 hover:underline cursor-pointer text-left bg-transparent p-0 border-none outline-none font-inherit text-slate-400"
+                    class="flex items-center space-x-1 hover:underline cursor-pointer text-left bg-transparent p-0 border-none outline-none font-inherit text-slate-400 dark:text-slate-500"
                   >
-                    <User class="h-3.5 w-3.5 text-slate-400" />
+                    <User class="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
                     <span>{post.author && post.author.toUpperCase() === 'ADMIN MAZEEDA' ? 'ADMIN MAZEEDA' : post.author}</span>
                   </button>
                 </div>
@@ -1518,8 +1527,8 @@
                     <p 
                       class="text-sm leading-relaxed font-normal text-justify
                         {isArabic(paragraph) 
-                          ? 'font-arabic text-right text-slate-800 text-lg md:text-xl' 
-                          : 'text-slate-600 text-left'}"
+                          ? 'font-arabic text-right text-slate-800 dark:text-slate-100 text-lg md:text-xl' 
+                          : 'text-slate-600 dark:text-slate-300 text-left'}"
                       dir={isArabic(paragraph) ? 'rtl' : 'ltr'}
                       style="text-align: justify; text-align-last: {isArabic(paragraph) ? 'right' : 'left'};"
                     >
@@ -1540,7 +1549,7 @@
                       <span>Tampilkan Lebih Sedikit</span>
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
                     {:else}
-                      <span>Baca Selengkapnya</span>
+                      <span>{$t("mading.read_more") || "Baca Selengkapnya"}</span>
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                     {/if}
                   </button>
@@ -1554,10 +1563,10 @@
                     <!-- Like Button -->
                     <button
                       on:click={() => handleLike(post)}
-                      class="inline-flex items-center space-x-1.5 text-xs font-bold py-2 px-3.5 rounded-xl border transition-all duration-200
+                      class="inline-flex items-center space-x-1.5 text-xs font-bold py-2 px-1 transition-all duration-200 hover:opacity-70
                         {post.hasLiked
-                        ? 'bg-rose-50 text-rose-600 border-rose-100 shadow-soft-sm'
-                        : 'bg-white text-slate-500 border-slate-200/60 hover:bg-slate-50 hover:border-slate-300'}"
+                        ? 'text-rose-600'
+                        : 'text-slate-500 dark:text-slate-400'}"
                       style="min-height: 40px;"
                     >
                       <Heart
@@ -1565,18 +1574,18 @@
                           ? 'fill-current text-rose-500'
                           : ''}"
                       />
-                      <span>{post.likes}</span>
+                      <span>{displayNumber(post.likes, $locale)}</span>
                     </button>
 
                     <!-- Comment Button (Instagram Style Bottom Drawer) -->
                     <button
                       on:click={() => { selectedAnnouncementForComments = post; newAnnouncementCommentText = ''; }}
-                      class="inline-flex items-center space-x-1.5 text-xs font-bold py-2 px-3.5 rounded-xl border border-slate-200/60 bg-white text-slate-500 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+                      class="inline-flex items-center space-x-1.5 text-xs font-bold py-2 px-1 text-slate-500 dark:text-slate-400 hover:opacity-70 transition-all duration-200"
                       style="min-height: 40px;"
                       title="Lihat Tanggapan"
                     >
                       <MessageSquare class="h-4.5 w-4.5" />
-                      <span>{post.comments.length}</span>
+                      <span>{displayNumber(post.comments.length, $locale)}</span>
                     </button>
                   </div>
 
@@ -1591,13 +1600,13 @@
         </div>
       {:else}
         <div
-          class="py-16 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50"
+          class="py-16 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-800/50"
         >
           <div class="max-w-xs mx-auto space-y-2">
-            <p class="text-sm font-bold text-slate-600">
+            <p class="text-sm font-bold text-slate-600 dark:text-slate-300">
               Tidak ada pengumuman ditemukan
             </p>
-            <p class="text-xs text-slate-400">
+            <p class="text-xs text-slate-400 dark:text-slate-500">
               Silakan gunakan kata kunci filter atau pencarian lainnya.
             </p>
           </div>
@@ -1609,7 +1618,7 @@
     <div class="space-y-6" in:fade={{ duration: 200 }}>
       <!-- Full-Width Virtual Corkboard display -->
       <div
-        class="bg-amber-50/15 border border-slate-200/60 rounded-3xl p-6 min-h-[500px] relative overflow-hidden shadow-inner"
+        class="bg-amber-50/15 border border-slate-200 dark:border-slate-700/60 rounded-3xl p-6 min-h-[500px] relative overflow-hidden shadow-inner"
       >
         <!-- Background pattern grid lines for organic corkboard feel -->
         <div
@@ -1622,7 +1631,7 @@
               <div
                 class="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto"
               ></div>
-              <p class="text-xs font-semibold text-slate-400">
+              <p class="text-xs font-semibold text-slate-400 dark:text-slate-500">
                 Mengambil catatan alumni...
               </p>
             </div>
@@ -1638,7 +1647,7 @@
                 >
                   <!-- Decorative Top Tape/Pin effect to mimic sticky note -->
                   <div
-                    class="absolute -top-2 left-1/2 -translate-x-1/2 h-4.5 w-14 rounded shadow-sm opacity-80 {colorObj.tape}"
+                    class="absolute -top-2 left-1/2 -translate-x-1/2 h-4.5 w-14 rounded shadow-sm dark:shadow-none opacity-80 {colorObj.tape}"
                   ></div>
 
                   <!-- Note Content -->
@@ -1672,7 +1681,7 @@
                     <button
                       type="button"
                       on:click={() => handleOpenProfile(note.sender_name && note.sender_name.toUpperCase() === 'ADMIN MAZEEDA' ? 'admin' : 'member', note.sender_name)}
-                      class="truncate max-w-[95px] hover:underline cursor-pointer text-left bg-transparent p-0 border-none outline-none font-black text-slate-500 text-[9px] uppercase tracking-wider"
+                      class="truncate max-w-[95px] hover:underline cursor-pointer text-left bg-transparent p-0 border-none outline-none font-black text-slate-500 dark:text-slate-400 dark:text-slate-500 text-[9px] uppercase tracking-wider"
                       title={note.sender_name}
                     >
                       {note.sender_name}
@@ -1690,7 +1699,7 @@
                             ? 'fill-current text-rose-500'
                             : ''}"
                         />
-                        <span>{note.likes || 0}</span>
+                        <span>{displayNumber(note.likes || 0, $locale)}</span>
                       </button>
 
                       <!-- Note Comment -->
@@ -1711,10 +1720,10 @@
             <div
               class="py-24 text-center max-w-xs mx-auto space-y-2 relative z-10"
             >
-              <p class="text-sm font-bold text-slate-500">
+              <p class="text-sm font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">
                 Dinding Aspirasi Kosong
               </p>
-              <p class="text-xs text-slate-400">
+              <p class="text-xs text-slate-400 dark:text-slate-500">
                 Jadilah yang pertama untuk menempelkan aspirasi sapaan atau
                 kenangan Anda!
               </p>
@@ -1745,21 +1754,21 @@
           <div
             on:click|stopPropagation
             transition:slide
-            class="bg-white rounded-t-3xl rounded-b-none sm:rounded-3xl w-full max-w-md overflow-hidden border border-slate-100 shadow-2xl flex flex-col max-h-[92vh]"
+            class="bg-white dark:bg-slate-900 rounded-t-3xl rounded-b-none sm:rounded-3xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800 shadow-2xl flex flex-col max-h-[92vh]"
           >
             <!-- Modal Header -->
             <div
-              class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50"
+              class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50"
             >
               <h3
-                class="font-black text-slate-800 text-sm tracking-tight flex items-center gap-1.5"
+                class="font-black text-slate-800 dark:text-slate-100 text-sm tracking-tight flex items-center gap-1.5"
               >
                 <Pin class="h-4.5 w-4.5 text-primary" />
                 <span>Tulis Aspirasi</span>
               </h3>
               <button
                 on:click={() => (showNoteCreatorModal = false)}
-                class="h-8 w-8 rounded-full border border-slate-200/60 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors text-sm font-bold cursor-pointer"
+                class="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors text-sm font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -1773,16 +1782,16 @@
                   <div class="flex justify-between items-center">
                     <label
                       for="noteText"
-                      class="text-xs font-bold text-slate-500">Isi Pesan</label
+                      class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">Isi Pesan</label
                     >
-                    <span class="text-[10px] text-slate-400 font-bold"
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold"
                       >{newNoteText.length}/1000</span
                     >
                   </div>
                   <textarea
                     id="noteText"
                     rows="5"
-                    class="flex w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-800 placeholder:text-slate-400 focus:border-primary focus:outline-none transition-colors"
+                    class="flex w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:text-slate-500 focus:border-primary focus:outline-none transition-colors"
                     placeholder="Ketik pesan Anda di sini... (maksimal 1000 karakter)"
                     maxlength="1000"
                     bind:value={newNoteText}
@@ -1792,7 +1801,7 @@
 
                 <!-- Color Picker pills -->
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-slate-500"
+                  <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500"
                     >Pilih Warna Kertas</label
                   >
                   <div class="flex gap-2">
@@ -1802,8 +1811,8 @@
                         on:click={() => (selectedColor = color.id)}
                         class="flex-1 h-9 rounded-xl border-2 flex items-center justify-center gap-1.5 text-[10px] font-bold transition-all duration-200
                           {selectedColor === color.id
-                          ? 'border-primary bg-white shadow-soft-sm font-black scale-102'
-                          : 'border-slate-200/60 bg-slate-50 text-slate-500 hover:bg-slate-100'}"
+                          ? 'border-primary bg-white dark:bg-slate-900 shadow-soft-sm font-black scale-102'
+                          : 'border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:bg-slate-800'}"
                       >
                         <span class="h-2 w-2 rounded-full {color.dot}"></span>
                         <span>{color.label}</span>
@@ -1845,34 +1854,34 @@
     <div
       on:click|stopPropagation
       transition:slide
-      class="bg-white rounded-t-3xl rounded-b-none sm:rounded-3xl w-full max-w-lg overflow-hidden border border-slate-100 shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh]"
+      class="bg-white dark:bg-slate-900 rounded-t-3xl rounded-b-none sm:rounded-3xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-800 shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh]"
     >
       <!-- Modal Header -->
       <div
-        class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50"
+        class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50"
       >
         <h3
-          class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"
+          class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-1.5"
         >
           <Pin class="h-4 w-4 text-primary" />
           <span>Detail & Diskusi Aspirasi</span>
         </h3>
         <button
           on:click={() => (selectedNoteForComments = null)}
-          class="h-8 w-8 rounded-full border border-slate-200/60 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors text-sm font-bold cursor-pointer"
+          class="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors text-sm font-bold cursor-pointer"
         >
           ✕
         </button>
       </div>
 
       <!-- Scrollable Content -->
-      <div class="px-2 py-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/20">
+      <div class="px-2 py-6 overflow-y-auto space-y-6 flex-1 bg-slate-50 dark:bg-slate-800/20">
         <!-- Sticky Note Magnified -->
         <div
           class="px-4 py-6 border rounded-2xl shadow-soft relative {selectedNoteColor?.bg} min-h-[120px] flex flex-col justify-between"
         >
           <div
-            class="absolute -top-2 left-1/2 -translate-x-1/2 h-4.5 w-16 rounded shadow-sm opacity-80 {selectedNoteColor?.tape}"
+            class="absolute -top-2 left-1/2 -translate-x-1/2 h-4.5 w-16 rounded shadow-sm dark:shadow-none opacity-80 {selectedNoteColor?.tape}"
           ></div>
           <p
             dir={isArabic(selectedNoteForComments.message) ? "rtl" : "ltr"}
@@ -1903,7 +1912,7 @@
               >{selectedNoteForComments.created_at
                 ? new Date(
                     selectedNoteForComments.created_at,
-                  ).toLocaleDateString("id-ID", {
+                  ).toLocaleDateString(get(locale) || "id-ID", {
                     day: "numeric",
                     month: "short",
                   })
@@ -1915,10 +1924,8 @@
         <!-- Comments Feed -->
         <div class="space-y-4">
           <h4
-            class="text-xs font-black text-slate-400 uppercase tracking-widest"
-          >
-            Komentar
-          </h4>
+            class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"
+          >{$t("mading.comments") || "Komentar"}</h4>
 
           {#if sortedNoteCommentsList.length > 0}
             <div class="space-y-2.5">
@@ -1926,8 +1933,8 @@
                 {@const avatarUrl = convertDriveUrl(authorAvatarMap[comment.author] || '')}
                 {@const isAdminComment = comment.author && (comment.author.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.author.toUpperCase() === 'ADMIN MAZEEDA' || comment.author.toUpperCase() === 'ADMIN')}
                 {@const isEditing = editingNoteCommentId == comment.id}
-                <div class="bg-white border rounded-2xl p-3.5 shadow-soft-sm transition-all {comment.parent_id ? 'ml-8 border-l-4 border-l-indigo-300' : ''}
-                  {isAdminComment ? 'border-indigo-100' : 'border-slate-100'}
+                <div class="bg-white dark:bg-slate-900 border rounded-2xl p-3.5 shadow-soft-sm transition-all {comment.parent_id ? 'ml-8 border-l-4 border-l-indigo-300' : ''}
+                  {isAdminComment ? 'border-indigo-100' : 'border-slate-100 dark:border-slate-800'}
                   {isAdmin || comment.author === $authStore.user?.name ? 'group/nc' : ''}">
                   <div class="flex items-start gap-3">
                     <!-- Avatar -->
@@ -1959,20 +1966,18 @@
                           {#if isAdminComment}<span class="ml-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[8px] font-black border border-indigo-100">ADMIN</span>{/if}
                         </div>
                         <div class="flex items-center gap-1 shrink-0">
-                          <span class="text-[9px] text-slate-400 font-bold">{new Date(comment.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                          <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold">{new Date(comment.created_at).toLocaleDateString(get(locale) || "id-ID", { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                           <!-- Actions -->
                           <button type="button" on:click|preventDefault|stopPropagation={() => { replyingToNoteCommentId = comment.id; replyingToNoteCommentAuthor = comment.author; }}
-                            class="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors ml-2 cursor-pointer">
-                            Balas
-                          </button>
+                            class="text-[9px] font-bold text-slate-400 dark:text-slate-500 hover:text-indigo-600 transition-colors ml-2 cursor-pointer">{$t("mading.reply") || "Balas"}</button>
                           {#if isAdmin || comment.author === $authStore.user?.name}
                             <button type="button" on:click|preventDefault|stopPropagation={() => { editingNoteCommentId = comment.id; editingNoteCommentText = comment.text; }}
-                              class="p-1.5 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all cursor-pointer"
+                              class="p-1.5 rounded-md text-slate-400 dark:text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all cursor-pointer"
                               title="Edit komentar">
                               <Pencil class="h-3.5 w-3.5" />
                             </button>
                             <button type="button" on:click|preventDefault|stopPropagation={() => deleteNoteComment(comment.id)}
-                              class="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                              class="p-1.5 rounded-md text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
                               title="Hapus komentar">
                               <Trash2 class="h-3.5 w-3.5" />
                             </button>
@@ -1984,24 +1989,22 @@
                         <div class="flex gap-2 items-center mt-1">
                           <input
                             type="text"
-                            class="flex-1 h-8 text-xs border border-indigo-200 rounded-xl px-2.5 bg-indigo-50/40 text-slate-700 outline-none focus:border-indigo-400"
+                            class="flex-1 h-8 text-xs border border-indigo-200 rounded-xl px-2.5 bg-indigo-50/40 text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-400"
                             bind:value={editingNoteCommentText}
                             on:keydown={(e) => { if (e.key === 'Enter') saveEditNoteComment(); if (e.key === 'Escape') { editingNoteCommentId = null; } }}
                             autofocus
                           />
                           <button on:click={saveEditNoteComment}
-                            class="h-8 px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black rounded-xl transition-colors">
-                            Simpan
-                          </button>
+                            class="h-8 px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black rounded-xl transition-colors">{$t("mading.save") || "Simpan"}</button>
                           <button on:click={() => { editingNoteCommentId = null; }}
-                            class="h-8 w-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl transition-colors">
+                            class="h-8 w-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-500 rounded-xl transition-colors">
                             <XIcon class="h-3.5 w-3.5" />
                           </button>
                         </div>
                       {:else}
                         <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <p class="text-xs font-medium text-slate-600 leading-relaxed" on:click={handleDelegatedMentionClick}>{@html formatMentions(comment.text)}</p>
+                        <p class="text-xs font-medium text-slate-600 dark:text-slate-300 leading-relaxed" on:click={handleDelegatedMentionClick}>{@html formatMentions(comment.text)}</p>
                       {/if}
                     </div>
                   </div>
@@ -2010,7 +2013,7 @@
             </div>
           {:else}
             <div
-              class="text-center py-6 text-slate-400 italic text-xs border border-dashed border-slate-200 rounded-2xl bg-white"
+              class="text-center py-6 text-slate-400 dark:text-slate-500 italic text-xs border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-900"
             >
               Belum ada komentar. Jadilah yang pertama memberikan masukan!
             </div>
@@ -2019,7 +2022,7 @@
       </div>
 
       <!-- Modal Footer: Comment Form (Sticky Note) -->
-      <div class="p-4 border-t border-slate-100 bg-white">
+      <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
         {#if replyingToNoteCommentId}
           <div class="flex items-center justify-between bg-indigo-50/50 px-3 py-2 rounded-t-xl border border-indigo-100 border-b-0 -mb-2 relative z-0">
             <span class="text-[10px] font-bold text-indigo-700">Membalas @{replyingToNoteCommentAuthor}</span>
@@ -2030,7 +2033,7 @@
         {/if}
         <form
           on:submit|preventDefault={handleAddNoteComment}
-          class="flex gap-2 items-center relative z-10 bg-white {replyingToNoteCommentId ? 'pt-2' : ''}"
+          class="flex gap-2 items-center relative z-10 bg-white dark:bg-slate-900 {replyingToNoteCommentId ? 'pt-2' : ''}"
         >
           <!-- Current user avatar -->
           {#if $authStore.user}
@@ -2046,26 +2049,26 @@
           {/if}
           <div class="flex-1 relative">
             {#if showMentionDropdown && activeMentionInput === 'note' && filteredUsers.length > 0}
-              <div class="absolute bottom-full left-0 mb-2 w-full max-h-48 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-xl z-[1000] py-1">
+              <div class="absolute bottom-full left-0 mb-2 w-full max-h-48 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[1000] py-1">
                 {#each filteredUsers as user}
                   <button 
                     type="button" 
-                    class="flex w-full items-center gap-2 px-3 py-2 hover:bg-indigo-50 border-b border-slate-100 last:border-b-0 transition-colors cursor-pointer"
+                    class="flex w-full items-center gap-2 px-3 py-2 hover:bg-indigo-50 border-b border-slate-100 dark:border-slate-800 last:border-b-0 transition-colors cursor-pointer"
                     on:click={() => insertMention(user.name)}
                   >
                     {#if user.avatar}
-                      <div class="w-6 h-6 rounded-full shrink-0 relative overflow-hidden bg-slate-200">
-                        <div class="absolute inset-0 flex items-center justify-center text-slate-600 font-bold text-[8px]">
+                      <div class="w-6 h-6 rounded-full shrink-0 relative overflow-hidden bg-slate-200 dark:bg-slate-700">
+                        <div class="absolute inset-0 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-[8px]">
                           {getInitials(user.name)}
                         </div>
                         <img src={convertDriveUrl(user.avatar)} alt={user.name} class="absolute inset-0 w-full h-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
                       </div>
                     {:else}
-                      <div class="w-6 h-6 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 font-bold text-[8px] shrink-0">
+                      <div class="w-6 h-6 rounded-full flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-[8px] shrink-0">
                         {getInitials(user.name)}
                       </div>
                     {/if}
-                    <span class="text-[11px] font-bold text-slate-700 truncate">{user.name}</span>
+                    <span class="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate">{user.name}</span>
                   </button>
                 {/each}
               </div>
@@ -2073,7 +2076,7 @@
             <input
               type="text"
               placeholder={replyingToNoteCommentId ? `Balas komentar...` : "Tulis komentar Anda..."}
-              class="w-full h-10 border border-slate-200 text-xs px-3 bg-slate-50/50 hover:bg-slate-50 focus:bg-white rounded-xl outline-none focus:border-primary"
+              class="w-full h-10 border border-slate-200 dark:border-slate-700 text-xs px-3 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-50 dark:bg-slate-800 focus:bg-white dark:bg-slate-900 rounded-xl outline-none focus:border-primary"
               bind:value={newNoteCommentText}
               bind:this={noteInputElement}
               on:input={(e) => handleCommentInput(e, 'note')}
@@ -2102,35 +2105,35 @@
     <div
       on:click|stopPropagation
       transition:slide
-      class="bg-white rounded-t-3xl rounded-b-none sm:rounded-3xl w-full max-w-lg overflow-hidden border border-slate-100 shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh]"
+      class="bg-white dark:bg-slate-900 rounded-t-3xl rounded-b-none sm:rounded-3xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-800 shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh]"
     >
       <!-- Modal Header -->
       <div
-        class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50"
+        class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50"
       >
         <h3
-          class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"
+          class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-1.5"
         >
           <Megaphone class="h-4 w-4 text-primary" />
           <span>Detail & Diskusi Pengumuman</span>
         </h3>
         <button
           on:click={() => (selectedAnnouncementForComments = null)}
-          class="h-8 w-8 rounded-full border border-slate-200/60 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors text-sm font-bold cursor-pointer"
+          class="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors text-sm font-bold cursor-pointer"
         >
           ✕
         </button>
       </div>
 
       <!-- Scrollable Content -->
-      <div class="px-2 py-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/20">
+      <div class="px-2 py-6 overflow-y-auto space-y-6 flex-1 bg-slate-50 dark:bg-slate-800/20">
         <!-- Announcement Card Magnified -->
-        <div class="px-5 py-6 bg-white border border-slate-200/80 rounded-2xl shadow-soft space-y-4">
+        <div class="px-5 py-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-soft space-y-4">
           <div class="flex flex-wrap items-center gap-2">
             <span class="px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full border {getCategoryStyles(selectedAnnouncementForComments.category)}">
               {selectedAnnouncementForComments.category}
             </span>
-            <h2 class="font-extrabold text-slate-800 text-base sm:text-lg leading-snug">
+            <h2 class="font-extrabold text-slate-800 dark:text-slate-100 text-base sm:text-lg leading-snug">
               {selectedAnnouncementForComments.title}
             </h2>
           </div>
@@ -2140,8 +2143,8 @@
                 <p 
                   class="text-sm leading-relaxed font-normal text-justify
                     {isArabic(paragraph) 
-                      ? 'font-arabic text-right text-slate-800 text-lg md:text-xl' 
-                      : 'text-slate-600 text-left'}"
+                      ? 'font-arabic text-right text-slate-800 dark:text-slate-100 text-lg md:text-xl' 
+                      : 'text-slate-600 dark:text-slate-300 text-left'}"
                   dir={isArabic(paragraph) ? 'rtl' : 'ltr'}
                   style="text-align: justify; text-align-last: {isArabic(paragraph) ? 'right' : 'left'};"
                 >
@@ -2152,13 +2155,13 @@
               {/if}
             {/each}
           </div>
-          <div class="text-[9px] font-black uppercase text-slate-400 tracking-wider pt-3 border-t border-slate-100 flex justify-between" dir="ltr">
+          <div class="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between" dir="ltr">
             <span class="flex items-center gap-1">
               Oleh: 
               <button
                 type="button"
                 on:click={() => handleOpenProfile(selectedAnnouncementForComments.author && selectedAnnouncementForComments.author.toUpperCase() === 'ADMIN MAZEEDA' ? 'admin' : 'member', selectedAnnouncementForComments.author)}
-                class="hover:underline cursor-pointer text-left bg-transparent p-0 border-none outline-none font-black text-slate-400 text-[9px] uppercase tracking-wider"
+                class="hover:underline cursor-pointer text-left bg-transparent p-0 border-none outline-none font-black text-slate-400 dark:text-slate-500 text-[9px] uppercase tracking-wider"
               >
                 {selectedAnnouncementForComments.author && selectedAnnouncementForComments.author.toUpperCase() === 'ADMIN MAZEEDA' ? 'ADMIN MAZEEDA' : selectedAnnouncementForComments.author}
               </button>
@@ -2169,8 +2172,8 @@
 
         <!-- Comments List -->
         <div class="space-y-4">
-          <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest">
-            Tanggapan & Diskusi ({selectedAnnouncementForComments.comments.length})
+          <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+            Tanggapan & Diskusi ({displayNumber(selectedAnnouncementForComments.comments.length, $locale)})
           </h4>
 
           {#if sortedAnnouncementComments.length > 0}
@@ -2179,8 +2182,8 @@
                 {@const avatarUrl = convertDriveUrl(authorAvatarMap[comment.author] || '')}
                 {@const isAdminComment = comment.author && (comment.author.toUpperCase() === (adminName || 'ADMIN MAZEEDA').toUpperCase() || comment.author.toUpperCase() === 'ADMIN MAZEEDA' || comment.author.toUpperCase() === 'ADMIN')}
                 {@const isEditing = editingAnnouncementCommentId == comment.id}
-                <div class="bg-white border rounded-2xl p-3.5 shadow-soft-sm transition-all {comment.parent_id ? 'ml-8 border-l-4 border-l-indigo-300' : ''}
-                  {isAdminComment ? 'border-indigo-100' : 'border-slate-100'}
+                <div class="bg-white dark:bg-slate-900 border rounded-2xl p-3.5 shadow-soft-sm transition-all {comment.parent_id ? 'ml-8 border-l-4 border-l-indigo-300' : ''}
+                  {isAdminComment ? 'border-indigo-100' : 'border-slate-100 dark:border-slate-800'}
                   {isAdmin || comment.author === $authStore.user?.name ? 'group/ac' : ''}">
                   <div class="flex items-start gap-3">
                     <!-- Avatar -->
@@ -2212,20 +2215,18 @@
                           {#if isAdminComment}<span class="ml-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[8px] font-black border border-indigo-100">ADMIN</span>{/if}
                         </div>
                         <div class="flex items-center gap-1 shrink-0">
-                          <span class="text-[9px] text-slate-400 font-bold">{comment.date}</span>
+                          <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold">{comment.date}</span>
                           <!-- Actions -->
                           <button type="button" on:click|preventDefault|stopPropagation={() => { replyingToAnnouncementCommentId = comment.id; replyingToAnnouncementCommentAuthor = comment.author; }}
-                            class="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors ml-2 cursor-pointer">
-                            Balas
-                          </button>
+                            class="text-[9px] font-bold text-slate-400 dark:text-slate-500 hover:text-indigo-600 transition-colors ml-2 cursor-pointer">{$t("mading.reply") || "Balas"}</button>
                           {#if isAdmin || comment.author === $authStore.user?.name}
                             <button type="button" on:click|preventDefault|stopPropagation={() => { editingAnnouncementCommentId = comment.id; editingAnnouncementCommentText = comment.text; }}
-                              class="p-1.5 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all cursor-pointer"
+                              class="p-1.5 rounded-md text-slate-400 dark:text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all cursor-pointer"
                               title="Edit komentar">
                               <Pencil class="h-3.5 w-3.5" />
                             </button>
                             <button type="button" on:click|preventDefault|stopPropagation={() => deleteAnnouncementComment(comment.id)}
-                              class="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                              class="p-1.5 rounded-md text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
                               title="Hapus komentar">
                               <Trash2 class="h-3.5 w-3.5" />
                             </button>
@@ -2237,24 +2238,22 @@
                         <div class="flex gap-2 items-center mt-1">
                           <input
                             type="text"
-                            class="flex-1 h-8 text-xs border border-indigo-200 rounded-xl px-2.5 bg-indigo-50/40 text-slate-700 outline-none focus:border-indigo-400"
+                            class="flex-1 h-8 text-xs border border-indigo-200 rounded-xl px-2.5 bg-indigo-50/40 text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-400"
                             bind:value={editingAnnouncementCommentText}
                             on:keydown={(e) => { if (e.key === 'Enter') saveEditAnnouncementComment(); if (e.key === 'Escape') { editingAnnouncementCommentId = null; } }}
                             autofocus
                           />
                           <button on:click={saveEditAnnouncementComment}
-                            class="h-8 px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black rounded-xl transition-colors">
-                            Simpan
-                          </button>
+                            class="h-8 px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black rounded-xl transition-colors">{$t("mading.save") || "Simpan"}</button>
                           <button on:click={() => { editingAnnouncementCommentId = null; }}
-                            class="h-8 w-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl transition-colors">
+                            class="h-8 w-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-500 rounded-xl transition-colors">
                             <XIcon class="h-3.5 w-3.5" />
                           </button>
                         </div>
                       {:else}
                         <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <p class="text-xs font-medium text-slate-600 leading-relaxed" on:click={handleDelegatedMentionClick}>{@html formatMentions(comment.text)}</p>
+                        <p class="text-xs font-medium text-slate-600 dark:text-slate-300 leading-relaxed" on:click={handleDelegatedMentionClick}>{@html formatMentions(comment.text)}</p>
                       {/if}
                     </div>
                   </div>
@@ -2262,7 +2261,7 @@
               {/each}
             </div>
           {:else}
-            <div class="text-center py-6 text-slate-400 italic text-xs border border-dashed border-slate-200 rounded-2xl bg-white">
+            <div class="text-center py-6 text-slate-400 dark:text-slate-500 italic text-xs border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-900">
               Belum ada tanggapan. Jadilah yang pertama menanggapi!
             </div>
           {/if}
@@ -2270,7 +2269,7 @@
       </div>
 
       <!-- Modal Footer: Add Comment Form (Announcement) -->
-      <div class="p-4 border-t border-slate-100 bg-white">
+      <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
         {#if replyingToAnnouncementCommentId}
           <div class="flex items-center justify-between bg-indigo-50/50 px-3 py-2 rounded-t-xl border border-indigo-100 border-b-0 -mb-2 relative z-0">
             <span class="text-[10px] font-bold text-indigo-700">Membalas @{replyingToAnnouncementCommentAuthor}</span>
@@ -2281,7 +2280,7 @@
         {/if}
         <form
           on:submit|preventDefault={handleAddAnnouncementComment}
-          class="flex gap-2 items-center relative z-10 bg-white {replyingToAnnouncementCommentId ? 'pt-2' : ''}"
+          class="flex gap-2 items-center relative z-10 bg-white dark:bg-slate-900 {replyingToAnnouncementCommentId ? 'pt-2' : ''}"
         >
           <!-- Current user avatar -->
           {#if $authStore.user}
@@ -2297,26 +2296,26 @@
           {/if}
           <div class="flex-1 relative">
             {#if showMentionDropdown && activeMentionInput === 'announcement' && filteredUsers.length > 0}
-              <div class="absolute bottom-full left-0 mb-2 w-full max-h-48 overflow-y-auto bg-white border border-slate-200 shadow-xl rounded-xl z-[1000] py-1">
+              <div class="absolute bottom-full left-0 mb-2 w-full max-h-48 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[1000] py-1">
                 {#each filteredUsers as user}
                   <button 
                     type="button" 
-                    class="flex w-full items-center gap-2 px-3 py-2 hover:bg-indigo-50 border-b border-slate-100 last:border-b-0 transition-colors cursor-pointer"
+                    class="flex w-full items-center gap-2 px-3 py-2 hover:bg-indigo-50 border-b border-slate-100 dark:border-slate-800 last:border-b-0 transition-colors cursor-pointer"
                     on:click={() => insertMention(user.name)}
                   >
                     {#if user.avatar}
-                      <div class="w-6 h-6 rounded-full shrink-0 relative overflow-hidden bg-slate-200">
-                        <div class="absolute inset-0 flex items-center justify-center text-slate-600 font-bold text-[8px]">
+                      <div class="w-6 h-6 rounded-full shrink-0 relative overflow-hidden bg-slate-200 dark:bg-slate-700">
+                        <div class="absolute inset-0 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-[8px]">
                           {getInitials(user.name)}
                         </div>
                         <img src={convertDriveUrl(user.avatar)} alt={user.name} class="absolute inset-0 w-full h-full object-cover" on:error={(e) => { e.currentTarget.style.display='none'; }} />
                       </div>
                     {:else}
-                      <div class="w-6 h-6 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 font-bold text-[8px] shrink-0">
+                      <div class="w-6 h-6 rounded-full flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-[8px] shrink-0">
                         {getInitials(user.name)}
                       </div>
                     {/if}
-                    <span class="text-[11px] font-bold text-slate-700 truncate">{user.name}</span>
+                    <span class="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate">{user.name}</span>
                   </button>
                 {/each}
               </div>
@@ -2324,7 +2323,7 @@
             <input
               type="text"
               placeholder={replyingToAnnouncementCommentId ? `Balas komentar...` : "Tulis tanggapan Anda..."}
-              class="w-full h-10 border border-slate-200 text-xs px-3 bg-slate-50/50 hover:bg-slate-50 focus:bg-white rounded-xl outline-none focus:border-primary"
+              class="w-full h-10 border border-slate-200 dark:border-slate-700 text-xs px-3 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-50 dark:bg-slate-800 focus:bg-white dark:bg-slate-900 rounded-xl outline-none focus:border-primary"
               bind:value={newAnnouncementCommentText}
               bind:this={announcementInputElement}
               on:input={(e) => handleCommentInput(e, 'announcement')}
@@ -2346,20 +2345,18 @@
 <!-- ==================== CONFIRMATION MODAL ==================== -->
 {#if showConfirmModal}
   <div class="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" style="z-index: 9999;">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-      <div class="p-5 border-b border-slate-100 flex items-center gap-3">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+      <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
         <div class="h-10 w-10 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
           <AlertCircle class="h-5 w-5 text-rose-500" />
         </div>
         <div>
-          <h3 class="text-sm font-bold text-slate-800">{confirmConfig.title}</h3>
-          <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">{confirmConfig.message}</p>
+          <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">{confirmConfig.title}</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">{confirmConfig.message}</p>
         </div>
       </div>
-      <div class="p-4 bg-slate-50/50 flex gap-3">
-        <button type="button" class="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold h-10 transition-colors" on:click={() => showConfirmModal = false}>
-          Batal
-        </button>
+      <div class="p-4 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
+        <button type="button" class="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold h-10 transition-colors" on:click={() => showConfirmModal = false}>{$t("mading.cancel") || "Batal"}</button>
         <button type="button" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold h-10 shadow-soft-sm transition-colors" on:click={confirmConfig.onConfirm}>
           Ya, Hapus
         </button>

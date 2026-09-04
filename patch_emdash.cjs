@@ -1,0 +1,1 @@
+const fs = require('fs'); const file = 'src/routes/+page.svelte'; let s = fs.readFileSync(file, 'utf8'); s = s.replace(/>\s*2023 — 2032 · Eksplorasi Kenangan\s*<\/p>/, '>\\n                {\\(\\'ikhtisar.jejak_desc\\') || \\'2023 - 2032 · Eksplorasi Kenangan\\'}\\n              </p>'); fs.writeFileSync(file, s);

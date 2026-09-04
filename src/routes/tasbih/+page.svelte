@@ -3,6 +3,7 @@
   import { fade, scale } from 'svelte/transition';
   import { ArrowLeft, RotateCcw, Volume2, VolumeX, Vibrate, Target, X, Check } from 'lucide-svelte';
   import { Haptics, ImpactStyle } from '@capacitor/haptics';
+  import { locale, t } from 'svelte-i18n';
 
   // State
   let count = 0;
@@ -10,7 +11,15 @@
   let customTarget = 33;
   let isHapticEnabled = true;
   let isSoundEnabled = false;
-  let mode: 'target' | 'free' = 'target'; 
+  let mode: 'target' | 'free' = 'target';
+
+  $: formatNumberDisplay = (num: number) => {
+    if ($locale === 'ar') {
+      const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+      return num.toLocaleString('id-ID').replace(/[0-9]/g, w => arabicNumbers[parseInt(w)]);
+    }
+    return num.toLocaleString('id-ID');
+  };
 
   // Drag State
   let buttonX = 0;
@@ -223,16 +232,16 @@
     <div class="flex items-center space-x-2 bg-white/5 border border-white/10 rounded-full p-1 backdrop-blur-md">
       <button 
         on:click={() => { mode = 'target'; showTargetModal = true; tempTargetInput = customTarget; }}
-        class="flex items-center space-x-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all {mode === 'target' ? 'bg-white text-emerald-900 shadow-md' : 'text-slate-400 hover:text-white'}"
+        class="flex items-center space-x-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all {mode === 'target' ? 'bg-white/20 text-white shadow-none' : 'text-slate-400 hover:text-white'}"
       >
-        <Target class="h-3.5 w-3.5 {mode === 'target' ? 'text-emerald-600' : 'text-slate-400'}" />
-        <span>Target {customTarget}</span>
+        <Target class="h-3.5 w-3.5 {mode === 'target' ? 'text-emerald-400' : 'text-slate-400'}" />
+        <span>{$t('tasbih.target') || 'Target'} {formatNumberDisplay(customTarget)}</span>
       </button>
       <button 
         on:click={() => { mode = 'free'; count = 0; }}
-        class="px-4 py-1.5 rounded-full text-xs font-bold transition-all {mode === 'free' ? 'bg-white text-emerald-900 shadow-md' : 'text-slate-400 hover:text-white'}"
+        class="px-4 py-1.5 rounded-full text-xs font-bold transition-all {mode === 'free' ? 'bg-white/20 text-white shadow-none' : 'text-slate-400 hover:text-white'}"
       >
-        Bebas
+        {$t('tasbih.bebas') || 'Bebas'}
       </button>
     </div>
 
@@ -240,7 +249,7 @@
       <!-- Settings -->
       <button 
         on:click={() => isSoundEnabled = !isSoundEnabled}
-        class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors {isSoundEnabled ? 'text-white' : 'text-slate-500'}"
+        class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors {isSoundEnabled ? 'text-white' : 'text-slate-400'}"
       >
         {#if isSoundEnabled}
           <Volume2 class="h-4.5 w-4.5" />
@@ -250,7 +259,7 @@
       </button>
       <button 
         on:click={() => isHapticEnabled = !isHapticEnabled}
-        class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors {isHapticEnabled ? 'text-white' : 'text-slate-500'}"
+        class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors {isHapticEnabled ? 'text-white' : 'text-slate-400'}"
       >
         <Vibrate class="h-4.5 w-4.5" />
       </button>
@@ -309,15 +318,15 @@
         {/if}
 
         <div class="flex flex-col items-center pointer-events-none">
-          <span class="text-8xl sm:text-9xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-emerald-200 font-mono drop-shadow-lg">
+          <span class="text-8xl sm:text-9xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-emerald-200  drop-shadow-lg">
             {#key count}
               <span in:scale={{ start: 0.8, duration: 200 }}>
-                {count}
+                {formatNumberDisplay(count)}
               </span>
             {/key}
           </span>
           {#if mode === 'target'}
-            <span class="text-xs font-bold text-emerald-300/70 mt-2 tracking-widest uppercase">Target / {customTarget}</span>
+            <span class="text-xs font-bold text-emerald-300/70 mt-2 tracking-widest uppercase">{$t('tasbih.target') || 'Target'} / {formatNumberDisplay(customTarget)}</span>
           {/if}
         </div>
       </div>
@@ -328,16 +337,16 @@
   <!-- Set a lower z-index so that the draggable button (z-50) will overlap and block clicks to it -->
   <div class="relative z-10 p-6 sm:p-8 flex items-end justify-between pointer-events-auto">
     <div class="space-y-1">
-      <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Keseluruhan</p>
-      <p class="text-2xl font-black text-white font-mono drop-shadow-md">{totalCount.toLocaleString()}</p>
+      <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase tracking-widest">{$t('tasbih.total_keseluruhan') || 'TOTAL KESELURUHAN'}</p>
+      <p class="text-2xl font-black text-white  drop-shadow-md dark:shadow-none">{formatNumberDisplay(totalCount)}</p>
     </div>
     
     <button 
       on:click|stopPropagation={() => showResetModal = true}
-      class="inline-flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/50 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-all border border-white/5 hover:border-rose-500/30 backdrop-blur-md shadow-lg"
+      class="inline-flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/50 hover:bg-rose-500/20 text-slate-400 dark:text-slate-500 hover:text-rose-400 transition-all border border-white/5 hover:border-rose-500/30 backdrop-blur-md shadow-lg"
     >
       <RotateCcw class="h-5 w-5 mb-1" />
-      <span class="text-[9px] font-bold uppercase tracking-wider">Reset</span>
+      <span class="text-[9px] font-bold uppercase tracking-wider">{$t('tasbih.reset') || 'RESET'}</span>
     </button>
   </div>
 
@@ -351,18 +360,18 @@
           <RotateCcw class="h-8 w-8" />
         </div>
         <div class="space-y-2">
-          <h3 class="text-lg font-bold text-white">Reset Hitungan?</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Ini akan menghapus angka hitungan saat ini dan total hitungan keseluruhan. Anda yakin?
+          <h3 class="text-lg font-bold text-white">{$t('tasbih.reset_title') || 'Reset Hitungan?'}</h3>
+          <p class="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">
+            {$t('tasbih.reset_desc') || 'Ini akan menghapus angka hitungan saat ini dan total hitungan keseluruhan. Anda yakin?'}
           </p>
         </div>
         <div class="flex gap-3">
           <button on:click={() => showResetModal = false} class="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition-colors border border-slate-700">
-            Batal
-          </button>
+            {$t('tasbih.batal') || 'Batal'}
+            </button>
           <button on:click={confirmReset} class="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-colors shadow-lg shadow-rose-600/20">
-            Ya, Reset
-          </button>
+            {$t('tasbih.ya_reset') || 'Ya, Reset'}
+            </button>
         </div>
       </div>
     </div>
@@ -374,21 +383,21 @@
       <div class="bg-slate-900 border border-emerald-900/50 p-6 rounded-3xl shadow-2xl max-w-sm w-full space-y-6" in:scale={{start: 0.9, duration: 200}}>
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
-            <Target class="h-5 w-5 text-emerald-500" /> Atur Target
+            <Target class="h-5 w-5 text-emerald-500" /> {$t('tasbih.atur_target') || 'Atur Target'}
           </h3>
-          <button on:click={() => showTargetModal = false} class="text-slate-500 hover:text-white p-1">
+          <button on:click={() => showTargetModal = false} class="text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-white p-1">
             <X class="h-5 w-5" />
           </button>
         </div>
         
         <div class="space-y-2">
-          <label for="targetInput" class="text-xs font-bold text-slate-400 uppercase tracking-widest">Angka Target</label>
+          <label for="targetInput" class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{$t('tasbih.target_number') || 'Angka Target'}</label>
           <input 
             id="targetInput" 
             type="number" 
             bind:value={tempTargetInput}
             min="1"
-            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-2xl font-mono font-bold text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-2xl  font-bold text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
           />
         </div>
         
@@ -396,7 +405,7 @@
           {#each [33, 100, 1000, 9999] as preset}
             <button 
               on:click={() => tempTargetInput = preset}
-              class="py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs border border-slate-700 transition-colors"
+              class="py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300  text-xs border border-slate-700 transition-colors"
             >
               {preset}
             </button>
@@ -404,7 +413,7 @@
         </div>
 
         <button on:click={saveCustomTarget} class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-colors shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
-          <Check class="h-4 w-4" /> Simpan Target
+          <Check class="h-4 w-4" /> {$t('tasbih.save_target') || 'Simpan Target'}
         </button>
       </div>
     </div>

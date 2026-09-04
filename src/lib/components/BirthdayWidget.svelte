@@ -122,28 +122,28 @@
       
       <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-center sm:text-left">
         <div class="flex flex-col items-center sm:items-start">
-          <div class="inline-flex items-center space-x-1 bg-white/60 backdrop-blur-sm border border-rose-100 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider text-rose-600 mb-1.5">
+          <div class="inline-flex items-center space-x-1 bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-rose-100 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider text-rose-600 mb-1.5">
             <CalendarHeart class="w-3 h-3" />
             <span>Menuju Ulang Tahunmu!</span>
           </div>
-          <h3 class="text-base font-black text-slate-800 tracking-tight">Siap-siap tambah umur, Cantik! 🥳</h3>
-          <p class="text-[10px] text-slate-500 font-medium max-w-[260px] leading-snug mt-0.5">Pstt... jangan lupa banyakin senyum, bulan spesialmu udah di depan mata lohhh! ✨</p>
+          <h3 class="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight">Siap-siap tambah umur, Cantik! 🥳</h3>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium max-w-[260px] leading-snug mt-0.5">Pstt... jangan lupa banyakin senyum, bulan spesialmu udah di depan mata lohhh! ✨</p>
         </div>
 
-        <div class="flex items-center justify-center space-x-1.5 sm:space-x-2 bg-white/50 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/60 shadow-sm self-center sm:self-auto w-auto mt-1 sm:mt-0">
+        <div class="flex items-center justify-center space-x-1.5 sm:space-x-2 bg-white dark:bg-slate-900/50 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/60 shadow-sm dark:shadow-none self-center sm:self-auto w-auto mt-1 sm:mt-0">
           <div class="flex flex-col items-center">
             <span class="text-lg sm:text-xl font-black text-rose-600 font-mono tracking-tighter leading-none">{daysLeft}</span>
-            <span class="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-1">Hari</span>
+            <span class="text-[7px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Hari</span>
           </div>
           <div class="text-slate-300 font-black text-base animate-pulse relative -top-1">:</div>
           <div class="flex flex-col items-center">
-            <span class="text-lg sm:text-xl font-black text-slate-700 font-mono tracking-tighter leading-none drop-shadow-sm">{hoursLeft.toString().padStart(2, '0')}</span>
-            <span class="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-1">Jam</span>
+            <span class="text-lg sm:text-xl font-black text-slate-700 dark:text-slate-200 font-mono tracking-tighter leading-none drop-shadow-sm dark:shadow-none">{hoursLeft.toString().padStart(2, '0')}</span>
+            <span class="text-[7px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Jam</span>
           </div>
           <div class="text-slate-300 font-black text-base animate-pulse relative -top-1">:</div>
           <div class="flex flex-col items-center">
-            <span class="text-lg sm:text-xl font-black text-slate-700 font-mono tracking-tighter leading-none">{minutesLeft.toString().padStart(2, '0')}</span>
-            <span class="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-1">Mnt</span>
+            <span class="text-lg sm:text-xl font-black text-slate-700 dark:text-slate-200 font-mono tracking-tighter leading-none">{minutesLeft.toString().padStart(2, '0')}</span>
+            <span class="text-[7px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Mnt</span>
           </div>
           <div class="text-slate-300 font-black text-base animate-pulse relative -top-1">:</div>
           <div class="flex flex-col items-center">
@@ -167,7 +167,7 @@
       <div class="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-5">
         <div class="space-y-2 max-w-lg">
           {#if state === 'TELAT'}
-            <div class="inline-block bg-white/20 backdrop-blur-md border border-white/30 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest text-white shadow-sm mb-1">
+            <div class="inline-block bg-white dark:bg-slate-900/20 backdrop-blur-md border border-white/30 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest text-white shadow-sm dark:shadow-none mb-1">
               🎉 TELAT {lateDays} HARI 😅
             </div>
             <h2 class="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
@@ -177,7 +177,7 @@
               Maafkan ya agak telat {lateDays} hari! Tapi doa terbaik tetap mengalir buat kamu. Semoga di usiamu yang baru ini selalu dilancarkan urusannya dan penuh senyum bahagia! ✨
             </p>
           {:else}
-            <div class="inline-block bg-white/20 backdrop-blur-md border border-white/30 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest text-white shadow-sm mb-1 animate-pulse">
+            <div class="inline-block bg-white dark:bg-slate-900/20 backdrop-blur-md border border-white/30 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest text-white shadow-sm dark:shadow-none mb-1 animate-pulse">
               ✨ HARI SPESIAL ✨
             </div>
             <h2 class="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
@@ -190,7 +190,7 @@
 
           <!-- Age Display -->
           <div class="mt-4 inline-flex items-center space-x-3 bg-black/20 backdrop-blur-sm rounded-xl p-2.5 px-4 shadow-inner border border-white/10 self-start">
-            <div class="text-2xl drop-shadow-md">⏳</div>
+            <div class="text-2xl drop-shadow-md dark:shadow-none">⏳</div>
             <div class="flex flex-col text-left">
               <span class="text-[10px] text-pink-100 uppercase font-bold tracking-wider mb-0.5">Tepatnya Usiamu Sekarang:</span>
               <span class="text-base font-black text-white leading-none">
@@ -204,7 +204,7 @@
         </div>
         
         <div class="flex-shrink-0 animate-in zoom-in duration-500 delay-150">
-          <div class="w-24 h-24 sm:w-28 sm:h-28 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border-4 border-white/30 shadow-xl">
+          <div class="w-24 h-24 sm:w-28 sm:h-28 bg-white dark:bg-slate-900/10 backdrop-blur-md rounded-full flex items-center justify-center border-4 border-white/30 shadow-xl">
             <span class="text-5xl drop-shadow-lg">🎂</span>
           </div>
         </div>
@@ -215,18 +215,18 @@
 
 {:else if placement === 'bottom'}
   {#if state === 'COUNTDOWN_LONG'}
-    <div class="group flex items-center justify-between bg-gradient-to-r from-indigo-50/80 via-purple-50/80 to-pink-50/80 border border-purple-100 rounded-xl p-3 mt-2 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden relative">
+    <div class="group flex items-center justify-between bg-gradient-to-r from-indigo-50/80 via-purple-50/80 to-pink-50/80 border border-purple-100 rounded-xl p-3 mt-2 shadow-sm dark:shadow-none hover:shadow-md dark:shadow-none transition-all duration-300 overflow-hidden relative">
       <div class="absolute -right-4 -bottom-4 text-purple-200/40 transform -rotate-12 group-hover:scale-110 transition-transform duration-500 pointer-events-none">
         <PartyPopper class="w-16 h-16" />
       </div>
       
       <div class="relative z-10 flex items-center space-x-3">
-        <div class="bg-white p-2 rounded-lg text-purple-500 shadow-sm border border-purple-50 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
+        <div class="bg-white dark:bg-slate-900 p-2 rounded-lg text-purple-500 shadow-sm dark:shadow-none border border-purple-50 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
           <Gift class="w-4 h-4" strokeWidth={1.5} />
         </div>
         <div class="flex flex-col">
-          <h4 class="text-[11px] font-extrabold text-slate-800 tracking-tight leading-none">Cieee, yang mau nambah umur! 🎉</h4>
-          <div class="flex items-center space-x-1 mt-1 text-[9px] font-bold text-slate-500 font-mono tracking-tighter">
+          <h4 class="text-[11px] font-extrabold text-slate-800 dark:text-slate-100 tracking-tight leading-none">Cieee, yang mau nambah umur! 🎉</h4>
+          <div class="flex items-center space-x-1 mt-1 text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 font-mono tracking-tighter">
             <span>Sisa:</span>
             <span class="text-purple-600">{daysLeft}h</span>
             <span class="animate-pulse">:</span>

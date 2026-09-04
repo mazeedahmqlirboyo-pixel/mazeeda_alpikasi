@@ -1,5 +1,7 @@
 <script lang="ts">
   export let params: any = undefined;
+  import { t, locale } from 'svelte-i18n';
+  import { get } from 'svelte/store';
   import { onMount, onDestroy } from 'svelte';
   import { fade, slide } from 'svelte/transition';
   import Card from '$lib/components/ui/card.svelte';
@@ -213,6 +215,35 @@
           }));
         }
 
+        // --- INJECT HYBRID TRANSLATION HERE ---
+        const currentLang = get(locale) || 'id';
+        if (currentLang !== 'id') {
+          const editionMap = { 'en': 'en.sahih', 'ar': 'ar.muyassar', 'ko': 'ko.korean', 'ja': 'ja.japanese', 'zh': 'zh.jian' };
+          const edition = editionMap[currentLang];
+          if (edition) {
+            try {
+              const foreignRes = await fetch(`https://api.alquran.cloud/v1/surah/${nomor}/${edition}`);
+              if (foreignRes.ok) {
+                const foreignJson = await foreignRes.json();
+                if (foreignJson.code === 200 && foreignJson.data && foreignJson.data.ayahs) {
+                  const translationMap = new Map();
+                  foreignJson.data.ayahs.forEach(a => {
+                    translationMap.set(a.numberInSurah, a.text);
+                  });
+                  
+                  data.ayat = data.ayat.map(v => ({
+                    ...v,
+                    teksIndonesia: translationMap.get(v.nomorAyat) || v.teksIndonesia,
+                    tafsir: get(t)('quran.no_tafsir') || 'Tafsir is not available in this language yet.'
+                  }));
+                }
+              }
+            } catch (err) {
+              console.error('Failed to fetch foreign translation', err);
+            }
+          }
+        }
+
         currentSurahDetails = data;
       } else {
         throw new Error(detailJson.message || 'Terjadi kesalahan memuat detail surah.');
@@ -382,7 +413,7 @@
   }
 
   async function copyToClipboard(verse: Verse) {
-    const textToCopy = `${verse.teksArab}\n\n${verse.teksLatin}\n\nTerjemahan: ${verse.teksIndonesia}\n\n(QS. ${currentSurahDetails?.namaLatin}: ${verse.nomorAyat})`;
+    const textToCopy = `${verse.teksArab}\n\n${verse.teksLatin}\n\n${$t('quran.translation') || 'Terjemahan'}: ${verse.teksIndonesia}\n\n(QS. ${currentSurahDetails?.namaLatin}: ${verse.nomorAyat})`;
     try {
       await navigator.clipboard.writeText(textToCopy);
       copiedVerseNumber = verse.nomorAyat;
@@ -404,27 +435,37 @@
     const s = Math.floor(secs % 60);
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
+
+  let currentLangTracker = '';
+  $: if ($locale && $locale !== currentLangTracker) {
+    if (currentLangTracker !== '') {
+       if (currentSurahDetails) {
+         fetchSurahDetails(selectedSurahId);
+       }
+    }
+    currentLangTracker = $locale;
+  }
 </script>
 
 <div class="space-y-6 pb-20 lg:pb-8">
-  <PageHeader title="Al-Qur'an" backTo="/" />
+  <PageHeader title={$t('quran.title') || "Al-Qur'an"} backTo="/" />
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 relative">
   <!-- Mobile Surah Selector Bar -->
-  <div class="lg:hidden col-span-1 sticky top-0 z-20 bg-white/95 backdrop-blur-md p-3 border border-slate-200/60 rounded-xl shadow-soft-sm flex items-center justify-between">
+  <div class="lg:hidden col-span-1 sticky top-0 z-20 bg-white dark:bg-slate-900/95 backdrop-blur-md p-3 border border-slate-200 dark:border-slate-700/60 rounded-xl shadow-soft-sm flex items-center justify-between">
     <div class="flex items-center space-x-2">
       <BookOpen class="h-5 w-5 text-primary animate-pulse" />
       <div>
-        <h3 class="text-sm font-extrabold text-slate-800 leading-tight">
+        <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 leading-tight">
           {#if selectedSurahSummary}
             Surah {selectedSurahSummary.namaLatin}
           {:else}
             Pilih Surah
           {/if}
         </h3>
-        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+        <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
           {#if selectedSurahSummary}
-            {selectedSurahSummary.arti} • {selectedSurahSummary.jumlahAyat} Ayat
+            {selectedSurahSummary.arti} • {selectedSurahSummary.jumlahAyat} {$t('quran.ayat') || 'Ayat'}
           {:else}
             Al-Qur'anul Karim
           {/if}
@@ -437,7 +478,7 @@
       class="text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg transition-premium border border-blue-100 flex items-center space-x-1"
       style="min-height: 36px;"
     >
-      <span>Pilih Surah</span>
+      <span>{$t('quran.select_surah') || 'Pilih Surah'}</span>
       <ChevronDown class="h-3.5 w-3.5" />
     </button>
   </div>
@@ -451,29 +492,27 @@
     ></div>
     <div 
       transition:slide={{ duration: 250 }} 
-      class="lg:hidden fixed bottom-0 left-0 right-0 max-h-[75vh] bg-white rounded-t-3xl z-50 p-4 flex flex-col shadow-2xl"
+      class="lg:hidden fixed bottom-0 left-0 right-0 max-h-[75vh] bg-white dark:bg-slate-900 rounded-t-3xl z-50 p-4 flex flex-col shadow-2xl"
     >
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-2">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center space-x-2">
           <Book class="h-4.5 w-4.5 text-primary" />
-          <span>Daftar Surah</span>
+          <span>{$t('quran.surah_list') || 'Daftar Surah'}</span>
         </h3>
         <button 
           on:click={() => isMobileSelectorOpen = false}
-          class="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-full hover:text-slate-600 transition-premium"
+          class="text-xs font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full hover:text-slate-600 dark:text-slate-300 transition-premium"
           style="min-height: 30px;"
-        >
-          Tutup
-        </button>
+        >{$t('quran.close') || 'Tutup'}</button>
       </div>
       
       <!-- Search inside Mobile Selector -->
       <div class="relative my-3">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500" />
         <input 
           type="text" 
-          placeholder="Cari nama surah atau nomor..." 
-          class="flex h-10 w-full rounded-lg border border-border bg-slate-50 pl-10 pr-3 text-xs text-slate-800 transition-colors focus:border-primary focus:outline-none"
+          placeholder={$t('quran.search_placeholder') || 'Cari Surah atau nomor...'} 
+          class="flex h-10 w-full rounded-lg border border-border bg-slate-50 dark:bg-slate-800 pl-10 pr-3 text-xs text-slate-800 dark:text-slate-100 transition-colors focus:border-primary focus:outline-none"
           bind:value={searchQuery}
         />
       </div>
@@ -486,13 +525,13 @@
             on:click={() => selectSurah(surah.nomor)}
             class="w-full flex items-center justify-between p-3 rounded-xl transition-premium text-left border
               {selectedSurahId === surah.nomor 
-                ? 'bg-gradient-to-r from-blue-50 to-indigo-50/50 border-blue-500/20 text-blue-700 shadow-sm' 
-                : 'bg-white border-transparent hover:bg-slate-50 text-slate-700'}"
+                ? 'bg-gradient-to-r from-blue-50 to-indigo-50/50 border-blue-500/20 text-blue-700 shadow-sm dark:shadow-none' 
+                : 'bg-white dark:bg-slate-900 border-transparent hover:bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200'}"
             style="min-height: 54px;"
           >
             <div class="flex items-center space-x-3 min-w-0">
               <span class="h-8 w-8 shrink-0 rounded-lg flex items-center justify-center text-xs font-extrabold
-                {selectedSurahId === surah.nomor ? 'bg-primary text-white shadow-soft-sm' : 'bg-slate-100 text-slate-500'}">
+                {selectedSurahId === surah.nomor ? 'bg-primary text-white shadow-soft-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500'}">
                 {surah.nomor}
               </span>
               <div class="min-w-0 leading-tight">
@@ -503,10 +542,10 @@
                     {surah.tempatTurun}
                   </span>
                 </div>
-                <p class="text-[10px] text-slate-400 font-semibold">{surah.arti} • {surah.jumlahAyat} Ayat</p>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">{surah.arti} • {surah.jumlahAyat} {$t('quran.ayat') || 'Ayat'}</p>
               </div>
             </div>
-            <span class="text-base font-arabic font-bold text-slate-800 pr-1">{surah.nama}</span>
+            <span class="text-base font-arabic font-bold text-slate-800 dark:text-slate-100 pr-1">{surah.nama}</span>
           </button>
         {/each}
       </div>
@@ -515,34 +554,32 @@
 
   <!-- Left Side: Desktop Surah Selector Panel -->
   <aside class="hidden lg:block lg:col-span-3 space-y-4">
-    <Card class="p-4 border-slate-200/60 shadow-soft-sm sticky top-20">
-      <div slot="header" class="pb-2 border-b border-slate-100 flex items-center justify-between">
-        <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-2">
+    <Card class="p-4 border-slate-200 dark:border-slate-700/60 shadow-soft-sm sticky top-20">
+      <div slot="header" class="pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <h2 class="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center space-x-2">
           <Book class="h-4.5 w-4.5 text-primary animate-pulse" />
-          <span>Daftar Surah</span>
+          <span>{$t('quran.surah_list') || 'Daftar Surah'}</span>
         </h2>
-        <span class="bg-blue-50 text-blue-700 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-blue-100 shadow-sm">
-          {surahList.length} Surah
+        <span class="bg-blue-50 text-blue-700 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-blue-100 shadow-sm dark:shadow-none">
+          {surahList.length} {$t('quran.surah') || 'Surah'}
         </span>
       </div>
 
       <!-- Search input -->
       <div class="relative my-3">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500" />
         <input 
           type="text" 
-          placeholder="Cari Surah atau nomor..." 
-          class="flex h-10 w-full rounded-lg border border-border bg-slate-50/50 pl-10 pr-3 text-xs text-slate-800 transition-colors focus:border-primary focus:outline-none"
+          placeholder={$t('quran.search_placeholder') || 'Cari Surah atau nomor...'} 
+          class="flex h-10 w-full rounded-lg border border-border bg-slate-50 dark:bg-slate-800/50 pl-10 pr-3 text-xs text-slate-800 dark:text-slate-100 transition-colors focus:border-primary focus:outline-none"
           bind:value={searchQuery}
         />
         {#if searchQuery}
           <button 
             type="button" 
             on:click={() => searchQuery = ''}
-            class="absolute right-3 top-3 text-[10px] text-slate-400 hover:text-slate-600 font-bold"
-          >
-            Bersihkan
-          </button>
+            class="absolute right-3 top-3 text-[10px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 font-bold"
+          >{$t('quran.clear') || 'Bersihkan'}</button>
         {/if}
       </div>
 
@@ -550,15 +587,15 @@
       <div class="space-y-1 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
         {#if loadingList}
           {#each Array(6) as _}
-            <div class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-100 animate-pulse bg-slate-50/50">
+            <div class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800 animate-pulse bg-slate-50 dark:bg-slate-800/50">
               <div class="flex items-center space-x-3">
-                <div class="h-8 w-8 rounded-lg bg-slate-200"></div>
+                <div class="h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700"></div>
                 <div class="space-y-2">
-                  <div class="h-4 w-24 bg-slate-200 rounded"></div>
-                  <div class="h-3 w-16 bg-slate-200 rounded"></div>
+                  <div class="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                  <div class="h-3 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
                 </div>
               </div>
-              <div class="h-6 w-12 bg-slate-200 rounded"></div>
+              <div class="h-6 w-12 bg-slate-200 dark:bg-slate-700 rounded"></div>
             </div>
           {/each}
         {:else if errorList}
@@ -573,12 +610,12 @@
               class="w-full flex items-center justify-between p-3 rounded-xl transition-premium text-left border
                 {selectedSurahId === surah.nomor 
                   ? 'bg-gradient-to-r from-blue-50 to-indigo-50/50 border-blue-500/25 text-blue-800 shadow-soft-sm font-semibold' 
-                  : 'bg-white border-transparent hover:bg-slate-50 text-slate-700'}"
+                  : 'bg-white dark:bg-slate-900 border-transparent hover:bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200'}"
               style="min-height: 54px;"
             >
               <div class="flex items-center space-x-3 min-w-0">
                 <span class="h-8 w-8 shrink-0 rounded-lg flex items-center justify-center text-xs font-bold transition-premium
-                  {selectedSurahId === surah.nomor ? 'bg-primary text-white shadow-soft-sm' : 'bg-slate-100 text-slate-500'}">
+                  {selectedSurahId === surah.nomor ? 'bg-primary text-white shadow-soft-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500'}">
                   {surah.nomor}
                 </span>
                 <div class="min-w-0 leading-tight">
@@ -589,10 +626,10 @@
                       {surah.tempatTurun}
                     </span>
                   </div>
-                  <p class="text-[10px] text-slate-400 font-semibold truncate">{surah.arti} • {surah.jumlahAyat} Ayat</p>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate">{surah.arti} • {surah.jumlahAyat} {$t('quran.ayat') || 'Ayat'}</p>
                 </div>
               </div>
-              <span class="text-base font-arabic font-bold text-slate-800 pr-1">{surah.nama}</span>
+              <span class="text-base font-arabic font-bold text-slate-800 dark:text-slate-100 pr-1">{surah.nama}</span>
             </button>
           {/each}
         {/if}
@@ -605,7 +642,7 @@
     
     <!-- Surah Metadata Banner Card — Blue gradient -->
     {#if selectedSurahSummary}
-      <Card class="p-6 overflow-hidden relative border-slate-200/50 shadow-soft-sm bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white">
+      <Card class="p-6 overflow-hidden relative border-slate-200 dark:border-slate-700/50 shadow-soft-sm bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white">
         <!-- Decorative backdrop -->
         <div class="absolute right-0 bottom-0 top-0 opacity-10 flex items-center pr-6 pointer-events-none">
           <BookOpen class="h-44 w-44" />
@@ -621,7 +658,7 @@
                 <span class="text-2xl font-arabic text-amber-400 font-bold">{selectedSurahSummary.nama}</span>
               </div>
               <p class="text-xs text-blue-200 font-bold uppercase tracking-wider mt-1">
-                NO. {selectedSurahSummary.nomor} • {selectedSurahSummary.arti} • {selectedSurahSummary.jumlahAyat} Ayat • {selectedSurahSummary.tempatTurun}
+                NO. {selectedSurahSummary.nomor} • {selectedSurahSummary.arti} • {selectedSurahSummary.jumlahAyat} {$t('quran.ayat') || 'Ayat'} • {selectedSurahSummary.tempatTurun}
               </p>
             </div>
             
@@ -629,11 +666,11 @@
               <button
                 type="button"
                 on:click={() => playFullSurahSequentially(1)}
-                class="inline-flex items-center space-x-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-xl text-xs font-black shadow-md transition-premium"
+                class="inline-flex items-center space-x-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 dark:text-white px-4 py-2 rounded-xl text-xs font-black shadow-md dark:shadow-none transition-premium"
                 style="min-height: 38px;"
               >
                 <Play class="h-4 w-4 fill-current" />
-                <span>Putar Surah</span>
+                <span>{$t('quran.play_surah') || 'Putar Surah'}</span>
               </button>
             </div>
           </div>
@@ -646,12 +683,12 @@
               class="inline-flex items-center space-x-1 text-xs font-bold text-blue-200 hover:text-white transition-premium"
             >
               <Info class="h-4 w-4" />
-              <span>{showSurahDesc ? 'Sembunyikan Informasi Surah' : 'Lihat Informasi Surah'}</span>
+              <span>{showSurahDesc ? ($t('quran.hide_info') || 'Sembunyikan Informasi Surah') : ($t('quran.show_info') || 'Lihat Informasi Surah')}</span>
               <ChevronDown class="h-3.5 w-3.5 transform transition-transform duration-200 {showSurahDesc ? 'rotate-180' : ''}" />
             </button>
 
             {#if showSurahDesc}
-              <div transition:slide class="mt-3 text-xs text-blue-100/90 leading-relaxed bg-white/5 backdrop-blur-sm p-4 rounded-xl border border-white/10 text-justify">
+              <div transition:slide class="mt-3 text-xs text-blue-100/90 leading-relaxed bg-white dark:bg-slate-900/5 backdrop-blur-sm p-4 rounded-xl border border-white/10 text-justify">
                 {@html selectedSurahSummary.deskripsi}
               </div>
             {/if}
@@ -662,60 +699,60 @@
 
     <!-- Reading Settings Panel — Premium Blue Design -->
     <div class="sticky top-0 lg:top-4 z-20">
-      <Card class="overflow-hidden border-slate-200/60 shadow-soft-sm">
+      <Card class="overflow-hidden border-slate-200 dark:border-slate-700/60 shadow-soft-sm">
         <!-- Top accent line -->
         <div class="h-0.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-400"></div>
-        <div class="p-4 bg-white/98 backdrop-blur-md">
+        <div class="p-4 bg-white dark:bg-slate-900/95 backdrop-blur-md">
           <div class="flex flex-col md:flex-row items-center justify-between gap-4">
             <!-- Reading Mode Switch -->
-            <div class="flex items-center bg-slate-100/80 p-1 rounded-xl mx-auto md:mx-0 border border-slate-200/50 shadow-inner">
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl mx-auto md:mx-0 border border-slate-200 dark:border-slate-700/50 shadow-inner">
               <button
                 type="button"
                 on:click={() => { readingMode = 'list'; activeMushafVerse = null; arabicFontSize = 25; }}
                 class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-premium
-                  {readingMode === 'list' ? 'bg-white text-primary shadow-soft-sm border border-blue-100/50 ring-1 ring-blue-200/30' : 'text-slate-500 hover:text-slate-700'}"
+                  {readingMode === 'list' ? 'bg-white dark:bg-slate-900 text-primary shadow-soft-sm border border-blue-100/50 ring-1 ring-blue-200/30' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200'}"
               >
                 <List class="h-3.5 w-3.5" />
-                <span>Mode Ayat</span>
+                <span>{$t('quran.mode_ayat') || 'Mode Ayat'}</span>
               </button>
               <button
                 type="button"
                 on:click={() => { readingMode = 'mushaf'; activeMushafVerse = null; arabicFontSize = 18; }}
                 class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-premium
-                  {readingMode === 'mushaf' ? 'bg-white text-primary shadow-soft-sm border border-blue-100/50 ring-1 ring-blue-200/30' : 'text-slate-500 hover:text-slate-700'}"
+                  {readingMode === 'mushaf' ? 'bg-white dark:bg-slate-900 text-primary shadow-soft-sm border border-blue-100/50 ring-1 ring-blue-200/30' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200'}"
               >
                 <BookOpen class="h-3.5 w-3.5" />
-                <span>Mode Mushaf</span>
+                <span>{$t('quran.mode_mushaf') || 'Mode Mushaf'}</span>
               </button>
             </div>
 
             <!-- Configuration options -->
             <div class="flex flex-wrap items-center justify-center md:justify-end gap-3 w-full md:w-auto">
               <!-- Qori Selector -->
-              <div class="flex items-center space-x-2 bg-slate-50/80 border border-slate-200/60 px-2.5 py-1.5 rounded-xl">
-                <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Qori'</span>
+              <div class="flex items-center space-x-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 px-2.5 py-1.5 rounded-xl">
+                <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">{$t('quran.qori') || "Qori'"}</span>
                 <div class="relative">
                   <select
                     bind:value={selectedQori}
-                    class="h-7 rounded-lg border-0 bg-transparent pl-1 pr-6 text-xs font-bold text-slate-700 focus:outline-none appearance-none cursor-pointer"
+                    class="h-7 rounded-lg border-0 bg-transparent pl-1 pr-6 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none appearance-none cursor-pointer"
                   >
                     {#each qoris as qori}
                       <option value={qori.id}>{qori.name}</option>
                     {/each}
                   </select>
-                  <ChevronDown class="absolute right-0 top-2 h-3 w-3 text-slate-400 pointer-events-none" />
+                  <ChevronDown class="absolute right-0 top-2 h-3 w-3 text-slate-400 dark:text-slate-500 pointer-events-none" />
                 </div>
               </div>
 
               <!-- Font Size Slider -->
-              <div class="flex items-center space-x-2 bg-slate-50/80 border border-slate-200/60 px-3 py-1.5 rounded-xl">
+              <div class="flex items-center space-x-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 px-3 py-1.5 rounded-xl">
                 <Sliders class="h-3.5 w-3.5 text-blue-400" />
-                <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Ukuran</span>
+                <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">{$t('quran.size') || 'Ukuran'}</span>
                 <input 
                   type="range" 
                   min="15" 
                   max="48" 
-                  class="accent-blue-600 w-20 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                  class="accent-blue-600 w-20 cursor-pointer h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg"
                   bind:value={arabicFontSize}
                   title="Sesuaikan ukuran huruf Arab"
                 />
@@ -723,33 +760,35 @@
               </div>
 
               <!-- Toggles -->
-              <div class="flex items-center space-x-3 text-xs font-bold text-slate-500 border-l border-slate-200 pl-3">
+              <div class="flex items-center space-x-3 text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 border-l border-slate-200 dark:border-slate-700 pl-3">
                 <label class="flex items-center space-x-1.5 cursor-pointer hover:text-blue-700 select-none group">
                   <div class="relative">
                     <input type="checkbox" bind:checked={showTranslation} class="sr-only peer" />
-                    <div class="w-7 h-4 bg-slate-200 peer-checked:bg-blue-500 rounded-full transition-colors duration-200"></div>
-                    <div class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-3"></div>
+                    <div class="w-7 h-4 bg-slate-200 dark:bg-slate-700 peer-checked:bg-blue-500 rounded-full transition-colors duration-200"></div>
+                    <div class="absolute top-0.5 left-0.5 w-3 h-3 bg-white dark:bg-slate-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-3"></div>
                   </div>
-                  <span class="peer-checked:text-blue-700 group-hover:text-blue-600 transition-colors">Terjemah</span>
+                  <span class="peer-checked:text-blue-700 group-hover:text-blue-600 transition-colors">{$t('quran.translation') || 'Terjemah'}</span>
                 </label>
 
                 <label class="flex items-center space-x-1.5 cursor-pointer hover:text-blue-700 select-none group">
                   <div class="relative">
                     <input type="checkbox" bind:checked={showLatin} class="sr-only peer" />
-                    <div class="w-7 h-4 bg-slate-200 peer-checked:bg-blue-500 rounded-full transition-colors duration-200"></div>
-                    <div class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-3"></div>
+                    <div class="w-7 h-4 bg-slate-200 dark:bg-slate-700 peer-checked:bg-blue-500 rounded-full transition-colors duration-200"></div>
+                    <div class="absolute top-0.5 left-0.5 w-3 h-3 bg-white dark:bg-slate-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-3"></div>
                   </div>
-                  <span class="peer-checked:text-blue-700 group-hover:text-blue-600 transition-colors">Latin</span>
+                  <span class="peer-checked:text-blue-700 group-hover:text-blue-600 transition-colors">{$t('quran.latin') || 'Latin'}</span>
                 </label>
 
+                {#if $locale === 'id'}
                 <label class="flex items-center space-x-1.5 cursor-pointer hover:text-blue-700 select-none group">
                   <div class="relative">
                     <input type="checkbox" bind:checked={showTafsir} class="sr-only peer" />
-                    <div class="w-7 h-4 bg-slate-200 peer-checked:bg-blue-500 rounded-full transition-colors duration-200"></div>
-                    <div class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-3"></div>
+                    <div class="w-7 h-4 bg-slate-200 dark:bg-slate-700 peer-checked:bg-blue-500 rounded-full transition-colors duration-200"></div>
+                    <div class="absolute top-0.5 left-0.5 w-3 h-3 bg-white dark:bg-slate-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-3"></div>
                   </div>
-                  <span class="peer-checked:text-blue-700 group-hover:text-blue-600 transition-colors">Tafsir</span>
+                  <span class="peer-checked:text-blue-700 group-hover:text-blue-600 transition-colors">{$t('quran.tafsir') || 'Tafsir'}</span>
                 </label>
+                {/if}
               </div>
             </div>
           </div>
@@ -761,17 +800,17 @@
     <div class="space-y-4">
       {#if loadingDetails}
         {#each Array(3) as _}
-          <div class="p-6 md:p-8 border border-slate-100 rounded-2xl animate-pulse space-y-6 bg-slate-50/30">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-              <div class="h-8 w-8 rounded-full bg-slate-200"></div>
-              <div class="h-6 w-16 bg-slate-200 rounded"></div>
+          <div class="p-6 md:p-8 border border-slate-100 dark:border-slate-800 rounded-2xl animate-pulse space-y-6 bg-slate-50 dark:bg-slate-800/30">
+            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div class="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+              <div class="h-6 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
             </div>
             <div class="flex justify-end">
-              <div class="h-10 w-2/3 bg-slate-200 rounded-xl"></div>
+              <div class="h-10 w-2/3 bg-slate-200 dark:bg-slate-700 rounded-xl"></div>
             </div>
             <div class="space-y-2">
-              <div class="h-3 w-1/2 bg-slate-200 rounded"></div>
-              <div class="h-4 w-5/6 bg-slate-200 rounded"></div>
+              <div class="h-3 w-1/2 bg-slate-200 dark:bg-slate-700 rounded"></div>
+              <div class="h-4 w-5/6 bg-slate-200 dark:bg-slate-700 rounded"></div>
             </div>
           </div>
         {/each}
@@ -782,18 +821,16 @@
             type="button"
             on:click={() => fetchSurahDetails(selectedSurahId)}
             class="mt-4 bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-xl text-xs font-bold transition-premium border border-red-200"
-          >
-            Coba Lagi
-          </button>
+          >{$t('quran.try_again') || 'Coba Lagi'}</button>
         </Card>
       {:else if currentSurahDetails}
         
         <!-- Bismillah Header Card -->
         {#if selectedSurahId !== 1 && selectedSurahId !== 9}
-          <Card class="py-8 px-8 text-center bg-slate-50/30 border-slate-200/40 relative overflow-hidden shadow-soft-sm">
+          <Card class="py-8 px-8 text-center bg-slate-50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700/40 relative overflow-hidden shadow-soft-sm">
             <div class="absolute inset-0 bg-[radial-gradient(#1d4ed8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.03]"></div>
-            <h3 class="font-arabic text-3xl text-slate-800 font-medium tracking-wide">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</h3>
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-3">Dengan nama Allah Yang Maha Pengasih, Maha Penyayang</p>
+            <h3 class="font-arabic text-3xl text-slate-800 dark:text-slate-100 font-medium tracking-wide">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</h3>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-3">{$t('quran.bismillah_meaning') || 'Dengan nama Allah Yang Maha Pengasih, Maha Penyayang'}</p>
           </Card>
         {/if}
 
@@ -805,7 +842,7 @@
               <Card 
                 id="verse-card-{verse.nomorAyat}"
                 class="p-6 md:p-8 hover:border-blue-200/50 transition-premium shadow-soft-sm relative overflow-hidden group
-                  {playingVerseNumber === verse.nomorAyat ? 'border-blue-500 bg-blue-50/30 shadow-md ring-1 ring-blue-500/10' : 'bg-white'}"
+                  {playingVerseNumber === verse.nomorAyat ? 'border-blue-500 bg-blue-50/30 shadow-md dark:shadow-none ring-1 ring-blue-500/10' : 'bg-white dark:bg-slate-900'}"
               >
                 <!-- Play progress highlight -->
                 {#if playingVerseNumber === verse.nomorAyat}
@@ -814,7 +851,7 @@
 
                 <div class="space-y-6 relative">
                   <!-- Verse Metadata Header -->
-                  <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                     <span class="inline-flex h-8 w-8 rounded-full bg-blue-50 border border-blue-100/50 text-blue-700 items-center justify-center text-sm font-serif font-bold leading-none shadow-soft-sm select-none">
                       {toArabicNumerals(verse.nomorAyat)}
                     </span>
@@ -823,7 +860,7 @@
                       <!-- Copy button -->
                       <button 
                         on:click={() => copyToClipboard(verse)}
-                        class="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-premium"
+                        class="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-blue-600 hover:bg-slate-50 dark:bg-slate-800 transition-premium"
                         title="Salin Ayat"
                         style="min-height: 32px;"
                       >
@@ -835,15 +872,17 @@
                       </button>
 
                       <!-- Tafsir toggle -->
+                      {#if $locale === 'id'}
                       <button 
                         on:click={() => toggleTafsirPerVerse(verse.nomorAyat)}
                         class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-premium
-                          {expandedTafsirs[verse.nomorAyat] ? 'bg-amber-50 text-amber-700' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"
+                          {expandedTafsirs[verse.nomorAyat] ? 'bg-amber-50 text-amber-700' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-800'}"
                         style="min-height: 32px;"
                       >
-                        <span>Tafsir</span>
+                        <span>{$t('quran.tafsir') || 'Tafsir'}</span>
                         <ChevronDown class="h-3.5 w-3.5 transform transition-transform duration-200 {expandedTafsirs[verse.nomorAyat] ? 'rotate-180' : ''}" />
                       </button>
+                      {/if}
 
                       <!-- Verse audio play button -->
                       <button 
@@ -856,7 +895,7 @@
                         }}
                         class="inline-flex items-center justify-center h-8 w-8 rounded-full transition-premium shadow-soft-sm
                           {playingVerseNumber === verse.nomorAyat && isPlaying 
-                            ? 'bg-amber-500 text-slate-900 scale-105 shadow-md' 
+                            ? 'bg-amber-500 text-slate-900 dark:text-white scale-105 shadow-md dark:shadow-none' 
                             : 'bg-blue-50 hover:bg-blue-100/75 text-blue-700'}"
                         title="Putar Suara Ayat"
                       >
@@ -872,7 +911,7 @@
                   <!-- Arabic Text -->
                   <div class="text-right py-2 leading-relaxed">
                     <p 
-                      class="font-arabic text-slate-800 tracking-wide font-normal"
+                      class="font-arabic text-slate-800 dark:text-white tracking-wide font-normal"
                       style="font-size: {arabicFontSize}px; text-align: justify; direction: rtl; text-align-last: right;"
                     >
                       {verse.teksArab}
@@ -881,14 +920,14 @@
 
                   <!-- Latin & Translation -->
                   {#if showTranslation || showLatin}
-                    <div class="space-y-3 mt-4 text-left border-t border-slate-50 pt-4">
+                    <div class="space-y-3 mt-4 text-left border-t border-slate-100 dark:border-slate-700/60 pt-4">
                       {#if showLatin}
-                        <p class="text-xs italic text-blue-600/90 font-semibold leading-relaxed">
+                        <p class="text-xs italic text-blue-600/90 dark:text-sky-300 font-semibold leading-relaxed">
                           {verse.teksLatin}
                         </p>
                       {/if}
                       {#if showTranslation}
-                        <p class="text-sm text-slate-600 font-normal leading-relaxed text-justify">
+                        <p class="text-sm text-slate-600 dark:text-slate-100 font-normal leading-relaxed text-justify">
                           {verse.teksIndonesia}
                         </p>
                       {/if}
@@ -896,23 +935,23 @@
                   {/if}
 
                   <!-- Expanded Tafsir per verse -->
-                  {#if expandedTafsirs[verse.nomorAyat] && verse.tafsir}
-                    <div transition:slide class="bg-amber-50/50 border-l-4 border-amber-500/80 p-4 rounded-r-xl mt-4 space-y-2">
-                      <span class="text-[9px] font-black text-amber-700 uppercase tracking-widest block">Tafsir Ayat {verse.nomorAyat}</span>
-                      <p class="text-xs text-slate-700 leading-relaxed text-justify whitespace-pre-wrap font-sans">
+                  {#if $locale === 'id' && expandedTafsirs[verse.nomorAyat] && verse.tafsir}
+                    <div transition:slide class="bg-amber-50 dark:bg-slate-800 border-l-4 border-amber-400 dark:border-amber-500 p-4 rounded-r-xl mt-4 space-y-2">
+                      <span class="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest block">Tafsir Ayat {verse.nomorAyat}</span>
+                      <p class="text-xs text-slate-700 dark:text-slate-100 leading-relaxed text-justify whitespace-pre-wrap font-sans">
                         {verse.tafsir}
                       </p>
                     </div>
                   {/if}
 
                   <!-- Global Tafsir -->
-                  {#if showTafsir && !expandedTafsirs[verse.nomorAyat] && verse.tafsir}
-                    <div transition:slide class="bg-slate-50 border-l-4 border-slate-300 p-4 rounded-r-xl mt-4 space-y-1">
-                      <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Tafsir Ringkas</span>
-                      <p class="text-xs text-slate-600 leading-relaxed text-justify line-clamp-3">{verse.tafsir}</p>
+                  {#if $locale === 'id' && showTafsir && !expandedTafsirs[verse.nomorAyat] && verse.tafsir}
+                    <div transition:slide class="bg-slate-50 dark:bg-slate-800/60 border-l-4 border-slate-300 dark:border-slate-500 p-4 rounded-r-xl mt-4 space-y-1">
+                      <span class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Tafsir Ringkas</span>
+                      <p class="text-xs text-slate-600 dark:text-slate-200 leading-relaxed text-justify line-clamp-3">{verse.tafsir}</p>
                       <button 
                         on:click={() => toggleTafsirPerVerse(verse.nomorAyat)}
-                        class="text-[10px] text-blue-600 hover:text-blue-700 font-bold mt-1 inline-block"
+                        class="text-[10px] text-blue-600 dark:text-sky-400 hover:text-blue-700 dark:hover:text-sky-300 font-bold mt-1 inline-block"
                       >
                         Selengkapnya &rarr;
                       </button>
@@ -924,7 +963,7 @@
           </div>
         {:else}
           <!-- MUSHAF VIEW MODE — Blue accent, Arabic verse numbers -->
-          <Card class="p-0 border-slate-200/60 shadow-soft-sm bg-[#FCFBF7] text-slate-800 relative overflow-hidden">
+          <Card class="p-0 border-slate-200 dark:border-slate-700/60 shadow-soft-sm bg-[#FCFBF7] dark:bg-slate-900 text-slate-800 dark:text-white relative overflow-hidden">
             <!-- Subtle background pattern -->
             <div class="absolute inset-0 bg-[radial-gradient(#1d4ed8_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.018] pointer-events-none"></div>
             
@@ -932,7 +971,7 @@
             <div class="border-4 border-double border-blue-600/20 m-1 sm:m-2 p-2 sm:p-4 rounded-xl relative">
               
               <!-- Running header -->
-              <div class="grid grid-cols-3 items-center border-b border-blue-600/10 pb-4 mb-8 text-slate-400 font-sans text-[11px] font-bold tracking-widest uppercase select-none">
+              <div class="grid grid-cols-3 items-center border-b border-blue-600/10 pb-4 mb-8 text-slate-400 dark:text-slate-500 font-sans text-[11px] font-bold tracking-widest uppercase select-none">
                 <span class="text-left">Juz {Math.ceil(currentSurahDetails.nomor / 4) || 1}</span>
                 <span class="text-center text-blue-800 font-black text-xs">QS {currentSurahDetails.namaLatin}</span>
                 <span class="text-right">NO. {currentSurahDetails.nomor}</span>
@@ -948,8 +987,8 @@
                   <!-- svelte-ignore a11y-no-static-element-interactions -->
                   <span 
                     class="cursor-pointer transition-all duration-200 px-1 py-0.5 rounded-md inline relative
-                      {playingVerseNumber === verse.nomorAyat ? 'bg-blue-100 text-blue-950 font-bold border-b-2 border-blue-500 shadow-sm' : ''}
-                      {activeMushafVerse?.nomorAyat === verse.nomorAyat ? 'bg-blue-50 ring-1 ring-blue-500/20' : 'hover:bg-blue-50/60 text-slate-800'}"
+                      {playingVerseNumber === verse.nomorAyat ? 'bg-blue-100 text-blue-950 font-bold border-b-2 border-blue-500 shadow-sm dark:shadow-none' : ''}
+                      {activeMushafVerse?.nomorAyat === verse.nomorAyat ? 'bg-blue-50 ring-1 ring-blue-500/20' : 'hover:bg-blue-50/60 text-slate-800 dark:text-slate-100'}"
                     on:click|stopPropagation={() => handleMushafVerseClick(verse)}
                   >
                     {verse.teksArab}
@@ -973,18 +1012,18 @@
   {#if readingMode === 'mushaf' && activeMushafVerse}
     <div 
       transition:slide={{ duration: 250 }} 
-      class="fixed {playingVerseNumber !== null ? 'bottom-[170px]' : 'bottom-24'} lg:bottom-6 right-4 left-4 lg:right-6 lg:left-auto lg:w-[480px] bg-white border border-slate-200/80 shadow-2xl rounded-2xl p-5 z-30 flex flex-col max-h-[380px] overflow-y-auto"
+      class="fixed {playingVerseNumber !== null ? 'bottom-[170px]' : 'bottom-24'} lg:bottom-6 right-4 left-4 lg:right-6 lg:left-auto lg:w-[480px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 shadow-2xl rounded-2xl p-5 z-30 flex flex-col max-h-[380px] overflow-y-auto"
     >
-      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 mb-3">
         <div class="flex items-center space-x-2">
           <BookOpen class="h-4.5 w-4.5 text-primary" />
-          <h4 class="text-sm font-extrabold text-slate-800">QS. {currentSurahDetails?.namaLatin}: Ayat {activeMushafVerse.nomorAyat}</h4>
+          <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-100">QS. {currentSurahDetails?.namaLatin}: Ayat {activeMushafVerse.nomorAyat}</h4>
         </div>
         
         <div class="flex items-center space-x-1.5">
           <button
             on:click={() => activeMushafVerse && copyToClipboard(activeMushafVerse)}
-            class="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-premium"
+            class="p-1 rounded-lg text-slate-400 dark:text-slate-500 hover:text-blue-600 hover:bg-slate-50 dark:bg-slate-800 transition-premium"
             title="Salin Ayat"
             style="min-height: 28px;"
           >
@@ -998,16 +1037,14 @@
           <button 
             type="button"
             on:click={() => activeMushafVerse = null}
-            class="text-xs font-bold text-slate-400 bg-slate-100 hover:bg-slate-200 hover:text-slate-600 px-2.5 py-1 rounded-full transition-premium"
+            class="text-xs font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 hover:text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-full transition-premium"
             style="min-height: 28px;"
-          >
-            Tutup
-          </button>
+          >{$t('quran.close') || 'Tutup'}</button>
         </div>
       </div>
 
       <div class="space-y-3.5 flex-1">
-        <p class="text-right font-arabic text-slate-800 leading-relaxed text-2xl font-medium">
+        <p class="text-right font-arabic text-slate-800 dark:text-slate-100 leading-relaxed text-2xl font-medium">
           {activeMushafVerse.teksArab}
         </p>
         
@@ -1017,15 +1054,15 @@
               <p class="text-[11px] italic text-blue-600/90 font-bold leading-relaxed">{activeMushafVerse.teksLatin}</p>
             {/if}
             {#if showTranslation}
-              <p class="text-xs text-slate-600 leading-relaxed text-justify">{activeMushafVerse.teksIndonesia}</p>
+              <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-justify">{activeMushafVerse.teksIndonesia}</p>
             {/if}
           </div>
         {/if}
 
-        {#if showTafsir && activeMushafVerse.tafsir}
+        {#if $locale === 'id' && showTafsir && activeMushafVerse.tafsir}
           <div class="bg-amber-50/50 border-l-3 border-amber-500 p-3 rounded-r-lg mt-2">
-            <span class="text-[9px] font-black text-amber-700 uppercase tracking-widest block mb-0.5">Tafsir</span>
-            <p class="text-xs text-slate-700 leading-relaxed text-justify whitespace-pre-wrap font-sans">{activeMushafVerse.tafsir}</p>
+            <span class="text-[9px] font-black text-amber-700 uppercase tracking-widest block mb-0.5">{$t('quran.tafsir') || 'Tafsir'}</span>
+            <p class="text-xs text-slate-700 dark:text-slate-200 leading-relaxed text-justify whitespace-pre-wrap font-sans">{activeMushafVerse.tafsir}</p>
           </div>
         {/if}
       </div>
@@ -1059,7 +1096,7 @@
       </div>
 
       <!-- Timer -->
-      <div class="text-[10px] font-bold text-slate-400 shrink-0 select-none hidden md:block">
+      <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 shrink-0 select-none hidden md:block">
         {formatTime(audioCurrentTime)} / {formatTime(audioDuration)}
       </div>
 
@@ -1077,7 +1114,7 @@
         <button
           type="button"
           on:click={togglePlayPause}
-          class="h-9 w-9 rounded-full bg-white text-slate-900 flex items-center justify-center hover:bg-blue-100 transition-premium scale-105 active:scale-95 shadow-lg"
+          class="h-9 w-9 rounded-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white flex items-center justify-center hover:bg-blue-100 transition-premium scale-105 active:scale-95 shadow-lg"
           title={isPlaying ? 'Jeda' : 'Putar'}
         >
           {#if isPlaying}
@@ -1112,7 +1149,7 @@
           class="h-8 px-2.5 rounded-lg flex items-center space-x-1.5 transition-premium text-xs font-bold border
             {isAutoplayEnabled 
               ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 font-black' 
-              : 'bg-slate-800 border-slate-700/60 text-slate-400 hover:text-white'}"
+              : 'bg-slate-800 border-slate-700/60 text-slate-400 dark:text-slate-500 hover:text-white'}"
           title={isAutoplayEnabled ? 'Putar Otomatis Aktif' : 'Putar Otomatis Nonaktif'}
         >
           <Repeat class="h-3.5 w-3.5" />
@@ -1133,7 +1170,7 @@
             class="h-8 px-2.5 rounded-lg flex items-center space-x-1.5 transition-premium text-xs font-bold border
               {activeMushafVerse 
                 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 font-black' 
-                : 'bg-slate-800 border-slate-700/60 text-slate-400 hover:text-white'}"
+                : 'bg-slate-800 border-slate-700/60 text-slate-400 dark:text-slate-500 hover:text-white'}"
             title={activeMushafVerse ? 'Sembunyikan Detail Ayat' : 'Tampilkan Detail Ayat'}
           >
             <Eye class="h-3.5 w-3.5" />
@@ -1144,7 +1181,7 @@
 
       <!-- Right: Extras -->
       <div class="flex items-center space-x-3 w-full md:w-auto md:ml-4 justify-between md:justify-end border-t border-slate-800 md:border-t-0 pt-2.5 md:pt-0">
-        <div class="text-[9px] font-bold text-slate-400 md:hidden">
+        <div class="text-[9px] font-bold text-slate-400 dark:text-slate-500 md:hidden">
           {formatTime(audioCurrentTime)} / {formatTime(audioDuration)}
         </div>
 
@@ -1156,7 +1193,7 @@
           <button
             type="button"
             on:click={toggleMute}
-            class="h-7 w-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-premium"
+            class="h-7 w-7 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-white hover:bg-slate-800 transition-premium"
             title={isMuted ? 'Suarakan' : 'Bisukan'}
           >
             {#if isMuted}

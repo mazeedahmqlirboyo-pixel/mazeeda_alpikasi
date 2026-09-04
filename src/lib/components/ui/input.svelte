@@ -22,10 +22,10 @@
     on:focus
     on:blur
     class="
-      flex h-12 w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-slate-800 
-      placeholder:text-slate-400 transition-all duration-200
+      flex h-12 w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-white
+      placeholder:text-slate-400 dark:text-slate-500 transition-all duration-200
       focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none
-      disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50
+      disabled:cursor-not-allowed disabled:bg-slate-50 dark:bg-slate-800 disabled:opacity-50
       {className}
     "
   />
@@ -42,10 +42,10 @@
     on:focus
     on:blur
     class="
-      flex h-12 w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-slate-800 
-      placeholder:text-slate-400 transition-all duration-200
+      flex h-12 w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 
+      placeholder:text-slate-400 dark:text-slate-500 transition-all duration-200
       focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none
-      disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50
+      disabled:cursor-not-allowed disabled:bg-slate-50 dark:bg-slate-800 disabled:opacity-50
       {className}
     "
   />
@@ -62,10 +62,10 @@
     on:focus
     on:blur
     class="
-      flex h-12 w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-slate-800 
-      placeholder:text-slate-400 transition-all duration-200
+      flex h-12 w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-white
+      placeholder:text-slate-400 dark:text-slate-500 transition-all duration-200
       focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none
-      disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50
+      disabled:cursor-not-allowed disabled:bg-slate-50 dark:bg-slate-800 disabled:opacity-50
       {className}
     "
   />
@@ -82,10 +82,10 @@
     on:focus
     on:blur
     class="
-      flex h-12 w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-slate-800 
-      placeholder:text-slate-400 transition-all duration-200
+      flex h-12 w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-white
+      placeholder:text-slate-400 dark:text-slate-500 transition-all duration-200
       focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none
-      disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50
+      disabled:cursor-not-allowed disabled:bg-slate-50 dark:bg-slate-800 disabled:opacity-50
       {className}
     "
   />
@@ -102,10 +102,10 @@
     on:focus
     on:blur
     class="
-      flex h-12 w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-slate-800 
-      placeholder:text-slate-400 transition-all duration-200
+      flex h-12 w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-white
+      placeholder:text-slate-400 dark:text-slate-500 transition-all duration-200
       focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none
-      disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50
+      disabled:cursor-not-allowed disabled:bg-slate-50 dark:bg-slate-800 disabled:opacity-50
       {className}
     "
   />

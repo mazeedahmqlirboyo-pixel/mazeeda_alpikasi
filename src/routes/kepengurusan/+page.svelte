@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { t, locale } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
   import { supabase } from '$lib/supabase';
   import { activeProfileStore } from '$lib/auth';
@@ -9,6 +10,7 @@
     BookOpen, Heart, CalendarRange, Filter
   } from 'lucide-svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Input from '$lib/components/ui/input.svelte';
 
   // State
   let searchQuery = '';
@@ -17,6 +19,15 @@
   let alumniDataMap: Record<string, any> = {}; // To fetch photos and other profile details
   let isLoading = true;
   
+
+  $: formatNumberDisplay = (numStr: string) => {
+    if ($locale === 'ar') {
+      const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+      return numStr.replace(/[0-9]/g, w => arabicNumbers[parseInt(w)]);
+    }
+    return numStr;
+  };
+
   let dropdownContainer: HTMLDivElement;
   let showYearDropdown = false;
 
@@ -128,9 +139,9 @@
     const key = name.trim().toLowerCase();
     const alumni = alumniDataMap[key];
     if (alumni && alumni.id) {
-      window.location.href = `/squad?id=${alumni.id}`;
+      window.location.href = `/squad?id=${alumni.id}&from=kepengurusan`;
     } else {
-      alert('Profil detail tidak ditemukan di database alumni.');
+      alert($t('kepengurusan.profile_not_found') || 'Profil detail tidak ditemukan di database alumni.');
     }
   }
 
@@ -176,7 +187,7 @@
   $: divisionGroups = filteredMembers.reduce((groups: Record<string, any[]>, m) => {
     const divLower = m.divisi.toLowerCase();
     if (divLower !== 'pengurus harian' && divLower !== 'bph' && divLower !== 'inti') {
-      const key = m.divisi || 'Divisi Lainnya';
+      const key = m.divisi || ($t('kepengurusan.other_divisions') || 'Divisi Lainnya');
       if (!groups[key]) groups[key] = [];
       groups[key].push(m);
     }
@@ -188,36 +199,32 @@
 
 <svelte:window on:click={closeDropdown} />
 
-<PageHeader title="Kepengurusan" backText="Dashboard" />
+<PageHeader title={$t('kepengurusan.title') || 'Kepengurusan'} backText={$t('kepengurusan.dashboard') || 'Dashboard'} />
 
 <div class="space-y-8 animate-in fade-in duration-300 pt-4 pb-8 px-4">
 
   <!-- Search & Year Picker -->
   <div class="relative w-full" bind:this={dropdownContainer}>
-    <div class="relative flex items-center w-full bg-slate-50/50 border border-slate-200/80 rounded-2xl shadow-soft-sm focus-within:bg-white focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-300 h-12 overflow-hidden">
-      <!-- Search Icon -->
-      <Search class="h-4.5 w-4.5 text-slate-400 ml-4 shrink-0 pointer-events-none" />
-      
-      <!-- Search Input -->
-      <input
-        type="text"
-        placeholder="Cari pengurus atau jabatan..."
-        class="flex-1 h-full bg-transparent pl-3 pr-2 text-xs md:text-sm text-slate-700 placeholder-slate-400 focus:outline-none"
-        bind:value={searchQuery}
-      />
+    <div class="flex items-center space-x-2 relative">
+      <div class="relative flex-1">
+        <Search class="absolute left-4 top-3.5 h-5 w-5 text-slate-400 dark:text-slate-500" />
+        <Input 
+          type="text" 
+          placeholder={$t('kepengurusan.search_placeholder') || 'Cari pengurus atau jabatan...'} 
+          class="pl-12 w-full text-slate-900 dark:!text-white bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-50 dark:bg-slate-800 focus:bg-white dark:bg-slate-900 transition-colors duration-200 border-slate-200 dark:border-slate-700/80 rounded-xl"
+          bind:value={searchQuery}
+        />
+      </div>
 
-      <!-- Divider line -->
-      <div class="w-px h-6 bg-slate-200 shrink-0"></div>
-
-      <!-- Filter Icon Button Trigger -->
-      <div class="shrink-0 flex items-center px-2 h-full">
+      <!-- Filter trigger button -->
+      <div class="relative shrink-0">
         <button
           type="button"
+          class="relative p-3 rounded-xl border transition-all duration-200 {showYearDropdown ? 'bg-primary text-white border-primary shadow-soft-sm' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}"
           on:click={toggleDropdown}
-          class="h-8.5 w-8.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 flex items-center justify-center transition-all duration-200 shrink-0 outline-none cursor-pointer"
-          title="Filter Tahun Ajaran"
+          title={$t('kepengurusan.filter_tooltip') || 'Filter Tahun Ajaran'}
         >
-          <Filter class="h-4.5 w-4.5" />
+          <Filter class="h-5 w-5" />
         </button>
       </div>
     </div>
@@ -226,10 +233,10 @@
     {#if showYearDropdown}
       <div 
         transition:fade={{ duration: 150 }}
-        class="absolute right-0 top-full mt-2 w-32 bg-white border border-slate-200/80 rounded-2xl shadow-lg py-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-200"
+        class="absolute right-0 top-full mt-2 w-32 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-lg py-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-200"
       >
-        <div class="px-3 py-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-          PILIH PERIODE
+        <div class="px-3 py-1.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+          {$t('kepengurusan.select_period') || 'PILIH PERIODE'}
         </div>
         <div class="max-h-60 overflow-y-auto scrollbar-thin">
           {#each academicYears as year}
@@ -238,10 +245,10 @@
               on:click={() => { activeYear = year; showYearDropdown = false; searchQuery = ''; }}
               class="w-full px-3 py-2 text-left text-xs transition-colors flex items-center justify-between cursor-pointer
                 {activeYear === year 
-                  ? 'bg-slate-50/80 text-primary font-bold' 
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50/40 font-medium'}"
+                  ? 'bg-slate-50 dark:bg-slate-800/80 text-primary font-bold' 
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'}"
             >
-              <span>T.A {year}</span>
+              <span>{$t('kepengurusan.academic_year_short') || 'T.A'} {formatNumberDisplay(year)}</span>
             </button>
           {/each}
         </div>
@@ -252,16 +259,16 @@
   <!-- Dashboard Content -->
   {#if isLoading}
     <div class="py-24 text-center space-y-4">
-      <img src="/images/loading.svg" alt="Loading..." class="h-16 w-16 mx-auto animate-spin opacity-80" style="animation-duration: 2s;" />
-      <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Menyinkronkan data...</p>
+      <img src="/loading-paperplane.svg" alt="Memuat..." class="h-48 w-48 mx-auto animate-pulse opacity-90" />
+      <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{$t('kepengurusan.loading') || 'Memuat Data Kepengurusan...'}</p>
     </div>
   {:else if !hasAnyData}
-    <div class="py-16 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 mt-6">
+    <div class="py-16 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-800/50 mt-6">
       <div class="flex justify-center mb-6">
-        <img src="/images/empty-content.svg" alt="Tidak Ditemukan" class="h-40 w-auto object-contain drop-shadow-sm opacity-80 hover:opacity-100 transition-opacity" />
+        <img src="/search.svg" alt="Tidak Ditemukan" class="h-40 w-auto object-contain drop-shadow-sm dark:shadow-none opacity-80 hover:opacity-100 transition-opacity" />
       </div>
-      <p class="text-sm font-bold text-slate-600">Tidak ada pengurus ditemukan</p>
-      <p class="text-xs text-slate-400 mt-1">{searchQuery ? 'Silakan ganti kata kunci pencarian Anda.' : `Belum ada data pengurus untuk T.A ${activeYear}.`}</p>
+      <p class="text-sm font-bold text-slate-600 dark:text-slate-300">{$t('kepengurusan.no_data') || 'Tidak ada pengurus ditemukan'}</p>
+      <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{searchQuery ? ($t('kepengurusan.change_keyword') || 'Silakan ganti kata kunci pencarian Anda.') : `\$\{$t('kepengurusan.no_data_for_year') || 'Belum ada data pengurus untuk T.A'\} \$\{formatNumberDisplay(activeYear)\}`}</p>
     </div>
   {:else}
     <div class="space-y-12">
@@ -269,9 +276,9 @@
       <!-- Tier 1: Pengurus Harian (BPH) -->
       {#if bphMembers.length > 0}
         <div class="space-y-4 text-center">
-          <h2 class="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center justify-center gap-2">
+          <h2 class="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center justify-center gap-2">
             <UserCheck class="h-4.5 w-4.5 text-indigo-500" />
-            <span>Pengurus Harian Inti</span>
+            <span>{$t('kepengurusan.core_board') || 'Pengurus Harian Inti'}</span>
           </h2>
           
           <div class="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto pt-2">
@@ -285,7 +292,7 @@
               <!-- svelte-ignore a11y-no-static-element-interactions -->
               <div 
                 on:click={() => viewProfile(member.nama_lengkap)}
-                class="w-full sm:w-64 bg-white border border-slate-100 hover:border-slate-200 rounded-3xl p-5 text-center transition-all duration-300 hover:scale-[1.02] hover:shadow-soft-md cursor-pointer border-t-4 {accent.border} flex flex-col items-center space-y-4"
+                class="w-full sm:w-64 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:border-slate-700 rounded-3xl p-5 text-center transition-all duration-300 hover:scale-[1.02] hover:shadow-soft-md cursor-pointer border-t-4 {accent.border} flex flex-col items-center space-y-4"
               >
                 <!-- Photo/Avatar -->
                 <div class="relative shrink-0">
@@ -305,7 +312,7 @@
                 </div>
 
                 <div class="space-y-1.5 leading-tight w-full">
-                  <h3 class="font-extrabold text-slate-800 text-sm md:text-base line-clamp-1 group-hover:text-primary transition-colors">
+                  <h3 class="font-extrabold text-slate-800 dark:text-slate-100 text-sm md:text-base line-clamp-1 group-hover:text-primary transition-colors">
                     {member.nama_lengkap}
                   </h3>
                   <p class="text-xs text-primary font-black uppercase tracking-wider">{member.jabatan}</p>
@@ -318,14 +325,14 @@
 
       <!-- Tier 2: Divisi / Bagian -->
       {#if Object.keys(divisionGroups).length > 0}
-        <div class="space-y-8 pt-4 border-t border-slate-100">
+        <div class="space-y-8 pt-4 border-t border-slate-100 dark:border-slate-800">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
             {#each Object.entries(divisionGroups) as [division, members]}
-              <Card noPadding class="overflow-hidden border-slate-200/60 shadow-soft-sm">
+              <Card noPadding class="overflow-hidden border-slate-200 dark:border-slate-700/60 shadow-soft-sm">
                 <!-- Group Header -->
-                <div class="px-5 py-3 bg-slate-50/95 border-b border-slate-100 flex items-center justify-between">
-                  <span class="text-xs font-black text-slate-700 uppercase tracking-wide">{division}</span>
-                  <span class="text-[9px] font-black uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">{members.length} Anggota</span>
+                <div class="px-5 py-3 bg-slate-50 dark:bg-slate-800/95 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wide">{division}</span>
+                  <span class="text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full">{formatNumberDisplay(members.length.toString())} {$t('kepengurusan.members') || 'Anggota'}</span>
                 </div>
 
                 <!-- Group List -->
@@ -340,7 +347,7 @@
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div 
                       on:click={() => viewProfile(member.nama_lengkap)}
-                      class="px-5 py-3 flex items-center justify-between hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                      class="px-5 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
                     >
                       <div class="flex items-center space-x-3.5 min-w-0">
                         {#if profilePhoto}
@@ -356,14 +363,14 @@
                           </div>
                         {/if}
                         <div class="min-w-0 leading-tight">
-                          <p class="font-extrabold text-slate-700 text-xs truncate group-hover:text-slate-900 transition-colors">{member.nama_lengkap}</p>
-                          <span class="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-wider mt-1.5">
+                          <p class="font-extrabold text-slate-700 dark:text-slate-200 text-xs truncate group-hover:text-slate-900 dark:group-hover:text-white transition-colors">{member.nama_lengkap}</p>
+                          <span class="inline-block px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-wider mt-1.5">
                             {member.jabatan}
                           </span>
                         </div>
                       </div>
 
-                      <ArrowRight class="h-4 w-4 text-slate-300 group-hover:text-slate-500 transition-colors shrink-0 ml-2" />
+                      <ArrowRight class="h-4 w-4 text-slate-300 group-hover:text-slate-500 dark:text-slate-600 dark:group-hover:text-slate-400 transition-colors shrink-0 ml-2" />
                     </div>
                   {/each}
                 </div>
@@ -390,7 +397,7 @@
     <button
       type="button"
       on:click|stopPropagation={closeLightbox}
-      class="absolute top-4 right-4 z-10 h-10 w-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors"
+      class="absolute top-4 right-4 z-10 h-10 w-10 rounded-full bg-white dark:bg-slate-900/20 hover:bg-white dark:bg-slate-900/40 flex items-center justify-center text-white transition-colors"
       title="Tutup"
     >
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>

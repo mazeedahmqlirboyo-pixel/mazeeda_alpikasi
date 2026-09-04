@@ -297,7 +297,7 @@
 </script>
 
 <!-- Menggunakan fixed inset-0 untuk menutupi seluruh layar tanpa terpengaruh padding dari +layout.svelte -->
-<div class="fixed inset-0 z-50 flex bg-white font-sans text-slate-800 overflow-y-auto lg:overflow-hidden hide-scrollbar" in:fade={{ duration: 500 }} on:mousemove={handleMouseMove} on:touchmove={handleMouseMove}>
+<div class="fixed inset-0 z-50 flex bg-white dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-100 overflow-y-auto lg:overflow-hidden hide-scrollbar" in:fade={{ duration: 500 }} on:mousemove={handleMouseMove} on:touchmove={handleMouseMove}>
   
   <!-- Sisi Kiri: Visual / Branding (Desktop Only) -->
   <div class="hidden lg:flex lg:w-1/2 relative bg-slate-900 items-center justify-center overflow-hidden">
@@ -308,11 +308,11 @@
     </div>
     
     <!-- Ornamen Lingkaran -->
-    <div class="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+    <div class="absolute -top-24 -left-24 w-96 h-96 bg-white dark:bg-slate-900/10 rounded-full blur-3xl"></div>
     <div class="absolute bottom-10 right-10 w-72 h-72 bg-indigo-400/20 rounded-full blur-2xl"></div>
 
     <div class="relative z-10 text-center text-white px-12" in:fade={{ delay: 200, duration: 800 }}>
-      <div class="inline-flex items-center justify-center w-24 h-24 rounded-2xl shadow-xl shadow-indigo-900/20 mb-8 overflow-hidden bg-white border border-white/20">
+      <div class="inline-flex items-center justify-center w-24 h-24 rounded-2xl shadow-xl shadow-indigo-900/20 mb-8 overflow-hidden bg-white dark:bg-slate-900 border border-white/20">
         <img src="/logo.png" alt="MAZEEDA Logo" class="w-full h-full object-cover" />
       </div>
       <h1 class="text-4xl xl:text-5xl font-extrabold tracking-tight mb-6 leading-tight">
@@ -326,21 +326,21 @@
   </div>
 
   <!-- Sisi Kanan: Form Login (Full Putih di Mobile, Solid di Desktop) -->
-  <div class="w-full lg:w-1/2 relative flex items-center justify-center p-6 sm:p-12 min-h-[700px] lg:min-h-0 lg:h-full overflow-y-auto bg-white hide-scrollbar">
+  <div class="w-full lg:w-1/2 relative flex items-center justify-center px-4 py-2 sm:p-10 lg:h-full bg-white dark:bg-slate-900 overflow-y-auto hide-scrollbar">
     
-    <div class="relative z-10 w-full max-w-md my-auto py-8">
+    <div class="relative z-10 w-full max-w-md">
       {#if $authStore.user}
         <!-- Tampilan Jika Sudah Login -->
-        <div class="bg-white lg:border-slate-100 lg:shadow-2xl rounded-3xl p-4 sm:p-8 text-center" in:fly={{ y: 20, duration: 600 }}>
+        <div class="bg-white dark:bg-slate-900 lg:border-slate-100 dark:border-slate-800 lg:shadow-2xl rounded-3xl p-4 sm:p-8 text-center" in:fly={{ y: 20, duration: 600 }}>
           <div class="inline-flex items-center justify-center w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full mb-6 ring-4 ring-white shadow-inner">
             <UserCheck class="w-10 h-10" />
           </div>
-          <h2 class="text-2xl font-bold text-slate-800 mb-2">Sesi Masih Aktif</h2>
-          <p class="text-sm text-slate-500 mb-6 font-medium">Anda sudah login sebagai <strong>{$authStore.user.name}</strong></p>
+          <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">Sesi Masih Aktif</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mb-6 font-medium">Anda sudah login sebagai <strong>{$authStore.user.name}</strong></p>
 
           <div class="space-y-3">
             <a href="/" class="block">
-              <Button class="w-full py-6 text-base font-semibold shadow-md hover:shadow-lg transition-all rounded-xl">
+              <Button class="w-full py-6 text-base font-semibold shadow-md dark:shadow-none hover:shadow-lg transition-all rounded-xl">
                 Masuk ke Dashboard
               </Button>
             </a>
@@ -357,15 +357,15 @@
         </div>
       {:else}
         <!-- Tampilan Form Login -->
-        <div class="bg-white rounded-3xl p-2 sm:p-10" in:fly={{ y: 20, duration: 600 }}>
+        <div class="bg-white dark:bg-slate-900 rounded-3xl px-2 py-2 sm:p-10" in:fly={{ y: 20, duration: 600 }}>
           
           <!-- Animated Mascot & Header -->
-          <div class="flex flex-col items-center text-center mb-8 lg:mb-10">
+          <div class="flex flex-col items-center text-center mb-2">
             
             <!-- CSS Animated Peacock Mascot (Interactive) -->
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div class="relative w-32 h-32 mb-6 cursor-pointer" on:click={() => { peacockState = 'angry'; setTimeout(() => peacockState = 'idle', 2000); }}>
+            <div class="relative w-32 h-32 mb-1 cursor-pointer" on:click={() => { peacockState = 'angry'; setTimeout(() => peacockState = 'idle', 2000); }}>
               <!-- Tail Fan Background -->
               <div class="absolute inset-x-0 bottom-2 h-32 flex justify-center items-end z-0 transition-transform duration-700 {focusedInput === 'namaAyah' && !showPassword ? 'scale-110' : 'scale-100'} {peacockState === 'loading' ? 'animate-pulse scale-105' : ''}">
                 <!-- Far Left -->
@@ -398,7 +398,7 @@
                 <!-- Eyes Container -->
                 <div class="absolute top-5 left-1/2 -translate-x-1/2 w-10 h-4 flex justify-between px-0.5 z-10">
                   <!-- Left Eye -->
-                  <div class="relative w-3.5 h-4 shadow-inner transition-all duration-300 {peacockState === 'angry' ? 'bg-yellow-300 scale-125 rounded-full overflow-hidden' : (peacockState === 'sad' ? 'bg-sky-100 scale-110 rounded-full overflow-hidden' : (peacockState === 'laughing' ? 'bg-transparent h-2 mt-1.5 border-t-[3px] border-slate-900 rounded-t-full shadow-none' : 'bg-white rounded-full overflow-hidden'))}">
+                  <div class="relative w-3.5 h-4 shadow-inner transition-all duration-300 {peacockState === 'angry' ? 'bg-yellow-300 scale-125 rounded-full overflow-hidden' : (peacockState === 'sad' ? 'bg-sky-100 scale-110 rounded-full overflow-hidden' : (peacockState === 'laughing' ? 'bg-transparent h-2 mt-1.5 border-t-[3px] border-slate-900 rounded-t-full shadow-none' : 'bg-white dark:bg-white rounded-full overflow-hidden'))}">
                     {#if peacockState !== 'laughing'}
                       <div class="absolute w-2 h-2 rounded-full transition-all duration-100 {peacockState === 'angry' ? 'bg-rose-600 top-1 left-0.5 w-2.5 h-2.5' : (peacockState === 'sad' ? 'bg-slate-900 top-2 left-0.5 w-2 h-2' : (peacockState === 'loading' ? 'animate-spin border-[2px] border-slate-900 border-t-transparent bg-transparent w-3 h-3 top-0.5 left-[1px]' : 'bg-slate-900'))} 
                         {peacockState === 'idle' && focusedInput === 'nis' ? 'top-2 left-1' : (peacockState === 'idle' && focusedInput === 'namaAyah' ? 'top-0.5 left-1' : (peacockState === 'idle' ? 'top-1 left-1' : ''))}"
@@ -415,7 +415,7 @@
                     {/if}
                   </div>
                   <!-- Right Eye -->
-                  <div class="relative w-3.5 h-4 shadow-inner transition-all duration-300 {peacockState === 'angry' ? 'bg-yellow-300 scale-125 rounded-full overflow-hidden' : (peacockState === 'sad' ? 'bg-sky-100 scale-110 rounded-full overflow-hidden' : (peacockState === 'laughing' ? 'bg-transparent h-2 mt-1.5 border-t-[3px] border-slate-900 rounded-t-full shadow-none' : 'bg-white rounded-full overflow-hidden'))}">
+                  <div class="relative w-3.5 h-4 shadow-inner transition-all duration-300 {peacockState === 'angry' ? 'bg-yellow-300 scale-125 rounded-full overflow-hidden' : (peacockState === 'sad' ? 'bg-sky-100 scale-110 rounded-full overflow-hidden' : (peacockState === 'laughing' ? 'bg-transparent h-2 mt-1.5 border-t-[3px] border-slate-900 rounded-t-full shadow-none' : 'bg-white dark:bg-white rounded-full overflow-hidden'))}">
                     {#if peacockState !== 'laughing'}
                       <div class="absolute w-2 h-2 rounded-full transition-all duration-100 {peacockState === 'angry' ? 'bg-rose-600 top-1 right-0.5 w-2.5 h-2.5' : (peacockState === 'sad' ? 'bg-slate-900 top-2 right-0.5 w-2 h-2' : (peacockState === 'loading' ? 'animate-spin border-[2px] border-slate-900 border-t-transparent bg-transparent w-3 h-3 top-0.5 right-[1px]' : 'bg-slate-900'))} 
                         {peacockState === 'idle' && focusedInput === 'nis' ? 'top-2 right-1' : (peacockState === 'idle' && focusedInput === 'namaAyah' ? 'top-0.5 right-1' : (peacockState === 'idle' ? 'top-1 right-1' : ''))}"
@@ -462,12 +462,11 @@
               </div>
             </div>
 
-            <div class="mt-4 mb-6 flex flex-col items-center">
-              <h1 class="text-3xl lg:text-4xl font-extrabold tracking-[0.3em] text-slate-800 ml-[0.3em]">MAZEEDA</h1>
+            <div class="mt-1 mb-1 flex flex-col items-center">
+              <h1 class="text-2xl sm:text-3xl font-extrabold tracking-[0.3em] text-slate-800 dark:text-slate-100 ml-[0.3em]">MAZEEDA</h1>
             </div>
 
-            <h2 class="text-xl lg:text-2xl font-bold text-slate-800 tracking-tight">Masuk Akun</h2>
-            <p class="text-sm text-slate-500 font-medium mt-1">Silakan isi data login Anda untuk melanjutkan.</p>
+            <h2 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Login</h2>
           </div>
 
           <!-- Alert Pesan -->
@@ -483,18 +482,18 @@
           {/if}
 
           <!-- Form Element -->
-          <form on:submit|preventDefault={handleAuthSubmit} class="space-y-5">
+          <form on:submit|preventDefault={handleAuthSubmit} class="space-y-2">
             
             <!-- Input NIS -->
             <div class="relative group" in:fly|global={{ y: 10, duration: 400, delay: 150 }}>
-              <div class="relative overflow-hidden rounded-xl transition-all duration-300 {focusedInput === 'nis' ? 'ring-2 ring-primary ring-offset-1 -translate-y-1 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]' : 'border border-slate-200 hover:border-slate-300'}">
-                <div class="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-slate-50 border-r border-slate-100 text-slate-400">
+              <div class="relative overflow-hidden rounded-xl transition-all duration-300 {focusedInput === 'nis' ? 'ring-2 ring-primary ring-offset-1 -translate-y-1 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]' : 'border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600'}">
+                <div class="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-slate-50 dark:bg-slate-800 border-r border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500">
                   <Hash class="w-5 h-5 {focusedInput === 'nis' ? 'text-primary' : ''} transition-colors" />
                 </div>
                 <input 
                   id="nis" 
                   type="text" 
-                  class="w-full bg-white pl-16 pr-4 py-3.5 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 focus:bg-slate-50/50 transition-colors"
+                  class="w-full bg-white dark:bg-slate-900 pl-16 pr-4 py-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-slate-50 dark:focus:bg-slate-800/50 transition-colors"
                   placeholder="NIS: 220412" 
                   bind:value={nis} 
                   on:focus={() => focusedInput = 'nis'}
@@ -506,15 +505,15 @@
             </div>
 
             <!-- Input Nama Ayah -->
-            <div class="relative group mt-5" in:fly|global={{ y: 10, duration: 400, delay: 250 }}>
-              <div class="relative overflow-hidden rounded-xl transition-all duration-300 {focusedInput === 'namaAyah' ? 'ring-2 ring-primary ring-offset-1 -translate-y-1 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]' : 'border border-slate-200 hover:border-slate-300'}">
-                <div class="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-slate-50 border-r border-slate-100 text-slate-400">
+            <div class="relative group" in:fly|global={{ y: 10, duration: 400, delay: 250 }}>
+              <div class="relative overflow-hidden rounded-xl transition-all duration-300 {focusedInput === 'namaAyah' ? 'ring-2 ring-primary ring-offset-1 -translate-y-1 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]' : 'border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600'}">
+                <div class="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-slate-50 dark:bg-slate-800 border-r border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500">
                   <User class="w-5 h-5 {focusedInput === 'namaAyah' ? 'text-primary' : ''} transition-colors" />
                 </div>
                 <input 
                   id="namaAyah" 
                   type={showPassword ? "text" : "password"} 
-                  class="w-full bg-white pl-16 pr-12 py-3.5 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-300 focus:bg-slate-50/50 transition-colors uppercase"
+                  class="w-full bg-white dark:bg-slate-900 pl-16 pr-12 py-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-slate-50 dark:focus:bg-slate-800/50 transition-colors uppercase"
                   placeholder="Nama ayah sesuai KK" 
                   value={namaAyah} 
                   on:input={(e) => namaAyah = e.currentTarget.value}
@@ -525,7 +524,7 @@
                 />
                 <button
                   type="button"
-                  class="absolute right-0 top-0 bottom-0 w-12 flex items-center justify-center text-slate-400 hover:text-primary transition-colors focus:outline-none"
+                  class="absolute right-0 top-0 bottom-0 w-12 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-primary transition-colors focus:outline-none"
                   on:click={() => showPassword = !showPassword}
                   tabindex="-1"
                 >
@@ -539,7 +538,7 @@
             </div>
 
             <!-- Checkbox Remember Me -->
-            <label class="flex items-center mt-3 ml-1 cursor-pointer group/checkbox" in:fly|global={{ y: 10, duration: 400, delay: 300 }}>
+            <label class="flex items-center mt-0.5 ml-1 cursor-pointer group/checkbox" in:fly|global={{ y: 10, duration: 400, delay: 300 }}>
               <div class="relative flex items-center justify-center">
                 <input 
                   type="checkbox" 
@@ -547,7 +546,7 @@
                   bind:checked={rememberMe}
                   disabled={loading}
                 />
-                <div class="w-5 h-5 border-2 rounded-md transition-all duration-300 flex items-center justify-center shadow-sm {rememberMe ? 'bg-primary border-primary' : 'bg-white border-slate-300 group-hover/checkbox:border-primary'}">
+                <div class="w-5 h-5 border-2 rounded-md transition-all duration-300 flex items-center justify-center shadow-sm dark:shadow-none {rememberMe ? 'bg-primary border-primary' : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 group-hover/checkbox:border-primary'}">
                   {#if rememberMe}
                     <svg class="w-3.5 h-3.5 text-white" in:scale={{duration: 200, start: 0.5}} out:scale={{duration: 200, start: 0.5}} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="20 6 9 17 4 12"></polyline>
@@ -555,7 +554,7 @@
                   {/if}
                 </div>
               </div>
-              <span class="ml-3 text-sm font-semibold text-slate-500 select-none group-hover/checkbox:text-slate-800 transition-colors">
+              <span class="ml-3 text-sm font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500 select-none group-hover/checkbox:text-slate-800 dark:text-slate-100 transition-colors">
                 Ingat NIS saya
               </span>
             </label>
@@ -564,7 +563,7 @@
             <div in:fly|global={{ y: 10, duration: 400, delay: 350 }}>
               <Button 
                 type="submit" 
-                class="w-full py-6 mt-4 text-base font-bold shadow-[0_8px_30px_rgb(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgb(79,70,229,0.4)] hover:-translate-y-1 active:scale-95 transition-all duration-300 rounded-xl relative overflow-hidden group before:absolute before:inset-0 before:bg-white/20 before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700" 
+                class="w-full py-3 mt-1 text-sm font-bold shadow-[0_8px_30px_rgb(79,70,229,0.2)] hover:shadow-[0_8px_30px_rgb(79,70,229,0.4)] hover:-translate-y-0.5 active:scale-95 transition-all duration-300 rounded-xl relative overflow-hidden group before:absolute before:inset-0 before:bg-white/30 dark:before:bg-white/10 before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700" 
                 disabled={loading}
               >
               {#if loading}
@@ -579,9 +578,9 @@
                   </div>
                   <span class="font-bold tracking-widest text-white z-10 animate-pulse">MELUNCUR...</span>
                   <div class="absolute inset-0 pointer-events-none opacity-20 flex items-center overflow-hidden">
-                    <div class="h-0.5 bg-white w-4 rounded-full absolute animate-cloud-1 right-0 top-1/4"></div>
-                    <div class="h-0.5 bg-white w-8 rounded-full absolute animate-cloud-2 right-0 bottom-1/4"></div>
-                    <div class="h-0.5 bg-white w-2 rounded-full absolute animate-cloud-3 right-0 top-1/2"></div>
+                    <div class="h-0.5 bg-white dark:bg-slate-900 w-4 rounded-full absolute animate-cloud-1 right-0 top-1/4"></div>
+                    <div class="h-0.5 bg-white dark:bg-slate-900 w-8 rounded-full absolute animate-cloud-2 right-0 bottom-1/4"></div>
+                    <div class="h-0.5 bg-white dark:bg-slate-900 w-2 rounded-full absolute animate-cloud-3 right-0 top-1/2"></div>
                   </div>
                 </span>
               {:else}
@@ -595,51 +594,51 @@
           </form>
 
           <!-- Bantuan Login & Lupa NIS -->
-          <div class="mt-8 pt-6 border-t border-slate-100/80 text-center" in:fly|global={{ y: 10, duration: 400, delay: 450 }}>
-            <p class="text-sm font-semibold text-slate-600 mb-4">
+          <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-center" in:fly|global={{ y: 10, duration: 400, delay: 450 }}>
+            <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
               Lupa atau tidak tahu NIS Anda? <br />
               <button type="button" class="text-primary font-bold hover:underline mt-1.5 inline-flex items-center" on:click={() => showLupaNisModal = true}>
                 <Search class="w-4 h-4 mr-1.5" /> Cari NIS Saya di Sini
               </button>
             </p>
-            <p class="text-xs text-slate-400 font-medium pt-3 border-t border-slate-50/50">
+            <p class="text-xs text-slate-400 dark:text-slate-500 font-medium pt-3 border-t border-slate-50/50">
               Mengalami masalah lain? <br class="lg:hidden" />
-              <a href="https://wa.me/6285111653232" target="_blank" class="text-slate-500 font-bold hover:text-primary transition-colors">Hubungi ADMIN</a>
+              <a href="https://wa.me/6285111653232" target="_blank" class="text-slate-500 dark:text-slate-400 dark:text-slate-500 font-bold hover:text-primary transition-colors">Hubungi ADMIN</a>
               <span class="mx-2 text-slate-300">•</span>
-              <button type="button" class="text-slate-500 font-bold hover:text-primary transition-colors" on:click={() => showGuestFeedbackModal = true}>Kotak Saran</button>
+              <button type="button" class="text-slate-500 dark:text-slate-400 dark:text-slate-500 font-bold hover:text-primary transition-colors" on:click={() => showGuestFeedbackModal = true}>Kotak Saran</button>
             </p>
           </div>
 
           <!-- Footer (Play Store & Social Media) -->
-          <div class="mt-8 pt-8 border-t border-slate-100/80 text-center space-y-6" in:fly|global={{ y: 10, duration: 400, delay: 550 }}>
+          <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-center space-y-1.5" in:fly|global={{ y: 10, duration: 400, delay: 550 }}>
             <!-- Google Play -->
             <a href="https://play.google.com/store/apps/details?id=com.miHoYo.GenshinImpact" target="_blank" class="inline-block transition-transform hover:scale-105">
-              <img src="/google-play-badge.png" alt="Get it on Google Play" class="h-11 w-auto mx-auto" />
+              <img src="/google-play-badge.png" alt="Get it on Google Play" class="h-8 w-auto mx-auto" />
             </a>
             
             <!-- Copyright -->
-            <p class="text-[11px] font-bold text-slate-500 tracking-wide">© 2026 MAZEEDA | MA HMQ LIRBOYO</p>
+            <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 tracking-wide">© 2026 MAZEEDA | MA HMQ LIRBOYO</p>
             
             <!-- Social Icons -->
-            <div class="flex items-center justify-center gap-3">
+            <div class="flex items-center justify-center gap-2">
               <!-- WhatsApp -->
-              <a href="https://wa.me/6285111653232" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="WhatsApp MAZEEDA">
+              <a href="https://wa.me/6285111653232" target="_blank" rel="noopener noreferrer" class="h-7 w-7 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="WhatsApp MAZEEDA">
                 <img src="/whatsapp.png" alt="WhatsApp" class="h-full w-full object-contain scale-[0.88] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- Instagram -->
-              <a href="https://instagram.com/mazeedahmqlirboyo" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="Instagram MAZEEDA">
+              <a href="https://instagram.com/mazeedahmqlirboyo" target="_blank" rel="noopener noreferrer" class="h-7 w-7 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="Instagram MAZEEDA">
                 <img src="/instagram.png" alt="Instagram" class="h-full w-full object-contain scale-[0.98] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- X / Twitter -->
-              <a href="https://x.com/MAZEEDA_HMQ_LBY" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="Twitter MAZEEDA">
+              <a href="https://x.com/MAZEEDA_HMQ_LBY" target="_blank" rel="noopener noreferrer" class="h-7 w-7 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="Twitter MAZEEDA">
                 <img src="/twitter.png" alt="Twitter" class="h-full w-full object-contain scale-[0.87] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- TikTok -->
-              <a href="https://tiktok.com/@mazeedahmqlirboyo" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="TikTok MAZEEDA">
+              <a href="https://tiktok.com/@mazeedahmqlirboyo" target="_blank" rel="noopener noreferrer" class="h-7 w-7 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="TikTok MAZEEDA">
                 <img src="/tiktok.png" alt="TikTok" class="h-full w-full object-contain scale-[0.87] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
               <!-- YouTube -->
-              <a href="https://www.youtube.com/@HaloMazeeda" target="_blank" rel="noopener noreferrer" class="h-9 w-9 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="YouTube MAZEEDA">
+              <a href="https://www.youtube.com/@HaloMazeeda" target="_blank" rel="noopener noreferrer" class="h-7 w-7 flex items-center justify-center transition-all hover:scale-110 active:scale-95 duration-200" title="YouTube MAZEEDA">
                 <img src="/youtube.png" alt="YouTube" class="h-full w-full object-contain scale-[0.90] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.12)]" />
               </a>
             </div>
@@ -652,13 +651,13 @@
   <!-- Modal Lupa NIS -->
   {#if showLupaNisModal}
     <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" transition:fade={{ duration: 200 }}>
-      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100" transition:scale={{ duration: 300, start: 0.95 }}>
-        <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <h3 class="text-lg font-bold text-slate-800 flex items-center">
+      <div class="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800" transition:scale={{ duration: 300, start: 0.95 }}>
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center">
             <Search class="w-5 h-5 mr-2 text-primary" />
             Cari NIS Saya
           </h3>
-          <button class="text-slate-400 hover:text-rose-500 transition-colors p-1 rounded-full hover:bg-rose-50" on:click={() => showLupaNisModal = false}>
+          <button class="text-slate-400 dark:text-slate-500 hover:text-rose-500 transition-colors p-1 rounded-full hover:bg-rose-50" on:click={() => showLupaNisModal = false}>
             <X class="w-5 h-5" />
           </button>
         </div>
@@ -672,14 +671,14 @@
 
           <form on:submit|preventDefault={handleCariNIS} class="space-y-4">
             <div class="space-y-1.5">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">NAMA LENGKAP</label>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-500 ml-1">NAMA LENGKAP</label>
               <Input bind:value={searchNamaLengkap} placeholder="CONTOH: SITI AISYAH" required disabled={isSearchingNis} class="py-3 uppercase" />
             </div>
             <div class="space-y-1.5">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">TEMPAT LAHIR</label>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-500 ml-1">TEMPAT LAHIR</label>
               <Input bind:value={searchTempatLahir} placeholder="CONTOH: KEDIRI" required disabled={isSearchingNis} class="py-3 uppercase" />
             </div>
-            <Button type="submit" class="w-full py-6 mt-4 text-base font-bold shadow-md hover:shadow-lg transition-all rounded-xl" disabled={isSearchingNis}>
+            <Button type="submit" class="w-full py-6 mt-4 text-base font-bold shadow-md dark:shadow-none hover:shadow-lg transition-all rounded-xl" disabled={isSearchingNis}>
               {isSearchingNis ? 'Mencari Data...' : 'Cari NIS Sekarang'}
             </Button>
           </form>
@@ -694,6 +693,27 @@
   input::-ms-reveal,
   input::-ms-clear {
     display: none;
+  }
+
+  /* Fix for browser autofill background color in Dark Mode */
+  :global(html.dark) input:-webkit-autofill,
+  :global(html.dark) input:-webkit-autofill:hover, 
+  :global(html.dark) input:-webkit-autofill:focus, 
+  :global(html.dark) input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 40px #0f172a inset !important;
+    -webkit-text-fill-color: #e2e8f0 !important;
+    caret-color: #e2e8f0 !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+  
+  /* Fix for browser autofill background color in Light Mode */
+  :global(html:not(.dark)) input:-webkit-autofill,
+  :global(html:not(.dark)) input:-webkit-autofill:hover, 
+  :global(html:not(.dark)) input:-webkit-autofill:focus, 
+  :global(html:not(.dark)) input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 40px #ffffff inset !important;
+    -webkit-text-fill-color: #1e293b !important;
+    transition: background-color 5000s ease-in-out 0s;
   }
 
   /* Menyembunyikan scrollbar tapi tetap bisa discroll */
@@ -758,18 +778,18 @@
     on:click={() => showGuestFeedbackModal = false}
   >
     <div 
-      class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+      class="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
       transition:scale={{ duration: 200, start: 0.95 }}
       on:click|stopPropagation
     >
       {#if !guestFeedbackSuccess}
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <MessageCircle class="w-5 h-5 text-primary" /> Kotak Saran
           </h3>
           <button 
             on:click={() => showGuestFeedbackModal = false}
-            class="p-2 -mr-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors focus:outline-none"
+            class="p-2 -mr-2 rounded-xl text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-50 transition-colors focus:outline-none"
           >
             <X class="w-5 h-5" />
           </button>
@@ -780,12 +800,12 @@
         {#if guestFeedbackSuccess}
           <div class="text-center py-8" in:fade={{ duration: 200 }}>
             <img src="/Success.svg" alt="Berhasil" class="w-48 h-48 mx-auto mb-4 object-contain scale-110" />
-            <h4 class="text-xl font-bold text-slate-800 mb-2">Terima Kasih!</h4>
-            <p class="text-sm text-slate-500">Saran dan masukan Anda telah terkirim dan akan sangat membantu kami mengembangkan aplikasi MAZEEDA.</p>
+            <h4 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Terima Kasih!</h4>
+            <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500">Saran dan masukan Anda telah terkirim dan akan sangat membantu kami mengembangkan aplikasi MAZEEDA.</p>
           </div>
         {:else}
           <div class="space-y-4">
-            <p class="text-xs text-slate-500 leading-relaxed mb-4">Punya ide fitur baru, menemukan bug, atau sekadar memberi kritik dan saran? Tulis di sini.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed mb-4">Punya ide fitur baru, menemukan bug, atau sekadar memberi kritik dan saran? Tulis di sini.</p>
             
             {#if guestFeedbackError}
               <div class="bg-rose-50/50 border border-rose-100 rounded-xl p-3 flex items-start gap-3 text-rose-600" in:fade={{duration: 200}}>
@@ -795,24 +815,24 @@
             {/if}
 
             <div>
-              <label for="guestName" class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Nama Anda</label>
+              <label for="guestName" class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-2 uppercase tracking-wider">Nama Anda</label>
               <input 
                 id="guestName" 
                 type="text"
                 placeholder="Masukkan nama lengkap" 
-                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary focus:bg-white dark:bg-slate-900 transition-colors"
                 bind:value={guestFeedbackName}
                 on:input={() => guestFeedbackError = ""}
               />
             </div>
 
             <div>
-              <label for="guestFeedback" class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Pesan Anda</label>
+              <label for="guestFeedback" class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-2 uppercase tracking-wider">Pesan Anda</label>
               <textarea 
                 id="guestFeedback" 
                 rows="4" 
                 placeholder="Tuliskan saran Anda secara detail..." 
-                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-primary focus:bg-white resize-none transition-colors"
+                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary focus:bg-white dark:bg-slate-900 resize-none transition-colors"
                 bind:value={guestFeedbackMessage}
                 on:input={() => guestFeedbackError = ""}
               ></textarea>

@@ -243,19 +243,19 @@
 </svelte:head>
 
 <!-- Progress Bar Top -->
-<div class="fixed top-0 left-0 right-0 z-50 h-1 bg-white/5">
+<div class="fixed top-0 left-0 right-0 z-50 h-1 bg-white dark:bg-slate-900/5">
   <div
     class="h-full transition-all duration-150 relative"
     style="width: {scrollProgress}%; background: linear-gradient(90deg, #38bdf8, #818cf8, #f472b6, #fbbf24);"
   >
-    <div class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-[0_0_10px_#fff]"></div>
+    <div class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white dark:bg-slate-900 shadow-[0_0_10px_#fff]"></div>
   </div>
 </div>
 
 <!-- Back Button -->
 <a
   href="/"
-  class="fixed top-5 left-5 z-50 flex items-center justify-center w-10 h-10 rounded-full text-white/70 hover:text-white transition-all duration-300 border border-white/10 hover:border-white/30 hover:bg-white/10 backdrop-blur-md"
+  class="fixed top-5 left-5 z-50 flex items-center justify-center w-10 h-10 rounded-full text-white/70 hover:text-white transition-all duration-300 border border-white/10 hover:border-white/30 hover:bg-white dark:bg-slate-900/10 backdrop-blur-md"
 >
   <ArrowLeft class="w-4 h-4" />
 </a>
@@ -287,7 +287,7 @@
       <!-- Stars -->
       {#each Array(60) as _, i}
         <div
-          class="absolute rounded-full bg-white animate-pulse"
+          class="absolute rounded-full bg-white dark:bg-slate-900 animate-pulse"
           style="
             width: {Math.random() * 2 + 1}px;
             height: {Math.random() * 2 + 1}px;
@@ -315,7 +315,7 @@
 
       <div in:fade|global={{ delay: 900, duration: 1000 }} class="flex items-center justify-center gap-4 mb-6">
         <span class="text-white/30 font-mono text-sm tracking-widest">2023</span>
-        <div class="h-px w-24 sm:w-40 relative overflow-hidden bg-white/10">
+        <div class="h-px w-24 sm:w-40 relative overflow-hidden bg-white dark:bg-slate-900/10">
           <div class="absolute inset-0 bg-gradient-to-r from-[#38bdf8] to-[#fbbf24] animate-[shimmer_3s_infinite]"></div>
         </div>
         <span class="text-white/30 font-mono text-sm tracking-widest">2032</span>
@@ -328,8 +328,8 @@
       <!-- Scroll Cue -->
       <div in:fade|global={{ delay: 1300, duration: 1000 }} class="flex flex-col items-center gap-3 text-white/30">
         <span class="text-xs tracking-widest uppercase">Mulai Menjelajah</span>
-        <div class="w-px h-16 relative overflow-hidden bg-white/10">
-          <div class="absolute top-0 left-0 w-full h-1/2 bg-white/80 animate-[scrollCue_1.5s_ease-in-out_infinite]"></div>
+        <div class="w-px h-16 relative overflow-hidden bg-white dark:bg-slate-900/10">
+          <div class="absolute top-0 left-0 w-full h-1/2 bg-white dark:bg-slate-900/80 animate-[scrollCue_1.5s_ease-in-out_infinite]"></div>
         </div>
       </div>
     </div>

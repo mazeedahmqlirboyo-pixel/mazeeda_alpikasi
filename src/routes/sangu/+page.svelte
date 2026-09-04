@@ -1,5 +1,6 @@
 <script lang="ts">
   export let params: any = undefined;
+  import { t, locale } from 'svelte-i18n';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
@@ -293,13 +294,13 @@
 
   // Set category color classes
   function getCategoryBadgeClass(category: string) {
-    if (!category) return 'bg-slate-50 text-slate-700 border-slate-100';
+    if (!category) return 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-100 dark:border-slate-800';
     switch (category.toLowerCase()) {
       case 'sholawat': return 'bg-teal-50 text-teal-700 border-teal-100';
       case 'jausyan': return 'bg-amber-50 text-amber-700 border-amber-100';
       case 'nadzom': return 'bg-blue-50 text-blue-700 border-blue-100';
       case 'doa': return 'bg-purple-50 text-purple-700 border-purple-100';
-      default: return 'bg-slate-50 text-slate-700 border-slate-100';
+      default: return 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-100 dark:border-slate-800';
     }
   }
 
@@ -477,17 +478,17 @@
     {#if !selectedItem}
   <!-- DIRECTORY GRID LIST VIEW -->
   <div class="space-y-6">
-    <PageHeader title="Sangu | Wirid" backTo="/" />
+    <PageHeader title={$t('sangu.title') || 'Sangu | Wirid'} backTo="/" />
 
     <!-- Search and Categories Header -->
         <div class="flex items-center space-x-2 relative">
           <!-- Search bar -->
           <div class="relative flex-1">
-            <Search class="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
+            <Search class="absolute left-4 top-3.5 h-5 w-5 text-slate-400 dark:text-slate-500" />
             <input 
               type="text" 
-              placeholder="Cari sholawat, nadzom, atau berkas doa..." 
-              class="flex h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 focus:bg-white transition-colors duration-200 pl-11 pr-3 text-xs text-slate-800 focus:outline-none focus:border-teal-500"
+              placeholder={$t('sangu.search_placeholder') || 'Cari sholawat, nadzom, atau berkas doa...'} 
+              class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-50 dark:bg-slate-800 focus:bg-white dark:bg-slate-900 transition-colors duration-200 pl-11 pr-3 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-teal-500"
               bind:value={searchQuery}
             />
           </div>
@@ -498,7 +499,7 @@
               type="button"
               class="relative p-3 rounded-xl border transition-all duration-200 {showFilter
                 ? 'bg-teal-600 text-white border-teal-600 shadow-soft-sm'
-                : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-600'}"
+                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}"
               on:click={() => (showFilter = !showFilter)}
               style="min-height: 44px; min-width: 44px; display: flex; align-items: center; justify-content: center;"
             >
@@ -522,15 +523,13 @@
               ></button>
 
               <div
-                class="absolute right-0 top-[calc(100%+8px)] z-20 w-60 bg-white border border-slate-200/80 rounded-2xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-1 duration-150 origin-top-right"
+                class="absolute right-0 top-[calc(100%+8px)] z-20 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-1 duration-150 origin-top-right"
               >
                 <!-- Kategori -->
                 <div class="px-3 pt-3 pb-2">
                   <p
-                    class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5"
-                  >
-                    Kategori
-                  </p>
+                    class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
+                  >{$t('sangu.category_label') || 'KATEGORI'}</p>
                   <div class="flex flex-wrap gap-1">
                     <!-- Semua -->
                     <button
@@ -539,8 +538,8 @@
                       class="px-2.5 py-1 text-[10px] font-bold rounded-full transition-all duration-150
                         {selectedCategory === 'all'
                         ? 'bg-teal-600 text-white'
-                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}"
-                      >Semua</button
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:bg-slate-700'}"
+                      >{$t('sangu.all') || 'Semua'}</button
                     >
 
                     {#if dynamicCategories.length > 0}
@@ -551,13 +550,13 @@
                           class="px-2.5 py-1 text-[10px] font-bold rounded-full transition-all duration-150
                             {selectedCategory === cat
                             ? 'bg-teal-600 text-white'
-                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}"
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:bg-slate-700'}"
                           >{getCategoryLabel(cat)}</button
                         >
                       {/each}
                     {:else}
-                      <span class="text-[10px] text-slate-400 italic"
-                        >Belum ada kategori</span
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 italic"
+                        >{$t('sangu.no_category') || 'Belum ada kategori'}</span
                       >
                     {/if}
                   </div>
@@ -565,7 +564,7 @@
 
                 <!-- Reset -->
                 {#if activeFilterCount > 0}
-                  <div class="border-t border-slate-100 px-3 py-2">
+                  <div class="border-t border-slate-100 dark:border-slate-800 px-3 py-2">
                     <button
                       type="button"
                       on:click={() => {
@@ -587,13 +586,13 @@
           <!-- Skeleton loading states -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {#each Array(4) as _}
-              <div class="p-5 bg-white border border-slate-100 rounded-2xl animate-pulse space-y-4">
-                <div class="h-4 bg-slate-100 rounded w-1/4"></div>
+              <div class="p-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl animate-pulse space-y-4">
+                <div class="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/4"></div>
                 <div class="space-y-2">
-                  <div class="h-5 bg-slate-100 rounded w-3/4"></div>
-                  <div class="h-4 bg-slate-100 rounded w-5/6"></div>
+                  <div class="h-5 bg-slate-100 dark:bg-slate-800 rounded w-3/4"></div>
+                  <div class="h-4 bg-slate-100 dark:bg-slate-800 rounded w-5/6"></div>
                 </div>
-                <div class="h-8 bg-slate-100 rounded w-full"></div>
+                <div class="h-8 bg-slate-100 dark:bg-slate-800 rounded w-full"></div>
               </div>
             {/each}
           </div>
@@ -604,7 +603,7 @@
               <!-- svelte-ignore a11y-no-static-element-interactions -->
               <div 
                 on:click={() => openDetail(item)}
-                class="group p-5 bg-white border border-slate-200/60 hover:border-teal-200 hover:shadow-soft-md rounded-2xl transition-premium cursor-pointer relative"
+                class="group p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 hover:border-teal-200 hover:shadow-soft-md rounded-2xl transition-premium cursor-pointer relative"
               >
                 <div class="space-y-2.5">
                   <div class="flex items-center justify-between">
@@ -615,7 +614,7 @@
 
                   <!-- Title -->
                   <div>
-                    <h3 class="font-extrabold text-base text-slate-800 group-hover:text-teal-700 transition-colors leading-tight">
+                    <h3 class="font-extrabold text-base text-slate-800 dark:text-slate-100 group-hover:text-teal-700 transition-colors leading-tight">
                       {item.title.toUpperCase()}
                     </h3>
                   </div>
@@ -625,14 +624,14 @@
           </div>
         {:else}
           <!-- Empty state -->
-          <div class="py-16 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/20 max-w-lg mx-auto">
+          <div class="py-16 text-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl bg-slate-50 dark:bg-slate-800/20 max-w-lg mx-auto">
             <div class="flex justify-center mb-6">
-              <img src="/images/empty-content.svg" alt="Tidak Ditemukan" class="h-40 w-auto object-contain drop-shadow-sm opacity-80 hover:opacity-100 transition-opacity" />
+              <img src="/search.svg" alt="Tidak Ditemukan" class="h-40 w-auto object-contain drop-shadow-sm dark:shadow-none opacity-80 hover:opacity-100 transition-opacity" />
             </div>
-            <h3 class="text-sm font-extrabold text-slate-600 mt-3">Tidak Ada Teks Sangu</h3>
-            <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1 leading-relaxed">
-              Tidak ditemukan berkas bacaan yang cocok untuk pencarian atau kategori ini.
-            </p>
+            <h3 class="text-sm font-extrabold text-slate-600 dark:text-slate-300 mt-3">Tidak Ada Teks Sangu</h3>
+            <p class="text-xs text-slate-400 dark:text-slate-500 max-w-xs mx-auto mt-1 leading-relaxed">
+                {$t('sangu.no_data') || 'Tidak ditemukan berkas bacaan yang cocok untuk pencarian atau kategori ini.'}
+              </p>
           </div>
         {/if}
 
@@ -642,19 +641,19 @@
       <div class="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
         
         <!-- Top Toolbar Sticky controls -->
-        <Card noPadding class="p-3 sm:p-4 border-slate-200/50 shadow-soft-sm bg-white/95 backdrop-blur-md sticky top-0 z-20 flex flex-col gap-3">
+        <Card noPadding class="p-3 sm:p-4 border-slate-200 dark:border-slate-700/50 shadow-soft-sm bg-white dark:bg-slate-900/95 backdrop-blur-md sticky top-0 z-20 flex flex-col gap-3">
           <!-- Top Row: Back button + Title & Category -->
-          <div class="flex items-center justify-between border-b border-slate-100/70 pb-2">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/70 pb-2">
             <button 
               on:click={closeDetail}
-              class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 hover:text-primary transition-colors -ml-2"
+              class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors"
             >
               <ArrowLeft class="w-5 h-5" />
             </button>
 
             <div class="text-right leading-tight ml-4 min-w-0 flex-1">
-              <h2 class="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-tight break-words whitespace-normal">{selectedItem.title}</h2>
-              <span class="text-[8px] sm:text-[9px] font-extrabold text-slate-400 uppercase tracking-widest block mt-0.5">
+              <h2 class="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight break-words whitespace-normal">{selectedItem.title}</h2>
+              <span class="text-[8px] sm:text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mt-0.5">
                 Kategori: {getCategoryLabel(selectedItem.category)}
               </span>
             </div>
@@ -664,31 +663,31 @@
           <div class="flex flex-wrap items-center gap-2 md:gap-3 justify-between md:justify-start">
             <div class="flex flex-wrap items-center gap-2">
               <!-- Arabic font size slider -->
-              <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg shrink-0">
-                <Settings class="h-3.5 w-3.5 text-slate-400" />
-                <span class="text-[9px] font-bold text-slate-500">Huruf:</span>
+              <div class="flex items-center space-x-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded-lg shrink-0">
+                <Settings class="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+                <span class="text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">{$t('sangu.font_size') || 'Huruf:'}</span>
                 <input 
                   type="range" 
                   min="20" 
                   max="44" 
-                  class="accent-teal-600 w-16 sm:w-20 cursor-pointer h-1 bg-slate-200 rounded-lg"
+                  class="accent-teal-600 w-16 sm:w-20 cursor-pointer h-1 bg-slate-200 dark:bg-slate-700 rounded-lg"
                   bind:value={arabicFontSize}
                 />
-                <span class="text-[9px] font-black text-slate-600 w-6 text-right">{arabicFontSize}px</span>
+                <span class="text-[9px] font-black text-slate-600 dark:text-slate-300 w-6 text-right">{arabicFontSize}px</span>
               </div>
 
               <!-- Visibility toggles for Terjemah and Latin -->
-              <div class="flex items-center space-x-4 text-[9px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg shrink-0">
+              <div class="flex items-center space-x-4 text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 px-3 py-1.5 rounded-lg shrink-0">
                 <label class="relative inline-flex items-center cursor-pointer select-none group">
                   <input type="checkbox" bind:checked={showLatin} class="sr-only peer" />
-                  <div class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-teal-600 group-hover:after:bg-slate-50"></div>
-                  <span class="ml-2 group-hover:text-slate-700 transition-colors">Latin</span>
+                  <div class="w-7 h-4 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-slate-900 after:border-slate-300 dark:border-slate-600 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-teal-600 group-hover:after:bg-slate-50 dark:bg-slate-800"></div>
+                  <span class="ml-2 group-hover:text-slate-700 dark:text-slate-200 transition-colors">{$t('sangu.latin') || 'Latin'}</span>
                 </label>
 
                 <label class="relative inline-flex items-center cursor-pointer select-none group">
                   <input type="checkbox" bind:checked={showTranslation} class="sr-only peer" />
-                  <div class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-teal-600 group-hover:after:bg-slate-50"></div>
-                  <span class="ml-2 group-hover:text-slate-700 transition-colors">Terjemah</span>
+                  <div class="w-7 h-4 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-slate-900 after:border-slate-300 dark:border-slate-600 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-teal-600 group-hover:after:bg-slate-50 dark:bg-slate-800"></div>
+                  <span class="ml-2 group-hover:text-slate-700 dark:text-slate-200 transition-colors">{$t('sangu.translation') || 'Terjemah'}</span>
                 </label>
               </div>
             </div>
@@ -697,7 +696,7 @@
         </Card>
 
         <!-- Unified Paper-like Reader Canvas -->
-        <Card noPadding class="border-slate-200/60 shadow-soft-sm bg-[#FCFBF7] text-slate-800 relative select-none">
+        <Card noPadding class="border-slate-200 dark:border-slate-700/60 shadow-soft-sm bg-[#FCFBF7] dark:bg-slate-900 text-slate-800 dark:text-slate-100 relative select-none">
           <!-- Spiritual backdrop pattern -->
           <div class="absolute inset-0 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.02] pointer-events-none"></div>
           
@@ -728,9 +727,9 @@
       
       <form on:submit|preventDefault={handleSaveSangu} class="space-y-4">
         <!-- Sticky Action Bar for Form -->
-        <Card noPadding class="p-3 sm:p-4 border-slate-200/50 shadow-soft-sm bg-white/95 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between gap-4">
+        <Card noPadding class="p-3 sm:p-4 border-slate-200 dark:border-slate-700/50 shadow-soft-sm bg-white dark:bg-slate-900/95 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between gap-4">
           <!-- Title and Icon -->
-          <h2 class="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-2">
+          <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
             {#if editingId}
               <Edit class="h-4.5 w-4.5 text-teal-600 shrink-0" />
               <span class="truncate max-w-[150px] sm:max-w-xs">Edit Catatan Sangu</span>
@@ -745,7 +744,7 @@
             <button 
               type="button" 
               on:click={cancelEdit} 
-              class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-premium cursor-pointer"
+              class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 transition-premium cursor-pointer"
               style="min-height: 36px;"
             >
               Batal
@@ -765,7 +764,7 @@
         <Card class="p-6 space-y-4">
           <!-- Title -->
           <div class="space-y-1.5">
-            <label for="title" class="text-xs font-bold text-slate-500">Judul Sangu / Wirid <span class="text-red-500">*</span></label>
+            <label for="title" class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">Judul Sangu / Wirid <span class="text-red-500">*</span></label>
             <Input 
               id="title" 
               type="text" 
@@ -777,10 +776,10 @@
 
           <!-- Category dropdown -->
           <div class="space-y-1.5">
-            <label for="category" class="text-xs font-bold text-slate-500">Kategori <span class="text-red-500">*</span></label>
+            <label for="category" class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">{$t('sangu.category_label') || 'KATEGORI'}<span class="text-red-500">*</span></label>
             <select
               id="category"
-              class="flex h-12 w-full rounded-xl border border-border bg-white px-3 text-xs font-semibold text-slate-700 focus:border-teal-500 focus:outline-none"
+              class="flex h-12 w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-3 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:border-teal-500 focus:outline-none"
               bind:value={newCategory}
             >
               {#each Array.from(new Set(['sholawat', 'jausyan', 'nadzom', 'doa', 'others', ...dynamicCategories])) as cat}
@@ -792,7 +791,7 @@
 
           {#if newCategory === 'new'}
             <div class="space-y-1.5" transition:slide>
-              <label for="newCustomCategory" class="text-xs font-bold text-slate-500">Nama Kategori Baru <span class="text-red-500">*</span></label>
+              <label for="newCustomCategory" class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">Nama Kategori Baru <span class="text-red-500">*</span></label>
               <Input
                 id="newCustomCategory"
                 type="text"
@@ -804,10 +803,10 @@
           {/if}
 
           <!-- Rich Text Content Editor -->
-          <div class="space-y-2 border-t border-slate-100 pt-4">
+          <div class="space-y-2 border-t border-slate-100 dark:border-slate-800 pt-4">
             <div class="flex flex-col space-y-1 mb-2">
-              <label for="rich-editor" class="text-xs font-bold text-slate-500">Isi Konten Sangu <span class="text-red-500">*</span></label>
-              <p class="text-[10px] text-slate-400">
+              <label for="rich-editor" class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">Isi Konten Sangu <span class="text-red-500">*</span></label>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500">
                 Gunakan editor di bawah untuk menulis konten Sangu. Blok teks Arab dan klik <strong>Format Arab</strong> dan <strong>RTL</strong> untuk meratakan dan menampilkan font Arab Mushaf secara optimal.
               </p>
             </div>
@@ -841,6 +840,9 @@
     display: block !important;
     margin-top: 1.5rem !important;
     margin-bottom: 1.5rem !important;
+  }
+  :global(.dark) .sangu-reader-content :global(.sangu-heading) {
+    color: #f1f5f9 !important;
   }
   
   .sangu-reader-content :global(.sangu-latin.sangu-heading) {
@@ -883,9 +885,15 @@
   .sangu-reader-content :global(.sangu-latin):not(h1):not(h2):not(.sangu-heading) {
     color: #334155 !important;
   }
+  :global(.dark) .sangu-reader-content :global(.sangu-latin):not(h1):not(h2):not(.sangu-heading) {
+    color: #e2e8f0 !important;
+  }
 
   .sangu-reader-content :global(.sangu-translation):not(h1):not(h2):not(.sangu-heading) {
     color: #2563eb !important;
+  }
+  :global(.dark) .sangu-reader-content :global(.sangu-translation):not(h1):not(h2):not(.sangu-heading) {
+    color: #93c5fd !important;
   }
 
   .sangu-reader-content :global(.sangu-nadzom),
@@ -934,12 +942,18 @@
     margin-bottom: 0.75rem;
     color: #1E293B;
   }
+  :global(.dark) .sangu-reader-content :global(h1) {
+    color: #f1f5f9;
+  }
   .sangu-reader-content :global(h2) {
     font-size: 1.25em;
     font-weight: 700;
     margin-top: 1.25rem;
     margin-bottom: 0.75rem;
     color: #1E293B;
+  }
+  :global(.dark) .sangu-reader-content :global(h2) {
+    color: #f1f5f9;
   }
   .sangu-reader-content :global(blockquote) {
     border-left: 4px solid #0d9488;

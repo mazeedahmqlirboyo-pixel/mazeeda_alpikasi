@@ -9,10 +9,10 @@
   let showLightbox = false;
 </script>
 
-<div class="min-h-screen bg-[#F8FAFC] pb-24 font-sans selection:bg-amber-100 selection:text-amber-900">
+<div class="min-h-screen bg-[#F8FAFC] dark:bg-slate-900 pb-24 font-sans selection:bg-amber-100 selection:text-amber-900">
   
-  <PageHeader noMargin={true} title="Profil Murobbi" backTo="/khasanah/mozaik" />
-  <div class="max-w-4xl mx-auto bg-white lg:rounded-3xl lg:shadow-xl lg:overflow-hidden relative border-slate-100 lg:border mt-0 lg:mt-8 mb-8">
+  <PageHeader noMargin={true} title={kyai.name} backTo="/khasanah/mozaik" variant="small" />
+  <div class="max-w-4xl mx-auto bg-white dark:bg-slate-900 lg:rounded-3xl lg:shadow-xl lg:overflow-hidden relative border-slate-100 dark:border-slate-800 lg:border mt-0 lg:mt-8 mb-8">
 
     <!-- Hero Section with Premium feel -->
     <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -40,15 +40,15 @@
     </div>
 
     <main class="max-w-3xl mx-auto px-0 sm:px-4 lg:px-8">
-      <article class="bg-white rounded-t-[2.5rem] sm:rounded-3xl px-6 py-10 sm:p-10 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)] lg:shadow-none border-t border-x border-white/50 lg:border-none -mt-16 relative z-10 
-        prose prose-slate prose-lg max-w-none
-        prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-slate-900
+      <article class="bg-white dark:bg-slate-900 rounded-[2.5rem] sm:rounded-3xl px-6 py-10 sm:p-10 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)] lg:shadow-none border border-white/50 dark:border-slate-800 lg:border-none -mt-16 relative z-10 
+        prose prose-slate dark:prose-invert dark:prose-p:text-slate-100 dark:prose-headings:text-white prose-lg max-w-none
+        prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-slate-900 dark:text-white
         prose-a:text-amber-600 prose-a:no-underline hover:prose-a:text-amber-700
-        prose-img:rounded-2xl prose-img:shadow-md
-        text-slate-700 leading-relaxed">
+        prose-img:rounded-2xl prose-img:shadow-md dark:shadow-none
+        text-slate-700 dark:text-slate-200 leading-relaxed">
         
         <!-- Decorative pull tab for mobile -->
-        <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8 sm:hidden"></div>
+        <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-8 sm:hidden"></div>
         
         <!-- Dynamic HTML Rendering -->
         {@html kyai.content}
@@ -61,7 +61,7 @@
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4" on:click={() => showLightbox = false} transition:fade={{ duration: 200 }}>
-    <button class="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors" on:click={() => showLightbox = false}>
+    <button class="absolute top-4 right-4 p-3 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-full text-white transition-colors" on:click={() => showLightbox = false}>
       <X class="w-6 h-6" />
     </button>
     <img src={kyai.image_url} alt={kyai.name} class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" on:click|stopPropagation />
@@ -70,6 +70,10 @@
 
 <style>
   /* Global styles for dynamic HTML content injected via @html */
+  :global(.dark .prose), :global(.dark .prose *) {
+    color: white !important;
+  }
+
   :global(.prose p) {
     text-align: justify;
     hyphens: auto;

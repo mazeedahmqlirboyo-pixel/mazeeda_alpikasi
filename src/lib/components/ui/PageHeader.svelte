@@ -9,17 +9,17 @@
   export let noMargin: boolean = false;
 </script>
 
-<header class="sticky top-0 z-40 {transparent ? 'bg-transparent' : 'bg-white/90 backdrop-blur-md'} border-b {transparent ? 'border-transparent' : 'border-slate-100/80'} shadow-sm {noMargin ? '' : '-mx-2 sm:-mx-4 md:-mx-8'} mb-6">
-  <div class="relative flex items-center justify-center w-full h-14">
-    <a href={backTo} class="absolute left-2 sm:left-4 md:left-6 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 hover:text-primary transition-colors z-10">
+<header class="sticky top-0 z-40 {transparent ? 'bg-transparent' : 'bg-white dark:bg-slate-900/90 backdrop-blur-md'} border-b {transparent ? 'border-transparent' : 'border-slate-100 dark:border-slate-800/80'} shadow-sm dark:shadow-none {noMargin ? '' : '-mx-4 sm:-mx-6 px-4 sm:px-6'} mb-6 pb-2">
+  <div class="flex items-center justify-between relative w-full">
+    <a href={backTo} class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors shrink-0">
       <ArrowLeft class="w-5 h-5" />
     </a>
     
-    <h1 class="{variant === 'small' ? 'text-[11px] font-bold text-slate-500' : 'text-sm font-black text-slate-800'} uppercase tracking-widest text-center whitespace-nowrap pointer-events-none">
+    <h1 class="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block whitespace-nowrap pointer-events-none">
       {title}
     </h1>
     
-    <div class="absolute right-2 sm:right-4 md:right-6 top-1/2 -translate-y-1/2 flex items-center justify-end z-10">
+    <div class="flex items-center justify-end shrink-0 w-10 h-10">
       <slot name="right" />
     </div>
   </div>

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { supabase } from '$lib/supabase';
+  import { t, locale } from 'svelte-i18n';
   import Card from '$lib/components/ui/card.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import ImageLightbox from '$lib/components/ImageLightbox.svelte';
@@ -143,11 +144,13 @@
     if (!url) return '';
     let cleaned = url.trim();
     if (cleaned.includes('lh3.googleusercontent.com/u/0/d/')) {
-      return cleaned.replace('lh3.googleusercontent.com/u/0/d/', 'lh3.googleusercontent.com/d/');
+      const match = cleaned.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
     }
     const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
-                  cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    if (match && match[1]) return `https://lh3.googleusercontent.com/d/${match[1]}`;
+                  cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/) ||
+                  cleaned.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
     return cleaned;
   }
 
@@ -234,10 +237,12 @@
     }
   }
 
-  function displayNilai(nilai: any) {
+  function displayNilai(nilai: any, currentLocale: string | null = null) {
     const n = parseFloat(nilai);
     if (isNaN(n)) return nilai ?? '-';
-    return n < 0 ? '0' : String(nilai);
+    const num = n < 0 ? 0 : n;
+    if (currentLocale === 'ar') return Number(num).toLocaleString('ar-EG');
+    return String(num);
   }
 
   // New color logic for 0-10 scale
@@ -517,7 +522,7 @@
                               <span class="text-[10px] text-slate-400 font-medium italic">{row.catatan}</span>
                             {/if}
                             <span class="inline-block min-w-[36px] text-center px-2 py-0.5 rounded-full font-black text-white text-xs {getNilaiColor(row.nilai)}">
-                              {displayNilai(row.nilai)}
+                              {displayNilai(row.nilai, $locale)}
                             </span>
                           </div>
                         </div>
@@ -562,7 +567,7 @@
                               <span class="text-[10px] text-slate-400 font-medium italic">{row.catatan}</span>
                             {/if}
                             <span class="inline-block min-w-[36px] text-center px-2 py-0.5 rounded-full font-black text-white text-xs {getNilaiColor(row.nilai)}">
-                              {displayNilai(row.nilai)}
+                              {displayNilai(row.nilai, $locale)}
                             </span>
                           </div>
                         </div>
@@ -642,14 +647,14 @@
 
   {:else}
     <!-- ===================== SEARCH VIEW ===================== -->
-    <PageHeader title="Nilai Akademik" backTo="/" />
+    <PageHeader title={$t("nilai.page_title") || "Nilai Akademik"} backTo="/" />
 
     <!-- Search Bar Only -->
     <div class="relative mt-2">
       <Search class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
       <input
         type="text"
-        placeholder="Ketik nama santri..."
+        placeholder={$t("nilai.search_placeholder") || "Ketik nama santri..."}
         bind:value={searchQuery}
         class="w-full pl-11 pr-10 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-800 placeholder-slate-400 text-sm font-semibold focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm transition-all"
       />
@@ -661,23 +666,24 @@
     </div>
 
     <!-- Results -->
-    {#if isSearching}
-      <div class="flex flex-col items-center justify-center py-10 gap-3 text-slate-400">
-        <img src="/images/loading.svg" alt="Loading" class="w-24 h-24 object-contain animate-pulse" />
-        <span class="text-sm font-semibold">Mencari data...</span>
+    {#if isSearching || (hasSearched && searchResults.length === 0)}
+      <div class="flex flex-col items-center justify-center min-h-[300px] text-center px-4">
+        {#if isSearching}
+          <div class="flex flex-col items-center justify-center gap-4 py-8">
+            <img src="/loading-paperplane.svg" alt="Loading" class="w-32 h-32 object-contain animate-pulse" />
+            <span class="text-sm font-semibold">{$t("nilai.searching") || "Mencari data..."}</span>
+          </div>
+        {:else if searchQuery && searchResults.length === 0}
+          <div class="flex flex-col items-center justify-center gap-4 py-8">
+            <img src="/search.svg" alt="Data kosong" class="h-32 w-auto opacity-90 drop-shadow-sm transition-all hover:scale-105 duration-300 ease-out" />
+            <p class="text-sm font-semibold mt-2">{$t("nilai.empty_not_found") || "Tidak ditemukan santri dengan nama"} "<strong class="text-slate-600 dark:text-slate-300">{searchQuery}</strong>"</p>
+          </div>
+        {/if}
       </div>
-
-    {:else if hasSearched && searchResults.length === 0}
-      <Card class="p-10 text-center">
-        <div class="flex flex-col items-center gap-3 text-slate-400">
-          <img src="/Empty content.svg" alt="Data kosong" class="w-40 sm:w-48 h-auto opacity-90 drop-shadow-sm transition-all hover:scale-105 duration-300 ease-out" />
-          <p class="text-sm font-semibold mt-2">Tidak ditemukan santri dengan nama "<strong class="text-slate-600">{searchQuery}</strong>"</p>
-        </div>
-      </Card>
 
     {:else if searchResults.length > 0}
       <div class="space-y-1.5 mt-3">
-        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 mb-2">{searchResults.length} santri ditemukan</p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 mb-2">{searchResults.length} {$t("nilai.students_found") || "santri ditemukan"}</p>
         {#each searchResults as student}
           {@const accent = getAccent(student.nama_lengkap)}
           <button type="button" on:click={() => selectStudent(student)} class="w-full text-left group">
@@ -719,21 +725,21 @@
             style="width: 200px; height: 200px; object-fit: contain;"
           />
           <div class="space-y-1">
-            <p class="text-sm font-bold text-slate-600">Cari nama santri di atas</p>
-            <p class="text-xs">Minimal 2 karakter untuk memulai pencarian</p>
+            <p class="text-sm font-bold text-slate-600">{$t("nilai.empty_title") || "Cari nama santri di atas"}</p>
+            <p class="text-xs">{$t("nilai.empty_desc") || "Minimal 2 karakter untuk memulai pencarian"}</p>
           </div>
           <div class="flex items-center justify-center gap-6 mt-6">
             <div class="flex flex-col items-center gap-1.5">
               <div class="w-3.5 h-3.5 rounded-full bg-emerald-500"></div>
-              <p class="text-[10px] font-bold text-slate-500">≥ 8 Baik</p>
+              <p class="text-[10px] font-bold text-slate-500">{$t("nilai.legend_good") || "≥ 8 Baik"}</p>
             </div>
             <div class="flex flex-col items-center gap-1.5">
               <div class="w-3.5 h-3.5 rounded-full bg-amber-500"></div>
-              <p class="text-[10px] font-bold text-slate-500">≥ 6.5 Cukup</p>
+              <p class="text-[10px] font-bold text-slate-500">{$t("nilai.legend_fair") || "≥ 6.5 Cukup"}</p>
             </div>
             <div class="flex flex-col items-center gap-1.5">
               <div class="w-3.5 h-3.5 rounded-full bg-rose-500"></div>
-              <p class="text-[10px] font-bold text-slate-500">&lt; 6.5 Kurang</p>
+              <p class="text-[10px] font-bold text-slate-500">{$t("nilai.legend_poor") || "&lt; 6.5 Kurang"}</p>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { t, locale } from 'svelte-i18n';
   import { fade, slide, scale } from 'svelte/transition';
   import { goto } from '$app/navigation';
   import { authStore } from '$lib/auth';
@@ -190,7 +191,7 @@
   }
 
   function deleteWallet(id: string) {
-    openConfirm('Hapus Buku Catatan', 'Yakin ingin menghapus buku ini beserta seluruh transaksinya?', () => {
+    openConfirm($t('keuangan.delete_book') || 'Hapus Buku Catatan', $t('keuangan.delete_book_confirm') || 'Yakin ingin menghapus buku ini beserta seluruh transaksinya?', () => {
       wallets = wallets.filter(w => w.id !== id);
       transactions = transactions.filter(t => t.walletId !== id);
       
@@ -292,25 +293,52 @@
 
   function handleDelete(id: string, e: Event) {
     e.stopPropagation();
-    openConfirm('Hapus Transaksi', 'Yakin ingin menghapus catatan ini?', () => {
+    openConfirm($t('keuangan.delete_transaction') || 'Hapus Transaksi', $t('keuangan.delete_transaction_confirm') || 'Yakin ingin menghapus catatan ini?', () => {
       transactions = transactions.filter(t => t.id !== id);
       saveData();
       closeModal();
     });
   }
 
-  function formatIDR(amount: number) {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
-  }
+  
+  $: getCategoryTranslation = (cat: string) => {
+    const map: Record<string, string> = {
+      'Tabungan (Savings)': $t('keuangan.cat_savings') || 'Tabungan',
+      'Gaji (Salary)': $t('keuangan.cat_salary') || 'Gaji',
+      'Pengembalian Dana (Refund)': $t('keuangan.cat_refund') || 'Pengembalian Dana',
+      'Investasi (Investment)': $t('keuangan.cat_investment') || 'Investasi',
+      'Hadiah (Gift)': $t('keuangan.cat_gift') || 'Hadiah',
+      'Transfer Rekening (Transfer)': $t('keuangan.cat_transfer') || 'Transfer Rekening',
+      'Belanja (Shopping)': $t('keuangan.cat_shopping') || 'Belanja',
+      'Tagihan (Bills)': $t('keuangan.cat_bills') || 'Tagihan',
+      'Top Up e-Wallet': $t('keuangan.cat_topup') || 'Top Up e-Wallet'
+    };
+    return map[cat] || cat;
+  };
 
-  function formatCompactIDR(amount: number) {
-    return new Intl.NumberFormat('id-ID', { 
+  $: formatIDR = (amount: number) => {
+    let str = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
+    if ($locale === 'ar') {
+      const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+      str = str.replace(/[0-9]/g, w => arabicNumbers[parseInt(w)]);
+    }
+    return str;
+  };
+
+  $: formatCompactIDR = (amount: number) => {
+    let str = new Intl.NumberFormat('id-ID', { 
       style: 'currency', 
       currency: 'IDR', 
       notation: 'compact', 
       maximumFractionDigits: 1 
     }).format(amount);
-  }
+    if ($locale === 'ar') {
+      const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+      str = str.replace(/[0-9]/g, w => arabicNumbers[parseInt(w)]);
+    }
+    return str;
+  };
+
 
   function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -321,9 +349,9 @@
   <title>Cash Flow | MAZEEDA</title>
 </svelte:head>
 
-<div class="min-h-screen bg-slate-50 pb-20">
+<div class="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
   <!-- Header -->
-  <PageHeader title="Manajemen Uang" backText="Dashboard" />
+  <PageHeader title={$t('keuangan.title') || 'Manajemen Uang'} backText="Dashboard" />
 
   <main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
     {#if !isLoaded}
@@ -334,30 +362,30 @@
       <!-- Balance Card -->
       <div class="bg-primary rounded-3xl p-6 text-white shadow-lg shadow-primary/30 relative overflow-hidden">
         <!-- Decoration -->
-        <div class="absolute -right-4 -top-4 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="absolute -left-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none"></div>
+        <div class="hidden dark:block absolute -right-4 -top-4 w-32 h-32 bg-white dark:bg-slate-900/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="hidden dark:block absolute -left-4 -bottom-4 w-24 h-24 bg-white dark:bg-slate-900/5 rounded-full blur-xl pointer-events-none"></div>
         
         <div class="relative z-10 space-y-1">
-          <p class="text-white/80 text-sm font-medium">Sisa Saldo Anda</p>
+          <p class="text-white/80 text-sm font-medium">{$t('keuangan.balance') || 'Sisa Saldo Anda'}</p>
           <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight break-all">{formatIDR(currentBalance)}</h2>
         </div>
 
         <div class="grid grid-cols-2 gap-4 mt-8 relative z-10">
-          <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100/50">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm dark:shadow-none border border-slate-100 dark:border-slate-800/50">
             <div class="flex items-center gap-2 mb-1">
               <div class="p-1 rounded-full bg-emerald-50 text-emerald-500">
                 <ArrowDownCircle class="w-4 h-4" />
               </div>
-              <p class="text-slate-500 text-xs font-bold">Pemasukan</p>
+              <p class="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-xs font-bold">{$t('keuangan.income') || 'Pemasukan'}</p>
             </div>
             <p class="font-black text-emerald-600 text-base break-all">{formatIDR(totalIncome)}</p>
           </div>
-          <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100/50">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm dark:shadow-none border border-slate-100 dark:border-slate-800/50">
             <div class="flex items-center gap-2 mb-1">
               <div class="p-1 rounded-full bg-rose-50 text-rose-500">
                 <ArrowUpCircle class="w-4 h-4" />
               </div>
-              <p class="text-slate-500 text-xs font-bold">Pengeluaran</p>
+              <p class="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-xs font-bold">{$t('keuangan.expense') || 'Pengeluaran'}</p>
             </div>
             <p class="font-black text-rose-600 text-base break-all">{formatIDR(totalExpense)}</p>
           </div>
@@ -369,10 +397,10 @@
         <div class="relative flex-1">
           <button 
             on:click={() => showWalletDropdown = !showWalletDropdown}
-            class="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 font-bold text-slate-800 shadow-sm outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-between text-lg"
+            class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 font-bold text-slate-800 dark:text-slate-100 shadow-sm dark:shadow-none outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-between text-lg"
           >
-            <span class="truncate">{wallets.find(w => w.id === activeWalletId)?.name}</span>
-            <ChevronDown class="w-5 h-5 text-slate-400 transition-transform {showWalletDropdown ? 'rotate-180' : ''} shrink-0" />
+            <span class="truncate">{wallets.find(w => w.id === activeWalletId)?.id === 'default' ? ($t('keuangan.default_wallet') || 'Uang Pribadi') : wallets.find(w => w.id === activeWalletId)?.name}</span>
+            <ChevronDown class="w-5 h-5 text-slate-400 dark:text-slate-500 transition-transform {showWalletDropdown ? 'rotate-180' : ''} shrink-0" />
           </button>
           
           {#if showWalletDropdown}
@@ -380,16 +408,16 @@
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div class="fixed inset-0 z-40" on:click={() => showWalletDropdown = false}></div>
             <div 
-              class="absolute z-50 mt-2 w-full bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden"
+              class="absolute z-50 mt-2 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden"
               transition:slide={{ duration: 200 }}
             >
               <div class="max-h-60 overflow-y-auto py-2">
                 {#each wallets as w}
                   <button 
-                    class="w-full px-4 py-3 text-left font-bold transition-colors hover:bg-slate-50 flex items-center justify-between {activeWalletId === w.id ? 'text-blue-600 bg-blue-50/50' : 'text-slate-700'}"
+                    class="w-full px-4 py-3 text-left font-bold transition-colors hover:bg-slate-50 dark:bg-slate-800 flex items-center justify-between {activeWalletId === w.id ? 'text-blue-600 bg-blue-50/50' : 'text-slate-700 dark:text-slate-200'}"
                     on:click={() => { activeWalletId = w.id; showWalletDropdown = false; }}
                   >
-                    <span class="truncate">{w.name}</span>
+                    <span class="truncate">{w.id === 'default' ? ($t('keuangan.default_wallet') || 'Uang Pribadi') : w.name}</span>
                     {#if activeWalletId === w.id}
                       <div class="w-2 h-2 rounded-full bg-blue-600 shrink-0"></div>
                     {/if}
@@ -401,14 +429,14 @@
         </div>
         <button 
           on:click={openWalletModal} 
-          class="bg-blue-50 text-blue-600 p-3 rounded-2xl hover:bg-blue-100 transition-colors shadow-sm flex items-center justify-center shrink-0"
+          class="bg-blue-50 text-blue-600 p-3 rounded-2xl hover:bg-blue-100 transition-colors shadow-sm dark:shadow-none flex items-center justify-center shrink-0"
           aria-label="Tambah Buku"
         >
           <Plus class="w-6 h-6" />
         </button>
         <button 
           on:click={() => deleteWallet(activeWalletId)} 
-          class="bg-rose-50 text-rose-500 p-3 rounded-2xl hover:bg-rose-100 transition-colors shadow-sm flex items-center justify-center shrink-0"
+          class="bg-rose-50 text-rose-500 p-3 rounded-2xl hover:bg-rose-100 transition-colors shadow-sm dark:shadow-none flex items-center justify-center shrink-0"
           aria-label="Hapus Buku"
         >
           <Trash2 class="w-6 h-6" />
@@ -418,29 +446,29 @@
       <!-- Quick Actions & History -->
       <div class="space-y-4">
         <div class="flex items-center justify-between">
-          <h3 class="font-bold text-slate-800 flex items-center gap-2">
-            <History class="w-4 h-4 text-slate-400" />
-            Riwayat Transaksi
+          <h3 class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <History class="w-4 h-4 text-slate-400 dark:text-slate-500" />
+            {$t('keuangan.transaction_history') || 'Riwayat Transaksi'}
           </h3>
           <button 
             on:click={() => openModal()}
-            class="bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm"
+            class="bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm dark:shadow-none"
           >
-            <Plus class="w-3.5 h-3.5" /> Tambah Data
+            <Plus class="w-3.5 h-3.5" /> {$t('keuangan.add_data') || 'Tambah Data'}
           </button>
         </div>
 
         {#if activeTransactions.length === 0}
-          <div class="bg-white rounded-3xl p-8 text-center border border-slate-100 shadow-sm flex flex-col items-center justify-center space-y-3">
+          <div class="bg-white dark:bg-slate-900 rounded-3xl p-8 text-center border border-slate-100 dark:border-slate-800 shadow-sm dark:shadow-none flex flex-col items-center justify-center space-y-3">
             <div class="w-32 h-32 flex items-center justify-center mb-2">
               <img src="/images/wallet-animation.svg" alt="Belum ada catatan" class="w-full h-full object-contain" />
             </div>
-            <p class="text-slate-500 text-sm font-medium">Belum ada catatan keuangan.</p>
+            <p class="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-sm font-medium">{$t('keuangan.no_record') || 'Belum ada catatan keuangan.'}</p>
             <button 
               on:click={() => openModal()}
               class="text-blue-600 font-bold text-sm hover:underline"
             >
-              Mulai catat sekarang
+              {$t('keuangan.start_record') || 'Mulai catat sekarang'}
             </button>
           </div>
         {:else}
@@ -449,7 +477,7 @@
               <!-- svelte-ignore a11y-click-events-have-key-events -->
               <!-- svelte-ignore a11y-no-static-element-interactions -->
               <div 
-                class="py-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between group"
+                class="py-4 border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:bg-slate-800 transition-colors cursor-pointer flex items-center justify-between group"
                 on:click={() => openModal(t)}
                 transition:slide|local
               >
@@ -458,8 +486,8 @@
                     <svelte:component this={categoryIcons[t.category] || FileText} class="w-6 h-6" />
                   </div>
                   <div class="flex-1 min-w-0">
-                    <h4 class="font-bold text-slate-800 text-[15px] truncate mb-0.5">{t.note || t.category}</h4>
-                    <p class="text-[11px] text-slate-400 font-medium truncate">{formatDate(t.date)}</p>
+                    <h4 class="font-bold text-slate-800 dark:text-slate-100 text-[15px] truncate mb-0.5">{t.note || t.category}</h4>
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium truncate">{formatDate(t.date)}</p>
                   </div>
                 </div>
                 <div class="flex items-center gap-2 pl-3 shrink-0 pr-2 sm:pr-0 text-right">
@@ -486,19 +514,19 @@
     on:click={closeModal}
   >
     <div 
-      class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[95dvh] overflow-y-auto"
+      class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[95dvh] overflow-y-auto"
       on:click|stopPropagation
       transition:slide={{ duration: 300, axis: 'y' }}
     >
-      <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50 shrink-0 rounded-t-3xl">
-        <h3 class="font-bold text-slate-800">{isEditing ? 'Edit Transaksi' : 'Tambah Transaksi'}</h3>
+      <div class="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 shrink-0 rounded-t-3xl">
+        <h3 class="font-bold text-slate-800 dark:text-slate-100">{isEditing ? ($t('keuangan.edit_transaction') || 'Edit Transaksi') : ($t('keuangan.add_transaction') || 'Tambah Transaksi')}</h3>
         <div class="flex items-center gap-2">
           {#if isEditing && editingId}
             <button on:click={(e) => handleDelete(editingId, e)} class="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors" aria-label="Hapus">
               <Trash2 class="w-5 h-5" />
             </button>
           {/if}
-          <button on:click={closeModal} class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors" aria-label="Tutup">
+          <button on:click={closeModal} class="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800 rounded-full transition-colors" aria-label="Tutup">
             <X class="w-5 h-5" />
           </button>
         </div>
@@ -506,29 +534,29 @@
       
       <form id="form-keuangan" on:submit={handleSave} class="p-5 space-y-5">
         <!-- Type Selector -->
-        <div class="flex bg-slate-100 p-1 rounded-xl">
+        <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
           <button 
             type="button"
-            class="flex-1 py-2 text-sm font-bold rounded-lg transition-colors {formData.type === 'expense' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
+            class="flex-1 py-2 text-sm font-bold rounded-lg transition-colors {formData.type === 'expense' ? 'bg-white dark:bg-slate-900 text-rose-600 shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200'}"
             on:click={() => handleTypeChange('expense')}
           >
-            Pengeluaran
+            {$t('keuangan.expense') || 'Pengeluaran'}
           </button>
           <button 
             type="button"
-            class="flex-1 py-2 text-sm font-bold rounded-lg transition-colors {formData.type === 'income' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
+            class="flex-1 py-2 text-sm font-bold rounded-lg transition-colors {formData.type === 'income' ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200'}"
             on:click={() => handleTypeChange('income')}
           >
-            Pemasukan
+            {$t('keuangan.income') || 'Pemasukan'}
           </button>
         </div>
 
         <div class="space-y-4">
           <!-- Nominal -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider" for="amount">Nominal (Rp)</label>
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase tracking-wider" for="amount">{$t('keuangan.amount_label') || 'Nominal (Rp)'}</label>
             <div class="relative">
-              <span class="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">Rp</span>
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 dark:text-slate-500">Rp</span>
               <input 
                 id="amount"
                 type="text" 
@@ -538,22 +566,22 @@
                 on:input={handleAmountInput}
                 placeholder="0"
                 required
-                class="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 text-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                class="w-full pl-9 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 text-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
               />
             </div>
           </div>
 
           <!-- Kategori -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider" for="category">Kategori</label>
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase tracking-wider" for="category">{$t('keuangan.category_label') || 'Kategori'}</label>
             <div class="relative">
               <button 
                 type="button"
                 on:click={() => showCategoryDropdown = !showCategoryDropdown}
-                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all flex items-center justify-between"
+                class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all flex items-center justify-between"
               >
-                <span class="truncate">{formData.category}</span>
-                <ChevronDown class="w-5 h-5 text-slate-400 transition-transform {showCategoryDropdown ? 'rotate-180' : ''} shrink-0" />
+                <span class="truncate">{getCategoryTranslation(formData.category)}</span>
+                <ChevronDown class="w-5 h-5 text-slate-400 dark:text-slate-500 transition-transform {showCategoryDropdown ? 'rotate-180' : ''} shrink-0" />
               </button>
               
               {#if showCategoryDropdown}
@@ -561,17 +589,17 @@
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <div class="fixed inset-0 z-40" on:click={() => showCategoryDropdown = false}></div>
                 <div 
-                  class="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden"
+                  class="absolute z-50 mt-2 w-full bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden"
                   transition:slide={{ duration: 200 }}
                 >
                   <div class="max-h-48 overflow-y-auto py-2">
                     {#each categories[formData.type] as cat}
                       <button 
                         type="button"
-                        class="w-full px-4 py-3 text-left font-medium transition-colors hover:bg-slate-50 {formData.category === cat ? 'text-blue-600 bg-blue-50/50' : 'text-slate-700'}"
+                        class="w-full px-4 py-3 text-left font-medium transition-colors hover:bg-slate-50 dark:bg-slate-800 {formData.category === cat ? 'text-blue-600 bg-blue-50/50' : 'text-slate-700 dark:text-slate-200'}"
                         on:click={() => { formData.category = cat; showCategoryDropdown = false; }}
                       >
-                        {cat}
+                        {getCategoryTranslation(cat)}
                       </button>
                     {/each}
                   </div>
@@ -582,7 +610,7 @@
 
           <!-- Tanggal -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider" for="date">Tanggal</label>
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase tracking-wider" for="date">{$t('keuangan.date_label') || 'Tanggal'}</label>
             <div class="relative">
               <input 
                 id="date"
@@ -590,9 +618,9 @@
                 use:datepicker
                 bind:value={formData.date}
                 required
-                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
               />
-              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500">
                 <Calendar class="w-5 h-5" />
               </div>
             </div>
@@ -600,26 +628,26 @@
 
           <!-- Keterangan -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider" for="note">Keterangan Singkat</label>
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase tracking-wider" for="note">{$t('keuangan.note_label') || 'Keterangan Singkat'}</label>
             <input 
               id="note"
               type="text" 
               bind:value={formData.note}
-              placeholder="Contoh: Beli nasi goreng"
-              class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+              placeholder={$t('keuangan.note_placeholder') || 'Contoh: Beli nasi goreng'}
+              class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
             />
           </div>
         </div>
 
       </form>
-      <div class="p-5 border-t border-slate-100 bg-white shrink-0" style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 1.25rem));">
+      <div class="p-5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0" style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 1.25rem));">
         <button 
           type="submit" 
           form="form-keuangan"
           class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
         >
           <Save class="w-4 h-4" />
-          {isEditing ? 'Simpan Perubahan' : 'Simpan Transaksi'}
+          {isEditing ? ($t('keuangan.save_changes') || 'Simpan Perubahan') : ($t('keuangan.save_transaction') || 'Simpan Transaksi')}
         </button>
       </div>
     </div>
@@ -636,27 +664,27 @@
     on:click={() => showWalletModal = false}
   >
     <div 
-      class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col"
+      class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col"
       on:click|stopPropagation
       transition:slide={{ duration: 300, axis: 'y' }}
     >
-      <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50 rounded-t-3xl">
-        <h3 class="font-bold text-slate-800">Tambah Buku Catatan Baru</h3>
-        <button on:click={() => showWalletModal = false} class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+      <div class="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-t-3xl">
+        <h3 class="font-bold text-slate-800 dark:text-slate-100">{$t('keuangan.add_book') || 'Tambah Buku Catatan Baru'}</h3>
+        <button on:click={() => showWalletModal = false} class="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800 rounded-full transition-colors">
           <X class="w-5 h-5" />
         </button>
       </div>
       
       <form on:submit={saveWallet} class="p-5 space-y-5">
         <div class="space-y-1.5">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider" for="walletName">Judul Catatan (Contoh: Uang Naila)</label>
+          <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase tracking-wider" for="walletName">{$t('keuangan.book_title_label') || 'JUDUL CATATAN (CONTOH: UANG NAILA)'}</label>
           <input 
             id="walletName"
             type="text" 
             bind:value={newWalletName}
-            placeholder="Masukkan judul..."
+            placeholder={$t('keuangan.book_title_placeholder') || 'Masukkan judul...'}
             required
-            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+            class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
           />
         </div>
         <button 
@@ -664,7 +692,7 @@
           class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
         >
           <Save class="w-4 h-4" />
-          Simpan Buku
+          {$t('keuangan.save_book') || 'Simpan Buku'}
         </button>
       </form>
     </div>
@@ -681,29 +709,29 @@
     on:click={confirmDialog.onCancel}
   >
     <div 
-      class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 space-y-4 text-center"
+      class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl p-6 space-y-4 text-center"
       on:click|stopPropagation
       transition:scale={{ duration: 200, start: 0.95 }}
     >
       <div class="mx-auto w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-2">
         <AlertCircle class="w-6 h-6" />
       </div>
-      <h3 class="font-black text-slate-800 text-lg">{confirmDialog.title}</h3>
-      <p class="text-slate-500 text-sm font-medium">{confirmDialog.message}</p>
+      <h3 class="font-black text-slate-800 dark:text-slate-100 text-lg">{confirmDialog.title}</h3>
+      <p class="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-sm font-medium">{confirmDialog.message}</p>
       
       <div class="grid grid-cols-2 gap-3 pt-2">
         <button 
           on:click={confirmDialog.onCancel}
-          class="px-4 py-3 rounded-xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors"
+          class="px-4 py-3 rounded-xl font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 transition-colors"
         >
-          Batal
-        </button>
+          {$t('keuangan.cancel') || 'Batal'}
+          </button>
         <button 
           on:click={confirmDialog.onConfirm}
           class="px-4 py-3 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-colors"
         >
-          Ya, Hapus
-        </button>
+          {$t('keuangan.yes_delete') || 'Ya, Hapus'}
+          </button>
       </div>
     </div>
   </div>

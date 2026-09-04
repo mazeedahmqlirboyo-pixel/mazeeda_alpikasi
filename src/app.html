@@ -17,6 +17,14 @@
 	<meta name="description"
 		content="MAZEEDA adalah web aplikasi manajemen modern untuk komunitas, dilengkapi Al-Qur'an digital, rekapitulasi keuangan Sangu, informasi mading realtime, dan galeri kenangan." />
 	<meta name="theme-color" content="#2563EB" />
+	<script>
+		// Anti-FOUC: Terapkan dark mode secepat mungkin sebelum aplikasi dimuat
+		if (localStorage.getItem('mazeeda_theme') === 'dark' || (!localStorage.getItem('mazeeda_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+			document.documentElement.classList.add('dark');
+		} else {
+			document.documentElement.classList.remove('dark');
+		}
+	</script>
 
 	<!-- Google Fonts for typography -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">

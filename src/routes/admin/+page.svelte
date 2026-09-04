@@ -2748,13 +2748,13 @@
   <div class="md:hidden mb-4 relative z-[60]">
     <button
       on:click={() => isMobileDropdownOpen = !isMobileDropdownOpen}
-      class="w-full flex items-center justify-between bg-white border border-slate-200 text-slate-700 font-bold rounded-xl p-3.5 shadow-sm transition-all {isMobileDropdownOpen ? 'ring-2 ring-primary border-transparent' : ''}"
+      class="w-full flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl p-3.5 shadow-sm dark:shadow-none transition-all {isMobileDropdownOpen ? 'ring-2 ring-primary border-transparent' : ''}"
     >
       <div class="flex items-center space-x-3 text-sm">
         <ShieldCheck class="h-5 w-5 text-primary" />
         <span class="truncate">{sections.find(s => s.value === activeSection)?.label || 'Pilih Menu Pengelolaan...'}</span>
       </div>
-      <ChevronDown class="h-5 w-5 text-slate-400 transition-transform duration-200 {isMobileDropdownOpen ? 'rotate-180' : ''}" />
+      <ChevronDown class="h-5 w-5 text-slate-400 dark:text-slate-500 transition-transform duration-200 {isMobileDropdownOpen ? 'rotate-180' : ''}" />
     </button>
 
     {#if isMobileDropdownOpen}
@@ -2768,20 +2768,20 @@
       <!-- Dropdown Menu -->
       <div 
         transition:slideTransition={{ duration: 200 }}
-        class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50"
+        class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden z-50"
       >
         <div class="max-h-[60vh] overflow-y-auto py-2">
           <!-- Khasanah Link -->
           <button 
             on:click={() => { isMobileDropdownOpen = false; goto('/admin/khasanah'); }}
-            class="w-full flex items-center space-x-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors border-b border-slate-50"
+            class="w-full flex items-center space-x-3 px-4 py-3.5 text-left hover:bg-slate-50 dark:bg-slate-800 transition-colors border-b border-slate-50"
           >
             <BookOpen class="h-5 w-5 text-emerald-500" />
-            <span class="text-sm font-bold text-slate-700">Khasanah Lirboyo (Mozaik, dll)</span>
+            <span class="text-sm font-bold text-slate-700 dark:text-slate-200">Khasanah Lirboyo (Mozaik, dll)</span>
           </button>
           
-          <div class="px-4 py-3 bg-slate-50/50">
-            <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Manajemen Data</span>
+          <div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/50">
+            <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Manajemen Data</span>
           </div>
 
           {#each sections as s}
@@ -2792,7 +2792,7 @@
                 goto(`/admin?tab=${s.value}`, { replaceState: true });
               }}
               class="w-full flex items-center px-4 py-3 text-left transition-colors
-                {activeSection === s.value ? 'bg-primary/5 text-primary' : 'text-slate-600 hover:bg-slate-50'}"
+                {activeSection === s.value ? 'bg-primary/5 text-primary' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-800'}"
             >
               <div class="w-1.5 h-1.5 rounded-full {activeSection === s.value ? 'bg-primary' : 'bg-transparent'} mr-3"></div>
               <span class="text-sm {activeSection === s.value ? 'font-bold' : 'font-medium'}">{s.label}</span>
@@ -2809,7 +2809,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200" transition:fade={{ duration: 150 }}>
       <!-- LEFT SIDE: INPUT FORM -->
       <div class="lg:col-span-6 space-y-4">
-        <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
           {#if editingMemberId}
             <Edit class="h-5 w-5 text-indigo-600" />
             <span>Edit Data Anggota</span>
@@ -2820,13 +2820,13 @@
         </h2>
 
         <!-- CSV Import Widget -->
-        <Card class="p-5 space-y-3 border-dashed border-2 border-slate-200 bg-slate-50/20 mb-4">
-          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-            <h3 class="text-sm font-bold text-slate-800 flex items-center space-x-2">
+        <Card class="p-5 space-y-3 border-dashed border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/20 mb-4">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
               <UploadCloud class="h-4.5 w-4.5 text-primary" />
               <span>Impor Data dari CSV</span>
             </h3>
-            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bulk Upload</span>
+            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Bulk Upload</span>
           </div>
 
           <!-- Instruction Rules -->
@@ -2847,7 +2847,7 @@
             on:dragleave={handleDragLeave}
             on:drop={handleDrop}
             class="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors
-              {isDragging ? 'border-primary bg-blue-50/30' : 'border-slate-200 bg-white hover:border-primary/40'}"
+              {isDragging ? 'border-primary bg-blue-50/30' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-primary/40'}"
             on:click={() => document.getElementById('csv-file-input')?.click()}
           >
             <input 
@@ -2857,13 +2857,13 @@
               class="hidden" 
               on:change={handleFileSelect}
             />
-            <UploadCloud class="h-8 w-8 text-slate-400 mx-auto mb-2" />
+            <UploadCloud class="h-8 w-8 text-slate-400 dark:text-slate-500 mx-auto mb-2" />
             {#if csvFile}
-              <p class="text-xs font-bold text-slate-700 truncate max-w-xs mx-auto">{csvFile.name}</p>
-              <p class="text-[10px] text-slate-400 mt-1">{(csvFile.size / 1024).toFixed(1)} KB</p>
+              <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-xs mx-auto">{csvFile.name}</p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{(csvFile.size / 1024).toFixed(1)} KB</p>
             {:else}
-              <p class="text-xs font-bold text-slate-600">Seret & taruh file CSV di sini, atau klik untuk memilih</p>
-              <p class="text-[10px] text-slate-400 mt-1">Pastikan terdapat kolom header <strong>nama_lengkap</strong></p>
+              <p class="text-xs font-bold text-slate-600 dark:text-slate-300">Seret & taruh file CSV di sini, atau klik untuk memilih</p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Pastikan terdapat kolom header <strong>nama_lengkap</strong></p>
             {/if}
           </div>
 
@@ -2889,11 +2889,11 @@
         <!-- Batch Photo Upload Widget -->
         <Card class="p-5 space-y-3 border-dashed border-2 border-emerald-200 bg-emerald-50/20 mb-4">
           <div class="flex items-center justify-between pb-2 border-b border-emerald-100">
-            <h3 class="text-sm font-bold text-slate-800 flex items-center space-x-2">
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
               <Image class="h-4.5 w-4.5 text-emerald-600" />
               <span>Upload Foto Profil Massal</span>
             </h3>
-            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Batch Upload</span>
+            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Batch Upload</span>
           </div>
 
           <div class="bg-emerald-50/60 rounded-xl p-3 text-[11px] leading-relaxed text-emerald-900 border border-emerald-100/50">
@@ -2913,7 +2913,7 @@
             on:dragleave={photo_handleDragLeave}
             on:drop={photo_handleDrop}
             class="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors
-              {isDraggingPhoto ? 'border-emerald-400 bg-emerald-100/50' : 'border-emerald-200 bg-white hover:border-emerald-400/40'}"
+              {isDraggingPhoto ? 'border-emerald-400 bg-emerald-100/50' : 'border-emerald-200 bg-white dark:bg-slate-900 hover:border-emerald-400/40'}"
             on:click={() => document.getElementById('photo-batch-input')?.click()}
           >
             <input 
@@ -2940,10 +2940,10 @@
             <p class="text-xs font-semibold text-emerald-700 bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-100">{batchPhotoStatus}</p>
           {/if}
           {#if isSubmitting && batchPhotoProgress.total > 0}
-             <div class="w-full bg-slate-200 rounded-full h-1.5 mt-2">
+             <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mt-2">
                <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width: {(batchPhotoProgress.current / batchPhotoProgress.total) * 100}%"></div>
              </div>
-             <p class="text-[10px] text-slate-500 text-center">Proses {batchPhotoProgress.current} dari {batchPhotoProgress.total}</p>
+             <p class="text-[10px] text-slate-500 dark:text-slate-400 dark:text-slate-500 text-center">Proses {batchPhotoProgress.current} dari {batchPhotoProgress.total}</p>
           {/if}
 
           <!-- Upload triggers -->
@@ -2959,7 +2959,7 @@
 
         <Card class="p-5 space-y-4">
           <!-- Step Tab Toggles -->
-          <Tabs items={stepTabs} bind:activeTab={activeFormStep} class="w-full bg-slate-50/50 p-0.5 rounded-lg border border-slate-200/40" />
+          <Tabs items={stepTabs} bind:activeTab={activeFormStep} class="w-full bg-slate-50 dark:bg-slate-800/50 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700/40" />
 
           <form on:submit|preventDefault={handleAddMember} class="space-y-4 pt-2">
             <!-- STEP 1: IDENTITAS DIRI -->
@@ -2967,34 +2967,34 @@
               <div class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="nama_lengkap">Nama Lengkap *</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="nama_lengkap">Nama Lengkap *</label>
                     <Input id="nama_lengkap" placeholder="Nama lengkap sesuai KTP" bind:value={nama_lengkap} required />
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="nama_panggilan">Nama Panggilan</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="nama_panggilan">Nama Panggilan</label>
                     <Input id="nama_panggilan" placeholder="Nama akrab panggilan" bind:value={nama_panggilan} />
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="nis">Nomor Induk Santri (NIS)</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="nis">Nomor Induk Santri (NIS)</label>
                     <Input id="nis" placeholder="e.g. 220412" bind:value={nis} />
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="tempat_lahir">Tempat Lahir</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="tempat_lahir">Tempat Lahir</label>
                     <Input id="tempat_lahir" placeholder="Kota lahir" bind:value={tempat_lahir} />
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="tahun_lahir">Tahun Lahir</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="tahun_lahir">Tahun Lahir</label>
                     <Input id="tahun_lahir" type="text" placeholder="e.g. 18 APRIL 2010" bind:value={tahun_lahir} />
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="golongan_darah">Golongan Darah</label>
-                    <select id="golongan_darah" class="flex h-12 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-700 focus:outline-none focus:border-primary" bind:value={golongan_darah}>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="golongan_darah">Golongan Darah</label>
+                    <select id="golongan_darah" class="flex h-12 w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-3 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary" bind:value={golongan_darah}>
                       <option value="A">Golongan Darah A</option>
                       <option value="B">Golongan Darah B</option>
                       <option value="AB">Golongan Darah AB</option>
@@ -3002,13 +3002,13 @@
                     </select>
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="nama_ayah">Nama Ayah Kandung</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="nama_ayah">Nama Ayah Kandung</label>
                     <Input id="nama_ayah" placeholder="Nama ayah kandung" bind:value={nama_ayah} />
                   </div>
                 </div>
 
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-slate-500" for="alamat_ktp">Alamat Sesuai KTP</label>
+                  <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="alamat_ktp">Alamat Sesuai KTP</label>
                   <Input id="alamat_ktp" placeholder="Tulis alamat asal KTP" bind:value={alamat_ktp} />
                 </div>
               </div>
@@ -3018,8 +3018,8 @@
               <div class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="kategori_mazeeda">Kategori Mazeeda *</label>
-                    <select id="kategori_mazeeda" class="flex h-12 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-700 focus:outline-none focus:border-primary" bind:value={kategori_mazeeda}>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="kategori_mazeeda">Kategori Mazeeda *</label>
+                    <select id="kategori_mazeeda" class="flex h-12 w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-3 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary" bind:value={kategori_mazeeda}>
                       {#if activeSection === 'asatidzah'}
                         <option value="pengajar">Pengajar</option>
                         <option value="musyrif">Musyrif</option>
@@ -3034,38 +3034,38 @@
                     </select>
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="tahun_masuk">Tahun Masuk Pondok</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="tahun_masuk">Tahun Masuk Pondok</label>
                     <Input id="tahun_masuk" placeholder="e.g. 2022" bind:value={tahun_masuk} />
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="kamar_santri">Kamar Santri</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="kamar_santri">Kamar Santri</label>
                     <Input id="kamar_santri" placeholder="e.g. Aisyah 02" bind:value={kamar_santri} />
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="daerah_santri">Daerah Santri</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="daerah_santri">Daerah Santri</label>
                     <Input id="daerah_santri" placeholder="e.g. Priangan, Jabodetabek" bind:value={daerah_santri} />
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="tahfidz_santri">Hafalan Qur'an</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="tahfidz_santri">Hafalan Qur'an</label>
                     <Input id="tahfidz_santri" placeholder="e.g. 5 Juz" bind:value={tahfidz_santri} />
                   </div>
                 </div>
 
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-slate-500" for="riwayat_pendidikan">Riwayat Pendidikan Terakhir</label>
+                  <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="riwayat_pendidikan">Riwayat Pendidikan Terakhir</label>
                   <Input id="riwayat_pendidikan" placeholder="Pendidikan terakhir santri" bind:value={riwayat_pendidikan} />
                 </div>
 
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-slate-500" for="alamat_riwayatpendidikan">Alamat Pendidikan</label>
+                  <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="alamat_riwayatpendidikan">Alamat Pendidikan</label>
                   <Input id="alamat_riwayatpendidikan" placeholder="Alamat riwayat pendidikan terakhir" bind:value={alamat_riwayatpendidikan} />
                 </div>
 
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-slate-500" for="rute_lengkap">Rute Lengkap Pulang / Perjalanan</label>
+                  <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="rute_lengkap">Rute Lengkap Pulang / Perjalanan</label>
                   <Input id="rute_lengkap" placeholder="e.g. Lembang - Subang - Sumedang" bind:value={rute_lengkap} />
                 </div>
               </div>
@@ -3074,45 +3074,45 @@
               <div class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="no_whatsapp">No. WhatsApp *</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="no_whatsapp">No. WhatsApp *</label>
                     <Input id="no_whatsapp" placeholder="Format: +6281..." bind:value={no_whatsapp} required />
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="email">Alamat Email *</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="email">Alamat Email *</label>
                     <Input id="email" type="email" placeholder="alamat@domain.com" bind:value={email} required />
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="media_social">Username Instagram</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="media_social">Username Instagram</label>
                     <Input id="media_social" placeholder="e.g. @alumni_mazeeda" bind:value={media_social} />
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="tiktok_akun">Akun TikTok</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="tiktok_akun">Akun TikTok</label>
                     <Input id="tiktok_akun" placeholder="e.g. @username_tiktok" bind:value={tiktok_akun} />
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="facebook_akun">Akun Facebook</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="facebook_akun">Akun Facebook</label>
                     <Input id="facebook_akun" placeholder="e.g. facebook.com/name" bind:value={facebook_akun} />
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="xtwitter_akun">Akun X / Twitter</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="xtwitter_akun">Akun X / Twitter</label>
                     <Input id="xtwitter_akun" placeholder="e.g. @username_x" bind:value={xtwitter_akun} />
                   </div>
                 </div>
 
                 <div class="space-y-2">
-                  <label class="text-xs font-bold text-slate-500" for="foto_url">Foto Profile</label>
+                  <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="foto_url">Foto Profile</label>
                   
                   <div class="flex items-center gap-3">
                     {#if foto_url}
-                      <img src={convertDriveUrl(foto_url)} alt="Preview" class="w-12 h-12 rounded-full object-cover border border-slate-200 shadow-sm" />
+                      <img src={convertDriveUrl(foto_url)} alt="Preview" class="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-none" />
                     {:else}
-                      <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-200 shadow-sm">
+                      <div class="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-none">
                         <Image class="w-5 h-5" />
                       </div>
                     {/if}
@@ -3129,7 +3129,7 @@
                             on:change={handleSinglePhotoUpload}
                             disabled={isUploadingSinglePhoto}
                           />
-                          <Button type="button" variant="outline" class="whitespace-nowrap px-3 pointer-events-none relative z-0 {isUploadingSinglePhoto ? 'bg-slate-50 text-slate-400' : ''}" disabled={isUploadingSinglePhoto}>
+                          <Button type="button" variant="outline" class="whitespace-nowrap px-3 pointer-events-none relative z-0 {isUploadingSinglePhoto ? 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500' : ''}" disabled={isUploadingSinglePhoto}>
                             {#if isUploadingSinglePhoto}
                               <UploadCloud class="w-4 h-4 mr-2 animate-pulse" />
                               Loading...
@@ -3149,57 +3149,57 @@
             {:else}
               <div class="space-y-4">
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-slate-500" for="alamat_domisili">Alamat Domisili Sekarang</label>
+                  <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="alamat_domisili">Alamat Domisili Sekarang</label>
                   <Input id="alamat_domisili" placeholder="Alamat tinggal sekarang" bind:value={alamat_domisili} />
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="keterampilan_khusus">Keterampilan Khusus</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="keterampilan_khusus">Keterampilan Khusus</label>
                     <Input id="keterampilan_khusus" placeholder="e.g. Desain, Jahit" bind:value={keterampilan_khusus} />
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="hobi">Hobi</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="hobi">Hobi</label>
                     <Input id="hobi" placeholder="Hobi santri" bind:value={hobi} />
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="music">Musik Favorit</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="music">Musik Favorit</label>
                     <Input id="music" placeholder="Musik kesukaan" bind:value={music} />
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="cita_cita">Cita-Cita</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="cita_cita">Cita-Cita</label>
                     <Input id="cita_cita" placeholder="Cita-cita santri" bind:value={cita_cita} />
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="makanan_kesukaan">Makanan Kesukaan</label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="makanan_kesukaan">Makanan Kesukaan</label>
                     <Input id="makanan_kesukaan" placeholder="Makanan favorit" bind:value={makanan_kesukaan} />
                   </div>
                 </div>
 
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-slate-500" for="kutipan_kenangan">Kutipan Kenangan Terindah (Quotes)</label>
+                  <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="kutipan_kenangan">Kutipan Kenangan Terindah (Quotes)</label>
                   <Input id="kutipan_kenangan" placeholder="Kutipan memori / kata bijak selama di pondok" bind:value={kutipan_kenangan} />
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="kesan">Kesan Selama di Pondok</label>
-                    <textarea id="kesan" rows="3" class="flex w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-primary focus:outline-none" placeholder="Tulis kesan santri..." bind:value={kesan}></textarea>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="kesan">Kesan Selama di Pondok</label>
+                    <textarea id="kesan" rows="3" class="flex w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:text-slate-500 focus:border-primary focus:outline-none" placeholder="Tulis kesan santri..." bind:value={kesan}></textarea>
                   </div>
                   <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500" for="pesan">Pesan untuk Anggota Lain</label>
-                    <textarea id="pesan" rows="3" class="flex w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-primary focus:outline-none" placeholder="Tulis pesan santri..." bind:value={pesan}></textarea>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="pesan">Pesan untuk Anggota Lain</label>
+                    <textarea id="pesan" rows="3" class="flex w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:text-slate-500 focus:border-primary focus:outline-none" placeholder="Tulis pesan santri..." bind:value={pesan}></textarea>
                   </div>
                 </div>
               </div>
             {/if}
 
             <!-- Submit trigger -->
-            <div class="flex items-center justify-between pt-4 border-t border-slate-100 gap-2">
-              <span class="text-[10px] text-slate-400 font-bold uppercase truncate max-w-[120px]">Langkah: {activeFormStep}</span>
+            <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800 gap-2">
+              <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase truncate max-w-[120px]">Langkah: {activeFormStep}</span>
               
               <div class="flex items-center gap-2">
                 {#if editingMemberId}
@@ -3227,7 +3227,7 @@
       <!-- RIGHT SIDE: DATABASE LIST -->
       <div class="lg:col-span-6 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+          <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
             <FileText class="h-5 w-5 text-blue-600" />
             <span>Database {activeSection === 'asatidzah' ? 'Asatidzah' : 'Squad'} ({squad.length} dari {squadTotalCount})</span>
           </h2>
@@ -3241,24 +3241,24 @@
         <Card class="p-3">
           <div class="space-y-3">
             <div class="relative">
-              <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
               <input 
                 type="text" 
                 placeholder="Cari alumni berdasarkan nama, panggilan, NIS..." 
-                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-primary focus:bg-white"
+                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-primary focus:bg-white dark:bg-slate-900"
                 bind:value={squadSearchQuery}
               />
             </div>
             
             <!-- Login Status Filter Buttons -->
-            <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100/50">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status Login:</span>
-              <div class="flex bg-slate-100/80 rounded-lg p-0.5 border border-slate-200/40">
+            <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/50">
+              <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status Login:</span>
+              <div class="flex bg-slate-100 dark:bg-slate-800/80 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700/40">
                 <button
                   type="button"
                   on:click={() => squadLoginFilter = 'all'}
                   class="px-2.5 py-1 text-[10px] font-bold rounded-md transition-all duration-200
-                    {squadLoginFilter === 'all' ? 'bg-white text-primary shadow-soft-sm' : 'text-slate-500 hover:text-slate-700'}"
+                    {squadLoginFilter === 'all' ? 'bg-white dark:bg-slate-900 text-primary shadow-soft-sm' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200'}"
                 >
                   Semua ({squad.length})
                 </button>
@@ -3266,7 +3266,7 @@
                   type="button"
                   on:click={() => squadLoginFilter = 'logged_in'}
                   class="px-2.5 py-1 text-[10px] font-bold rounded-md transition-all duration-200
-                    {squadLoginFilter === 'logged_in' ? 'bg-white text-emerald-600 shadow-soft-sm' : 'text-slate-500 hover:text-slate-700'}"
+                    {squadLoginFilter === 'logged_in' ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-soft-sm' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200'}"
                 >
                   Pernah Login ({squad.filter(s => s.has_logged_in).length})
                 </button>
@@ -3274,7 +3274,7 @@
                   type="button"
                   on:click={() => squadLoginFilter = 'not_logged_in'}
                   class="px-2.5 py-1 text-[10px] font-bold rounded-md transition-all duration-200
-                    {squadLoginFilter === 'not_logged_in' ? 'bg-white text-slate-600 shadow-soft-sm' : 'text-slate-500 hover:text-slate-700'}"
+                    {squadLoginFilter === 'not_logged_in' ? 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 shadow-soft-sm' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200'}"
                 >
                   Belum Login ({squad.filter(s => !s.has_logged_in).length})
                 </button>
@@ -3282,7 +3282,7 @@
                   type="button"
                   on:click={() => squadLoginFilter = 'deactivated'}
                   class="px-2.5 py-1 text-[10px] font-bold rounded-md transition-all duration-200
-                    {squadLoginFilter === 'deactivated' ? 'bg-white text-rose-600 shadow-soft-sm' : 'text-slate-500 hover:text-slate-700'}"
+                    {squadLoginFilter === 'deactivated' ? 'bg-white dark:bg-slate-900 text-rose-600 shadow-soft-sm' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200'}"
                 >
                   Dinonaktifkan ({squad.filter(s => s.is_active === false).length})
                 </button>
@@ -3295,14 +3295,14 @@
         <div class="max-h-[600px] overflow-y-auto pr-1">
           {#if isLoadingSquad}
             <div class="py-16 text-center space-y-4">
-              <img src="/loading.svg" alt="Loading..." class="h-16 w-16 mx-auto animate-pulse" />
-              <p class="text-xs font-bold text-slate-400 tracking-wide uppercase">Memuat data {activeSection === 'asatidzah' ? 'Asatidzah' : 'Squad'}...</p>
+              <img src="/loading-paperplane.svg" alt="Loading..." class="h-32 w-32 mx-auto animate-pulse" />
+              <p class="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-wide uppercase">Memuat data {activeSection === 'asatidzah' ? 'Asatidzah' : 'Squad'}...</p>
             </div>
           {:else if squad.length > 0}
             <div class="grid grid-cols-1 gap-2">
               {#each squad as item (item.id || item.nama_lengkap)}
                 {@const accent = getAccent(item.nama_lengkap)}
-                <Card class="group flex flex-col justify-between hover:scale-[1.01] hover:shadow-soft-md transition-all duration-300 h-full p-4 border-slate-100">
+                <Card class="group flex flex-col justify-between hover:scale-[1.01] hover:shadow-soft-md transition-all duration-300 h-full p-4 border-slate-100 dark:border-slate-800">
                   <div class="flex items-center space-x-3 min-w-0">
                     <!-- Avatar with accent ring + dot -->
                     <div class="relative shrink-0">
@@ -3328,16 +3328,16 @@
                     
                     <div class="flex-1 min-w-0 leading-tight">
                       <div class="flex items-center justify-between gap-2">
-                        <h3 class="font-extrabold text-slate-800 text-sm truncate group-hover:text-primary transition-colors" title={item.nama_lengkap}>
+                        <h3 class="font-extrabold text-slate-800 dark:text-slate-100 text-sm truncate group-hover:text-primary transition-colors" title={item.nama_lengkap}>
                           {item.nama_lengkap}
                         </h3>
-                        <span class="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-200/50 px-2.5 py-0.5 rounded-full truncate max-w-[100px]" title={item.alamat_domisili}>
+                        <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 px-2.5 py-0.5 rounded-full truncate max-w-[100px]" title={item.alamat_domisili}>
                           {item.alamat_domisili || '-'}
                         </span>
                       </div>
                       
                       <!-- Display nickname | region -->
-                      <p class="text-xs text-slate-400 font-medium truncate mt-1">
+                      <p class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate mt-1">
                         {item.nama_panggilan || '-'}{item.daerah_santri ? ' | ' + capitalizeEachWord(item.daerah_santri) : ''}
                       </p>
 
@@ -3347,11 +3347,11 @@
                           <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                           <span>Pernah Login</span>
                           {#if item.last_login}
-                            <span class="text-slate-400 font-medium font-mono text-[8.5px]">({formatDateTime(item.last_login)})</span>
+                            <span class="text-slate-400 dark:text-slate-500 font-medium font-mono text-[8.5px]">({formatDateTime(item.last_login)})</span>
                           {/if}
                         </div>
                       {:else}
-                        <div class="flex items-center space-x-1 mt-1.5 bg-slate-50 text-slate-400 border border-slate-200/50 rounded-lg px-2 py-0.5 text-[9px] font-bold w-fit">
+                        <div class="flex items-center space-x-1 mt-1.5 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/50 rounded-lg px-2 py-0.5 text-[9px] font-bold w-fit">
                           <span class="h-1.5 w-1.5 rounded-full bg-slate-300"></span>
                           <span>Belum Login</span>
                         </div>
@@ -3360,8 +3360,8 @@
                   </div>
 
                   <!-- Footer with category and action buttons -->
-                  <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                    <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full truncate uppercase" title={item.kategori_mazeeda}>
+                  <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full truncate uppercase" title={item.kategori_mazeeda}>
                       {item.kategori_mazeeda || 'alumni'}
                     </span>
 
@@ -3406,18 +3406,18 @@
                 <Button 
                   on:click={() => { squadLimit += 10; fetchSquad(squadSearchQuery, squadLoginFilter, squadLimit, activeSection); }} 
                   variant="outline" 
-                  class="font-bold text-slate-600 bg-white hover:bg-slate-50 border-slate-200/60 w-full sm:w-auto"
+                  class="font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700/60 w-full sm:w-auto"
                 >
                   Muat Lebih Banyak ({squadTotalCount - squad.length} tersisa)
                 </Button>
               </div>
             {/if}
           {:else}
-            <div class="py-16 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50 flex flex-col items-center justify-center space-y-4">
-              <img src="/empty-content.svg" alt="Tidak ada data" class="h-40 w-40 opacity-80" />
+            <div class="py-16 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center space-y-4">
+              <img src="/search.svg" alt="Tidak ada data" class="h-40 w-40 opacity-80" />
               <div>
-                <p class="text-sm font-bold text-slate-500">Data {activeSection === 'asatidzah' ? 'Asatidzah' : 'Squad'} tidak ditemukan</p>
-                <p class="text-xs text-slate-400 mt-1">Silakan sesuaikan filter pencarian atau isi formulir baru di sebelah kiri.</p>
+                <p class="text-sm font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">Data {activeSection === 'asatidzah' ? 'Asatidzah' : 'Squad'} tidak ditemukan</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Silakan sesuaikan filter pencarian atau isi formulir baru di sebelah kiri.</p>
               </div>
             </div>
           {/if}
@@ -3427,12 +3427,12 @@
 
   {:else if activeSection === 'comments'}
     <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl shadow-soft-sm border border-slate-100">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-soft-sm border border-slate-100 dark:border-slate-800">
         <div>
-          <h2 class="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+          <h2 class="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
             <span class="text-2xl">💬</span> Manajemen Komentar
           </h2>
-          <p class="text-sm text-slate-500 font-medium mt-1">Pantau dan kelola semua komentar di aplikasi.</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium mt-1">Pantau dan kelola semua komentar di aplikasi.</p>
         </div>
         <button on:click={fetchAdminComments} class="px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl font-bold text-sm transition-colors flex items-center gap-2">
           <RefreshCw class="w-4 h-4 {isLoadingAdminComments ? 'animate-spin' : ''}" />
@@ -3443,7 +3443,7 @@
       <!-- Controls -->
       <div class="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
         <!-- Segmented Control for Comment Types -->
-        <div class="flex p-1 bg-slate-100/80 rounded-2xl w-full sm:w-fit backdrop-blur-sm shadow-inner overflow-x-auto">
+        <div class="flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl w-full sm:w-fit backdrop-blur-sm shadow-inner overflow-x-auto">
           {#each [
             { value: 'timeline', label: 'Timeline' },
             { value: 'mading_announcements', label: 'Pengumuman Mading' },
@@ -3451,7 +3451,7 @@
           ] as type}
             <button 
               on:click={() => { adminCommentsType = type.value; fetchAdminComments(); }}
-              class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 whitespace-nowrap {adminCommentsType === type.value ? 'bg-white text-indigo-600 shadow-soft-sm scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 scale-95'}"
+              class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 whitespace-nowrap {adminCommentsType === type.value ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-soft-sm scale-100' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:bg-slate-700/50 scale-95'}"
             >
               {type.label}
             </button>
@@ -3460,30 +3460,30 @@
 
         <!-- Search Input -->
         <div class="relative w-full sm:w-64 shrink-0">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
           <input 
             type="text" 
             bind:value={adminCommentsSearch}
             placeholder="Cari user atau teks..." 
-            class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-soft-sm"
+            class="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-soft-sm"
           />
         </div>
       </div>
 
       <!-- Comments List -->
-      <div class="bg-white rounded-3xl shadow-soft-sm border border-slate-100 overflow-hidden">
+      <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-soft-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
         {#if isLoadingAdminComments}
           <div class="p-12 text-center">
             <div class="animate-spin h-8 w-8 border-3 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p class="text-sm font-bold text-slate-500 animate-pulse">Memuat komentar...</p>
+            <p class="text-sm font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 animate-pulse">Memuat komentar...</p>
           </div>
         {:else if filteredAdminComments.length === 0}
-          <div class="p-16 text-center border-2 border-dashed border-slate-100 rounded-2xl m-4 bg-slate-50/50">
-            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div class="p-16 text-center border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl m-4 bg-slate-50 dark:bg-slate-800/50">
+            <div class="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search class="w-8 h-8 text-slate-300" />
             </div>
-            <p class="text-base font-bold text-slate-600">Tidak ada komentar</p>
-            <p class="text-sm text-slate-400 mt-1">
+            <p class="text-base font-bold text-slate-600 dark:text-slate-300">Tidak ada komentar</p>
+            <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">
               {adminCommentsSearch ? 'Tidak ada komentar yang cocok dengan pencarian.' : 'Belum ada komentar di kategori ini.'}
             </p>
           </div>
@@ -3493,12 +3493,12 @@
               {@const authorName = comment.user_name || comment.author || 'Anonim'}
               {@const isSelfAdmin = authorName === 'ADMIN MAZEEDA' || authorName === $authStore.user?.name}
               {@const authorPhotoUrl = isSelfAdmin ? $authStore.user?.foto_url : adminUsersPhotoMap.get(authorName)}
-              <div class="p-5 hover:bg-slate-50/80 transition-all duration-300 group flex gap-4 items-start relative overflow-hidden">
+              <div class="p-5 hover:bg-slate-50 dark:bg-slate-800/80 transition-all duration-300 group flex gap-4 items-start relative overflow-hidden">
                 <!-- Avatar -->
                 {#if authorPhotoUrl}
-                  <img src={convertDriveUrl(authorPhotoUrl)} alt={authorName} class="h-10 w-10 shrink-0 rounded-full object-cover shadow-sm ring-2 ring-white z-10" referrerpolicy="no-referrer" />
+                  <img src={convertDriveUrl(authorPhotoUrl)} alt={authorName} class="h-10 w-10 shrink-0 rounded-full object-cover shadow-sm dark:shadow-none ring-2 ring-white z-10" referrerpolicy="no-referrer" />
                 {:else}
-                  <div class="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex items-center justify-center text-indigo-700 font-black text-base shadow-sm ring-2 ring-white z-10">
+                  <div class="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex items-center justify-center text-indigo-700 font-black text-base shadow-sm dark:shadow-none ring-2 ring-white z-10">
                     {authorName[0].toUpperCase()}
                   </div>
                 {/if}
@@ -3506,14 +3506,14 @@
                 <!-- Content -->
                 <div class="flex-1 min-w-0 z-10">
                   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-1.5">
-                    <h4 class="text-sm font-black text-slate-800 truncate pr-4">{authorName}</h4>
-                    <span class="text-[10px] text-slate-400 font-semibold whitespace-nowrap bg-slate-100/60 px-2 py-0.5 rounded-full w-fit">
+                    <h4 class="text-sm font-black text-slate-800 dark:text-slate-100 truncate pr-4">{authorName}</h4>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800/60 px-2 py-0.5 rounded-full w-fit">
                       {new Date(comment.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB
                     </span>
                   </div>
                   
-                  <div class="bg-white/60 border border-slate-100/80 rounded-2xl p-3.5 shadow-sm">
-                    <p class="text-[13px] text-slate-600 leading-relaxed whitespace-pre-wrap break-words">{comment.comment_text || comment.text || comment.message}</p>
+                  <div class="bg-white dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-3.5 shadow-sm dark:shadow-none">
+                    <p class="text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words">{comment.comment_text || comment.text || comment.message}</p>
                   </div>
                 </div>
                 
@@ -3521,7 +3521,7 @@
                 <div class="shrink-0 flex items-center h-full sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 pt-1 sm:pt-0">
                   <button 
                     on:click={() => deleteAdminComment(comment.id)}
-                    class="p-2.5 bg-white text-slate-400 hover:text-white hover:bg-rose-500 rounded-xl shadow-soft-sm hover:shadow-md hover:shadow-rose-500/20 transition-all duration-300 border border-slate-100 hover:border-rose-500"
+                    class="p-2.5 bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 hover:text-white hover:bg-rose-500 rounded-xl shadow-soft-sm hover:shadow-md dark:shadow-none hover:shadow-rose-500/20 transition-all duration-300 border border-slate-100 dark:border-slate-800 hover:border-rose-500"
                     title="Hapus Komentar"
                   >
                     <Trash2 class="w-4 h-4" />
@@ -3539,12 +3539,12 @@
 
   {:else if activeSection === 'user_reports'}
     <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl shadow-soft-sm border border-slate-100">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-soft-sm border border-slate-100 dark:border-slate-800">
         <div>
-          <h2 class="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+          <h2 class="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
             <ShieldAlert class="w-6 h-6 text-rose-500" /> Laporan Pengguna
           </h2>
-          <p class="text-sm text-slate-500 font-medium mt-1">Kelola laporan pelanggaran pengguna dan tindak tegas akun yang melanggar aturan.</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium mt-1">Kelola laporan pelanggaran pengguna dan tindak tegas akun yang melanggar aturan.</p>
         </div>
         <button on:click={fetchUserReports} class="px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl font-bold text-sm transition-colors flex items-center gap-2">
           <RefreshCw class="w-4 h-4 {isLoadingUserReports ? 'animate-spin' : ''}" />
@@ -3553,7 +3553,7 @@
       </div>
 
       <!-- Segmented Control for Report Types -->
-      <div class="flex p-1 bg-slate-100/80 rounded-2xl w-full sm:w-fit backdrop-blur-sm shadow-inner overflow-x-auto">
+      <div class="flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl w-full sm:w-fit backdrop-blur-sm shadow-inner overflow-x-auto">
         {#each [
           { value: 'pending', label: 'Menunggu' },
           { value: 'resolved', label: 'Selesai' },
@@ -3562,7 +3562,7 @@
         ] as type}
           <button 
             on:click={() => { userReportsFilter = type.value; fetchUserReports(); }}
-            class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 whitespace-nowrap {userReportsFilter === type.value ? 'bg-white text-rose-600 shadow-soft-sm scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 scale-95'}"
+            class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 whitespace-nowrap {userReportsFilter === type.value ? 'bg-white dark:bg-slate-900 text-rose-600 shadow-soft-sm scale-100' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:bg-slate-700/50 scale-95'}"
           >
             {type.label}
           </button>
@@ -3570,42 +3570,42 @@
       </div>
 
       <!-- Reports List -->
-      <div class="bg-white rounded-3xl shadow-soft-sm border border-slate-100 overflow-hidden">
+      <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-soft-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
         {#if isLoadingUserReports}
           <div class="p-12 text-center">
             <div class="animate-spin h-8 w-8 border-3 border-rose-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p class="text-sm font-bold text-slate-500 animate-pulse">Memuat laporan...</p>
+            <p class="text-sm font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 animate-pulse">Memuat laporan...</p>
           </div>
         {:else if userReportsList.length === 0}
-          <div class="p-16 text-center border-2 border-dashed border-slate-100 rounded-2xl m-4 bg-slate-50/50 flex flex-col items-center justify-center">
-            <img src="/empty-content.svg" alt="Tidak ada data" class="h-40 w-40 opacity-80 mb-4" />
-            <p class="text-base font-bold text-slate-600">Tidak ada laporan</p>
-            <p class="text-sm text-slate-400 mt-1">Saat ini tidak ada laporan dengan status ini.</p>
+          <div class="p-16 text-center border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl m-4 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center">
+            <img src="/search.svg" alt="Tidak ada data" class="h-40 w-40 opacity-80 mb-4" />
+            <p class="text-base font-bold text-slate-600 dark:text-slate-300">Tidak ada laporan</p>
+            <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Saat ini tidak ada laporan dengan status ini.</p>
           </div>
         {:else}
           <div class="divide-y divide-slate-100 max-h-[650px] overflow-y-auto custom-scrollbar pr-1">
             {#each userReportsList as report (report.id)}
-              <div class="p-5 hover:bg-slate-50/80 transition-all duration-300 group flex flex-col gap-3 relative overflow-hidden">
+              <div class="p-5 hover:bg-slate-50 dark:bg-slate-800/80 transition-all duration-300 group flex flex-col gap-3 relative overflow-hidden">
                 <div class="flex justify-between items-start">
                   <div>
-                    <h4 class="text-sm font-black text-slate-800">Dilaporkan: <span class="text-rose-600">{report.reported_name}</span></h4>
-                    <p class="text-xs text-slate-500 mt-0.5">Pelapor: <span class="font-bold">{report.reporter_name}</span> &bull; {new Date(report.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB</p>
+                    <h4 class="text-sm font-black text-slate-800 dark:text-slate-100">Dilaporkan: <span class="text-rose-600">{report.reported_name}</span></h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">Pelapor: <span class="font-bold">{report.reporter_name}</span> &bull; {new Date(report.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB</p>
                   </div>
-                  <span class="px-2.5 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider {report.status === 'pending' ? 'bg-amber-100 text-amber-700' : report.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">
+                  <span class="px-2.5 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider {report.status === 'pending' ? 'bg-amber-100 text-amber-700' : report.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500'}">
                     {report.status}
                   </span>
                 </div>
                 
-                <div class="bg-rose-50/50 border border-rose-100/80 rounded-xl p-3.5 shadow-sm">
-                  <p class="text-[13px] text-slate-700 font-medium">Alasan Pelaporan:</p>
-                  <p class="text-[13px] text-slate-600 leading-relaxed whitespace-pre-wrap break-words mt-1">{report.reason}</p>
+                <div class="bg-rose-50/50 border border-rose-100/80 rounded-xl p-3.5 shadow-sm dark:shadow-none">
+                  <p class="text-[13px] text-slate-700 dark:text-slate-200 font-medium">Alasan Pelaporan:</p>
+                  <p class="text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words mt-1">{report.reason}</p>
                 </div>
                 
                 {#if report.status === 'pending'}
                   <div class="flex gap-2 justify-end mt-2">
                     <button 
                       on:click={() => updateReportStatus(report.id, 'rejected')}
-                      class="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg text-xs font-bold transition-colors"
+                      class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:bg-slate-700 rounded-lg text-xs font-bold transition-colors"
                     >
                       Tolak
                     </button>
@@ -3617,7 +3617,7 @@
                     </button>
                     <button 
                       on:click={() => executeReportAction(report.id, report.reported_name, 'delete')}
-                      class="px-3 py-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center gap-1"
+                      class="px-3 py-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded-lg text-xs font-bold transition-colors shadow-sm dark:shadow-none flex items-center gap-1"
                     >
                       <Trash2 class="w-3.5 h-3.5" /> Hapus Akun
                     </button>
@@ -3627,7 +3627,7 @@
                   <div class="flex gap-2 justify-end mt-2">
                     <button 
                       on:click={() => deleteReport(report.id)}
-                      class="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-rose-600 rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center gap-1"
+                      class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:bg-slate-700 hover:text-rose-600 rounded-lg text-xs font-bold transition-colors shadow-sm dark:shadow-none flex items-center gap-1"
                     >
                       <Trash2 class="w-3.5 h-3.5" /> Hapus Laporan
                     </button>
@@ -3642,81 +3642,81 @@
 
   {:else if activeSection === 'feedbacks'}
     <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl shadow-soft-sm border border-slate-100">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-soft-sm border border-slate-100 dark:border-slate-800">
         <div>
-          <h2 class="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+          <h2 class="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
             <span class="text-2xl">📬</span> Kotak Saran & Masukan
           </h2>
-          <p class="text-sm text-slate-500 mt-1">Kelola dan baca saran dari para alumni & asatidzah.</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Kelola dan baca saran dari para alumni & asatidzah.</p>
         </div>
         
         <div class="flex items-center gap-2">
           <select 
             bind:value={feedbackFilter} 
             on:change={fetchFeedbacks}
-            class="h-10 border border-slate-200 text-sm font-semibold text-slate-600 rounded-xl px-3 focus:outline-none focus:border-indigo-400 bg-slate-50"
+            class="h-10 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-600 dark:text-slate-300 rounded-xl px-3 focus:outline-none focus:border-indigo-400 bg-slate-50 dark:bg-slate-800"
           >
             <option value="all">Semua Pesan</option>
             <option value="unread">Belum Dibaca</option>
             <option value="read">Sudah Dibaca</option>
           </select>
-          <button on:click={fetchFeedbacks} class="flex items-center justify-center h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-4 rounded-xl transition-colors">
+          <button on:click={fetchFeedbacks} class="flex items-center justify-center h-10 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold px-4 rounded-xl transition-colors">
             <RefreshCw class="w-4 h-4 mr-2 {isLoadingFeedbacks ? 'animate-spin' : ''}" />
             Refresh
           </button>
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-soft-sm border border-slate-100 overflow-hidden">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-soft-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
         {#if isLoadingFeedbacks}
           <div class="py-12 text-center space-y-4">
-            <img src="/loading.svg" alt="Loading..." class="h-16 w-16 mx-auto animate-pulse" />
-            <p class="text-xs font-bold text-slate-400 tracking-wide uppercase">Memuat Kotak Saran...</p>
+            <img src="/loading-paperplane.svg" alt="Loading..." class="h-32 w-32 mx-auto animate-pulse" />
+            <p class="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-wide uppercase">Memuat Kotak Saran...</p>
           </div>
         {:else if feedbacksList.length === 0}
           <div class="py-16 text-center flex flex-col items-center justify-center space-y-4">
-            <img src="/empty-content.svg" alt="Kosong" class="h-32 w-32 opacity-75" />
+            <img src="/search.svg" alt="Kosong" class="h-32 w-32 opacity-75" />
             <div>
-              <p class="text-sm font-bold text-slate-500">Belum ada saran yang masuk</p>
-              <p class="text-xs text-slate-400 mt-1">Saran dan masukan pengguna akan muncul di sini.</p>
+              <p class="text-sm font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">Belum ada saran yang masuk</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Saran dan masukan pengguna akan muncul di sini.</p>
             </div>
           </div>
         {:else}
           <div class="divide-y divide-slate-100">
             {#each feedbacksList as item (item.id)}
-              <div class="p-5 hover:bg-slate-50 transition-colors {item.is_read ? 'opacity-70' : 'bg-indigo-50/30'} flex flex-col sm:flex-row gap-4">
+              <div class="p-5 hover:bg-slate-50 dark:bg-slate-800 transition-colors {item.is_read ? 'opacity-70' : 'bg-indigo-50/30'} flex flex-col sm:flex-row gap-4">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-2">
-                    <span class="font-bold text-slate-800 text-sm">{item.user_name}</span>
-                    <span class="text-[10px] text-slate-400 font-medium">• {formatDateTime(item.created_at)}</span>
+                    <span class="font-bold text-slate-800 dark:text-slate-100 text-sm">{item.user_name}</span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">• {formatDateTime(item.created_at)}</span>
                     {#if !item.is_read}
                       <span class="bg-indigo-100 text-indigo-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">Baru</span>
                     {/if}
                   </div>
-                  <p class="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{item.message}</p>
+                  <p class="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">{item.message}</p>
                   
                   {#if item.admin_reply}
                     <div class="mt-3 bg-indigo-50/50 rounded-lg p-3 border border-indigo-100/50">
                       <p class="text-xs font-bold text-indigo-700 mb-1 flex items-center gap-1.5">
                         <ShieldCheck class="w-3.5 h-3.5" /> Balasan Admin:
                       </p>
-                      <p class="text-sm text-slate-700 whitespace-pre-wrap">{item.admin_reply}</p>
+                      <p class="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{item.admin_reply}</p>
                     </div>
                   {/if}
                   
                   <!-- Reply Form -->
                   {#if replyingToId === item.id}
-                    <div class="mt-4 bg-white border border-slate-200 rounded-xl p-3 shadow-soft-sm">
+                    <div class="mt-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 shadow-soft-sm">
                       <textarea 
                         bind:value={replyMessage}
                         placeholder="Ketik balasan Anda di sini..." 
-                        class="w-full text-sm border-none bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-400 rounded-lg p-2 resize-none outline-none mb-3"
+                        class="w-full text-sm border-none bg-slate-50 dark:bg-slate-800 focus:bg-white dark:bg-slate-900 focus:ring-1 focus:ring-indigo-400 rounded-lg p-2 resize-none outline-none mb-3"
                         rows="3"
                       ></textarea>
                       <div class="flex items-center justify-end gap-2">
                         <button 
                           on:click={() => replyingToId = null}
-                          class="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                          class="px-3 py-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 rounded-lg transition-colors"
                         >Batal</button>
                         <button 
                           on:click={() => submitReply(item)}
@@ -3776,9 +3776,9 @@
       <div class="lg:col-span-5 space-y-4">
         <form on:submit|preventDefault={handleSaveSangu} class="space-y-4">
           <!-- Sticky Action Bar for Form -->
-          <Card noPadding class="p-3 sm:p-4 border-slate-200/50 shadow-soft-sm bg-white/95 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between gap-4">
+          <Card noPadding class="p-3 sm:p-4 border-slate-200 dark:border-slate-700/50 shadow-soft-sm bg-white dark:bg-slate-900/95 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between gap-4">
             <!-- Title -->
-            <h2 class="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-2">
+            <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
               {#if editingSanguId}
                 <Edit class="h-4.5 w-4.5 text-indigo-600 shrink-0" />
                 <span>Edit Catatan Sangu</span>
@@ -3794,7 +3794,7 @@
                 <button 
                   type="button" 
                   on:click={cancelEditSangu} 
-                  class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-premium cursor-pointer"
+                  class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 transition-premium cursor-pointer"
                   style="min-height: 36px;"
                 >
                   Batal
@@ -3819,13 +3819,13 @@
 
           <Card class="p-5 space-y-4">
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="sangu_title">Judul Sangu / Wirid *</label>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="sangu_title">Judul Sangu / Wirid *</label>
               <Input id="sangu_title" placeholder="e.g. Sholawat Ibrahimiyah, Doa Tolak Bala" bind:value={sanguTitle} required />
             </div>
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="sangu_cat">Kategori *</label>
-              <select id="sangu_cat" class="flex h-12 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-700 focus:outline-none focus:border-teal-500" bind:value={sanguCategory}>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="sangu_cat">Kategori *</label>
+              <select id="sangu_cat" class="flex h-12 w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-3 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-teal-500" bind:value={sanguCategory}>
                 <option value="sholawat">Sholawat</option>
                 <option value="jausyan">Jausyan</option>
                 <option value="nadzom">Nadzom</option>
@@ -3837,13 +3837,13 @@
 
             {#if sanguCategory === 'new'}
               <div class="space-y-1" transition:slideTransition>
-                <label class="text-xs font-bold text-slate-500" for="sangu_new_cat">Nama Kategori Baru *</label>
+                <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="sangu_new_cat">Nama Kategori Baru *</label>
                 <Input id="sangu_new_cat" placeholder="e.g. Wirid, Ratib" bind:value={sanguNewCategory} required />
               </div>
             {/if}
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500">Isi Konten Bacaan *</label>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">Isi Konten Bacaan *</label>
               <RichTextEditor bind:value={sanguContent} placeholder="Tulis isi bacaan arab, latin, dan terjemahan di sini..." />
             </div>
           </Card>
@@ -3853,7 +3853,7 @@
       <!-- RIGHT SIDE: DATABASE LIST -->
       <div class="lg:col-span-7 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+          <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
             <BookOpen class="h-5 w-5 text-teal-600" />
             <span>Daftar Bacaan Sangu ({sanguList.length})</span>
           </h2>
@@ -3866,11 +3866,11 @@
         <!-- Sangu Search Bar -->
         <Card class="p-3">
           <div class="relative">
-            <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
             <input 
               type="text" 
               placeholder="Cari sholawat, nadzom, atau berkas doa..." 
-              class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-teal-500 focus:bg-white"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-teal-500 focus:bg-white dark:bg-slate-900"
               bind:value={sanguSearchQuery}
             />
           </div>
@@ -3881,7 +3881,7 @@
           {#if isLoadingSangu}
             <div class="py-12 text-center space-y-2">
               <div class="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
-              <p class="text-xs font-semibold text-slate-400">Memuat data bacaan...</p>
+              <p class="text-xs font-semibold text-slate-400 dark:text-slate-500">Memuat data bacaan...</p>
             </div>
           {:else}
             {@const filteredSangu = sanguList.filter(item => {
@@ -3893,20 +3893,20 @@
             {#if filteredSangu.length > 0}
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {#each filteredSangu as item (item.id)}
-                  <Card class="p-4 flex flex-col justify-between hover:scale-[1.01] hover:shadow-soft-md transition-all duration-300 h-full border-slate-100">
+                  <Card class="p-4 flex flex-col justify-between hover:scale-[1.01] hover:shadow-soft-md transition-all duration-300 h-full border-slate-100 dark:border-slate-800">
                     <div class="space-y-2.5">
                       <div class="flex items-center justify-between">
                         <span class="text-[10px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full uppercase">
                           {item.category || 'UMUM'}
                         </span>
                       </div>
-                      <h4 class="font-extrabold text-slate-800 text-sm line-clamp-2" title={item.title}>{item.title.toUpperCase()}</h4>
-                      <p class="text-[11px] text-slate-500 font-normal line-clamp-3">
+                      <h4 class="font-extrabold text-slate-800 dark:text-slate-100 text-sm line-clamp-2" title={item.title}>{item.title.toUpperCase()}</h4>
+                      <p class="text-[11px] text-slate-500 dark:text-slate-400 dark:text-slate-500 font-normal line-clamp-3">
                         {item.content ? item.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : ''}
                       </p>
                     </div>
 
-                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                    <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-1.5">
                       <button
                         type="button"
                         on:click={() => startEditSangu(item)}
@@ -3928,8 +3928,8 @@
                 {/each}
               </div>
             {:else}
-              <div class="py-12 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                <p class="text-xs font-semibold text-slate-500">Tidak ada bacaan Sangu ditemukan</p>
+              <div class="py-12 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500">Tidak ada bacaan Sangu ditemukan</p>
               </div>
             {/if}
           {/if}
@@ -3942,7 +3942,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200" transition:fade={{ duration: 150 }}>
       <!-- LEFT SIDE: CREATE FORM -->
       <div class="lg:col-span-5 space-y-4">
-        <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
           {#if editingMadingId}
             <Edit class="h-5 w-5 text-amber-600" />
             <span>Edit Pengumuman Mading</span>
@@ -3955,13 +3955,13 @@
         <Card class="p-5">
           <form on:submit|preventDefault={addMading} class="space-y-4">
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="madTitle">Judul Mading</label>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="madTitle">Judul Mading</label>
               <Input id="madTitle" placeholder="e.g. Jadwal Ronda Masjid Baru" bind:value={madingTitle} required />
             </div>
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="madCat">Kategori Pengumuman</label>
-              <select id="madCat" class="flex h-12 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-700 focus:outline-none focus:border-amber-500" bind:value={madingCategory}>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="madCat">Kategori Pengumuman</label>
+              <select id="madCat" class="flex h-12 w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-3 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-amber-500" bind:value={madingCategory}>
                 <option value="Informasi">Informasi</option>
                 <option value="Kajian">Kajian</option>
                 <option value="Sosial">Sosial</option>
@@ -3972,13 +3972,13 @@
 
             {#if madingCategory === 'new'}
               <div class="space-y-1" transition:slideTransition>
-                <label class="text-xs font-bold text-slate-500" for="madNewCat">Nama Kategori Baru</label>
+                <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="madNewCat">Nama Kategori Baru</label>
                 <Input id="madNewCat" placeholder="e.g. Kreatif, Olahraga" bind:value={madingNewCategory} required />
               </div>
             {/if}
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="madAuth">Penulis</label>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="madAuth">Penulis</label>
               <Input id="madAuth" placeholder="Masukkan nama pembuat" bind:value={madingAuthor} />
             </div>
 
@@ -3987,17 +3987,17 @@
               <input 
                 type="checkbox" 
                 id="madPriority" 
-                class="h-4.5 w-4.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500/20 cursor-pointer" 
+                class="h-4.5 w-4.5 rounded border-slate-300 dark:border-slate-600 text-amber-600 focus:ring-amber-500/20 cursor-pointer" 
                 bind:checked={madingIsPriority} 
               />
-              <label for="madPriority" class="text-xs font-bold text-slate-600 cursor-pointer select-none">
+              <label for="madPriority" class="text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
                 📌 Sematkan Pengumuman (Jadikan Prioritas di Bagian Paling Atas)
               </label>
             </div>
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="madCont">Isi Pengumuman</label>
-              <textarea id="madCont" rows="4" class="flex w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-amber-500 focus:outline-none" placeholder="Tulis detail pengumuman disini..." bind:value={madingContent} required></textarea>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="madCont">Isi Pengumuman</label>
+              <textarea id="madCont" rows="4" class="flex w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:text-slate-500 focus:border-amber-500 focus:outline-none" placeholder="Tulis detail pengumuman disini..." bind:value={madingContent} required></textarea>
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-2">
@@ -4023,7 +4023,7 @@
       <!-- RIGHT SIDE: MADING DATABASE LISTS -->
       <div class="lg:col-span-7 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+          <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
             <FileText class="h-5 w-5 text-amber-600" />
             <span>Pengumuman Resmi ({madingList.length})</span>
           </h2>
@@ -4036,11 +4036,11 @@
         <!-- Mading Search Bar -->
         <Card class="p-3">
           <div class="relative">
-            <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
             <input 
               type="text" 
               placeholder="Cari pengumuman berdasarkan judul, isi, kategori..." 
-              class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-amber-500 focus:bg-white"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-amber-500 focus:bg-white dark:bg-slate-900"
               bind:value={madingSearchQuery}
             />
           </div>
@@ -4048,7 +4048,7 @@
 
         <div class="space-y-2.5 max-h-[600px] overflow-y-auto pr-1">
           {#if isLoadingMading}
-            <div class="py-6 text-center text-xs font-semibold text-slate-400">Memuat pengumuman...</div>
+            <div class="py-6 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">Memuat pengumuman...</div>
           {:else}
             {@const filteredMading = madingList.filter(item => {
               if (!madingSearchQuery) return true;
@@ -4059,22 +4059,22 @@
             {#if filteredMading.length > 0}
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {#each filteredMading as item}
-                  <Card class="p-4 flex flex-col justify-between border-slate-100 {item.is_priority ? 'border-l-4 border-l-amber-500 bg-amber-50/10' : ''}">
+                  <Card class="p-4 flex flex-col justify-between border-slate-100 dark:border-slate-800 {item.is_priority ? 'border-l-4 border-l-amber-500 bg-amber-50/10' : ''}">
                     <div class="leading-tight min-w-0 pr-2">
                       <div class="flex items-center space-x-1.5">
                         {#if item.is_priority}
                           <span class="text-xs text-amber-600" title="Pinned/Prioritas">📌</span>
                         {/if}
-                        <h4 class="font-extrabold text-slate-800 text-sm truncate max-w-[200px]" title={item.title}>{item.title}</h4>
+                        <h4 class="font-extrabold text-slate-800 dark:text-slate-100 text-sm truncate max-w-[200px]" title={item.title}>{item.title}</h4>
                       </div>
-                      <p class="text-[9px] text-slate-400 font-bold uppercase mt-1">
+                      <p class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase mt-1">
                         <span class="px-1.5 py-0.5 rounded bg-amber-50 border border-amber-100 text-amber-700">{item.category}</span>
                         <span class="ml-1">Oleh: {item.author}</span>
                       </p>
-                      <p class="text-xs text-slate-500 line-clamp-3 mt-2">{item.content}</p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 line-clamp-3 mt-2">{item.content}</p>
                     </div>
                     
-                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                    <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-1.5">
                       <button
                         type="button"
                         on:click={() => startEditMading(item)}
@@ -4096,7 +4096,7 @@
                 {/each}
               </div>
             {:else}
-              <div class="py-6 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Tidak ada pengumuman ditemukan.</div>
+              <div class="py-6 text-center text-xs font-semibold text-slate-400 dark:text-slate-500 border border-dashed rounded-xl bg-slate-50 dark:bg-slate-800/50">Tidak ada pengumuman ditemukan.</div>
             {/if}
           {/if}
         </div>
@@ -4108,7 +4108,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200" transition:fade={{ duration: 150 }}>
       <!-- LEFT SIDE: CREATE/EDIT FORM -->
       <div class="lg:col-span-5 space-y-4">
-        <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
           {#if editingStickyId}
             <Edit class="h-5 w-5 text-amber-600" />
             <span>Edit Aspirasi Dinding</span>
@@ -4121,13 +4121,13 @@
         <Card class="p-5">
           <form on:submit|preventDefault={handleSaveSticky} class="space-y-4">
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="stickySender">Nama Pengirim *</label>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="stickySender">Nama Pengirim *</label>
               <Input id="stickySender" placeholder="Masukkan nama Anda..." bind:value={stickySenderName} required />
             </div>
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="stickyTheme">Warna Tempelan *</label>
-              <select id="stickyTheme" class="flex h-12 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-700 focus:outline-none focus:border-amber-500" bind:value={stickyColorTheme}>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="stickyTheme">Warna Tempelan *</label>
+              <select id="stickyTheme" class="flex h-12 w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-3 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-amber-500" bind:value={stickyColorTheme}>
                 {#each stickyColors as col}
                   <option value={col.value}>{col.name}</option>
                 {/each}
@@ -4135,8 +4135,8 @@
             </div>
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="stickyMsg">Isi Catatan/Aspirasi *</label>
-              <textarea id="stickyMsg" rows="4" class="flex w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-amber-500 focus:outline-none" placeholder="Tulis aspirasi atau pesan singkat..." bind:value={stickyMessage} required></textarea>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="stickyMsg">Isi Catatan/Aspirasi *</label>
+              <textarea id="stickyMsg" rows="4" class="flex w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:text-slate-500 focus:border-amber-500 focus:outline-none" placeholder="Tulis aspirasi atau pesan singkat..." bind:value={stickyMessage} required></textarea>
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-2">
@@ -4162,7 +4162,7 @@
       <!-- RIGHT SIDE: DATABASE LIST -->
       <div class="lg:col-span-7 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+          <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
             <FileText class="h-5 w-5 text-amber-600" />
             <span>Moderasi Dinding Aspirasi ({stickyNotes.length})</span>
           </h2>
@@ -4175,11 +4175,11 @@
         <!-- Sticky Notes Search Bar -->
         <Card class="p-3">
           <div class="relative">
-            <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
             <input 
               type="text" 
               placeholder="Cari aspirasi berdasarkan pesan, pengirim..." 
-              class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-amber-500 focus:bg-white"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-amber-500 focus:bg-white dark:bg-slate-900"
               bind:value={stickySearchQuery}
             />
           </div>
@@ -4187,7 +4187,7 @@
  
         <div class="space-y-2.5 max-h-[600px] overflow-y-auto pr-1">
           {#if isLoadingSticky}
-            <div class="py-6 text-center text-xs font-semibold text-slate-400">Memuat aspirasi...</div>
+            <div class="py-6 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">Memuat aspirasi...</div>
           {:else}
             {@const filteredSticky = stickyNotes.filter(item => {
               if (!stickySearchQuery) return true;
@@ -4198,15 +4198,15 @@
             {#if filteredSticky.length > 0}
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {#each filteredSticky as item}
-                  <Card class="p-4 flex flex-col justify-between border-slate-100 hover:border-amber-100 transition-colors">
+                  <Card class="p-4 flex flex-col justify-between border-slate-100 dark:border-slate-800 hover:border-amber-100 transition-colors">
                     <div class="leading-tight min-w-0 pr-2">
-                      <p class="text-xs font-semibold text-slate-700 italic break-words">"{item.message}"</p>
-                      <p class="text-[9px] text-slate-400 font-bold uppercase mt-1">
+                      <p class="text-xs font-semibold text-slate-700 dark:text-slate-200 italic break-words">"{item.message}"</p>
+                      <p class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase mt-1">
                         Tempelan Oleh: {item.sender_name}
                       </p>
                     </div>
                     
-                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                    <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-1.5">
                       <button
                         type="button"
                         on:click={() => startEditSticky(item)}
@@ -4228,7 +4228,7 @@
                 {/each}
               </div>
             {:else}
-              <div class="py-6 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Tidak ada aspirasi ditemukan.</div>
+              <div class="py-6 text-center text-xs font-semibold text-slate-400 dark:text-slate-500 border border-dashed rounded-xl bg-slate-50 dark:bg-slate-800/50">Tidak ada aspirasi ditemukan.</div>
             {/if}
           {/if}
         </div>
@@ -4240,7 +4240,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200" transition:fade={{ duration: 150 }}>
       <!-- LEFT SIDE: UPLOAD FORM -->
       <div class="lg:col-span-5 space-y-4">
-        <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
           <Plus class="h-5 w-5 text-indigo-600" />
           <span>{editingPhotoId ? 'Edit Foto Memori' : 'Unggah Foto Memori Baru'}</span>
         </h2>
@@ -4248,23 +4248,23 @@
         <Card class="p-5">
           <form on:submit|preventDefault={addPhoto} class="space-y-4">
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="phTitle">Judul Kegiatan / Momen</label>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="phTitle">Judul Kegiatan / Momen</label>
               <Input id="phTitle" placeholder="e.g. Raker MAZEEDA" bind:value={photoTitle} required />
             </div>
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="phLoc">Lokasi Momen</label>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="phLoc">Lokasi Momen</label>
               <Input id="phLoc" placeholder="e.g. Lembang, Bandung" bind:value={photoLoc} required />
             </div>
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="phDate">Tanggal</label>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="phDate">Tanggal</label>
               <Input id="phDate" type="date" bind:value={photoDate} required />
             </div>
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="phCategory">Kategori</label>
-              <select id="phCategory" class="flex h-12 w-full rounded-xl border border-border bg-white px-3 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none" bind:value={photoCategory}>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="phCategory">Kategori</label>
+              <select id="phCategory" class="flex h-12 w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-3 text-sm text-slate-700 dark:text-slate-200 focus:border-indigo-500 focus:outline-none" bind:value={photoCategory}>
                 {#each uniquePhotoCategories as cat}
                   <option value={cat}>{cat}</option>
                 {/each}
@@ -4274,28 +4274,28 @@
 
             {#if photoCategory === 'new'}
               <div class="space-y-1" transition:slideTransition>
-                <label class="text-xs font-bold text-slate-500" for="phNewCat">Nama Kategori Baru *</label>
+                <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="phNewCat">Nama Kategori Baru *</label>
                 <Input id="phNewCat" placeholder="e.g. Masa-masa Ibtida'iyah" bind:value={photoNewCategory} required />
               </div>
             {/if}
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="phDesc">Deskripsi Momen</label>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="phDesc">Deskripsi Momen</label>
               <textarea 
                 id="phDesc" 
                 placeholder="Tulis cerita singkat atau deskripsi momen di sini..." 
-                class="flex w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 transition-colors focus:border-indigo-500 focus:outline-none min-h-[80px]"
+                class="flex w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 transition-colors focus:border-indigo-500 focus:outline-none min-h-[80px]"
                 bind:value={photoDesc}
               ></textarea>
             </div>
 
             <div class="space-y-2">
-              <label class="text-xs font-bold text-slate-500">Pilih Berkas Foto</label>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">Pilih Berkas Foto</label>
               <!-- svelte-ignore a11y-click-events-have-key-events -->
               <!-- svelte-ignore a11y-no-static-element-interactions -->
               <div 
                 on:click={() => fileInputRef.click()}
-                class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-500/40 transition-colors cursor-pointer"
+                class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-6 text-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-50 dark:bg-slate-800 hover:border-indigo-500/40 transition-colors cursor-pointer"
               >
                 <input 
                   type="file" 
@@ -4304,13 +4304,13 @@
                   accept="image/*" 
                   class="hidden" 
                 />
-                <UploadCloud class="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                <UploadCloud class="h-8 w-8 text-slate-400 dark:text-slate-500 mx-auto mb-2" />
                 {#if selectedFile}
-                  <p class="text-xs font-bold text-slate-700 truncate max-w-xs mx-auto">{selectedFile.name}</p>
-                  <p class="text-[10px] text-slate-400 mt-1">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                  <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-xs mx-auto">{selectedFile.name}</p>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{(selectedFile.size / 1024).toFixed(1)} KB</p>
                 {:else}
-                  <p class="text-xs font-bold text-slate-600">{editingPhotoId ? 'Klik jika ingin mengganti foto (opsional)' : 'Klik untuk memilih berkas foto'}</p>
-                  <p class="text-[10px] text-slate-400 mt-1">Format PNG, JPG atau WebP hingga 5MB</p>
+                  <p class="text-xs font-bold text-slate-600 dark:text-slate-300">{editingPhotoId ? 'Klik jika ingin mengganti foto (opsional)' : 'Klik untuk memilih berkas foto'}</p>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Format PNG, JPG atau WebP hingga 5MB</p>
                 {/if}
               </div>
             </div>
@@ -4330,7 +4330,7 @@
                 {/if}
               </Button>
               {#if editingPhotoId}
-                <Button type="button" variant="outline" on:click={cancelEditPhoto} class="w-full h-11 border-slate-200 text-slate-600 hover:bg-slate-50 font-bold">
+                <Button type="button" variant="outline" on:click={cancelEditPhoto} class="w-full h-11 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-800 font-bold">
                   Batal Edit
                 </Button>
               {/if}
@@ -4342,7 +4342,7 @@
       <!-- RIGHT SIDE: TIMELINE RECORDS LIST -->
       <div class="lg:col-span-7 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+          <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
             <FileText class="h-5 w-5 text-indigo-600" />
             <span>Daftar Foto Galeri Memori ({photosList.length})</span>
           </h2>
@@ -4356,18 +4356,18 @@
         <Card class="p-3 !overflow-visible">
           <div class="flex items-center space-x-2">
             <div class="relative flex-1">
-              <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
               <input 
                 type="text" 
                 placeholder="Cari foto memori berdasarkan judul, lokasi, kategori..." 
-                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-indigo-500 focus:bg-white"
+                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-indigo-500 focus:bg-white dark:bg-slate-900"
                 bind:value={timelineSearchQuery}
               />
             </div>
             <div class="relative">
               <button 
                 type="button" 
-                class="flex items-center justify-center h-[38px] w-[38px] bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 hover:text-indigo-600 focus:outline-none focus:border-indigo-500 focus:bg-white text-slate-500 transition-colors relative" 
+                class="flex items-center justify-center h-[38px] w-[38px] bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:bg-slate-800 hover:text-indigo-600 focus:outline-none focus:border-indigo-500 focus:bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 dark:text-slate-500 transition-colors relative" 
                 on:click={() => timelineFilterOpen = !timelineFilterOpen}
                 title="Filter Kategori"
               >
@@ -4381,14 +4381,14 @@
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <div class="fixed inset-0 z-40" on:click={() => timelineFilterOpen = false}></div>
-                <div class="absolute right-0 top-full mt-1.5 w-48 bg-white border border-slate-100 rounded-xl shadow-lg z-50 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100">
-                  <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 {timelineFilterCategory === '' ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600'} transition-colors" on:click={() => { timelineFilterCategory = ''; timelineFilterOpen = false; }}>
+                <div class="absolute right-0 top-full mt-1.5 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-lg z-50 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100">
+                  <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:bg-slate-800 {timelineFilterCategory === '' ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600 dark:text-slate-300'} transition-colors" on:click={() => { timelineFilterCategory = ''; timelineFilterOpen = false; }}>
                     Semua Kategori
                   </button>
-                  <div class="h-px bg-slate-100 w-full my-1"></div>
+                  <div class="h-px bg-slate-100 dark:bg-slate-800 w-full my-1"></div>
                   <div class="max-h-60 overflow-y-auto">
                     {#each uniquePhotoCategories as cat}
-                      <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 {timelineFilterCategory === cat ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600'} truncate transition-colors" on:click={() => { timelineFilterCategory = cat; timelineFilterOpen = false; }}>
+                      <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:bg-slate-800 {timelineFilterCategory === cat ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600 dark:text-slate-300'} truncate transition-colors" on:click={() => { timelineFilterCategory = cat; timelineFilterOpen = false; }}>
                         {cat}
                       </button>
                     {/each}
@@ -4402,8 +4402,8 @@
         <div class="space-y-2.5 max-h-[600px] overflow-y-auto pr-1">
           {#if isLoadingPhotos}
             <div class="py-12 text-center space-y-4">
-              <img src="/loading.svg" alt="Loading..." class="h-16 w-16 mx-auto animate-pulse" />
-              <p class="text-xs font-bold text-slate-400 tracking-wide uppercase">Memuat foto memori...</p>
+              <img src="/loading-paperplane.svg" alt="Loading..." class="h-32 w-32 mx-auto animate-pulse" />
+              <p class="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-wide uppercase">Memuat foto memori...</p>
             </div>
           {:else}
             {@const filteredPhotos = photosList.filter(item => {
@@ -4416,14 +4416,14 @@
 
             {#if filteredPhotos.length > 0}
               {#each filteredPhotos as item}
-                <Card class="p-4 relative border-slate-100 hover:border-indigo-100 hover:shadow-soft-sm transition-all duration-200 block">
+                <Card class="p-4 relative border-slate-100 dark:border-slate-800 hover:border-indigo-100 hover:shadow-soft-sm transition-all duration-200 block">
                   <div class="flex items-center space-x-3 min-w-0 pr-16">
                     {#if item.image_url}
-                      <img referrerpolicy="no-referrer" src={convertDriveUrl(item.image_url)} alt={item.title} class="h-12 w-12 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200" />
+                      <img referrerpolicy="no-referrer" src={convertDriveUrl(item.image_url)} alt={item.title} class="h-12 w-12 rounded-lg object-cover bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200 dark:border-slate-700" />
                     {/if}
                     <div class="leading-tight min-w-0">
-                      <h4 class="font-extrabold text-slate-800 text-sm truncate">{item.title}</h4>
-                      <p class="text-[9px] text-slate-400 font-bold uppercase mt-1">
+                      <h4 class="font-extrabold text-slate-800 dark:text-slate-100 text-sm truncate">{item.title}</h4>
+                      <p class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase mt-1">
                         <span class="px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-100 text-indigo-700">{item.category}</span>
                         <span class="ml-1">{item.location} • {item.date}</span>
                       </p>
@@ -4433,7 +4433,7 @@
                     <button 
                       type="button"
                       on:click={() => startEditPhoto(item)}
-                      class="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center justify-center border border-transparent hover:border-indigo-100 transition-colors"
+                      class="h-8 w-8 text-slate-400 dark:text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center justify-center border border-transparent hover:border-indigo-100 transition-colors"
                       title="Edit Foto"
                     >
                       <Edit class="h-4 w-4" />
@@ -4441,7 +4441,7 @@
                     <button 
                       type="button"
                       on:click={() => deletePhoto(item.id)}
-                      class="h-8 w-8 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg flex items-center justify-center border border-transparent hover:border-rose-100 transition-colors"
+                      class="h-8 w-8 text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-50 rounded-lg flex items-center justify-center border border-transparent hover:border-rose-100 transition-colors"
                       title="Hapus Foto"
                     >
                       <Trash2 class="h-4 w-4" />
@@ -4450,11 +4450,11 @@
                 </Card>
               {/each}
             {:else}
-              <div class="py-16 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50 flex flex-col items-center justify-center space-y-4">
-                <img src="/Empty content.svg" alt="Tidak ada data" class="h-40 w-40 opacity-80" />
+              <div class="py-16 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center space-y-4">
+                <img src="/search.svg" alt="Tidak ada data" class="h-40 w-40 opacity-80" />
                 <div>
-                  <p class="text-sm font-bold text-slate-500">Foto Memori tidak ditemukan</p>
-                  <p class="text-xs text-slate-400 mt-1">Silakan sesuaikan filter pencarian atau kategori.</p>
+                  <p class="text-sm font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">Foto Memori tidak ditemukan</p>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Silakan sesuaikan filter pencarian atau kategori.</p>
                 </div>
               </div>
             {/if}
@@ -4468,7 +4468,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200" transition:fade={{ duration: 150 }}>
       <!-- LEFT SIDE: CREATE NOTIFICATION -->
       <div class="lg:col-span-5 space-y-4">
-        <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
           <Plus class="h-5 w-5 text-rose-600" />
           <span>Kirim Notifikasi Baru</span>
         </h2>
@@ -4476,21 +4476,21 @@
         <Card class="space-y-4">
           <div class="space-y-3">
             <div>
-              <label class="text-xs font-bold text-slate-600 mb-1 block" for="notTitle">Judul Notifikasi *</label>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1 block" for="notTitle">Judul Notifikasi *</label>
               <Input id="notTitle" bind:value={notifTitle} placeholder="Contoh: Aplikasi Update v1.00" class="w-full" />
             </div>
             <div>
-              <label class="text-xs font-bold text-slate-600 mb-1 block" for="notMsg">Pesan (opsional)</label>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1 block" for="notMsg">Pesan (opsional)</label>
               <textarea
                 id="notMsg"
                 bind:value={notifMessage}
                 placeholder="Tulis detail pesan singkat untuk user..."
                 rows="3"
-                class="w-full text-sm border border-slate-200 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 bg-slate-50/50"
+                class="w-full text-sm border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 bg-slate-50 dark:bg-slate-800/50"
               ></textarea>
             </div>
             <div>
-              <label class="text-xs font-bold text-slate-600 mb-1 block">Tipe Notifikasi</label>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1 block">Tipe Notifikasi</label>
               <div class="flex flex-wrap gap-2">
                 {#each [
                   { value: 'info', label: 'ℹ️ Info', cls: 'bg-blue-50 border-blue-200 text-blue-700' },
@@ -4501,14 +4501,14 @@
                   <button
                     type="button"
                     on:click={() => notifType = t.value}
-                    class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all {notifType === t.value ? t.cls + ' ring-2 ring-offset-1 ring-current' : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'}"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all {notifType === t.value ? t.cls + ' ring-2 ring-offset-1 ring-current' : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:bg-slate-700'}"
                   >{t.label}</button>
                 {/each}
               </div>
             </div>
           </div>
 
-          <div class="pt-3 border-t border-slate-100">
+          <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
             <Button on:click={addNotif} disabled={isSubmitting || !notifTitle.trim()} class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold h-11">
               <Bell class="h-4 w-4 mr-2" />
               {isSubmitting ? 'Mengirim...' : 'Kirim Notifikasi ke Semua User'}
@@ -4520,7 +4520,7 @@
       <!-- RIGHT SIDE: NOTIFICATION HISTORY -->
       <div class="lg:col-span-7 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+          <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
             <FileText class="h-5 w-5 text-rose-600" />
             <span>Riwayat Notifikasi ({notifList.length})</span>
           </h2>
@@ -4533,11 +4533,11 @@
         <!-- Notifications Search Bar -->
         <Card class="p-3">
           <div class="relative">
-            <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <Search class="absolute left-3 top-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
             <input 
               type="text" 
               placeholder="Cari riwayat notifikasi berdasarkan judul, tipe, isi..." 
-              class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-rose-500 focus:bg-white"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-rose-500 focus:bg-white dark:bg-slate-900"
               bind:value={notifSearchQuery}
             />
           </div>
@@ -4554,7 +4554,7 @@
             })}
 
             {#if filteredNotif.length === 0}
-              <div class="py-12 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">
+              <div class="py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500 border border-dashed rounded-xl bg-slate-50 dark:bg-slate-800/50">
                 Tidak ada notifikasi ditemukan.
               </div>
             {:else}
@@ -4567,17 +4567,17 @@
                        notif.type === 'urgent'  ? 'bg-rose-500'   : 'bg-blue-500'}">
                     </span>
                     <div class="flex-1 min-w-0 leading-normal">
-                      <p class="text-sm font-black text-slate-800 leading-snug">{notif.title}</p>
+                      <p class="text-sm font-black text-slate-800 dark:text-slate-100 leading-snug">{notif.title}</p>
                       {#if notif.message}
-                        <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">{notif.message}</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">{notif.message}</p>
                       {/if}
                       <div class="flex items-center gap-2 mt-1.5">
                         <span class="text-[10px] font-bold uppercase tracking-wider
                           {notif.type === 'success' ? 'text-emerald-600' :
                            notif.type === 'warning' ? 'text-amber-600' :
                            notif.type === 'urgent'  ? 'text-rose-600'   : 'text-blue-600'}">{notif.type}</span>
-                        <span class="text-[10px] text-slate-400">•</span>
-                        <span class="text-[10px] font-semibold {notif.is_active ? 'text-emerald-600' : 'text-slate-400'}">
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500">•</span>
+                        <span class="text-[10px] font-semibold {notif.is_active ? 'text-emerald-600' : 'text-slate-400 dark:text-slate-500'}">
                           {notif.is_active ? '● Aktif' : '○ Nonaktif'}
                         </span>
                       </div>
@@ -4586,11 +4586,11 @@
                   <div class="flex items-center gap-1.5 shrink-0">
                     <button
                       on:click={() => toggleNotif(notif.id, notif.is_active)}
-                      class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition-all {notif.is_active ? 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'}"
+                      class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition-all {notif.is_active ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'}"
                     >{notif.is_active ? 'Nonaktifkan' : 'Aktifkan'}</button>
                     <button
                       on:click={() => deleteNotif(notif.id)}
-                      class="h-8 w-8 flex items-center justify-center rounded-lg border border-transparent text-slate-400 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-100 transition-all"
+                      class="h-8 w-8 flex items-center justify-center rounded-lg border border-transparent text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-100 transition-all"
                     ><Trash2 class="h-3.5 w-3.5" /></button>
                   </div>
                 </Card>
@@ -4605,7 +4605,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200" transition:fade={{ duration: 150 }}>
       <!-- LEFT SIDE: CREATE/EDIT SLIDE -->
       <div class="lg:col-span-5 space-y-4">
-        <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
           {#if editingSlideId}
             <Edit class="h-5 w-5 text-primary" />
             <span>Edit Banner Slide</span>
@@ -4620,54 +4620,54 @@
             
             <!-- Title -->
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-600 mb-1 block" for="slTitle">Judul Slide *</label>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1 block" for="slTitle">Judul Slide *</label>
               <Input id="slTitle" bind:value={slideTitle} placeholder="Contoh: Pembaruan Aplikasi v1.4.0" required />
             </div>
 
             <!-- Description -->
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-600 mb-1 block" for="slDesc">Deskripsi Singkat</label>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1 block" for="slDesc">Deskripsi Singkat</label>
               <textarea 
                 id="slDesc" 
                 bind:value={slideDesc} 
                 placeholder="Tuliskan deskripsi singkat banner slide..." 
                 rows="3"
-                class="flex w-full rounded-xl border border-border bg-white px-3 py-2 text-xs font-semibold text-slate-700 focus:border-primary focus:outline-none"
+                class="flex w-full rounded-xl border border-border bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:border-primary focus:outline-none"
               ></textarea>
             </div>
 
             <!-- Redirect URL -->
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-600 mb-1 block" for="slRedirect">Link Tujuan (Redirect URL)</label>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1 block" for="slRedirect">Link Tujuan (Redirect URL)</label>
               <Input id="slRedirect" bind:value={slideRedirectUrl} placeholder="Contoh: /mading atau https://..." />
-              <p class="text-[10px] text-slate-400 mt-1">Mengarah ke halaman tertentu saat banner diklik (opsional).</p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Mengarah ke halaman tertentu saat banner diklik (opsional).</p>
             </div>
 
             <!-- Photo Upload/URL selection -->
             <div class="space-y-2.5">
-              <label class="text-xs font-bold text-slate-600 block">Foto Banner *</label>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300 block">Foto Banner *</label>
               
               <!-- Direct URL option -->
               <div class="space-y-1">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Opsi A: Tulis URL Gambar</span>
+                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Opsi A: Tulis URL Gambar</span>
                 <Input bind:value={slideImageUrl} placeholder="Contoh: https://images.unsplash.com/..." />
               </div>
 
               <div class="relative flex py-1 items-center">
-                <div class="flex-grow border-t border-slate-100"></div>
+                <div class="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
                 <span class="flex-shrink mx-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest">ATAU</span>
-                <div class="flex-grow border-t border-slate-100"></div>
+                <div class="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
               </div>
 
               <!-- File Upload option -->
               <div class="space-y-1">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Opsi B: Unggah Berkas Foto</span>
+                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Opsi B: Unggah Berkas Foto</span>
                 <input 
                   type="file" 
                   accept="image/*" 
                   bind:this={slideFileRef}
                   on:change={handleSlideFileSelect}
-                  class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-primary hover:file:bg-blue-100 cursor-pointer"
+                  class="block w-full text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-primary hover:file:bg-blue-100 cursor-pointer"
                 />
               </div>
             </div>
@@ -4680,7 +4680,7 @@
             {/if}
 
             <!-- Form Actions -->
-            <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+            <div class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               {#if editingSlideId}
                 <Button 
                   type="button" 
@@ -4707,7 +4707,7 @@
 
       <!-- RIGHT SIDE: SLIDES LIST -->
       <div class="lg:col-span-7 space-y-4">
-        <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center justify-between">
+        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center justify-between">
           <span>Daftar Banner Slide ({carouselSlides.length})</span>
           <button 
             type="button" 
@@ -4721,7 +4721,7 @@
 
         <div class="grid grid-cols-1 gap-4">
           {#if isLoadingCarousel}
-            <div class="py-12 text-center text-xs font-semibold text-slate-400">Memuat banner slide...</div>
+            <div class="py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">Memuat banner slide...</div>
           {:else}
             {#if carouselSlides.length > 0}
               {#each carouselSlides as slide (slide.id)}
@@ -4729,18 +4729,18 @@
                   <img referrerpolicy="no-referrer" 
                     src={convertDriveUrl(slide.image_url)} 
                     alt={slide.title} 
-                    class="h-16 w-24 rounded-lg object-cover border border-slate-200/60 bg-slate-50 shrink-0" 
+                    class="h-16 w-24 rounded-lg object-cover border border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-800 shrink-0" 
                     on:error={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1594322436404-5a0526db4d13?q=80&w=200&auto=format&fit=crop'; }}
                   />
                   <div class="min-w-0 flex-1 space-y-1">
-                    <h3 class="font-extrabold text-sm text-slate-800 truncate pr-16">{slide.title}</h3>
+                    <h3 class="font-extrabold text-sm text-slate-800 dark:text-slate-100 truncate pr-16">{slide.title}</h3>
                     {#if slide.description}
-                      <p class="text-xs text-slate-400 font-medium line-clamp-1">{slide.description}</p>
+                      <p class="text-xs text-slate-400 dark:text-slate-500 font-medium line-clamp-1">{slide.description}</p>
                     {/if}
                     {#if slide.redirect_url}
                       <p class="text-[10px] text-primary font-black truncate">🔗 Link: {slide.redirect_url}</p>
                     {/if}
-                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider pt-1">Dibuat: {formatDateTime(slide.created_at)}</p>
+                    <p class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider pt-1">Dibuat: {formatDateTime(slide.created_at)}</p>
                   </div>
                   
                   <!-- Actions -->
@@ -4748,7 +4748,7 @@
                     <button
                       type="button"
                       on:click={() => startEditSlide(slide)}
-                      class="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-blue-50 transition-all"
+                      class="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-primary hover:bg-blue-50 transition-all"
                       title="Edit Banner"
                       style="min-height: 32px; min-width: 32px;"
                     >
@@ -4757,7 +4757,7 @@
                     <button
                       type="button"
                       on:click={() => deleteNewsSlide(slide.id)}
-                      class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                      class="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all"
                       title="Hapus Banner"
                       style="min-height: 32px; min-width: 32px;"
                     >
@@ -4767,7 +4767,7 @@
                 </Card>
               {/each}
             {:else}
-              <div class="py-12 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Belum ada banner slide yang dibuat.</div>
+              <div class="py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500 border border-dashed rounded-xl bg-slate-50 dark:bg-slate-800/50">Belum ada banner slide yang dibuat.</div>
             {/if}
           {/if}
         </div>
@@ -4779,23 +4779,23 @@
     <div in:fade={{ duration: 200 }} class="space-y-6">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
         <div>
-          <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+          <h1 class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-3">
             <Award class="h-8 w-8 text-primary" />
             Manajemen Nilai Akademik
           </h1>
-          <p class="text-sm text-slate-500 mt-1">Kelola data nilai santri secara manual atau upload via CSV.</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Kelola data nilai santri secara manual atau upload via CSV.</p>
         </div>
         
-        <div class="flex items-center bg-slate-100 p-1 rounded-xl shadow-inner w-full sm:w-auto">
+        <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner w-full sm:w-auto">
           <button 
             on:click={() => nilai_mode = 'manual'}
-            class="flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all duration-200 {nilai_mode === 'manual' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
+            class="flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all duration-200 {nilai_mode === 'manual' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200'}"
           >
             Kelola Manual
           </button>
           <button 
             on:click={() => nilai_mode = 'csv'}
-            class="flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all duration-200 {nilai_mode === 'csv' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
+            class="flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all duration-200 {nilai_mode === 'csv' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-200'}"
           >
             Upload CSV
           </button>
@@ -4805,16 +4805,16 @@
 
 
       {#if nilai_mode === 'csv'}
-        <div class="mb-2 mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <label class="text-sm font-bold text-slate-700 whitespace-nowrap">Pilih Tabel Database:</label>
-          <select bind:value={nilai_targetTable} class="w-full sm:max-w-xs text-sm px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-medium text-slate-700">
+        <div class="mb-2 mt-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-none flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <label class="text-sm font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">Pilih Tabel Database:</label>
+          <select bind:value={nilai_targetTable} class="w-full sm:max-w-xs text-sm px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-medium text-slate-700 dark:text-slate-200">
             <option value="nilai_tamrin">Tabel: nilai_tamrin (Atau Muhafadzoh)</option>
             <option value="nilai_ujian">Tabel: nilai_ujian</option>
           </select>
         </div>
 
-        <Card class="p-6 border-emerald-100 shadow-sm mt-4">
-          <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <Card class="p-6 border-emerald-100 shadow-sm dark:shadow-none mt-4">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
             <UploadCloud class="h-5 w-5 text-emerald-500" />
             Import CSV Nilai
           </h3>
@@ -4822,9 +4822,9 @@
 
 
         <div class="space-y-4">
-          <div class="p-4 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 hover:border-emerald-400 transition-colors relative group text-center cursor-pointer">
+          <div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-emerald-400 transition-colors relative group text-center cursor-pointer">
             <input type="file" accept=".csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" on:change={handleNilaiFileSelect} />
-            <div class="flex flex-col items-center justify-center space-y-2 text-slate-500 group-hover:text-emerald-500 transition-colors">
+            <div class="flex flex-col items-center justify-center space-y-2 text-slate-500 dark:text-slate-400 dark:text-slate-500 group-hover:text-emerald-500 transition-colors">
               <UploadCloud class="h-8 w-8" />
               <p class="text-sm font-semibold">Klik atau Drag & Drop file CSV Nilai di sini</p>
               <p class="text-xs opacity-75">Hanya file berformat .csv yang diterima</p>
@@ -4880,12 +4880,12 @@
       
       {:else}
         <!-- MODE KELOLA MANUAL -->
-        <Card class="p-0 overflow-hidden shadow-sm border-indigo-100 mt-4">
+        <Card class="p-0 overflow-hidden shadow-sm dark:shadow-none border-indigo-100 mt-4">
           <!-- Toolbar -->
-          <div class="p-4 sm:p-5 border-b border-slate-100 bg-white flex flex-col gap-4">
+          <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col gap-4">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div class="relative w-full sm:max-w-md">
-                <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400" />
+                <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
                 <input 
                   type="text" 
                   placeholder="Cari NIS atau Nama Siswi..." 
@@ -4894,38 +4894,38 @@
                     clearTimeout(searchTimeout);
                     searchTimeout = setTimeout(fetchNilaiManual, 500);
                   }}
-                  class="w-full pl-10 pr-4 py-2.5 text-sm font-medium border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
+                  class="w-full pl-10 pr-4 py-2.5 text-sm font-medium border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:bg-white dark:bg-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400 dark:text-slate-500"
                 />
               </div>
-              <Button on:click={openAddNilai} class="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg transition-all rounded-xl py-2.5 px-5 shrink-0">
+              <Button on:click={openAddNilai} class="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md dark:shadow-none hover:shadow-lg transition-all rounded-xl py-2.5 px-5 shrink-0">
                 <Plus class="h-4.5 w-4.5" />
                 <span class="font-bold tracking-wide">Tambah Nilai</span>
               </Button>
             </div>
             
-            <div class="flex flex-col sm:flex-row gap-4 w-full bg-slate-50/80 p-3 rounded-xl border border-slate-100">
+            <div class="flex flex-col sm:flex-row gap-4 w-full bg-slate-50 dark:bg-slate-800/80 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
               <div class="w-full sm:w-1/2">
-                <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2 block">Filter Kategori Nilai</label>
+                <label class="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 block">Filter Kategori Nilai</label>
                 <div class="relative group cursor-pointer">
                   <div class="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 bg-indigo-50 rounded-lg text-indigo-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors pointer-events-none">
                     <Award class="h-3.5 w-3.5" />
                   </div>
-                  <select bind:value={nilaiFilterKategori} on:change={() => { if(nilaiSearch.trim().length >= 2) fetchNilaiManual(); }} class="w-full text-sm pl-12 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-bold text-slate-700 appearance-none shadow-sm cursor-pointer hover:border-indigo-300">
+                  <select bind:value={nilaiFilterKategori} on:change={() => { if(nilaiSearch.trim().length >= 2) fetchNilaiManual(); }} class="w-full text-sm pl-12 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-bold text-slate-700 dark:text-slate-200 appearance-none shadow-sm dark:shadow-none cursor-pointer hover:border-indigo-300">
                     <option value="">Semua Kategori</option>
                     <option value="Tamrin">Tamrin</option>
                     <option value="Ujian">Ujian</option>
                     <option value="Muhafadzoh">Muhafadzoh</option>
                   </select>
-                  <ChevronDown class="absolute right-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400 group-hover:text-indigo-500 transition-colors pointer-events-none" />
+                  <ChevronDown class="absolute right-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400 dark:text-slate-500 group-hover:text-indigo-500 transition-colors pointer-events-none" />
                 </div>
               </div>
               <div class="w-full sm:w-1/2">
-                <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2 block">Filter Tahun Ajaran</label>
+                <label class="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 block">Filter Tahun Ajaran</label>
                 <div class="relative group cursor-pointer">
                   <div class="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 bg-sky-50 rounded-lg text-sky-500 group-hover:bg-sky-100 group-hover:text-sky-600 transition-colors pointer-events-none">
                     <Calendar class="h-3.5 w-3.5" />
                   </div>
-                  <select bind:value={nilaiFilterTahunAjaran} on:change={() => { if(nilaiSearch.trim().length >= 2) fetchNilaiManual(); }} class="w-full text-sm pl-12 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all font-bold text-slate-700 appearance-none shadow-sm cursor-pointer hover:border-sky-300">
+                  <select bind:value={nilaiFilterTahunAjaran} on:change={() => { if(nilaiSearch.trim().length >= 2) fetchNilaiManual(); }} class="w-full text-sm pl-12 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all font-bold text-slate-700 dark:text-slate-200 appearance-none shadow-sm dark:shadow-none cursor-pointer hover:border-sky-300">
                     <option value="">Semua Tahun Ajaran</option>
                     <option value="2023-2024">2023-2024</option>
                     <option value="2024-2025">2024-2025</option>
@@ -4933,7 +4933,7 @@
                     <option value="2026-2027">2026-2027</option>
                     <option value="2027-2028">2027-2028</option>
                   </select>
-                  <ChevronDown class="absolute right-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400 group-hover:text-sky-500 transition-colors pointer-events-none" />
+                  <ChevronDown class="absolute right-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400 dark:text-slate-500 group-hover:text-sky-500 transition-colors pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -4942,39 +4942,39 @@
           <!-- Table -->
           <div class="overflow-x-auto">
             <table class="w-full text-left text-sm whitespace-nowrap">
-              <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+              <thead class="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
-                  <th class="px-5 py-4 border-b border-slate-100">Siswi</th>
-                  <th class="px-5 py-4 border-b border-slate-100">Periode & Tahun</th>
-                  <th class="px-5 py-4 border-b border-slate-100">Pelajaran</th>
-                  <th class="px-5 py-4 border-b border-slate-100">Perolehan / Bayan</th>
-                  <th class="px-5 py-4 border-b border-slate-100 text-right">Aksi</th>
+                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">Siswi</th>
+                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">Periode & Tahun</th>
+                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">Pelajaran</th>
+                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">Perolehan / Bayan</th>
+                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-50">
                 {#if isFetchingNilai}
-                  <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400 font-medium">Mencari data nilai...</td></tr>
+                  <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400 dark:text-slate-500 font-medium">Mencari data nilai...</td></tr>
                 {:else if !nilaiSearch || nilaiSearch.length < 2}
-                  <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400 font-medium bg-slate-50/50">Ketikkan minimal 2 huruf/angka dari Nama atau NIS untuk mencari data nilai.</td></tr>
+                  <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400 dark:text-slate-500 font-medium bg-slate-50 dark:bg-slate-800/50">Ketikkan minimal 2 huruf/angka dari Nama atau NIS untuk mencari data nilai.</td></tr>
                 {:else if nilaiData.length === 0}
                   <tr><td colspan="5" class="px-5 py-12 text-center text-rose-400 font-medium bg-rose-50/50 border-y border-rose-100">Data nilai tidak ditemukan untuk pencarian "{nilaiSearch}".</td></tr>
                 {:else}
                   {#each nilaiData as item}
-                    <tr class="hover:bg-slate-50/80 transition-colors group">
+                    <tr class="hover:bg-slate-50 dark:bg-slate-800/80 transition-colors group">
                       <td class="px-5 py-3">
-                        <div class="font-bold text-slate-800">{item.nama_siswi || '-'}</div>
-                        <div class="text-[11px] font-semibold text-slate-500 mt-0.5">NIS: {item.nis}</div>
+                        <div class="font-bold text-slate-800 dark:text-slate-100">{item.nama_siswi || '-'}</div>
+                        <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">NIS: {item.nis}</div>
                       </td>
                       <td class="px-5 py-3">
                         <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-50 border border-indigo-100/50 text-indigo-700 text-xs font-bold">
                           {item.periode || '-'}
                         </div>
-                        <div class="text-[11px] text-slate-500 font-medium mt-1">{item.tahun_ajaran || '-'}</div>
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium mt-1">{item.tahun_ajaran || '-'}</div>
                       </td>
                       <td class="px-5 py-3">
-                        <div class="font-bold text-slate-700">{item.mata_pelajaran || '-'}</div>
+                        <div class="font-bold text-slate-700 dark:text-slate-200">{item.mata_pelajaran || '-'}</div>
                         {#if item.kategori}
-                          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{item.kategori}</div>
+                          <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">{item.kategori}</div>
                         {/if}
                       </td>
                       <td class="px-5 py-3">
@@ -4984,7 +4984,7 @@
                           {@const bayan = parts[1] ? parts[1].trim() : '-'}
                           
                           <div class="font-black text-sm text-emerald-700">
-                            {perolehan} <span class="text-slate-300 font-normal mx-1.5">|</span> <span class="text-slate-600">{bayan}</span>
+                            {perolehan} <span class="text-slate-300 font-normal mx-1.5">|</span> <span class="text-slate-600 dark:text-slate-300">{bayan}</span>
                           </div>
                         {:else}
                           <!-- NON-MUHAFADZOH / STANDARD -->
@@ -4994,7 +4994,7 @@
                           <div class="font-black text-sm text-emerald-700">
                             {perolehan} 
                             {#if bayan}
-                              <span class="text-slate-300 font-normal mx-1.5">|</span> <span class="text-slate-600">{bayan}</span>
+                              <span class="text-slate-300 font-normal mx-1.5">|</span> <span class="text-slate-600 dark:text-slate-300">{bayan}</span>
                             {/if}
                           </div>
                         {/if}
@@ -5024,13 +5024,13 @@
       <!-- LEFT SIDE: INPUT FORM & CSV UPLOAD -->
       <div class="lg:col-span-6 space-y-4">
         <!-- CSV Import Widget for Kepengurusan -->
-        <Card class="p-5 space-y-3 border-dashed border-2 border-slate-200 bg-slate-50/20 mb-4">
-          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-            <h3 class="text-sm font-bold text-slate-800 flex items-center space-x-2">
+        <Card class="p-5 space-y-3 border-dashed border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/20 mb-4">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
               <UploadCloud class="h-4.5 w-4.5 text-primary" />
               <span>Impor Data Pengurus (.CSV)</span>
             </h3>
-            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bulk Upload</span>
+            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Bulk Upload</span>
           </div>
 
           <!-- Rules / Instructions -->
@@ -5052,7 +5052,7 @@
             on:dragleave={kep_handleDragLeave}
             on:drop={kep_handleDrop}
             class="border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors
-              {kep_isDragging ? 'border-primary bg-blue-50/30' : 'border-slate-200 bg-white hover:border-primary/40'}"
+              {kep_isDragging ? 'border-primary bg-blue-50/30' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-primary/40'}"
             on:click={() => document.getElementById('kep-csv-file-input')?.click()}
           >
             <input 
@@ -5062,12 +5062,12 @@
               class="hidden" 
               on:change={kep_handleFileSelect}
             />
-            <UploadCloud class="h-7 w-7 text-slate-400 mx-auto mb-1.5" />
+            <UploadCloud class="h-7 w-7 text-slate-400 dark:text-slate-500 mx-auto mb-1.5" />
             {#if kep_csvFile}
-              <p class="text-xs font-bold text-slate-700 truncate max-w-xs mx-auto">{kep_csvFile.name}</p>
-              <p class="text-[10px] text-slate-400 mt-1">{(kep_csvFile.size / 1024).toFixed(1)} KB</p>
+              <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-xs mx-auto">{kep_csvFile.name}</p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{(kep_csvFile.size / 1024).toFixed(1)} KB</p>
             {:else}
-              <p class="text-xs font-bold text-slate-600 text-center">Tarik & letakkan berkas CSV, atau klik untuk memilih</p>
+              <p class="text-xs font-bold text-slate-600 dark:text-slate-300 text-center">Tarik & letakkan berkas CSV, atau klik untuk memilih</p>
             {/if}
           </div>
 
@@ -5090,7 +5090,7 @@
           {/if}
         </Card>
 
-        <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
           {#if editingKepId}
             <Edit class="h-5 w-5 text-indigo-600" />
             <span>Edit Pengurus</span>
@@ -5107,8 +5107,8 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Tahun Ajaran -->
               <div class="space-y-1">
-                <label class="text-xs font-bold text-slate-500" for="kep_year">Tahun Ajaran *</label>
-                <select id="kep_year" class="flex h-11 w-full rounded-xl border border-slate-200/80 bg-white px-3 text-xs font-semibold text-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" bind:value={kep_tahunAjaran}>
+                <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="kep_year">Tahun Ajaran *</label>
+                <select id="kep_year" class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 px-3 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" bind:value={kep_tahunAjaran}>
                   <option value="2026-2027">2026-2027</option>
                   <option value="2027-2028">2027-2028</option>
                   <option value="2028-2029">2028-2029</option>
@@ -5120,13 +5120,13 @@
 
               <!-- Nama Lengkap -->
               <div class="space-y-1 relative">
-                <label class="text-xs font-bold text-slate-500" for="kep_name">Nama Pengurus *</label>
+                <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="kep_name">Nama Pengurus *</label>
                 <div class="relative">
                   <input 
                     id="kep_name" 
                     type="text"
                     placeholder="Ketik untuk mencari nama..." 
-                    class="flex h-11 w-full rounded-xl border border-slate-200/80 bg-white px-3 text-xs font-semibold text-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
+                    class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 px-3 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
                     bind:value={kep_namaLengkap} 
                     on:focus={() => { showKepDropdown = true; kepSearchQuery = kep_namaLengkap; }}
                     on:blur={() => setTimeout(() => showKepDropdown = false, 200)}
@@ -5135,12 +5135,12 @@
                   />
                   <!-- Custom Dropdown -->
                   {#if showKepDropdown}
-                    <ul class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                    <ul class="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-60 overflow-y-auto">
                       {#each squad.filter(s => (s.nama_lengkap || '').toLowerCase().includes((kepSearchQuery || '').toLowerCase())).sort((a, b) => a.nama_lengkap.localeCompare(b.nama_lengkap)).slice(0, 15) as item}
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                         <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
                         <li 
-                          class="px-4 py-2.5 text-xs text-slate-700 hover:bg-primary/10 hover:text-primary cursor-pointer border-b border-slate-50 last:border-0"
+                          class="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-primary/10 hover:text-primary cursor-pointer border-b border-slate-50 last:border-0"
                           on:mousedown={() => {
                             kep_namaLengkap = item.nama_lengkap;
                             kepSearchQuery = item.nama_lengkap;
@@ -5149,12 +5149,12 @@
                         >
                           <span class="font-bold">{item.nama_lengkap}</span>
                           {#if item.nama_panggilan}
-                            <span class="text-slate-400 ml-1">({item.nama_panggilan})</span>
+                            <span class="text-slate-400 dark:text-slate-500 ml-1">({item.nama_panggilan})</span>
                           {/if}
                         </li>
                       {/each}
                       {#if squad.filter(s => (s.nama_lengkap || '').toLowerCase().includes((kepSearchQuery || '').toLowerCase())).length === 0}
-                        <li class="px-4 py-3 text-xs text-slate-400 text-center italic">Nama tidak ditemukan</li>
+                        <li class="px-4 py-3 text-xs text-slate-400 dark:text-slate-500 text-center italic">Nama tidak ditemukan</li>
                       {/if}
                     </ul>
                   {/if}
@@ -5165,19 +5165,19 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Jabatan -->
               <div class="space-y-1">
-                <label class="text-xs font-bold text-slate-500" for="kep_role">Jabatan / Peran *</label>
+                <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="kep_role">Jabatan / Peran *</label>
                 <Input id="kep_role" placeholder="e.g. Ketua Koordinator" class="h-11 rounded-xl text-xs" bind:value={kep_jabatan} required />
               </div>
 
               <!-- Divisi / Bagian -->
               <div class="space-y-1 relative">
-                <label class="text-xs font-bold text-slate-500" for="kep_division">Divisi / Bagian *</label>
+                <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="kep_division">Divisi / Bagian *</label>
                 <div class="relative">
                   <input 
                     id="kep_division" 
                     type="text"
                     placeholder="Ketik divisi atau pilih..." 
-                    class="flex h-11 w-full rounded-xl border border-slate-200/80 bg-white px-3 text-xs font-semibold text-slate-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
+                    class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 px-3 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
                     bind:value={kep_divisi} 
                     on:focus={() => { showDivisiDropdown = true; divisiSearchQuery = kep_divisi; }}
                     on:blur={() => setTimeout(() => showDivisiDropdown = false, 200)}
@@ -5186,12 +5186,12 @@
                   />
                   <!-- Custom Dropdown -->
                   {#if showDivisiDropdown && availableDivisions.length > 0}
-                    <ul class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    <ul class="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
                       {#each availableDivisions.filter(d => d.toLowerCase().includes((divisiSearchQuery || '').toLowerCase())).slice(0, 15) as divName}
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                         <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
                         <li 
-                          class="px-4 py-2.5 text-xs text-slate-700 hover:bg-primary/10 hover:text-primary cursor-pointer border-b border-slate-50 last:border-0"
+                          class="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-primary/10 hover:text-primary cursor-pointer border-b border-slate-50 last:border-0"
                           on:mousedown={() => {
                             kep_divisi = divName;
                             divisiSearchQuery = divName;
@@ -5202,7 +5202,7 @@
                         </li>
                       {/each}
                       {#if availableDivisions.filter(d => d.toLowerCase().includes((divisiSearchQuery || '').toLowerCase())).length === 0}
-                        <li class="px-4 py-3 text-xs text-slate-400 text-center italic">Belum ada divisi serupa</li>
+                        <li class="px-4 py-3 text-xs text-slate-400 dark:text-slate-500 text-center italic">Belum ada divisi serupa</li>
                       {/if}
                     </ul>
                   {/if}
@@ -5212,11 +5212,11 @@
 
             <!-- Custom Photo URL (opsional) -->
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-500" for="kep_photo">URL Foto Khusus (Opsional)</label>
+              <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="kep_photo">URL Foto Khusus (Opsional)</label>
               <Input id="kep_photo" placeholder="Kosongkan untuk memakai foto profil asli alumni" class="h-11 rounded-xl text-xs" bind:value={kep_fotoCustomUrl} />
             </div>
 
-            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
               {#if editingKepId}
                 <Button type="button" variant="secondary" on:click={cancelEditKepengurusan} size="sm">Batal</Button>
               {/if}
@@ -5239,7 +5239,7 @@
       <!-- RIGHT SIDE: KEPENGURUSAN LIST -->
       <div class="lg:col-span-6 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 class="text-lg font-bold text-slate-800 tracking-tight flex items-center space-x-2">
+          <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center space-x-2">
             <FileText class="h-5 w-5 text-indigo-600" />
             <span>Database Pengurus ({kepengurusanList.length})</span>
           </h2>
@@ -5252,12 +5252,12 @@
         <!-- Search and Filter Bar -->
         <div class="flex flex-col sm:flex-row gap-2 w-full">
           <!-- Search Input -->
-          <div class="relative flex-1 bg-white border border-slate-200 rounded-xl transition-all duration-300 h-10 overflow-hidden focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 shadow-sm">
-            <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+          <div class="relative flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl transition-all duration-300 h-10 overflow-hidden focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 shadow-sm dark:shadow-none">
+            <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
             <input 
               type="text" 
               placeholder="Cari pengurus berdasarkan nama, jabatan, divisi..." 
-              class="w-full h-full bg-transparent pl-10 pr-4 text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none"
+              class="w-full h-full bg-transparent pl-10 pr-4 text-xs font-semibold text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none"
               bind:value={kepengurusanSearchQuery}
             />
           </div>
@@ -5267,7 +5267,7 @@
             <button
               type="button"
               on:click={() => showAdminKepYearFilterDropdown = !showAdminKepYearFilterDropdown}
-              class="w-full h-full pl-9 pr-8 flex items-center bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-bold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-100/50 transition-all cursor-pointer focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+              class="w-full h-full pl-9 pr-8 flex items-center bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-bold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-100/50 transition-all cursor-pointer focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-sm dark:shadow-none"
             >
               <Calendar class="absolute left-3 h-4 w-4 text-indigo-500 pointer-events-none" />
               <span class="truncate">{kepengurusanYearFilter === 'all' ? 'Semua TA' : kepengurusanYearFilter}</span>
@@ -5283,7 +5283,7 @@
               <!-- svelte-ignore a11y-no-static-element-interactions -->
               <div class="fixed inset-0 z-40" on:click={() => showAdminKepYearFilterDropdown = false}></div>
               
-              <div class="absolute z-50 mt-1 right-0 w-40 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 py-1">
+              <div class="absolute z-50 mt-1 right-0 w-40 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in slide-in-from-top-2 py-1">
                 {#each [
                   { value: 'all', label: 'Semua TA' },
                   { value: '2026-2027', label: '2026-2027' },
@@ -5295,7 +5295,7 @@
                 ] as option}
                   <button
                     type="button"
-                    class="w-full text-left px-4 py-2.5 text-xs font-bold transition-colors hover:bg-slate-50 flex items-center justify-between {kepengurusanYearFilter === option.value ? 'bg-indigo-50/50 text-indigo-700' : 'text-slate-600'}"
+                    class="w-full text-left px-4 py-2.5 text-xs font-bold transition-colors hover:bg-slate-50 dark:bg-slate-800 flex items-center justify-between {kepengurusanYearFilter === option.value ? 'bg-indigo-50/50 text-indigo-700' : 'text-slate-600 dark:text-slate-300'}"
                     on:click={() => {
                       kepengurusanYearFilter = option.value;
                       showAdminKepYearFilterDropdown = false;
@@ -5315,7 +5315,7 @@
         <!-- List View -->
         <div class="space-y-3 max-h-[600px] overflow-y-auto pr-1">
           {#if isLoadingKepengurusan}
-            <div class="py-12 text-center text-xs font-semibold text-slate-400">Memuat data pengurus...</div>
+            <div class="py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">Memuat data pengurus...</div>
           {:else}
             {@const filteredKep = kepengurusanList.filter(item => {
               // 1. Filter by Year
@@ -5339,14 +5339,14 @@
               {#each filteredKep as item}
                 {@const alumni = alumniPhotoMap[item.nama_lengkap.trim().toLowerCase()]}
                 {@const profilePhoto = item.foto_custom_url || (alumni && alumni.foto_url)}
-                <Card noPadding class="border-slate-100 hover:shadow-soft-sm hover:border-indigo-100/80 transition-all duration-300">
+                <Card noPadding class="border-slate-100 dark:border-slate-800 hover:shadow-soft-sm hover:border-indigo-100/80 transition-all duration-300">
                   <div class="p-3.5 flex items-center justify-between gap-4">
                     <div class="flex items-center space-x-3.5 min-w-0">
                       {#if profilePhoto}
                         <img referrerpolicy="no-referrer" 
                           src={convertDriveUrl(profilePhoto)} 
                           alt={item.nama_lengkap} 
-                          class="h-11 w-11 rounded-full object-cover shadow-soft-sm border border-slate-100 shrink-0"
+                          class="h-11 w-11 rounded-full object-cover shadow-soft-sm border border-slate-100 dark:border-slate-800 shrink-0"
                         />
                       {:else}
                         <div class="h-11 w-11 rounded-full flex items-center justify-center font-bold text-xs bg-indigo-50 border border-indigo-100 text-indigo-600 shrink-0">
@@ -5356,11 +5356,11 @@
 
                       <div class="min-w-0 leading-snug">
                         <div class="flex flex-wrap items-center gap-1.5">
-                          <h4 class="font-extrabold text-slate-800 text-sm truncate">{item.nama_lengkap}</h4>
+                          <h4 class="font-extrabold text-slate-800 dark:text-slate-100 text-sm truncate">{item.nama_lengkap}</h4>
                           <span class="px-1.5 py-0.5 rounded-md bg-indigo-50 border border-indigo-100/50 text-indigo-700 text-[9px] font-black tracking-tight">{item.tahun_ajaran}</span>
                         </div>
                         <p class="text-xs text-primary font-black uppercase tracking-wider mt-0.5">{item.jabatan}</p>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide mt-0.5">{item.divisi}</p>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wide mt-0.5">{item.divisi}</p>
                       </div>
                     </div>
                     
@@ -5368,7 +5368,7 @@
                       <button
                         type="button"
                         on:click={() => startEditKepengurusan(item)}
-                        class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors flex items-center justify-center"
+                        class="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors flex items-center justify-center"
                         title="Edit Pengurus"
                       >
                         <Edit class="h-4.5 w-4.5" />
@@ -5376,7 +5376,7 @@
                       <button 
                         type="button"
                         on:click={() => deleteKepengurusan(item.id)}
-                        class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center"
+                        class="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center"
                         title="Hapus Pengurus"
                       >
                         <Trash2 class="h-4.5 w-4.5" />
@@ -5386,7 +5386,7 @@
                 </Card>
               {/each}
             {:else}
-              <div class="py-12 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Tidak ada pengurus ditemukan.</div>
+              <div class="py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500 border border-dashed rounded-xl bg-slate-50 dark:bg-slate-800/50">Tidak ada pengurus ditemukan.</div>
             {/if}
           {/if}
         </div>
@@ -5397,13 +5397,13 @@
     <div in:fade={{ duration: 200 }} class="space-y-6">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
         <div>
-          <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+          <h1 class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-3">
             <CheckCircle2 class="h-8 w-8 text-primary" />
             Persetujuan Foto Profil
           </h1>
-          <p class="text-sm text-slate-500 mt-1">Kelola dan setujui foto profil custom yang diunggah oleh anggota.</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Kelola dan setujui foto profil custom yang diunggah oleh anggota.</p>
         </div>
-        <button on:click={fetchPendingPhotos} class="px-4 py-2 bg-white border border-slate-200 text-slate-600 font-bold text-xs rounded-xl shadow-sm hover:bg-slate-50 flex items-center gap-2">
+        <button on:click={fetchPendingPhotos} class="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl shadow-sm dark:shadow-none hover:bg-slate-50 dark:bg-slate-800 flex items-center gap-2">
           <RefreshCw class="h-4 w-4 {isLoadingPendingPhotos ? 'animate-spin' : ''}" />
           Segarkan
         </button>
@@ -5411,17 +5411,17 @@
 
       <Card class="p-3 overflow-visible">
         <div class="relative w-full">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
           <input 
             type="text" 
             placeholder="Cari nama pengunggah..." 
-            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-12 text-xs font-medium focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors"
+            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 pl-9 pr-12 text-xs font-medium focus:outline-none focus:border-indigo-500 focus:bg-white dark:bg-slate-900 transition-colors"
             bind:value={customPhotoSearchQuery}
           />
           <div class="absolute right-1.5 top-1/2 -translate-y-1/2">
             <button 
               type="button" 
-              class="flex items-center justify-center h-7 w-7 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-indigo-600 focus:outline-none text-slate-500 transition-colors relative shadow-sm" 
+              class="flex items-center justify-center h-7 w-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:bg-slate-800 hover:text-indigo-600 focus:outline-none text-slate-500 dark:text-slate-400 dark:text-slate-500 transition-colors relative shadow-sm dark:shadow-none" 
               on:click={() => customPhotoFilterOpen = !customPhotoFilterOpen}
               title="Filter Status"
             >
@@ -5435,15 +5435,15 @@
               <!-- svelte-ignore a11y-click-events-have-key-events -->
               <!-- svelte-ignore a11y-no-static-element-interactions -->
               <div class="fixed inset-0 z-40" on:click={() => customPhotoFilterOpen = false}></div>
-              <div class="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-lg z-50 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100">
-                <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 {customPhotoStatusFilter === 'all' ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600'} transition-colors" on:click={() => { customPhotoStatusFilter = 'all'; customPhotoFilterOpen = false; }}>
+              <div class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-lg z-50 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100">
+                <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:bg-slate-800 {customPhotoStatusFilter === 'all' ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600 dark:text-slate-300'} transition-colors" on:click={() => { customPhotoStatusFilter = 'all'; customPhotoFilterOpen = false; }}>
                   Semua Foto
                 </button>
-                <div class="h-px bg-slate-100 w-full my-1"></div>
-                <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 {customPhotoStatusFilter === 'pending' ? 'text-amber-600 bg-amber-50/50' : 'text-slate-600'} transition-colors" on:click={() => { customPhotoStatusFilter = 'pending'; customPhotoFilterOpen = false; }}>
+                <div class="h-px bg-slate-100 dark:bg-slate-800 w-full my-1"></div>
+                <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:bg-slate-800 {customPhotoStatusFilter === 'pending' ? 'text-amber-600 bg-amber-50/50' : 'text-slate-600 dark:text-slate-300'} transition-colors" on:click={() => { customPhotoStatusFilter = 'pending'; customPhotoFilterOpen = false; }}>
                   Menunggu
                 </button>
-                <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 {customPhotoStatusFilter === 'approved' ? 'text-emerald-600 bg-emerald-50/50' : 'text-slate-600'} transition-colors" on:click={() => { customPhotoStatusFilter = 'approved'; customPhotoFilterOpen = false; }}>
+                <button type="button" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:bg-slate-800 {customPhotoStatusFilter === 'approved' ? 'text-emerald-600 bg-emerald-50/50' : 'text-slate-600 dark:text-slate-300'} transition-colors" on:click={() => { customPhotoStatusFilter = 'approved'; customPhotoFilterOpen = false; }}>
                   Disetujui
                 </button>
               </div>
@@ -5453,36 +5453,36 @@
       </Card>
 
       {#if isLoadingPendingPhotos}
-        <div class="py-16 text-center text-xs font-semibold text-slate-400">Memuat data foto...</div>
+        <div class="py-16 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">Memuat data foto...</div>
       {:else if filteredCustomPhotos.length === 0}
-        <div class="py-16 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 flex flex-col items-center">
-          <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-3">
-            <CheckCircle2 class="h-8 w-8 text-slate-400" />
+        <div class="py-16 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center">
+          <div class="w-16 h-16 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center shadow-sm dark:shadow-none mb-3">
+            <CheckCircle2 class="h-8 w-8 text-slate-400 dark:text-slate-500" />
           </div>
-          <h3 class="text-slate-700 font-bold">Tidak ada foto</h3>
-          <p class="text-slate-500 text-xs mt-1">Coba sesuaikan filter atau kata kunci pencarian.</p>
+          <h3 class="text-slate-700 dark:text-slate-200 font-bold">Tidak ada foto</h3>
+          <p class="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-xs mt-1">Coba sesuaikan filter atau kata kunci pencarian.</p>
         </div>
       {:else}
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
           {#each filteredCustomPhotos as photo (photo.id)}
-            <Card class="overflow-hidden flex flex-col bg-white border-slate-100 hover:shadow-soft-md transition-all">
-              <div class="relative w-full aspect-square bg-slate-100 group">
+            <Card class="overflow-hidden flex flex-col bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:shadow-soft-md transition-all">
+              <div class="relative w-full aspect-square bg-slate-100 dark:bg-slate-800 group">
                 <img referrerpolicy="no-referrer" src={convertDriveUrl(photo.photo_url)} alt={photo.user_name} class="w-full h-full object-cover" />
                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <a href={convertDriveUrl(photo.photo_url)} target="_blank" class="px-4 py-2 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-xl text-white text-xs font-bold transition-colors">
+                  <a href={convertDriveUrl(photo.photo_url)} target="_blank" class="px-4 py-2 bg-white dark:bg-slate-900/20 hover:bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-xl text-white text-xs font-bold transition-colors">
                     Lihat Penuh
                   </a>
                 </div>
               </div>
               <div class="p-4 flex flex-col gap-3 flex-1 relative">
                 {#if photo.status === 'approved'}
-                  <div class="absolute top-0 right-0 -mt-2 -mr-2 bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">
+                  <div class="absolute top-0 right-0 -mt-2 -mr-2 bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm dark:shadow-none z-10">
                     Disetujui
                   </div>
                 {/if}
                 <div>
-                  <h3 class="font-bold text-sm text-slate-800 line-clamp-1">{photo.user_name}</h3>
-                  <p class="text-[10px] text-slate-400 font-medium mt-0.5">Diupload {new Date(photo.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})}</p>
+                  <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 line-clamp-1">{photo.user_name}</h3>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">Diupload {new Date(photo.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})}</p>
                 </div>
                 <div class="flex items-center gap-2 mt-auto pt-2 border-t border-slate-50">
                   {#if photo.status === 'pending'}
@@ -5509,33 +5509,33 @@
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start" in:fade={{ duration: 250, delay: 50 }}>
       <!-- Form Panel -->
       <div class="xl:col-span-4 space-y-6">
-        <Card class="border-slate-100 shadow-soft-xl bg-white relative overflow-hidden">
+        <Card class="border-slate-100 dark:border-slate-800 shadow-soft-xl bg-white dark:bg-slate-900 relative overflow-hidden">
           <div class="p-6">
-            <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
+            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
               <Image class="h-5 w-5 text-indigo-500" />
               {editingGalleryId ? 'Edit Gambar' : 'Tambah Gambar'}
             </h3>
             <div class="space-y-4">
               <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Pilih File Foto</label>
-                <div class="relative w-full h-11 border border-slate-200 border-dashed rounded-xl bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors">
+                <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Pilih File Foto</label>
+                <div class="relative w-full h-11 border border-slate-200 dark:border-slate-700 border-dashed rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-100 dark:bg-slate-800 transition-colors">
                   <input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" on:change={handleGalleryFileSelect} />
-                  <span class="text-xs font-semibold text-slate-500 flex items-center gap-2">
+                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500 flex items-center gap-2">
                     <UploadCloud class="h-4 w-4 text-indigo-500" />
                     {gallerySelectedFile ? gallerySelectedFile.name : 'Klik untuk Unggah File (Opsional)'}
                   </span>
                 </div>
               </div>
               <div class="text-center relative">
-                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
-                <span class="relative bg-white px-2 text-[10px] font-bold text-slate-400">ATAU</span>
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200 dark:border-slate-700"></div></div>
+                <span class="relative bg-white dark:bg-slate-900 px-2 text-[10px] font-bold text-slate-400 dark:text-slate-500">ATAU</span>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">URL Gambar Eksternal</label>
+                <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">URL Gambar Eksternal</label>
                 <Input type="url" bind:value={galleryImageUrl} on:input={() => gallerySelectedFile = null} placeholder="https://..." class="w-full text-sm font-medium" />
               </div>
               {#if galleryImageUrl || gallerySelectedFile}
-                <div class="rounded-xl overflow-hidden border border-slate-200 h-32 w-full bg-slate-50 flex items-center justify-center">
+                <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 h-32 w-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
                   {#if gallerySelectedFile}
                     <span class="text-xs font-semibold text-indigo-600 px-4 text-center">Berkas terpilih akan diunggah saat disimpan</span>
                   {:else}
@@ -5560,19 +5560,19 @@
       <div class="xl:col-span-8 space-y-6">
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {#if isLoadingGallery}
-            <div class="col-span-full py-12 text-center text-xs font-semibold text-slate-400">Memuat galeri...</div>
+            <div class="col-span-full py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">Memuat galeri...</div>
           {:else if galleryItems.length > 0}
             {#each galleryItems as item}
-              <Card class="group overflow-hidden border-slate-100 relative h-32 hover:shadow-soft-md transition-all p-0">
+              <Card class="group overflow-hidden border-slate-100 dark:border-slate-800 relative h-32 hover:shadow-soft-md transition-all p-0">
                 <img src={item.image_url} alt="Gallery item" class="w-full h-full object-cover" />
                 <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-sm">
-                  <button on:click={() => startEditGallery(item)} class="p-2 bg-white/20 hover:bg-white text-white hover:text-indigo-600 rounded-lg transition-colors"><Edit class="h-4 w-4" /></button>
-                  <button on:click={() => deleteGalleryImage(item.id)} class="p-2 bg-white/20 hover:bg-white text-white hover:text-rose-600 rounded-lg transition-colors"><Trash2 class="h-4 w-4" /></button>
+                  <button on:click={() => startEditGallery(item)} class="p-2 bg-white dark:bg-slate-900/20 hover:bg-white dark:bg-slate-900 text-white hover:text-indigo-600 rounded-lg transition-colors"><Edit class="h-4 w-4" /></button>
+                  <button on:click={() => deleteGalleryImage(item.id)} class="p-2 bg-white dark:bg-slate-900/20 hover:bg-white dark:bg-slate-900 text-white hover:text-rose-600 rounded-lg transition-colors"><Trash2 class="h-4 w-4" /></button>
                 </div>
               </Card>
             {/each}
           {:else}
-            <div class="col-span-full py-12 text-center text-xs font-semibold text-slate-400 border border-dashed rounded-xl bg-slate-50/50">Belum ada gambar di galeri ini.</div>
+            <div class="col-span-full py-12 text-center text-xs font-semibold text-slate-400 dark:text-slate-500 border border-dashed rounded-xl bg-slate-50 dark:bg-slate-800/50">Belum ada gambar di galeri ini.</div>
           {/if}
         </div>
       </div>
@@ -5582,48 +5582,48 @@
 
 {#if showNilaiModal}
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-[2px] animate-in fade-in duration-200">
-    <div class="bg-white rounded-3xl border border-slate-100 shadow-soft-xl max-w-lg w-full overflow-hidden animate-in scale-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-      <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
-        <h3 class="text-xl font-black text-slate-800 flex items-center gap-2">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-soft-xl max-w-lg w-full overflow-hidden animate-in scale-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+      <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 shrink-0">
+        <h3 class="text-xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
           <Award class="h-6 w-6 text-indigo-500" />
           {editingNilai ? 'Edit Nilai Santri' : 'Tambah Nilai Manual'}
         </h3>
-        <button on:click={() => showNilaiModal = false} class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors">
+        <button on:click={() => showNilaiModal = false} class="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors">
           <X class="h-5 w-5" />
         </button>
       </div>
       <div class="p-6 overflow-y-auto space-y-5">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-600">NIS Siswi <span class="text-rose-500">*</span></label>
-            <input type="text" bind:value={formNilai.nis} placeholder="Misal: 22001" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">NIS Siswi <span class="text-rose-500">*</span></label>
+            <input type="text" bind:value={formNilai.nis} placeholder="Misal: 22001" class="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
           </div>
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-600">Nama Lengkap <span class="text-rose-500">*</span></label>
-            <input type="text" bind:value={formNilai.nama_siswi} placeholder="Nama Siswi" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Nama Lengkap <span class="text-rose-500">*</span></label>
+            <input type="text" bind:value={formNilai.nama_siswi} placeholder="Nama Siswi" class="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-600">Periode</label>
-            <select bind:value={formNilai.periode} class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Periode</label>
+            <select bind:value={formNilai.periode} class="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none">
               <option value="Ganjil">Ganjil</option>
               <option value="Genap">Genap</option>
             </select>
           </div>
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-600">Tahun Ajaran</label>
-            <input type="text" bind:value={formNilai.tahun_ajaran} placeholder="2026-2027" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Tahun Ajaran</label>
+            <input type="text" bind:value={formNilai.tahun_ajaran} placeholder="2026-2027" class="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-600">Mata Pelajaran <span class="text-rose-500">*</span></label>
-            <input type="text" bind:value={formNilai.mata_pelajaran} placeholder="Fiqih / Nahwu / Shorof" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Mata Pelajaran <span class="text-rose-500">*</span></label>
+            <input type="text" bind:value={formNilai.mata_pelajaran} placeholder="Fiqih / Nahwu / Shorof" class="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
           </div>
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-600">Kategori</label>
-            <select bind:value={formNilai.kategori} class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Kategori</label>
+            <select bind:value={formNilai.kategori} class="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none">
               <option value="">- Pilih Kategori (Opsional) -</option>
               <option value="Qobla Maulud">Qobla Maulud</option>
               <option value="Ba'da Maulud">Ba'da Maulud</option>
@@ -5634,18 +5634,18 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-600">Nilai (Angka)</label>
-            <input type="text" bind:value={formNilai.nilai} placeholder="Contoh: 90.5" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Nilai (Angka)</label>
+            <input type="text" bind:value={formNilai.nilai} placeholder="Contoh: 90.5" class="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
           </div>
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-600">Catatan / Predikat</label>
-            <input type="text" bind:value={formNilai.catatan} placeholder="Misal: Mumtaz / Jayyid" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Catatan / Predikat</label>
+            <input type="text" bind:value={formNilai.catatan} placeholder="Misal: Mumtaz / Jayyid" class="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none" />
           </div>
         </div>
       </div>
-      <div class="p-6 border-t border-slate-100 bg-slate-50/30 flex justify-end gap-3 shrink-0">
+      <div class="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 flex justify-end gap-3 shrink-0">
         <Button variant="secondary" on:click={() => showNilaiModal = false} class="rounded-xl">Batal</Button>
-        <Button on:click={saveNilaiManual} disabled={isSubmitting} class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-6 shadow-md">
+        <Button on:click={saveNilaiManual} disabled={isSubmitting} class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-6 shadow-md dark:shadow-none">
           {#if isSubmitting}Menyimpan...{:else}Simpan Data{/if}
         </Button>
       </div>
@@ -5655,25 +5655,25 @@
 
 {#if showConfirmModal}
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-[2px] animate-in fade-in duration-200">
-    <div class="bg-white rounded-3xl border border-slate-100 shadow-soft-xl max-w-sm w-full overflow-hidden p-6 space-y-5 animate-in scale-in zoom-in-95 duration-200">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-soft-xl max-w-sm w-full overflow-hidden p-6 space-y-5 animate-in scale-in zoom-in-95 duration-200">
       <div class="flex flex-col items-center text-center space-y-3">
         <div class="h-14 w-14 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100/60 shadow-soft-sm">
           <Trash2 class="h-7 w-7" />
         </div>
         <div class="space-y-1">
-          <h3 class="font-extrabold text-base text-slate-800 leading-tight">
+          <h3 class="font-extrabold text-base text-slate-800 dark:text-slate-100 leading-tight">
             {confirmModalTitle}
           </h3>
-          <p class="text-xs text-slate-500 font-medium leading-relaxed px-2">
+          <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium leading-relaxed px-2">
             {confirmModalMessage}
           </p>
         </div>
       </div>
       
-      <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+      <div class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
         <button 
           type="button" 
-          class="flex-1 h-11 rounded-2xl border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors focus:outline-none"
+          class="flex-1 h-11 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-800 hover:text-slate-800 dark:text-slate-100 transition-colors focus:outline-none"
           on:click={() => { showConfirmModal = false; confirmModalCallback = null; }}
         >
           Batal

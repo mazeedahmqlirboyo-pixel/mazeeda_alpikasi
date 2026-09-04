@@ -23,7 +23,7 @@
 {#if isLoading}
   <div class="py-24 text-center space-y-4">
     <div class="animate-spin h-8 w-8 border-3 border-primary border-t-transparent rounded-full mx-auto"></div>
-    <p class="text-sm font-semibold text-slate-500">Memeriksa hak akses administrator...</p>
+    <p class="text-sm font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500">Memeriksa hak akses administrator...</p>
   </div>
 {:else}
   {#if isAuthorized}
@@ -37,8 +37,8 @@
         </div>
         
         <div class="space-y-2">
-          <h2 class="text-xl font-bold text-slate-800">Akses Terbatas</h2>
-          <p class="text-xs text-slate-500 leading-relaxed font-normal">
+          <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100">Akses Terbatas</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed font-normal">
             Halaman ini hanya dapat diakses oleh akun dengan peran administrator MAZEEDA. Akun Anda saat ini tidak memiliki wewenang untuk melihat modul ini.
           </p>
         </div>

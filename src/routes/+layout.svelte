@@ -1,15 +1,15 @@
 <script lang="ts">
-  import '../app.postcss';
-  import { page } from '$app/stores';
-  import { fade, slide, fly, scale } from 'svelte/transition';
-  import { 
-    LayoutDashboard, 
-    Users, 
-    Megaphone, 
-    BookOpen, 
-    Sparkles, 
-    Image, 
-    ShieldCheck, 
+  import "../app.postcss";
+  import { page } from "$app/stores";
+  import { fade, slide, fly, scale } from "svelte/transition";
+  import {
+    LayoutDashboard,
+    Users,
+    Megaphone,
+    BookOpen,
+    Sparkles,
+    Image,
+    ShieldCheck,
     LogIn,
     LogOut,
     UserCheck,
@@ -40,88 +40,141 @@
     ShieldBan,
     MoreVertical,
     Share2,
-    Palette
-  } from 'lucide-svelte';
-  import Card from '$lib/components/ui/card.svelte';
-  import { isAudioPlayingGlobal } from '$lib/audioStore';
-  import { supabase, uploadCustomProfilePhoto } from '$lib/supabase';
-  import { deferredPrompt, showInstallBtn } from '$lib/pwaStore';
-  import Cropper from 'svelte-easy-crop';
-  import getCroppedImg from '$lib/cropImage';
+    Palette,
+    Sun,
+    Moon,
+    Bookmark,
+  } from "lucide-svelte";
+  import Card from "$lib/components/ui/card.svelte";
+  import { isAudioPlayingGlobal } from "$lib/audioStore";
+  import { supabase, uploadCustomProfilePhoto } from "$lib/supabase";
+  import { deferredPrompt, showInstallBtn } from "$lib/pwaStore";
+  import Cropper from "svelte-easy-crop";
+  import getCroppedImg from "$lib/cropImage";
+  import { themeStore } from "$lib/themeStore";
+  import { setupI18n, switchLanguage } from "$lib/i18n";
+  import { t, locale } from "svelte-i18n";
+
+  // Setup i18n
+  setupI18n();
+
+  // Apply Amiri font globally for Arabic locale
+  $: if (typeof document !== 'undefined') {
+    if ($locale === 'ar') {
+      document.documentElement.classList.add('font-amiri');
+    } else {
+      document.documentElement.classList.remove('font-amiri');
+    }
+  }
 
   // Define navigation configuration
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Squad', path: '/squad', icon: Users },
-    { name: 'Mading', path: '/mading', icon: Megaphone },
-    { name: 'Al-Qur\'an', path: '/quran', icon: BookOpen },
-    { name: 'Sangu', path: '/sangu', icon: Sparkles },
-    { name: 'Timeline', path: '/timeline', icon: Image }
+    { name: "Dashboard", key: "dashboard", path: "/", icon: LayoutDashboard },
+    { name: "Squad", key: "squad", path: "/squad", icon: Users },
+    { name: "Mading", key: "mading", path: "/mading", icon: Megaphone },
+    { name: "Al-Qur'an", key: "alquran", path: "/quran", icon: BookOpen },
+    { name: "Sangu", key: "sangu", path: "/sangu", icon: Sparkles },
+    { name: "Timeline", key: "timeline", path: "/timeline", icon: Image },
   ];
 
   const adminSubmenus = [
-    { name: 'Khasanah Lirboyo', path: '/admin/khasanah', icon: BookOpen },
-    { name: 'Kelola Squad', path: '/admin?tab=members', icon: Users },
-    { name: 'Kelola Asatidzah', path: '/admin?tab=asatidzah', icon: Users },
-    { name: 'Persetujuan Foto', path: '/admin?tab=persetujuan_foto', icon: CheckCircle2 },
-    { name: 'Nilai Akademik', path: '/admin?tab=nilai', icon: Award },
-    { name: 'Kelola Kepengurusan', path: '/admin?tab=kepengurusan', icon: Award },
-    { name: 'Kelola Sangu', path: '/admin?tab=sangu', icon: BookOpen },
-    { name: 'Pengumuman Mading', path: '/admin?tab=mading', icon: Megaphone },
-    { name: 'Dinding Aspirasi', path: '/admin?tab=stickynotes', icon: FileText },
-    { name: 'Kelola Timeline', path: '/admin?tab=timeline', icon: Image },
-    { name: 'Notifikasi', path: '/admin?tab=notifikasi', icon: Bell },
-    { name: 'Banner Slide', path: '/admin?tab=carousel', icon: Image },
-    { name: 'Galeri Kenangan', path: '/admin?tab=gallery_coverflow', icon: Image },
-    { name: 'Momen Spesial', path: '/admin?tab=gallery_landscape', icon: Image },
-    { name: 'Wajah MAZEEDA', path: '/admin?tab=gallery_marquee', icon: Image },
-    { name: 'Kotak Saran', path: '/admin?tab=feedbacks', icon: FileText },
-    { name: 'Manajemen Komentar', path: '/admin?tab=comments', icon: MessageSquare },
-    { name: 'Laporan Pengguna', path: '/admin?tab=user_reports', icon: ShieldAlert,
-    ShieldBan,
-    MoreVertical,
-    Share2 }
+    { name: "Khasanah Lirboyo", path: "/admin/khasanah", icon: BookOpen },
+    { name: "Kelola Squad", path: "/admin?tab=members", icon: Users },
+    { name: "Kelola Asatidzah", path: "/admin?tab=asatidzah", icon: Users },
+    {
+      name: "Persetujuan Foto",
+      path: "/admin?tab=persetujuan_foto",
+      icon: CheckCircle2,
+    },
+    { name: "Nilai Akademik", path: "/admin?tab=nilai", icon: Award },
+    {
+      name: "Kelola Kepengurusan",
+      path: "/admin?tab=kepengurusan",
+      icon: Award,
+    },
+    { name: "Kelola Sangu", path: "/admin?tab=sangu", icon: BookOpen },
+    { name: "Pengumuman Mading", path: "/admin?tab=mading", icon: Megaphone },
+    {
+      name: "Dinding Aspirasi",
+      path: "/admin?tab=stickynotes",
+      icon: FileText,
+    },
+    { name: "Kelola Timeline", path: "/admin?tab=timeline", icon: Image },
+    { name: "Notifikasi", path: "/admin?tab=notifikasi", icon: Bell },
+    { name: "Banner Slide", path: "/admin?tab=carousel", icon: Image },
+    {
+      name: "Galeri Kenangan",
+      path: "/admin?tab=gallery_coverflow",
+      icon: Image,
+    },
+    {
+      name: "Momen Spesial",
+      path: "/admin?tab=gallery_landscape",
+      icon: Image,
+    },
+    { name: "Wajah MAZEEDA", path: "/admin?tab=gallery_marquee", icon: Image },
+    { name: "Kotak Saran", path: "/admin?tab=feedbacks", icon: FileText },
+    {
+      name: "Manajemen Komentar",
+      path: "/admin?tab=comments",
+      icon: MessageSquare,
+    },
+    {
+      name: "Laporan Pengguna",
+      path: "/admin?tab=user_reports",
+      icon: ShieldAlert,
+      ShieldBan,
+      MoreVertical,
+      Share2,
+    },
   ];
 
   // Helper to check if a navigation item is active
   $: currentPath = $page.url.pathname;
   $: isActive = (path: string) => {
-    if (path === '/') return currentPath === '/';
-    if (path === '/admin') return currentPath.startsWith('/admin');
+    if (path === "/") return currentPath === "/";
+    if (path === "/admin") return currentPath.startsWith("/admin");
     return currentPath.startsWith(path);
   };
 
   $: isActiveQuery = (pathWithQuery: string) => {
-    const [path, query] = pathWithQuery.split('?');
+    const [path, query] = pathWithQuery.split("?");
     if (currentPath !== path) return false;
     if (!query) return true;
-    
-    const targetTab = new URLSearchParams(query).get('tab');
-    const currentTab = $page.url.searchParams.get('tab') || 'members';
+
+    const targetTab = new URLSearchParams(query).get("tab");
+    const currentTab = $page.url.searchParams.get("tab") || "members";
     return targetTab === currentTab;
   };
 
   // Do not show full layouts (sidebar / bottom-nav) on the Auth page
-  $: isAuthPage = currentPath === '/auth';
-  $: isFullscreenPage = currentPath.startsWith('/perjalanan');
-  
+  $: isAuthPage = currentPath === "/auth";
+  $: isFullscreenPage = currentPath.startsWith("/perjalanan");
+
   let isAdminMenuExpanded = false;
-  
+  let showLangMenu = false;
+
   // Navigation Icon Click Animation Logic
-  let activeNavAnim = '';
+  let activeNavAnim = "";
   function triggerNavAnim(name: string) {
     activeNavAnim = name;
     setTimeout(() => {
-      if (activeNavAnim === name) activeNavAnim = '';
+      if (activeNavAnim === name) activeNavAnim = "";
     }, 600); // Wait for the animation to finish
   }
-  
-  import { onMount, onDestroy, tick } from 'svelte';
-  import { browser } from '$app/environment';
-  import { goto } from '$app/navigation';
-  import { authStore, initAuth, logout, activeProfileStore, deactivatedAlertStore } from '$lib/auth';
 
-  $: userRole = $authStore.user?.role || '';
+  import { onMount, onDestroy, tick } from "svelte";
+  import { browser } from "$app/environment";
+  import { goto } from "$app/navigation";
+  import {
+    authStore,
+    initAuth,
+    logout,
+    activeProfileStore,
+    deactivatedAlertStore,
+  } from "$lib/auth";
+
+  $: userRole = $authStore.user?.role || "";
 
   // Global scroll to top on path or parameter navigation
   async function resetScrollToTop() {
@@ -130,7 +183,7 @@
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
-      const mainEl = document.querySelector('main');
+      const mainEl = document.querySelector("main");
       if (mainEl) {
         mainEl.scrollTop = 0;
       }
@@ -144,9 +197,10 @@
       }
     }
     initAuth();
-    
+    themeStore.init();
+
     // Auto-expand admin menu if starting on admin page
-    if (currentPath.startsWith('/admin')) {
+    if (currentPath.startsWith("/admin")) {
       isAdminMenuExpanded = true;
     }
   });
@@ -158,28 +212,35 @@
   // Client-side routing redirects based on auth store
   $: if (browser && !$authStore.loading) {
     if (!$authStore.user && !isAuthPage) {
-      goto('/auth');
+      goto("/auth");
     } else if ($authStore.user && isAuthPage) {
-      goto('/');
-    } else if ($authStore.user && $authStore.user.role !== 'admin' && currentPath.startsWith('/admin')) {
-      goto('/');
+      goto("/");
+    } else if (
+      $authStore.user &&
+      $authStore.user.role !== "admin" &&
+      currentPath.startsWith("/admin")
+    ) {
+      goto("/");
     }
   }
 
-    async function loadBlockedUsers() {
+  async function loadBlockedUsers() {
     const currentName = $authStore.user?.name;
     if (!currentName) return;
     try {
-      const { data } = await supabase.from('blocked_users').select('blocked_name').eq('blocker_name', currentName);
+      const { data } = await supabase
+        .from("blocked_users")
+        .select("blocked_name")
+        .eq("blocker_name", currentName);
       if (data) {
-        blockedUsersList = data.map(d => d.blocked_name);
+        blockedUsersList = data.map((d) => d.blocked_name);
       }
     } catch (e) {
-      console.error('Failed to load blocked users', e);
+      console.error("Failed to load blocked users", e);
     }
   }
 
-  let userToUnblock = '';
+  let userToUnblock = "";
 
   function unblockUser(blockedName: string) {
     userToUnblock = blockedName;
@@ -189,18 +250,21 @@
     if (!userToUnblock) return;
     try {
       const blockerName = $authStore.user?.name;
-      const { error } = await supabase.from('blocked_users')
+      const { error } = await supabase
+        .from("blocked_users")
         .delete()
-        .eq('blocker_name', blockerName)
-        .eq('blocked_name', userToUnblock);
-        
+        .eq("blocker_name", blockerName)
+        .eq("blocked_name", userToUnblock);
+
       if (error) throw error;
-      
-      blockedUsersList = blockedUsersList.filter(name => name !== userToUnblock);
+
+      blockedUsersList = blockedUsersList.filter(
+        (name) => name !== userToUnblock,
+      );
     } catch (e) {
-      alert('Gagal membuka blokir pengguna.');
+      alert("Gagal membuka blokir pengguna.");
     } finally {
-      userToUnblock = '';
+      userToUnblock = "";
     }
   }
 
@@ -215,7 +279,12 @@
 
   let hasSyncedPhoto = false;
   // Sync profile photo on load to ensure custom photos are not stuck globally
-  $: if (browser && $authStore.user && $authStore.user.role === 'member' && !hasSyncedPhoto) {
+  $: if (
+    browser &&
+    $authStore.user &&
+    $authStore.user.role === "member" &&
+    !hasSyncedPhoto
+  ) {
     hasSyncedPhoto = true;
     syncProfilePhoto();
   }
@@ -223,31 +292,35 @@
   async function syncProfilePhoto() {
     const currentUser = $authStore.user;
     // Force re-sync if they currently have a custom photo (Supabase URL) in their global avatar
-    if (!currentUser || (currentUser.foto_url && !currentUser.foto_url.includes('supabase.co'))) return;
-    
+    if (
+      !currentUser ||
+      (currentUser.foto_url && !currentUser.foto_url.includes("supabase.co"))
+    )
+      return;
+
     try {
       let { data, error } = await supabase
-        .from('allowed_alumni')
-        .select('foto_url')
-        .eq('nis', currentUser.nis)
+        .from("allowed_alumni")
+        .select("foto_url")
+        .eq("nis", currentUser.nis)
         .maybeSingle();
-        
+
       if (!data) {
         const asatidzahRes = await supabase
-          .from('asatidzah')
-          .select('foto_url')
-          .eq('nis', currentUser.nis)
+          .from("asatidzah")
+          .select("foto_url")
+          .eq("nis", currentUser.nis)
           .maybeSingle();
         data = asatidzahRes.data;
       }
 
       if (data && data.foto_url) {
         const updated = { ...currentUser, foto_url: data.foto_url };
-        localStorage.setItem('mazeeda_logged_user', JSON.stringify(updated));
-        authStore.update(state => ({ ...state, user: updated }));
+        localStorage.setItem("mazeeda_logged_user", JSON.stringify(updated));
+        authStore.update((state) => ({ ...state, user: updated }));
       }
     } catch (e) {
-      console.error('Failed to sync profile photo:', e);
+      console.error("Failed to sync profile photo:", e);
     }
   }
 
@@ -256,10 +329,14 @@
     if (!url) return "";
     let cleaned = url.trim();
     if (cleaned.includes("lh3.googleusercontent.com/u/0/d/")) {
-      return cleaned.replace("lh3.googleusercontent.com/u/0/d/", "lh3.googleusercontent.com/d/");
+      return cleaned.replace(
+        "lh3.googleusercontent.com/u/0/d/",
+        "lh3.googleusercontent.com/d/",
+      );
     }
-    const match = cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || 
-                  cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    const match =
+      cleaned.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+      cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
       // Menggunakan lh3.googleusercontent.com karena drive.google.com/thumbnail mulai sering diblokir (403)
       return `https://lh3.googleusercontent.com/d/${match[1]}`;
@@ -280,21 +357,48 @@
   let myProfileData: any = null;
   let isLoadingProfile = false;
   let customPhotos: any[] = [];
-  let allProfilePhotos: {url: string, type: string, status: string}[] = [];
+  let allProfilePhotos: { url: string; type: string; status: string }[] = [];
   let currentPhotoIndex = 0;
   let isUploadingPhoto = false;
   let fileInputRef: HTMLInputElement;
 
-  let rlsDebug = 'wait';
-  
+  let rlsDebug = "wait";
+
+  // Saved Memories State
+  let showSavedMemories = false;
+  let savedMemoriesList: any[] = [];
+  let isLoadingSaved = false;
+
+  async function loadSavedMemoriesProfile() {
+    const userName = $authStore.user?.name;
+    if (!userName) return;
+    isLoadingSaved = true;
+    try {
+      const { data } = await supabase
+        .from('saved_memories')
+        .select('memory_id, memories(id, title, image_url, location, date, category)')
+        .eq('user_name', userName)
+        .order('created_at', { ascending: false });
+      savedMemoriesList = (data || []).map((d: any) => d.memories).filter(Boolean);
+    } catch (e) {
+      console.error('Failed to load saved memories:', e);
+    } finally {
+      isLoadingSaved = false;
+    }
+  }
+
   onMount(() => {
-    fetch('/api/test-rls')
-      .then(r => r.json())
-      .then(d => {
-        rlsDebug = d.anon_result?.error ? 'err' : (d.anon_result?.data ? 'ok' : 'null');
+    fetch("/api/test-rls")
+      .then((r) => r.json())
+      .then((d) => {
+        rlsDebug = d.anon_result?.error
+          ? "err"
+          : d.anon_result?.data
+            ? "ok"
+            : "null";
       })
-      .catch(e => {
-        rlsDebug = 'catch';
+      .catch((e) => {
+        rlsDebug = "catch";
       });
   });
 
@@ -302,32 +406,44 @@
     if (!name) return;
     try {
       const { data, error } = await supabase
-        .from('custom_profile_photos')
-        .select('*')
-        .eq('user_name', name);
+        .from("custom_profile_photos")
+        .select("*")
+        .eq("user_name", name);
       if (error) {
-        console.error('Error fetching custom photos:', error);
-        triggerAlert('Gagal memuat foto tambahan: ' + error.message, 'error');
+        console.error("Error fetching custom photos:", error);
+        triggerAlert("Gagal memuat foto tambahan: " + error.message, "error");
         throw error;
       }
-      
-      const isOwnOrAdmin = $authStore.user?.role === 'admin' || $authStore.user?.name === name || ($authStore.user?.nis && $authStore.user?.nis === myProfileData?.nis);
-      const visiblePhotos = data.filter(p => p.status?.toLowerCase() === 'approved' || (isOwnOrAdmin && p.status?.toLowerCase() === 'pending'));
-      
+
+      const isOwnOrAdmin =
+        $authStore.user?.role === "admin" ||
+        $authStore.user?.name === name ||
+        ($authStore.user?.nis && $authStore.user?.nis === myProfileData?.nis);
+      const visiblePhotos = data.filter(
+        (p) =>
+          p.status?.toLowerCase() === "approved" ||
+          (isOwnOrAdmin && p.status?.toLowerCase() === "pending"),
+      );
+
       customPhotos = visiblePhotos;
-      
+
       // Safely preserve the original drive photo, avoiding async race conditions
-      const basePhoto = myProfileData?.foto_url 
-        ? [{ url: myProfileData.foto_url, type: 'admin', status: 'approved' }] 
+      const basePhoto = myProfileData?.foto_url
+        ? [{ url: myProfileData.foto_url, type: "admin", status: "approved" }]
         : [];
-        
+
       // Put base photo first so it remains the primary visible photo
       allProfilePhotos = [
         ...basePhoto,
-        ...visiblePhotos.map(p => ({ id: p.id, url: p.photo_url, type: 'custom', status: p.status }))
+        ...visiblePhotos.map((p) => ({
+          id: p.id,
+          url: p.photo_url,
+          type: "custom",
+          status: p.status,
+        })),
       ];
     } catch (e) {
-      console.error('Exception in fetchCustomPhotosForProfile:', e);
+      console.error("Exception in fetchCustomPhotosForProfile:", e);
     }
   }
 
@@ -342,14 +458,19 @@
   function prevPhoto(e: Event) {
     e.stopPropagation();
     if (allProfilePhotos.length > 1) {
-      currentPhotoIndex = (currentPhotoIndex - 1 + allProfilePhotos.length) % allProfilePhotos.length;
+      currentPhotoIndex =
+        (currentPhotoIndex - 1 + allProfilePhotos.length) %
+        allProfilePhotos.length;
     }
   }
 
   let showToast = false;
-  let toastMessage = '';
-  let toastType = 'success';
-  function showNotification(msg: string, type: 'success' | 'error' = 'success') {
+  let toastMessage = "";
+  let toastType = "success";
+  function showNotification(
+    msg: string,
+    type: "success" | "error" = "success",
+  ) {
     toastMessage = msg;
     toastType = type;
     showToast = true;
@@ -360,11 +481,14 @@
 
   function triggerPhotoUpload() {
     if (customPhotos.length >= 3) {
-      showNotification('Maksimal hanya 3 foto opsional yang diizinkan.', 'error');
+      showNotification(
+        "Maksimal hanya 3 foto opsional yang diizinkan.",
+        "error",
+      );
       return;
     }
-    
-    if (browser && localStorage.getItem('hidePhotoUploadWarning') === 'true') {
+
+    if (browser && localStorage.getItem("hidePhotoUploadWarning") === "true") {
       fileInputRef.click();
     } else {
       showUploadWarning = true;
@@ -373,7 +497,7 @@
 
   function proceedWithUpload() {
     if (dontShowWarningAgain && browser) {
-      localStorage.setItem('hidePhotoUploadWarning', 'true');
+      localStorage.setItem("hidePhotoUploadWarning", "true");
     }
     showUploadWarning = false;
     fileInputRef.click();
@@ -385,7 +509,7 @@
 
   // Crop State
   let showCropModal = false;
-  let cropImageSrc = '';
+  let cropImageSrc = "";
   let crop = { x: 0, y: 0 };
   let zoom = 1;
   let croppedAreaPixels: any = null;
@@ -399,53 +523,63 @@
     const target = e.target as HTMLInputElement;
     const file = target.files?.[0];
     if (!file || !myProfileData) return;
-    
+
     if (customPhotos.length >= 3) {
-      showNotification('Maksimal hanya 3 foto opsional yang diizinkan.', 'error');
-      target.value = '';
+      showNotification(
+        "Maksimal hanya 3 foto opsional yang diizinkan.",
+        "error",
+      );
+      target.value = "";
       return;
     }
-    
+
     currentFile = file;
     cropImageSrc = URL.createObjectURL(file);
     showCropModal = true;
-    target.value = '';
+    target.value = "";
   }
 
   async function processCropAndUpload() {
     if (!currentFile || !myProfileData || !croppedAreaPixels) return;
-    
+
     isUploadingPhoto = true;
     showCropModal = false;
-    
+
     try {
       const croppedFile = await getCroppedImg(cropImageSrc, croppedAreaPixels);
-      if (!croppedFile) throw new Error('Gagal memotong gambar.');
-      
+      if (!croppedFile) throw new Error("Gagal memotong gambar.");
+
       const profileName = myProfileData.nama_lengkap || myProfileData.name;
-      const { url, id } = await uploadCustomProfilePhoto(croppedFile as File, profileName);
-      
-      const newPhoto = { id, url, type: 'custom', status: 'pending' };
+      const { url, id } = await uploadCustomProfilePhoto(
+        croppedFile as File,
+        profileName,
+      );
+
+      const newPhoto = { id, url, type: "custom", status: "pending" };
       customPhotos = [...customPhotos, newPhoto];
       allProfilePhotos = [...allProfilePhotos, newPhoto];
       currentPhotoIndex = allProfilePhotos.length - 1;
-      showNotification('Foto berhasil diunggah dan sedang menunggu persetujuan Admin (1x24 jam).', 'success');
+      showNotification(
+        "Foto berhasil diunggah dan sedang menunggu persetujuan Admin (1x24 jam).",
+        "success",
+      );
     } catch (err: any) {
-      const errMsg = err?.message || typeof err === 'string' ? err : JSON.stringify(err);
-      showNotification(`Gagal mengunggah foto: ${errMsg}`, 'error');
+      const errMsg =
+        err?.message || typeof err === "string" ? err : JSON.stringify(err);
+      showNotification(`Gagal mengunggah foto: ${errMsg}`, "error");
     } finally {
       isUploadingPhoto = false;
       currentFile = null;
       if (cropImageSrc) {
         URL.revokeObjectURL(cropImageSrc);
-        cropImageSrc = '';
+        cropImageSrc = "";
       }
     }
   }
 
   // ===== PROFILE THEME LOGIC =====
-  import { profileThemes } from '$lib/profileThemes';
-  
+  import { profileThemes } from "$lib/profileThemes";
+
   let currentProfileTheme = profileThemes[0];
   let showThemeModal = false;
   let isSavingTheme = false;
@@ -454,19 +588,19 @@
     if (!name) return;
     try {
       const { data, error } = await supabase
-        .from('profile_themes')
-        .select('theme_id')
-        .eq('user_name', name)
+        .from("profile_themes")
+        .select("theme_id")
+        .eq("user_name", name)
         .maybeSingle();
-        
+
       if (data && data.theme_id) {
-        const found = profileThemes.find(t => t.id === data.theme_id);
+        const found = profileThemes.find((t) => t.id === data.theme_id);
         if (found) currentProfileTheme = found;
       } else {
         currentProfileTheme = profileThemes[0];
       }
     } catch (e) {
-      console.error('Error fetching profile theme:', e);
+      console.error("Error fetching profile theme:", e);
       currentProfileTheme = profileThemes[0];
     }
   }
@@ -476,24 +610,30 @@
   }
 
   async function selectTheme(themeId: string) {
-    const selected = profileThemes.find(t => t.id === themeId);
+    const selected = profileThemes.find((t) => t.id === themeId);
     if (!selected) return;
-    
+
     currentProfileTheme = selected; // apply optimistically locally
     isSavingTheme = true;
-    
+
     const finalProfileName = myProfileData.nama_lengkap || myProfileData.name;
     try {
       const { error } = await supabase
-        .from('profile_themes')
-        .upsert({ user_name: finalProfileName, theme_id: themeId }, { onConflict: 'user_name' });
-        
+        .from("profile_themes")
+        .upsert(
+          { user_name: finalProfileName, theme_id: themeId },
+          { onConflict: "user_name" },
+        );
+
       if (error) throw error;
-      showNotification('Tema profil berhasil diperbarui.', 'success');
+      showNotification("Tema profil berhasil diperbarui.", "success");
       showThemeModal = false;
     } catch (err: any) {
-      console.error('Failed to save theme:', err);
-      showNotification('Gagal menyimpan tema profil. Pastikan tabel profile_themes sudah dibuat.', 'error');
+      console.error("Failed to save theme:", err);
+      showNotification(
+        "Gagal menyimpan tema profil. Pastikan tabel profile_themes sudah dibuat.",
+        "error",
+      );
     } finally {
       isSavingTheme = false;
     }
@@ -502,7 +642,7 @@
   // Delete Photo Logic
   let isDeletingPhoto = false;
   let showDeleteModal = false;
-  let photoToDelete: { id: number, url: string } | null = null;
+  let photoToDelete: { id: number; url: string } | null = null;
 
   function triggerDeletePhoto(photoId: number, photoUrl: string) {
     photoToDelete = { id: photoId, url: photoUrl };
@@ -512,47 +652,47 @@
   async function confirmDeletePhoto() {
     if (!photoToDelete) return;
     const { id: photoId } = photoToDelete;
-    
+
     isDeletingPhoto = true;
     showDeleteModal = false;
-    
+
     isDeletingPhoto = true;
     try {
       const { error } = await supabase
-        .from('custom_profile_photos')
+        .from("custom_profile_photos")
         .delete()
-        .eq('id', photoId);
-        
+        .eq("id", photoId);
+
       if (error) throw error;
-      
+
       // Try to delete the actual file from storage
       try {
         if (photoToDelete.url) {
           const urlObj = new URL(photoToDelete.url);
-          const pathParts = urlObj.pathname.split('/memories/');
+          const pathParts = urlObj.pathname.split("/memories/");
           if (pathParts.length > 1) {
             // e.g. custom_profiles/randomname.jpg
             const filePath = decodeURIComponent(pathParts[1]);
-            await supabase.storage.from('memories').remove([filePath]);
+            await supabase.storage.from("memories").remove([filePath]);
           }
         }
       } catch (storageErr) {
-        console.error('Failed to delete file from storage:', storageErr);
+        console.error("Failed to delete file from storage:", storageErr);
       }
-      
+
       // Update local state
-      customPhotos = customPhotos.filter(p => p.id !== photoId);
-      allProfilePhotos = allProfilePhotos.filter(p => p.id !== photoId);
-      
+      customPhotos = customPhotos.filter((p) => p.id !== photoId);
+      allProfilePhotos = allProfilePhotos.filter((p) => p.id !== photoId);
+
       // Adjust index
       if (currentPhotoIndex >= allProfilePhotos.length) {
         currentPhotoIndex = Math.max(0, allProfilePhotos.length - 1);
       }
-      
-      showNotification('Foto berhasil dihapus.', 'success');
+
+      showNotification("Foto berhasil dihapus.", "success");
       closeLightbox();
     } catch (err: any) {
-      showNotification(`Gagal menghapus foto: ${err.message}`, 'error');
+      showNotification(`Gagal menghapus foto: ${err.message}`, "error");
     } finally {
       isDeletingPhoto = false;
       photoToDelete = null;
@@ -564,17 +704,17 @@
 
   // Lightbox State (untuk zoom foto profil)
   let showLightbox = false;
-  let lightboxUrl = '';
+  let lightboxUrl = "";
   function openLightbox(url: string) {
     lightboxUrl = url;
     showLightbox = true;
   }
   function closeLightbox() {
     showLightbox = false;
-    lightboxUrl = '';
+    lightboxUrl = "";
   }
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       if (showLightbox) closeLightbox();
       if (showLogoutModal) showLogoutModal = false;
     }
@@ -585,39 +725,40 @@
   let adminEditForm: any = {};
 
   const DEFAULT_ADMIN_PROFILE = {
-    nama_lengkap: 'ADMIN MAZEEDA',
-    nama_panggilan: 'Admin',
-    email: 'admin@mazeeda.com',
-    foto_url: 'https://drive.google.com/file/d/1f332yzKnUHuix7YeAvCgMZm4y2v30CwF/view?usp=drive_link',
-    no_whatsapp: '',
-    media_social: '',
-    tiktok_akun: '',
-    xtwitter_akun: '',
-    facebook_akun: '',
-    alamat_domisili: '',
-    alamat_ktp: '',
-    rute_lengkap: '',
-    hobi: '',
-    keterampilan_khusus: '',
-    music: '',
-    kutipan_kenangan: '',
-    kesan: '',
-    pesan: '',
-    tempat_lahir: '',
-    tahun_lahir: '',
-    golongan_darah: 'O',
-    tahun_masuk: '',
-    kamar_santri: '',
-    tahfidz_santri: '',
-    riwayat_pendidikan: '',
-    alamat_riwayatpendidikan: ''
+    nama_lengkap: "ADMIN MAZEEDA",
+    nama_panggilan: "Admin",
+    email: "admin@mazeeda.com",
+    foto_url:
+      "https://drive.google.com/file/d/1f332yzKnUHuix7YeAvCgMZm4y2v30CwF/view?usp=drive_link",
+    no_whatsapp: "",
+    media_social: "",
+    tiktok_akun: "",
+    xtwitter_akun: "",
+    facebook_akun: "",
+    alamat_domisili: "",
+    alamat_ktp: "",
+    rute_lengkap: "",
+    hobi: "",
+    keterampilan_khusus: "",
+    music: "",
+    kutipan_kenangan: "",
+    kesan: "",
+    pesan: "",
+    tempat_lahir: "",
+    tahun_lahir: "",
+    golongan_darah: "O",
+    tahun_masuk: "",
+    kamar_santri: "",
+    tahfidz_santri: "",
+    riwayat_pendidikan: "",
+    alamat_riwayatpendidikan: "",
   };
 
   // Load profil admin dari localStorage (fallback/cache)
   function loadAdminProfileFromCache() {
     if (!browser) return DEFAULT_ADMIN_PROFILE;
     try {
-      const saved = localStorage.getItem('mazeeda_admin_profile');
+      const saved = localStorage.getItem("mazeeda_admin_profile");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (!parsed.foto_url) {
@@ -633,16 +774,17 @@
   async function fetchAdminProfileFromDB(): Promise<any> {
     try {
       const { data, error } = await supabase
-        .from('admin_profile')
-        .select('*')
-        .eq('id', 1)
+        .from("admin_profile")
+        .select("*")
+        .eq("id", 1)
         .maybeSingle();
       if (!error && data) {
         if (!data.foto_url) {
           data.foto_url = DEFAULT_ADMIN_PROFILE.foto_url;
         }
         // Simpan ke cache localStorage juga
-        if (browser) localStorage.setItem('mazeeda_admin_profile', JSON.stringify(data));
+        if (browser)
+          localStorage.setItem("mazeeda_admin_profile", JSON.stringify(data));
         return { ...DEFAULT_ADMIN_PROFILE, ...data };
       }
     } catch (_) {}
@@ -656,46 +798,56 @@
     // 1. Simpan ke Supabase (agar semua user bisa lihat)
     try {
       const { error } = await supabase
-        .from('admin_profile')
-        .upsert({ id: 1, ...adminEditForm, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+        .from("admin_profile")
+        .upsert(
+          { id: 1, ...adminEditForm, updated_at: new Date().toISOString() },
+          { onConflict: "id" },
+        );
       if (error) {
-        console.error('Gagal simpan profil admin ke Supabase:', error.message);
+        console.error("Gagal simpan profil admin ke Supabase:", error.message);
       }
     } catch (e) {
-      console.error('Error saat upsert admin profile:', e);
+      console.error("Error saat upsert admin profile:", e);
     }
 
     // 2. Simpan ke localStorage sebagai cache
-    localStorage.setItem('mazeeda_admin_profile', JSON.stringify(adminEditForm));
+    localStorage.setItem(
+      "mazeeda_admin_profile",
+      JSON.stringify(adminEditForm),
+    );
     myProfileData = { ...adminEditForm };
 
     // 3. Sync name, foto_url, email ke authStore agar header & sidebar langsung update
-    authStore.update(state => ({
+    authStore.update((state) => ({
       ...state,
-      user: state.user ? {
-        ...state.user,
-        name: adminEditForm.nama_lengkap || state.user.name,
-        foto_url: adminEditForm.foto_url || '',
-        email: adminEditForm.email || state.user.email
-      } : state.user
+      user: state.user
+        ? {
+            ...state.user,
+            name: adminEditForm.nama_lengkap || state.user.name,
+            foto_url: adminEditForm.foto_url || "",
+            email: adminEditForm.email || state.user.email,
+          }
+        : state.user,
     }));
 
     // 4. Update localStorage sesi admin agar tetap sinkron setelah refresh
-    const storedUser = localStorage.getItem('mazeeda_logged_user');
+    const storedUser = localStorage.getItem("mazeeda_logged_user");
     if (storedUser) {
       try {
         const u = JSON.parse(storedUser);
-        localStorage.setItem('mazeeda_logged_user', JSON.stringify({
-          ...u,
-          name: adminEditForm.nama_lengkap || u.name,
-          foto_url: adminEditForm.foto_url || '',
-          email: adminEditForm.email || u.email
-        }));
+        localStorage.setItem(
+          "mazeeda_logged_user",
+          JSON.stringify({
+            ...u,
+            name: adminEditForm.nama_lengkap || u.name,
+            foto_url: adminEditForm.foto_url || "",
+            email: adminEditForm.email || u.email,
+          }),
+        );
       } catch (_) {}
     }
     isEditingAdminProfile = false;
   }
-
 
   function startEditAdminProfile() {
     adminEditForm = { ...myProfileData };
@@ -712,7 +864,7 @@
     isLoadingProfile = false;
   }
 
-  import { setBadgeCount, clearBadge } from '$lib/badge';
+  import { setBadgeCount, clearBadge } from "$lib/badge";
 
   // ── Notifikasi (App Notifications) ──
   let notifications: any[] = [];
@@ -720,16 +872,16 @@
   let readNotifIds: string[] = [];
   let notifChannel: any;
 
-  $: unreadCount = notifications.filter(n => {
+  $: unreadCount = notifications.filter((n) => {
     if (!n.is_active) return false;
     if (readNotifIds.includes(String(n.id))) return false;
     if (n.target_user) {
       const targetUser = n.target_user.trim().toLowerCase();
-      const myName = ($authStore.user?.name || '').trim().toLowerCase();
-      const myRole = $authStore.user?.role || '';
-      
-      if (targetUser === 'admin_role') {
-        if (myRole !== 'admin') return false;
+      const myName = ($authStore.user?.name || "").trim().toLowerCase();
+      const myRole = $authStore.user?.role || "";
+
+      if (targetUser === "admin_role") {
+        if (myRole !== "admin") return false;
       } else if (targetUser !== myName) {
         return false;
       }
@@ -738,7 +890,7 @@
   }).length;
 
   // Update App Icon Badge whenever unreadCount changes
-  $: if (browser && typeof unreadCount !== 'undefined') {
+  $: if (browser && typeof unreadCount !== "undefined") {
     if (unreadCount > 0) {
       setBadgeCount(unreadCount);
     } else {
@@ -749,10 +901,10 @@
   async function fetchNotifications() {
     try {
       const { data, error } = await supabase
-        .from('app_notifications')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .from("app_notifications")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
       if (!error && data) notifications = data;
     } catch (_) {}
   }
@@ -761,18 +913,44 @@
     showNotifPanel = !showNotifPanel;
     if (showNotifPanel) {
       // tandai semua yang tampil sebagai sudah dibaca
-      const newRead = [...new Set([...readNotifIds, ...notifications.map(n => String(n.id))])];
+      const newRead = [
+        ...new Set([
+          ...readNotifIds,
+          ...notifications.map((n) => String(n.id)),
+        ]),
+      ];
       readNotifIds = newRead;
-      if (browser) localStorage.setItem('mazeeda_read_notifs', JSON.stringify(newRead));
+      if (browser)
+        localStorage.setItem("mazeeda_read_notifs", JSON.stringify(newRead));
     }
   }
 
   function getNotifStyle(type: string) {
     switch (type) {
-      case 'success': return { bg: 'bg-emerald-50 border-emerald-200', dot: 'bg-emerald-500', text: 'text-emerald-700' };
-      case 'warning': return { bg: 'bg-amber-50 border-amber-200', dot: 'bg-amber-500', text: 'text-amber-700' };
-      case 'urgent':  return { bg: 'bg-rose-50 border-rose-200',   dot: 'bg-rose-500',   text: 'text-rose-700' };
-      default:        return { bg: 'bg-blue-50 border-blue-200',    dot: 'bg-blue-500',   text: 'text-blue-700' };
+      case "success":
+        return {
+          bg: "bg-emerald-50 border-emerald-200",
+          dot: "bg-emerald-500",
+          text: "text-emerald-700",
+        };
+      case "warning":
+        return {
+          bg: "bg-amber-50 border-amber-200",
+          dot: "bg-amber-500",
+          text: "text-amber-700",
+        };
+      case "urgent":
+        return {
+          bg: "bg-rose-50 border-rose-200",
+          dot: "bg-rose-500",
+          text: "text-rose-700",
+        };
+      default:
+        return {
+          bg: "bg-blue-50 border-blue-200",
+          dot: "bg-blue-500",
+          text: "text-blue-700",
+        };
     }
   }
 
@@ -783,11 +961,11 @@
   // ── Swipe-to-Back (Android style) — kedua sisi ──
   let swipeStartX = 0;
   let swipeStartY = 0;
-  let swipeDelta = 0;          // seberapa jauh sudah di-drag (px)
-  let isSwiping = false;       // apakah sedang swipe back aktif
-  let swipeSide: 'left' | 'right' = 'left'; // sisi mana yang mulai
-  const EDGE_ZONE = 40;        // zona tepi (px dari kiri/kanan)
-  const TRIGGER_DIST = 80;     // jarak minimum untuk trigger back
+  let swipeDelta = 0; // seberapa jauh sudah di-drag (px)
+  let isSwiping = false; // apakah sedang swipe back aktif
+  let swipeSide: "left" | "right" = "left"; // sisi mana yang mulai
+  const EDGE_ZONE = 40; // zona tepi (px dari kiri/kanan)
+  const TRIGGER_DIST = 80; // jarak minimum untuk trigger back
 
   function onTouchStart(e: TouchEvent) {
     const t = e.touches[0];
@@ -798,14 +976,14 @@
       swipeStartY = t.clientY;
       swipeDelta = 0;
       isSwiping = true;
-      swipeSide = 'left';
+      swipeSide = "left";
     } else if (t.clientX >= screenW - EDGE_ZONE) {
       // Mulai dari tepi KANAN → swipe ke kiri
       swipeStartX = t.clientX;
       swipeStartY = t.clientY;
       swipeDelta = 0;
       isSwiping = true;
-      swipeSide = 'right';
+      swipeSide = "right";
     }
   }
 
@@ -815,9 +993,13 @@
     const rawDx = t.clientX - swipeStartX;
     const dy = Math.abs(t.clientY - swipeStartY);
     // Hitung dx sesuai arah yang diharapkan
-    const dx = swipeSide === 'left' ? rawDx : -rawDx;
+    const dx = swipeSide === "left" ? rawDx : -rawDx;
     // Batalkan kalau lebih banyak vertikal
-    if (dy > Math.abs(rawDx)) { isSwiping = false; swipeDelta = 0; return; }
+    if (dy > Math.abs(rawDx)) {
+      isSwiping = false;
+      swipeDelta = 0;
+      return;
+    }
     if (dx > 0) {
       swipeDelta = Math.min(dx, 140);
     } else {
@@ -835,12 +1017,20 @@
 
   onMount(() => {
     splashMounted = true;
-    
+
     // Simulate randomized loading progress
-    setTimeout(() => { splashProgress = Math.floor(Math.random() * 15) + 15; }, 2100);
-    setTimeout(() => { splashProgress = Math.floor(Math.random() * 20) + 40; }, 3200);
-    setTimeout(() => { splashProgress = Math.floor(Math.random() * 15) + 70; }, 4500);
-    setTimeout(() => { splashProgress = 100; }, 5500);
+    setTimeout(() => {
+      splashProgress = Math.floor(Math.random() * 15) + 15;
+    }, 2100);
+    setTimeout(() => {
+      splashProgress = Math.floor(Math.random() * 20) + 40;
+    }, 3200);
+    setTimeout(() => {
+      splashProgress = Math.floor(Math.random() * 15) + 70;
+    }, 4500);
+    setTimeout(() => {
+      splashProgress = 100;
+    }, 5500);
 
     setTimeout(() => {
       showSplash = false;
@@ -850,51 +1040,68 @@
     if (browser) {
       // Validate if logged-in member still exists in the database
       const u = $authStore.user;
-      if (u && u.role === 'member' && u.nis) {
-        supabase.from('allowed_alumni').select('id').eq('nis', u.nis).maybeSingle().then(async ({ data, error }) => {
-          if (!data) {
-            const { data: asatidzahData } = await supabase.from('asatidzah').select('id').eq('nis', u.nis).maybeSingle();
-            if (!asatidzahData) {
-              console.warn('User no longer exists in database. Forcing logout.');
-              logout();
+      if (u && u.role === "member" && u.nis) {
+        supabase
+          .from("allowed_alumni")
+          .select("id")
+          .eq("nis", u.nis)
+          .maybeSingle()
+          .then(async ({ data, error }) => {
+            if (!data) {
+              const { data: asatidzahData } = await supabase
+                .from("asatidzah")
+                .select("id")
+                .eq("nis", u.nis)
+                .maybeSingle();
+              if (!asatidzahData) {
+                console.warn(
+                  "User no longer exists in database. Forcing logout.",
+                );
+                logout();
+              }
             }
-          }
-        });
+          });
       }
 
-      window.addEventListener('touchstart', onTouchStart, { passive: true });
-      window.addEventListener('touchmove', onTouchMove, { passive: true });
-      window.addEventListener('touchend', onTouchEnd);
+      window.addEventListener("touchstart", onTouchStart, { passive: true });
+      window.addEventListener("touchmove", onTouchMove, { passive: true });
+      window.addEventListener("touchend", onTouchEnd);
 
       // Capacitor Native Back Button Handling
-      import('@capacitor/app').then(({ App }) => {
-        App.addListener('backButton', ({ canGoBack }) => {
-          const path = window.location.pathname;
-          // Return to previous page if not on home or auth
-          if (path !== '/' && path !== '/auth') {
-            window.history.back();
-          } else {
-            // Exit app only if on root/home or auth page
-            App.exitApp();
-          }
+      import("@capacitor/app")
+        .then(({ App }) => {
+          App.addListener("backButton", ({ canGoBack }) => {
+            const path = window.location.pathname;
+            // Return to previous page if not on home or auth
+            if (path !== "/" && path !== "/auth") {
+              window.history.back();
+            } else {
+              // Exit app only if on root/home or auth page
+              App.exitApp();
+            }
+          });
+        })
+        .catch(() => {
+          // Ignore if not running in Capacitor environment
         });
-      }).catch(() => {
-        // Ignore if not running in Capacitor environment
-      });
 
       // Register Service Worker with Auto-Update logic (ONLY IN PRODUCTION WEB, NOT IN CAPACITOR)
-      if ('serviceWorker' in navigator) {
-        const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
+      if ("serviceWorker" in navigator) {
+        const isCapacitor =
+          typeof window !== "undefined" && (window as any).Capacitor;
         // @ts-ignore
         if (import.meta.env.DEV || isCapacitor) {
-          navigator.serviceWorker.getRegistrations().then(registrations => {
+          navigator.serviceWorker.getRegistrations().then((registrations) => {
             for (let registration of registrations) {
               registration.unregister().then((success) => {
-                if (success) console.log('Successfully unregistered service worker for Capacitor/Dev mode');
+                if (success)
+                  console.log(
+                    "Successfully unregistered service worker for Capacitor/Dev mode",
+                  );
               });
             }
           });
-          if (typeof caches !== 'undefined') {
+          if (typeof caches !== "undefined") {
             caches.keys().then((names) => {
               for (let name of names) {
                 caches.delete(name);
@@ -902,50 +1109,58 @@
             });
           }
         } else {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker
+            .register("/sw.js")
             .then((reg) => {
-              console.log('Service Worker Registered with scope:', reg.scope);
-            
-            // Listen for updates to the Service Worker
-            reg.addEventListener('updatefound', () => {
-              const newWorker = reg.installing;
-              if (newWorker) {
-                newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    console.log('New version detected! Reloading to apply updates...');
-                    window.location.reload();
-                  }
-                });
-              }
-            });
-          })
-          .catch((err) => console.error('Service worker registration failed:', err));
+              console.log("Service Worker Registered with scope:", reg.scope);
+
+              // Listen for updates to the Service Worker
+              reg.addEventListener("updatefound", () => {
+                const newWorker = reg.installing;
+                if (newWorker) {
+                  newWorker.addEventListener("statechange", () => {
+                    if (
+                      newWorker.state === "installed" &&
+                      navigator.serviceWorker.controller
+                    ) {
+                      console.log(
+                        "New version detected! Reloading to apply updates...",
+                      );
+                      window.location.reload();
+                    }
+                  });
+                }
+              });
+            })
+            .catch((err) =>
+              console.error("Service worker registration failed:", err),
+            );
         }
       }
 
       // Listen for PWA installation prompt
-      window.addEventListener('beforeinstallprompt', (e) => {
+      window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
         deferredPrompt.set(e);
         showInstallBtn.set(true);
-        console.log('beforeinstallprompt event fired');
+        console.log("beforeinstallprompt event fired");
       });
 
       // Listen for PWA installed event
-      window.addEventListener('appinstalled', () => {
+      window.addEventListener("appinstalled", () => {
         deferredPrompt.set(null);
         showInstallBtn.set(false);
-        console.log('App successfully installed!');
+        console.log("App successfully installed!");
       });
 
       // Load read notif ids from localStorage
       try {
-        const saved = localStorage.getItem('mazeeda_read_notifs');
+        const saved = localStorage.getItem("mazeeda_read_notifs");
         if (saved) readNotifIds = JSON.parse(saved);
-        
+
         // Listen for updates from the notifikasi page
-        window.addEventListener('mazeeda_read_notifs_updated', () => {
-          const updated = localStorage.getItem('mazeeda_read_notifs');
+        window.addEventListener("mazeeda_read_notifs_updated", () => {
+          const updated = localStorage.getItem("mazeeda_read_notifs");
           if (updated) readNotifIds = JSON.parse(updated);
         });
       } catch (_) {}
@@ -955,15 +1170,19 @@
         if (profile) {
           myProfileData = profile;
           // If the logged in user is admin, sync to authStore so they have the loaded profile picture
-          if ($authStore.user?.role === 'admin') {
-            authStore.update(state => state.user ? {
-              ...state,
-              user: {
-                ...state.user,
-                name: profile.nama_lengkap || state.user.name,
-                foto_url: profile.foto_url || state.user.foto_url
-              }
-            } : state);
+          if ($authStore.user?.role === "admin") {
+            authStore.update((state) =>
+              state.user
+                ? {
+                    ...state,
+                    user: {
+                      ...state.user,
+                      name: profile.nama_lengkap || state.user.name,
+                      foto_url: profile.foto_url || state.user.foto_url,
+                    },
+                  }
+                : state,
+            );
           }
         }
       });
@@ -972,18 +1191,22 @@
 
     // Realtime: dengarkan perubahan app_notifications
     notifChannel = supabase
-      .channel('app_notifications_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_notifications' }, () => {
-        fetchNotifications();
-      })
+      .channel("app_notifications_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "app_notifications" },
+        () => {
+          fetchNotifications();
+        },
+      )
       .subscribe();
   });
 
   onDestroy(() => {
     if (browser) {
-      window.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
     }
     if (notifChannel) supabase.removeChannel(notifChannel);
   });
@@ -1007,80 +1230,85 @@
 
   // Generate Initials
   function getInitials(name: string) {
-    if (!name) return 'M';
-    return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+    if (!name) return "M";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
   }
 
   // Capitalize each word
   function capitalizeEachWord(str: string) {
-    if (!str) return '-';
+    if (!str) return "-";
     return str
       .toLowerCase()
-      .split(' ')
-      .map(word => {
-        if (word.startsWith('@')) {
-          return '@' + word.slice(1).charAt(0).toUpperCase() + word.slice(2);
+      .split(" ")
+      .map((word) => {
+        if (word.startsWith("@")) {
+          return "@" + word.slice(1).charAt(0).toUpperCase() + word.slice(2);
         }
         return word.charAt(0).toUpperCase() + word.slice(1);
       })
-      .join(' ');
+      .join(" ");
   }
 
   // Format WhatsApp numbers to start with 0
   function formatWhatsApp(phone: string) {
-    if (!phone) return '-';
-    let cleaned = phone.replace(/[^0-9]/g, '');
-    if (cleaned.startsWith('62')) {
-      cleaned = '0' + cleaned.slice(2);
-    } else if (cleaned.startsWith('8')) {
-      cleaned = '0' + cleaned;
+    if (!phone) return "-";
+    let cleaned = phone.replace(/[^0-9]/g, "");
+    if (cleaned.startsWith("62")) {
+      cleaned = "0" + cleaned.slice(2);
+    } else if (cleaned.startsWith("8")) {
+      cleaned = "0" + cleaned;
     }
     return cleaned;
   }
 
   // Get correct link for wa.me API (must start with 62 instead of 0)
   function getWhatsAppLink(phone: string) {
-    if (!phone) return '#';
-    let cleaned = phone.replace(/[^0-9]/g, '');
-    if (cleaned.startsWith('0')) {
-      cleaned = '62' + cleaned.slice(1);
+    if (!phone) return "#";
+    let cleaned = phone.replace(/[^0-9]/g, "");
+    if (cleaned.startsWith("0")) {
+      cleaned = "62" + cleaned.slice(1);
     }
-    return 'https://wa.me/' + cleaned;
+    return "https://wa.me/" + cleaned;
   }
 
   // Link helper functions for social media handles
   function getInstagramLink(ig: string) {
-    if (!ig) return '#';
+    if (!ig) return "#";
     let handle = ig.trim();
-    if (handle.startsWith('http')) return handle;
-    if (handle.startsWith('@')) {
+    if (handle.startsWith("http")) return handle;
+    if (handle.startsWith("@")) {
       handle = handle.slice(1);
     }
     return `https://instagram.com/${handle}`;
   }
 
   function getTiktokLink(tiktok: string) {
-    if (!tiktok) return '#';
+    if (!tiktok) return "#";
     let handle = tiktok.trim();
-    if (handle.startsWith('http')) return handle;
-    if (handle.startsWith('@')) {
+    if (handle.startsWith("http")) return handle;
+    if (handle.startsWith("@")) {
       handle = handle.slice(1);
     }
     return `https://tiktok.com/@${handle}`;
   }
 
   function getFacebookLink(fb: string) {
-    if (!fb) return '#';
+    if (!fb) return "#";
     let handle = fb.trim();
-    if (handle.startsWith('http')) return handle;
+    if (handle.startsWith("http")) return handle;
     return `https://facebook.com/${handle}`;
   }
 
   function getXTwitterLink(xtwitter: string) {
-    if (!xtwitter) return '#';
+    if (!xtwitter) return "#";
     let handle = xtwitter.trim();
-    if (handle.startsWith('http')) return handle;
-    if (handle.startsWith('@')) {
+    if (handle.startsWith("http")) return handle;
+    if (handle.startsWith("@")) {
       handle = handle.slice(1);
     }
     return `https://x.com/${handle}`;
@@ -1088,28 +1316,33 @@
 
   function getYouTubeId(url: string) {
     if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.trim().match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    return match && match[2].length === 11 ? match[2] : null;
   }
 
   async function openMyProfile() {
     if (!$authStore.user) return;
     showMyProfile = true;
     isEditingAdminProfile = false;
-    
-    if ($authStore.user.role === 'admin') {
+
+    if ($authStore.user.role === "admin") {
       isLoadingProfile = true;
       myProfileData = loadAdminProfileFromCache();
       myProfileData = await fetchAdminProfileFromDB();
-      
+
       customPhotos = [];
       currentPhotoIndex = 0;
       allProfilePhotos = [];
       if (myProfileData.foto_url) {
-        allProfilePhotos.push({ url: myProfileData.foto_url, type: 'admin', status: 'approved' });
+        allProfilePhotos.push({
+          url: myProfileData.foto_url,
+          type: "admin",
+          status: "approved",
+        });
       }
-      
+
       isLoadingProfile = false;
       return;
     }
@@ -1117,18 +1350,18 @@
     try {
       isLoadingProfile = true;
       let { data, error } = await supabase
-        .from('allowed_alumni')
-        .select('*')
-        .eq('nis', $authStore.user.nis)
+        .from("allowed_alumni")
+        .select("*")
+        .eq("nis", $authStore.user.nis)
         .maybeSingle();
 
       if (error) throw error;
-      
+
       if (!data) {
         const asatidzahRes = await supabase
-          .from('asatidzah')
-          .select('*')
-          .eq('nis', $authStore.user.nis)
+          .from("asatidzah")
+          .select("*")
+          .eq("nis", $authStore.user.nis)
           .maybeSingle();
         if (asatidzahRes.error) throw asatidzahRes.error;
         data = asatidzahRes.data;
@@ -1138,16 +1371,16 @@
         myProfileData = data;
       } else {
         let { data: nameData, error: nameError } = await supabase
-          .from('allowed_alumni')
-          .select('*')
-          .eq('nama_lengkap', $authStore.user.name)
+          .from("allowed_alumni")
+          .select("*")
+          .eq("nama_lengkap", $authStore.user.name)
           .maybeSingle();
-          
+
         if (!nameData) {
           const asatidzahNameRes = await supabase
-            .from('asatidzah')
-            .select('*')
-            .eq('nama_lengkap', $authStore.user.name)
+            .from("asatidzah")
+            .select("*")
+            .eq("nama_lengkap", $authStore.user.name)
             .maybeSingle();
           nameData = asatidzahNameRes.data;
         }
@@ -1158,24 +1391,27 @@
           myProfileData = $authStore.user;
         }
       }
-      
+
       // Explicitly initialize photo arrays to avoid Svelte reactivity race conditions
       customPhotos = [];
       currentPhotoIndex = 0;
       allProfilePhotos = [];
       if (myProfileData.foto_url) {
-        allProfilePhotos.push({ url: myProfileData.foto_url, type: 'admin', status: 'approved' });
+        allProfilePhotos.push({
+          url: myProfileData.foto_url,
+          type: "admin",
+          status: "approved",
+        });
       }
 
       // Explicitly fetch custom photos after myProfileData is firmly established
       // This avoids Svelte reactivity race conditions where allProfilePhotos might be cleared
       const finalProfileName = myProfileData.nama_lengkap || myProfileData.name;
-      if (finalProfileName && finalProfileName !== 'ADMIN MAZEEDA') {
+      if (finalProfileName && finalProfileName !== "ADMIN MAZEEDA") {
         await fetchCustomPhotosForProfile(finalProfileName);
       }
-      
     } catch (e) {
-      console.error('Error fetching full profile:', e);
+      console.error("Error fetching full profile:", e);
       myProfileData = $authStore.user;
     } finally {
       isLoadingProfile = false;
@@ -1183,12 +1419,11 @@
   }
 
   // Reactive: Check if the viewed profile belongs to the currently logged in user
-  $: isOwnProfile = $authStore.user && myProfileData && (
-    ($authStore.user.role === 'admin' && myProfileData.role === 'admin') || 
-    (myProfileData.nis === $authStore.user.nis)
-  );
-
-
+  $: isOwnProfile =
+    $authStore.user &&
+    myProfileData &&
+    (($authStore.user.role === "admin" && myProfileData.role === "admin") ||
+      myProfileData.nis === $authStore.user.nis);
 
   // Close profile on route changes
   $: if (currentPath) {
@@ -1205,36 +1440,43 @@
   $: if (browser && $activeProfileStore) {
     const trigger = $activeProfileStore;
     activeProfileStore.set(null); // Reset store
-    openPublicProfile(trigger.type, trigger.nameOrNis);
+    if (trigger.type === 'admin') {
+      goto(`/asatidzah?name=${encodeURIComponent(trigger.nameOrNis)}`);
+    } else {
+      goto(`/squad?name=${encodeURIComponent(trigger.nameOrNis)}`);
+    }
   }
 
-  async function openPublicProfile(type: 'admin' | 'member', nameOrNis: string) {
+  async function openPublicProfile(
+    type: "admin" | "member",
+    nameOrNis: string,
+  ) {
     showMyProfile = true;
     isEditingAdminProfile = false;
     isLoadingProfile = true;
 
-    if (type === 'admin') {
+    if (type === "admin") {
       myProfileData = await fetchAdminProfileFromDB();
       isLoadingProfile = false;
       return;
     }
 
     try {
-      let query = supabase.from('allowed_alumni').select('*');
+      let query = supabase.from("allowed_alumni").select("*");
       if (/^\d+$/.test(nameOrNis)) {
-        query = query.eq('nis', nameOrNis);
+        query = query.eq("nis", nameOrNis);
       } else {
-        query = query.ilike('nama_lengkap', nameOrNis);
+        query = query.ilike("nama_lengkap", nameOrNis);
       }
-      
+
       let { data, error } = await query.maybeSingle();
 
       if (!data) {
-        let asatidzahQuery = supabase.from('asatidzah').select('*');
+        let asatidzahQuery = supabase.from("asatidzah").select("*");
         if (/^\d+$/.test(nameOrNis)) {
-          asatidzahQuery = asatidzahQuery.eq('nis', nameOrNis);
+          asatidzahQuery = asatidzahQuery.eq("nis", nameOrNis);
         } else {
-          asatidzahQuery = asatidzahQuery.ilike('nama_lengkap', nameOrNis);
+          asatidzahQuery = asatidzahQuery.ilike("nama_lengkap", nameOrNis);
         }
         const asatidzahRes = await asatidzahQuery.maybeSingle();
         data = asatidzahRes.data;
@@ -1246,18 +1488,18 @@
       } else {
         myProfileData = {
           nama_lengkap: nameOrNis,
-          nama_panggilan: nameOrNis.split(' ')[0],
-          status: 'Alumni',
-          category: 'Siswa'
+          nama_panggilan: nameOrNis.split(" ")[0],
+          status: "Alumni",
+          category: "Siswa",
         };
       }
     } catch (err) {
-      console.error('Failed to fetch public profile:', err);
+      console.error("Failed to fetch public profile:", err);
       myProfileData = {
         nama_lengkap: nameOrNis,
-        nama_panggilan: nameOrNis.split(' ')[0],
-        status: 'Alumni',
-        category: 'Siswa'
+        nama_panggilan: nameOrNis.split(" ")[0],
+        status: "Alumni",
+        category: "Siswa",
       };
     } finally {
       isLoadingProfile = false;
@@ -1273,78 +1515,227 @@
 
 {#if showSplash}
   <!-- Premium White Splash Screen -->
-  <div class="fixed inset-0 z-[999999] bg-slate-50 flex flex-col items-center justify-center overflow-hidden" out:fade={{ duration: 800 }}>
+  <div
+    class="fixed inset-0 z-[999999] bg-slate-50 dark:bg-slate-800 flex flex-col items-center justify-center overflow-hidden"
+    out:fade={{ duration: 800 }}
+  >
     {#if splashMounted}
       <!-- Background Decorative Elements -->
       <div class="absolute inset-0 z-0 opacity-40">
-        <div class="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3" in:fade={{ duration: 1500 }}></div>
-        <div class="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl -translate-x-1/3 translate-y-1/3" in:fade={{ duration: 1500 }}></div>
+        <div
+          class="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3"
+          in:fade={{ duration: 1500 }}
+        ></div>
+        <div
+          class="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl -translate-x-1/3 translate-y-1/3"
+          in:fade={{ duration: 1500 }}
+        ></div>
       </div>
 
       <!-- Animated Splash Mascot -->
       <div class="relative z-10 flex flex-col items-center">
-        
         <!-- The Peacock (Splash Version) -->
-        <div class="relative w-40 h-40 mb-8" in:fly={{ y: 50, duration: 1000, delay: 300 }}>
+        <div
+          class="relative w-40 h-40 mb-8"
+          in:fly={{ y: 50, duration: 1000, delay: 300 }}
+        >
           <!-- Tail Feathers -->
-          <div class="absolute inset-x-0 bottom-4 h-40 flex justify-center items-end z-0">
-            <div in:fly={{ y: 80, duration: 800, delay: 1000 }} class="absolute bottom-0"><div class="w-10 h-24 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg" style="transform: rotate(-75deg); transform-origin: bottom center;"><div class="w-4 h-5 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"></div></div></div>
-            
-            <div in:fly={{ y: 80, duration: 800, delay: 850 }} class="absolute bottom-0"><div class="w-10 h-32 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg" style="transform: rotate(-45deg); transform-origin: bottom center;"><div class="w-5 h-6 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"></div></div></div>
-            
-            <div in:fly={{ y: 80, duration: 800, delay: 700 }} class="absolute bottom-0"><div class="w-10 h-40 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg" style="transform: rotate(-15deg); transform-origin: bottom center;"><div class="w-5 h-6 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"></div></div></div>
-            
-            <div in:fly={{ y: 80, duration: 800, delay: 700 }} class="absolute bottom-0"><div class="w-10 h-40 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg" style="transform: rotate(15deg); transform-origin: bottom center;"><div class="w-5 h-6 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"></div></div></div>
-            
-            <div in:fly={{ y: 80, duration: 800, delay: 850 }} class="absolute bottom-0"><div class="w-10 h-32 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg" style="transform: rotate(45deg); transform-origin: bottom center;"><div class="w-5 h-6 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"></div></div></div>
-            
-            <div in:fly={{ y: 80, duration: 800, delay: 1000 }} class="absolute bottom-0"><div class="w-10 h-24 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg" style="transform: rotate(75deg); transform-origin: bottom center;"><div class="w-4 h-5 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"></div></div></div>
+          <div
+            class="absolute inset-x-0 bottom-4 h-40 flex justify-center items-end z-0"
+          >
+            <div
+              in:fly={{ y: 80, duration: 800, delay: 1000 }}
+              class="absolute bottom-0"
+            >
+              <div
+                class="w-10 h-24 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg"
+                style="transform: rotate(-75deg); transform-origin: bottom center;"
+              >
+                <div
+                  class="w-4 h-5 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"
+                ></div>
+              </div>
+            </div>
+
+            <div
+              in:fly={{ y: 80, duration: 800, delay: 850 }}
+              class="absolute bottom-0"
+            >
+              <div
+                class="w-10 h-32 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg"
+                style="transform: rotate(-45deg); transform-origin: bottom center;"
+              >
+                <div
+                  class="w-5 h-6 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"
+                ></div>
+              </div>
+            </div>
+
+            <div
+              in:fly={{ y: 80, duration: 800, delay: 700 }}
+              class="absolute bottom-0"
+            >
+              <div
+                class="w-10 h-40 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg"
+                style="transform: rotate(-15deg); transform-origin: bottom center;"
+              >
+                <div
+                  class="w-5 h-6 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"
+                ></div>
+              </div>
+            </div>
+
+            <div
+              in:fly={{ y: 80, duration: 800, delay: 700 }}
+              class="absolute bottom-0"
+            >
+              <div
+                class="w-10 h-40 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg"
+                style="transform: rotate(15deg); transform-origin: bottom center;"
+              >
+                <div
+                  class="w-5 h-6 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"
+                ></div>
+              </div>
+            </div>
+
+            <div
+              in:fly={{ y: 80, duration: 800, delay: 850 }}
+              class="absolute bottom-0"
+            >
+              <div
+                class="w-10 h-32 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg"
+                style="transform: rotate(45deg); transform-origin: bottom center;"
+              >
+                <div
+                  class="w-5 h-6 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"
+                ></div>
+              </div>
+            </div>
+
+            <div
+              in:fly={{ y: 80, duration: 800, delay: 1000 }}
+              class="absolute bottom-0"
+            >
+              <div
+                class="w-10 h-24 bg-emerald-500 rounded-full border-2 border-emerald-600 flex justify-center pt-2 shadow-lg"
+                style="transform: rotate(75deg); transform-origin: bottom center;"
+              >
+                <div
+                  class="w-4 h-5 bg-blue-600 rounded-full border-2 border-yellow-400 shadow-inner"
+                ></div>
+              </div>
+            </div>
           </div>
 
           <!-- Body -->
-          <div class="absolute bottom-0 left-1/2 -ml-9 w-18 h-32 bg-blue-600 rounded-t-full rounded-b-[30px] shadow-[inset_0_-10px_0_rgba(0,0,0,0.2)] z-10" style="width: 72px;">
-            
+          <div
+            class="absolute bottom-0 left-1/2 -ml-9 w-18 h-32 bg-blue-600 rounded-t-full rounded-b-[30px] shadow-[inset_0_-10px_0_rgba(0,0,0,0.2)] z-10"
+            style="width: 72px;"
+          >
             <!-- Crest -->
-            <div class="absolute -top-6 left-1/2 -translate-x-1/2 flex space-x-1.5" in:scale={{ duration: 500, delay: 1200, start: 0 }}>
-              <div class="w-1 h-5 bg-slate-800 rotate-[-25deg] origin-bottom relative"><div class="absolute -top-2 -left-1 w-3 h-3 bg-blue-400 rounded-full shadow-sm"></div></div>
-              <div class="w-1 h-6 bg-slate-800 relative"><div class="absolute -top-2 -left-1 w-3 h-3 bg-blue-400 rounded-full shadow-sm"></div></div>
-              <div class="w-1 h-5 bg-slate-800 rotate-[25deg] origin-bottom relative"><div class="absolute -top-2 -left-1 w-3 h-3 bg-blue-400 rounded-full shadow-sm"></div></div>
+            <div
+              class="absolute -top-6 left-1/2 -translate-x-1/2 flex space-x-1.5"
+              in:scale={{ duration: 500, delay: 1200, start: 0 }}
+            >
+              <div
+                class="w-1 h-5 bg-slate-800 rotate-[-25deg] origin-bottom relative"
+              >
+                <div
+                  class="absolute -top-2 -left-1 w-3 h-3 bg-blue-400 rounded-full shadow-sm dark:shadow-none"
+                ></div>
+              </div>
+              <div class="w-1 h-6 bg-slate-800 relative">
+                <div
+                  class="absolute -top-2 -left-1 w-3 h-3 bg-blue-400 rounded-full shadow-sm dark:shadow-none"
+                ></div>
+              </div>
+              <div
+                class="w-1 h-5 bg-slate-800 rotate-[25deg] origin-bottom relative"
+              >
+                <div
+                  class="absolute -top-2 -left-1 w-3 h-3 bg-blue-400 rounded-full shadow-sm dark:shadow-none"
+                ></div>
+              </div>
             </div>
 
             <!-- Eyes -->
-            <div class="absolute top-6 left-1/2 -translate-x-1/2 w-12 h-5 flex justify-between px-1 z-10">
+            <div
+              class="absolute top-6 left-1/2 -translate-x-1/2 w-12 h-5 flex justify-between px-1 z-10"
+            >
               <!-- Normal Open Eyes -->
-              <div class="relative w-4 h-5 bg-white rounded-full overflow-hidden shadow-inner" in:scale={{ duration: 400, delay: 1300 }}>
-                <div class="absolute top-1 left-1 w-2.5 h-2.5 bg-slate-900 rounded-full"></div>
+              <div
+                class="relative w-4 h-5 bg-white rounded-full overflow-hidden shadow-inner"
+                in:scale={{ duration: 400, delay: 1300 }}
+              >
+                <div
+                  class="absolute top-1 left-1 w-2.5 h-2.5 bg-slate-900 rounded-full"
+                ></div>
               </div>
-              <div class="relative w-4 h-5 bg-white rounded-full overflow-hidden shadow-inner" in:scale={{ duration: 400, delay: 1300 }}>
-                <div class="absolute top-1 right-1 w-2.5 h-2.5 bg-slate-900 rounded-full"></div>
+              <div
+                class="relative w-4 h-5 bg-white rounded-full overflow-hidden shadow-inner"
+                in:scale={{ duration: 400, delay: 1300 }}
+              >
+                <div
+                  class="absolute top-1 right-1 w-2.5 h-2.5 bg-slate-900 rounded-full"
+                ></div>
               </div>
             </div>
 
             <!-- Smiling Cheeks -->
-            <div class="absolute top-9 left-2 w-3 h-1.5 bg-rose-400 rounded-full opacity-60 z-10" in:scale={{ duration: 300, delay: 1400 }}></div>
-            <div class="absolute top-9 right-2 w-3 h-1.5 bg-rose-400 rounded-full opacity-60 z-10" in:scale={{ duration: 300, delay: 1400 }}></div>
+            <div
+              class="absolute top-9 left-2 w-3 h-1.5 bg-rose-400 rounded-full opacity-60 z-10"
+              in:scale={{ duration: 300, delay: 1400 }}
+            ></div>
+            <div
+              class="absolute top-9 right-2 w-3 h-1.5 bg-rose-400 rounded-full opacity-60 z-10"
+              in:scale={{ duration: 300, delay: 1400 }}
+            ></div>
 
             <!-- Beak -->
-            <div class="absolute top-12 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[10px] border-t-yellow-400 z-20" in:scale={{ duration: 400, delay: 1400 }}></div>
+            <div
+              class="absolute top-12 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[10px] border-t-yellow-400 z-20"
+              in:scale={{ duration: 400, delay: 1400 }}
+            ></div>
 
             <!-- Wings -->
-            <div class="absolute bottom-4 -left-3 w-8 h-14 bg-blue-500 rounded-full origin-top rotate-[20deg] shadow-[inset_-2px_0_10px_rgba(0,0,0,0.1)] z-20 animate-wave-left" in:fly={{ x: 20, duration: 600, delay: 1000 }}></div>
-            <div class="absolute bottom-4 -right-3 w-8 h-14 bg-blue-500 rounded-full origin-top rotate-[-20deg] shadow-[inset_2px_0_10px_rgba(0,0,0,0.1)] z-20 animate-wave-right" in:fly={{ x: -20, duration: 600, delay: 1000 }}></div>
+            <div
+              class="absolute bottom-4 -left-3 w-8 h-14 bg-blue-500 rounded-full origin-top rotate-[20deg] shadow-[inset_-2px_0_10px_rgba(0,0,0,0.1)] z-20 animate-wave-left"
+              in:fly={{ x: 20, duration: 600, delay: 1000 }}
+            ></div>
+            <div
+              class="absolute bottom-4 -right-3 w-8 h-14 bg-blue-500 rounded-full origin-top rotate-[-20deg] shadow-[inset_2px_0_10px_rgba(0,0,0,0.1)] z-20 animate-wave-right"
+              in:fly={{ x: -20, duration: 600, delay: 1000 }}
+            ></div>
           </div>
         </div>
-        
+
         <!-- Typography -->
         <div class="mt-4 flex flex-col items-center">
-          <h1 class="text-4xl font-extrabold tracking-[0.3em] text-slate-800 ml-[0.3em]" in:fly={{ y: 20, duration: 800, delay: 1500 }}>MAZEEDA</h1>
-          <p class="text-slate-500 font-medium tracking-widest text-xs mt-2 ml-[0.1em]" in:fade={{ duration: 800, delay: 1700 }}>Eratkan Sanad, Sebarkan Manfaat!</p>
+          <h1
+            class="text-4xl font-extrabold tracking-[0.3em] text-slate-800 dark:text-slate-100 ml-[0.3em]"
+            in:fly={{ y: 20, duration: 800, delay: 1500 }}
+          >
+            MAZEEDA
+          </h1>
+          <p
+            class="text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium tracking-widest text-xs mt-2 ml-[0.1em]"
+            in:fade={{ duration: 800, delay: 1700 }}
+          >
+            Eratkan Sanad, Sebarkan Manfaat!
+          </p>
         </div>
       </div>
-      
+
       <!-- Modern Progress Bar -->
-      <div class="absolute bottom-20 w-48 h-1 bg-slate-200 rounded-full overflow-hidden" in:fade={{ delay: 2000 }}>
-        <div class="h-full bg-primary rounded-full transition-all duration-700 ease-out" style="width: {splashProgress}%;"></div>
+      <div
+        class="absolute bottom-20 w-48 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden"
+        in:fade={{ delay: 2000 }}
+      >
+        <div
+          class="h-full bg-primary rounded-full transition-all duration-700 ease-out"
+          style="width: {splashProgress}%;"
+        ></div>
       </div>
     {/if}
   </div>
@@ -1352,38 +1743,70 @@
 
 <!-- ===== UPLOAD WARNING MODAL ===== -->
 {#if showUploadWarning}
-  <div class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" transition:fade={{ duration: 200 }}>
-    <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+  <div
+    class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+    transition:fade={{ duration: 200 }}
+  >
+    <div
+      class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
+    >
       <div class="p-6">
-        <div class="w-12 h-12 bg-blue-100 text-primary rounded-full flex items-center justify-center mb-4">
+        <div
+          class="w-12 h-12 bg-blue-100 text-primary rounded-full flex items-center justify-center mb-4"
+        >
           <Camera class="w-6 h-6" />
         </div>
-        <h3 class="text-xl font-black text-slate-800 mb-2">Unggah Foto Tambahan</h3>
-        <p class="text-sm text-slate-500 mb-4 leading-relaxed">
-          Anda akan menambahkan foto opsional ke profil Anda. Foto ini tidak akan langsung tampil, melainkan <b>menunggu persetujuan Admin (1x24 jam)</b>. 
-          <br><br>
+        <h3 class="text-xl font-black text-slate-800 dark:text-slate-100 mb-2">
+          Unggah Foto Tambahan
+        </h3>
+        <p
+          class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mb-4 leading-relaxed"
+        >
+          Anda akan menambahkan foto opsional ke profil Anda. Foto ini tidak
+          akan langsung tampil, melainkan <b
+            >menunggu persetujuan Admin (1x24 jam)</b
+          >.
+          <br /><br />
           Maksimal Anda bisa menambahkan <b>3 foto tambahan</b> selain foto utama.
         </p>
-        
-        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+
+        <label
+          class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl cursor-pointer hover:bg-slate-100 dark:bg-slate-800 transition-colors"
+        >
           <div class="relative flex items-start mt-0.5">
-            <input type="checkbox" bind:checked={dontShowWarningAgain} class="peer sr-only" />
-            <div class="w-5 h-5 border-2 border-slate-300 rounded peer-checked:bg-primary peer-checked:border-primary transition-colors flex items-center justify-center">
+            <input
+              type="checkbox"
+              bind:checked={dontShowWarningAgain}
+              class="peer sr-only"
+            />
+            <div
+              class="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 rounded peer-checked:bg-primary peer-checked:border-primary transition-colors flex items-center justify-center"
+            >
               {#if dontShowWarningAgain}
                 <Check class="w-3 h-3 text-white" />
               {/if}
             </div>
           </div>
-          <span class="text-xs font-medium text-slate-600 leading-tight">Jangan tampilkan pesan peringatan ini lagi saat saya mengunggah foto.</span>
+          <span
+            class="text-xs font-medium text-slate-600 dark:text-slate-300 leading-tight"
+            >Jangan tampilkan pesan peringatan ini lagi saat saya mengunggah
+            foto.</span
+          >
         </label>
       </div>
-      
-      <div class="flex border-t border-slate-100">
-        <button on:click={cancelUpload} class="flex-1 py-3.5 text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors">
+
+      <div class="flex border-t border-slate-100 dark:border-slate-800">
+        <button
+          on:click={cancelUpload}
+          class="flex-1 py-3.5 text-sm font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:bg-slate-800 transition-colors"
+        >
           Batal
         </button>
-        <div class="w-px bg-slate-100"></div>
-        <button on:click={proceedWithUpload} class="flex-1 py-3.5 text-sm font-black text-primary hover:bg-blue-50 transition-colors">
+        <div class="w-px bg-slate-100 dark:bg-slate-800"></div>
+        <button
+          on:click={proceedWithUpload}
+          class="flex-1 py-3.5 text-sm font-black text-primary hover:bg-blue-50 transition-colors"
+        >
           Pilih Foto
         </button>
       </div>
@@ -1393,13 +1816,21 @@
 
 <!-- ===== CROP IMAGE MODAL ===== -->
 {#if showCropModal}
-  <div class="fixed inset-0 z-[100000] flex flex-col bg-slate-900 animate-in fade-in duration-300">
+  <div
+    class="fixed inset-0 z-[100000] flex flex-col bg-slate-900 animate-in fade-in duration-300"
+  >
     <!-- Header -->
-    <div class="flex items-center justify-between p-4 bg-slate-900 z-10 border-b border-white/10">
+    <div
+      class="flex items-center justify-between p-4 bg-slate-900 z-10 border-b border-white/10"
+    >
       <h3 class="text-white font-black">Sesuaikan Foto</h3>
-      <button 
-        on:click={() => { showCropModal = false; cropImageSrc = ''; currentFile = null; }}
-        class="bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-colors"
+      <button
+        on:click={() => {
+          showCropModal = false;
+          cropImageSrc = "";
+          currentFile = null;
+        }}
+        class="bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 text-white rounded-full p-2 transition-colors"
       >
         <X class="w-5 h-5" />
       </button>
@@ -1417,16 +1848,20 @@
         on:cropcomplete={onCropComplete}
       />
     </div>
-    
+
     <!-- Footer / Actions -->
     <div class="p-6 bg-slate-900 flex gap-3 pb-8">
-      <button 
-        on:click={() => { showCropModal = false; cropImageSrc = ''; currentFile = null; }}
+      <button
+        on:click={() => {
+          showCropModal = false;
+          cropImageSrc = "";
+          currentFile = null;
+        }}
         class="flex-1 py-3.5 px-4 rounded-xl text-sm font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors"
       >
         Batal
       </button>
-      <button 
+      <button
         on:click={processCropAndUpload}
         class="flex-1 py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
       >
@@ -1438,14 +1873,27 @@
 
 <!-- ===== THEME SELECTION MODAL ===== -->
 {#if showThemeModal}
-  <div class="fixed inset-0 z-[100000] flex flex-col items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" on:click={() => showThemeModal = false}>
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh]" on:click|stopPropagation>
+  <div
+    class="fixed inset-0 z-[100000] flex flex-col items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+    on:click={() => (showThemeModal = false)}
+  >
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh]"
+      on:click|stopPropagation
+    >
       <!-- Header -->
-      <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
-        <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+      <div
+        class="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0"
+      >
+        <h3
+          class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2"
+        >
           <Palette class="w-5 h-5 text-blue-500" /> Pilih Tema Profil
         </h3>
-        <button on:click={() => showThemeModal = false} class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
+        <button
+          on:click={() => (showThemeModal = false)}
+          class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors"
+        >
           <X class="w-4 h-4" />
         </button>
       </div>
@@ -1454,41 +1902,69 @@
       <div class="p-6 overflow-y-auto custom-scrollbar">
         <div class="grid grid-cols-2 gap-4">
           {#each profileThemes as theme}
-            {#if !theme.isAdminOnly || userRole === 'admin'}
+            {#if !theme.isAdminOnly || userRole === "admin"}
               <button
                 on:click={() => selectTheme(theme.id)}
                 disabled={isSavingTheme}
-                class="relative group rounded-2xl overflow-hidden border-2 transition-all {currentProfileTheme.id === theme.id ? 'border-blue-500 shadow-md ring-2 ring-blue-500/20' : 'border-transparent hover:border-slate-200'}"
+                class="relative group rounded-2xl overflow-hidden border-2 transition-all {currentProfileTheme.id ===
+                theme.id
+                  ? 'border-blue-500 shadow-md dark:shadow-none ring-2 ring-blue-500/20'
+                  : 'border-transparent hover:border-slate-200 dark:border-slate-700'}"
               >
                 <!-- Preview Box -->
-                <div class="h-24 w-full {theme.class} transition-transform duration-500 group-hover:scale-105" style={theme.style || ''}>
+                <div
+                  class="h-24 w-full {theme.class} transition-transform duration-500 group-hover:scale-105"
+                  style={theme.style || ""}
+                >
                   {#if currentProfileTheme.id === theme.id}
-                    <div class="absolute inset-0 bg-blue-500/20 flex items-center justify-center backdrop-blur-[1px]">
-                      <div class="bg-white rounded-full p-1.5 shadow-sm">
+                    <div
+                      class="absolute inset-0 bg-blue-500/20 flex items-center justify-center backdrop-blur-[1px]"
+                    >
+                      <div
+                        class="bg-white dark:bg-slate-900 rounded-full p-1.5 shadow-sm dark:shadow-none"
+                      >
                         <Check class="w-5 h-5 text-blue-600" />
                       </div>
                     </div>
                   {/if}
                   {#if theme.isAdminOnly}
-                    <div class="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent flex p-2">
-                      <div class="bg-black/60 backdrop-blur-md rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm h-fit">
-                        <span class="text-[9px] font-black tracking-wider text-amber-400 uppercase">Admin</span>
+                    <div
+                      class="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent flex p-2"
+                    >
+                      <div
+                        class="bg-black/60 backdrop-blur-md rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm dark:shadow-none h-fit"
+                      >
+                        <span
+                          class="text-[9px] font-black tracking-wider text-amber-400 uppercase"
+                          >Admin</span
+                        >
                       </div>
                     </div>
                   {/if}
                 </div>
                 <!-- Label -->
-                <div class="bg-slate-50 py-2.5 px-3 text-center border-t border-slate-100 group-hover:bg-slate-100 transition-colors">
-                  <span class="text-[11px] font-bold {theme.isAdminOnly ? 'text-amber-600' : 'text-slate-700'}">{theme.name}</span>
+                <div
+                  class="bg-slate-50 dark:bg-slate-800 py-2.5 px-3 text-center border-t border-slate-100 dark:border-slate-800 group-hover:bg-slate-100 dark:bg-slate-800 transition-colors"
+                >
+                  <span
+                    class="text-[11px] font-bold {theme.isAdminOnly
+                      ? 'text-amber-600'
+                      : 'text-slate-700 dark:text-slate-200'}"
+                    >{theme.name}</span
+                  >
                 </div>
               </button>
             {/if}
           {/each}
         </div>
-        
+
         {#if isSavingTheme}
-          <div class="mt-6 flex items-center justify-center gap-3 text-blue-600">
-            <div class="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+          <div
+            class="mt-6 flex items-center justify-center gap-3 text-blue-600"
+          >
+            <div
+              class="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"
+            ></div>
             <span class="text-xs font-bold">Menyimpan tema...</span>
           </div>
         {/if}
@@ -1499,28 +1975,42 @@
 
 <!-- ===== DELETE CONFIRMATION MODAL ===== -->
 {#if showDeleteModal}
-  <div class="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" on:click={() => showDeleteModal = false}>
-    <div class="relative bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-sm p-6 space-y-5 animate-in zoom-in-95 duration-200" on:click|stopPropagation>
-      
+  <div
+    class="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+    on:click={() => (showDeleteModal = false)}
+  >
+    <div
+      class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/80 w-full max-w-sm p-6 space-y-5 animate-in zoom-in-95 duration-200"
+      on:click|stopPropagation
+    >
       <!-- Icon -->
       <div class="flex items-center justify-center">
-        <div class="h-14 w-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center shadow-inner">
+        <div
+          class="h-14 w-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center shadow-inner"
+        >
           <Trash2 class="h-7 w-7 text-rose-500 animate-bounce" />
         </div>
       </div>
 
       <!-- Text -->
       <div class="text-center space-y-1.5">
-        <h3 class="text-lg font-black text-slate-800">Hapus Foto?</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Apakah Anda yakin ingin menghapus foto tambahan ini? Aksi ini tidak dapat dibatalkan.</p>
+        <h3 class="text-lg font-black text-slate-800 dark:text-slate-100">
+          Hapus Foto?
+        </h3>
+        <p
+          class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed"
+        >
+          Apakah Anda yakin ingin menghapus foto tambahan ini? Aksi ini tidak
+          dapat dibatalkan.
+        </p>
       </div>
 
       <!-- Actions -->
       <div class="flex flex-col sm:flex-row gap-2 pt-1">
         <button
           type="button"
-          on:click={() => showDeleteModal = false}
-          class="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+          on:click={() => (showDeleteModal = false)}
+          class="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 transition-colors"
         >
           Batal
         </button>
@@ -1541,43 +2031,71 @@
 {#if showLightbox}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
-  <div 
+  <div
     class="fixed inset-0 z-[99999] flex items-center justify-center p-4"
     style="background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);"
     on:click={closeLightbox}
     transition:fade={{ duration: 200 }}
   >
     <!-- Foto Besar -->
-    <div 
+    <div
       class="relative max-w-sm w-full mx-auto"
       on:click|stopPropagation
       style="animation: lightboxZoomIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;"
     >
-      {#if showMyProfile && allProfilePhotos.length > 1 && allProfilePhotos.some(p => p.url === lightboxUrl || convertDriveUrl(p.url) === lightboxUrl)}
-        <button type="button" on:click={(e) => { prevPhoto(e); lightboxUrl = convertDriveUrl(allProfilePhotos[currentPhotoIndex].url); }} class="absolute left-2 md:-left-12 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3 transition-colors z-[101]">
+      {#if showMyProfile && allProfilePhotos.length > 1 && allProfilePhotos.some((p) => p.url === lightboxUrl || convertDriveUrl(p.url) === lightboxUrl)}
+        <button
+          type="button"
+          on:click={(e) => {
+            prevPhoto(e);
+            lightboxUrl = convertDriveUrl(
+              allProfilePhotos[currentPhotoIndex].url,
+            );
+          }}
+          class="absolute left-2 md:-left-12 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 text-white rounded-full p-3 transition-colors z-[101]"
+        >
           <ChevronLeft class="h-6 w-6 md:h-8 md:w-8" />
         </button>
-        <button type="button" on:click={(e) => { nextPhoto(e); lightboxUrl = convertDriveUrl(allProfilePhotos[currentPhotoIndex].url); }} class="absolute right-2 md:-right-12 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3 transition-colors z-[101]">
+        <button
+          type="button"
+          on:click={(e) => {
+            nextPhoto(e);
+            lightboxUrl = convertDriveUrl(
+              allProfilePhotos[currentPhotoIndex].url,
+            );
+          }}
+          class="absolute right-2 md:-right-12 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 text-white rounded-full p-3 transition-colors z-[101]"
+        >
           <ChevronRight class="h-6 w-6 md:h-8 md:w-8" />
         </button>
       {/if}
 
-      <img referrerpolicy="no-referrer" 
-        src={lightboxUrl} 
+      <img
+        referrerpolicy="no-referrer"
+        src={lightboxUrl}
         alt="Foto Profil"
-        class="w-full rounded-3xl shadow-2xl object-cover border-2 border-white/20 {showMyProfile && allProfilePhotos[currentPhotoIndex]?.status === 'pending' && allProfilePhotos[currentPhotoIndex]?.url === lightboxUrl ? 'opacity-70 blur-[2px]' : ''}"
+        class="w-full rounded-3xl shadow-2xl object-cover border-2 border-white/20 {showMyProfile &&
+        allProfilePhotos[currentPhotoIndex]?.status === 'pending' &&
+        allProfilePhotos[currentPhotoIndex]?.url === lightboxUrl
+          ? 'opacity-70 blur-[2px]'
+          : ''}"
         style="max-height: 80vh; object-fit: contain;"
-        on:error={(e) => { closeLightbox(); }}
+        on:error={(e) => {
+          closeLightbox();
+        }}
       />
-      
+
       <!-- Delete Button inside Lightbox -->
-      {#if showMyProfile && isOwnProfile && allProfilePhotos[currentPhotoIndex]?.type === 'custom' && allProfilePhotos[currentPhotoIndex]?.id}
+      {#if showMyProfile && isOwnProfile && allProfilePhotos[currentPhotoIndex]?.type === "custom" && allProfilePhotos[currentPhotoIndex]?.id}
         <div class="absolute top-4 right-4 z-[105]">
-          <button 
-            type="button" 
-            on:click={(e) => { 
-              e.stopPropagation(); 
-              triggerDeletePhoto(allProfilePhotos[currentPhotoIndex].id, allProfilePhotos[currentPhotoIndex].url); 
+          <button
+            type="button"
+            on:click={(e) => {
+              e.stopPropagation();
+              triggerDeletePhoto(
+                allProfilePhotos[currentPhotoIndex].id,
+                allProfilePhotos[currentPhotoIndex].url,
+              );
             }}
             class="bg-rose-500/90 hover:bg-rose-600 text-white p-2.5 rounded-full shadow-lg backdrop-blur-md transition-all active:scale-95 border border-rose-400/50"
           >
@@ -1589,83 +2107,50 @@
   </div>
 {/if}
 
-<style>
-  :global(.animate-jump-spin) {
-    animation: jump-spin 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  @keyframes jump-spin {
-    0% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-45px) rotate(180deg) scale(1.3); }
-    100% { transform: translateY(0) rotate(360deg) scale(1); }
-  }
-
-  @keyframes lightboxZoomIn {
-    from { opacity: 0; transform: scale(0.7); }
-    to   { opacity: 1; transform: scale(1); }
-  }
-
-  /* Animasi Progress Bar Splash Screen */
-  @keyframes progress {
-    0% { width: 0%; opacity: 1; }
-    50% { width: 70%; opacity: 1; }
-    100% { width: 100%; opacity: 0; }
-  }
-  .animate-progress {
-    animation: progress 3.8s ease-in-out 2s both;
-  }
-
-  /* Animasi Sayap Dadah Dadah */
-  @keyframes wave-left {
-    0%, 100% { transform: rotate(20deg); }
-    50% { transform: rotate(70deg); }
-  }
-  @keyframes wave-right {
-    0%, 100% { transform: rotate(-20deg); }
-    50% { transform: rotate(-70deg); }
-  }
-  .animate-wave-left {
-    animation: wave-left 0.8s ease-in-out infinite;
-    animation-delay: 1.6s;
-  }
-  .animate-wave-right {
-    animation: wave-right 0.8s ease-in-out infinite;
-    animation-delay: 1.6s;
-  }
-
-  /* Animasi Logout Bouncing Arrow */
-  @keyframes bounce-right {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(4px); }
-  }
-  :global(.animate-bounce-right) {
-    animation: bounce-right 1.5s ease-in-out infinite;
-  }
-</style>
-
 <!-- ===== NOTIFICATION MODAL ===== -->
 {#if showToast}
-  <div class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full border border-slate-100 animate-in zoom-in-95 duration-300 relative flex flex-col items-center text-center p-6 sm:p-8 space-y-4">
+  <div
+    class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+  >
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-300 relative flex flex-col items-center text-center p-6 sm:p-8 space-y-4"
+    >
       <div class="flex items-center justify-center w-32 h-32 -mb-2 -mt-4">
-        {#if toastType === 'success'}
-          <img src="/Success.svg" alt="Success" class="w-full h-full object-contain drop-shadow-sm" />
+        {#if toastType === "success"}
+          <img
+            src="/Success.svg"
+            alt="Success"
+            class="w-full h-full object-contain drop-shadow-sm dark:shadow-none"
+          />
         {:else}
-          <img src="/images/error-fail-animation.svg" alt="Error" class="w-full h-full object-contain drop-shadow-sm" />
+          <img
+            src="/images/error-fail-animation.svg"
+            alt="Error"
+            class="w-full h-full object-contain drop-shadow-sm dark:shadow-none"
+          />
         {/if}
       </div>
-      
+
       <div class="space-y-2">
-        <h2 class="text-xl sm:text-2xl font-black {toastType === 'success' ? 'text-emerald-700' : 'text-rose-700'} tracking-tight">
-          {toastType === 'success' ? 'Berhasil!' : 'Oops, Gagal!'}
+        <h2
+          class="text-xl sm:text-2xl font-black {toastType === 'success'
+            ? 'text-emerald-700'
+            : 'text-rose-700'} tracking-tight"
+        >
+          {toastType === "success" ? "Berhasil!" : "Oops, Gagal!"}
         </h2>
-        <p class="text-sm font-medium text-slate-500 leading-relaxed">
+        <p
+          class="text-sm font-medium text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed"
+        >
           {toastMessage}
         </p>
       </div>
 
-      <button 
-        on:click={() => showToast = false}
-        class="mt-4 w-full {toastType === 'success' ? 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800' : 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800'} text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md active:scale-[0.98]"
+      <button
+        on:click={() => (showToast = false)}
+        class="mt-4 w-full {toastType === 'success'
+          ? 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800'
+          : 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800'} text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md dark:shadow-none active:scale-[0.98]"
       >
         Oke, Mengerti
       </button>
@@ -1675,12 +2160,26 @@
 
 <!-- FULL SCREEN LOADING UNTUK UPLOAD -->
 {#if isUploadingPhoto}
-  <div class="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300 p-4">
-    <div class="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-4">
-      <img src="/loading.svg" alt="Loading..." class="h-20 w-20 object-contain drop-shadow-sm" />
+  <div
+    class="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300 p-4"
+  >
+    <div
+      class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-4"
+    >
+      <img
+        src="/loading-paperplane.svg"
+        alt="Loading..."
+        class="h-48 w-48 object-contain drop-shadow-sm dark:shadow-none"
+      />
       <div class="text-center">
-        <p class="font-black text-slate-800 text-lg">Mengunggah Foto...</p>
-        <p class="text-xs text-slate-500 font-medium">Mohon tunggu sebentar, sedang diproses.</p>
+        <p class="font-black text-slate-800 dark:text-slate-100 text-lg">
+          Mengunggah Foto...
+        </p>
+        <p
+          class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium"
+        >
+          Mohon tunggu sebentar, sedang diproses.
+        </p>
       </div>
     </div>
   </div>
@@ -1689,52 +2188,91 @@
 <!-- Swipe-to-Back Visual Indicator -->
 {#if isSwiping && swipeDelta > 8}
   <!-- Indikator dari KIRI -->
-  {#if swipeSide === 'left'}
+  {#if swipeSide === "left"}
     <div
       class="fixed left-0 top-1/2 z-[9999] flex items-center pointer-events-none"
-      style="transform: translateY(-50%) translateX({swipeDelta - 48}px); opacity: {Math.min(swipeDelta / TRIGGER_DIST, 1)};"
+      style="transform: translateY(-50%) translateX({swipeDelta -
+        48}px); opacity: {Math.min(swipeDelta / TRIGGER_DIST, 1)};"
     >
-      <div class="h-12 w-12 rounded-full bg-slate-800/80 backdrop-blur-sm flex items-center justify-center shadow-xl ml-2"
+      <div
+        class="h-12 w-12 rounded-full bg-slate-800/80 backdrop-blur-sm flex items-center justify-center shadow-xl ml-2"
         style="transform: scale({0.7 + (swipeDelta / TRIGGER_DIST) * 0.3});"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 text-white"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7" /></svg
+        >
       </div>
       {#if swipeDelta >= TRIGGER_DIST}
-        <span class="ml-2 text-[10px] font-black text-slate-800 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full shadow border border-slate-200">Lepaskan</span>
+        <span
+          class="ml-2 text-[10px] font-black text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900/90 backdrop-blur-sm px-2 py-1 rounded-full shadow border border-slate-200 dark:border-slate-700"
+          >Lepaskan</span
+        >
       {/if}
     </div>
-  <!-- Indikator dari KANAN -->
+    <!-- Indikator dari KANAN -->
   {:else}
     <div
       class="fixed right-0 top-1/2 z-[9999] flex flex-row-reverse items-center pointer-events-none"
-      style="transform: translateY(-50%) translateX({-(swipeDelta - 48)}px); opacity: {Math.min(swipeDelta / TRIGGER_DIST, 1)};"
+      style="transform: translateY(-50%) translateX({-(
+        swipeDelta - 48
+      )}px); opacity: {Math.min(swipeDelta / TRIGGER_DIST, 1)};"
     >
-      <div class="h-12 w-12 rounded-full bg-slate-800/80 backdrop-blur-sm flex items-center justify-center shadow-xl mr-2"
+      <div
+        class="h-12 w-12 rounded-full bg-slate-800/80 backdrop-blur-sm flex items-center justify-center shadow-xl mr-2"
         style="transform: scale({0.7 + (swipeDelta / TRIGGER_DIST) * 0.3});"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 text-white"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg
+        >
       </div>
       {#if swipeDelta >= TRIGGER_DIST}
-        <span class="mr-2 text-[10px] font-black text-slate-800 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full shadow border border-slate-200">Lepaskan</span>
+        <span
+          class="mr-2 text-[10px] font-black text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900/90 backdrop-blur-sm px-2 py-1 rounded-full shadow border border-slate-200 dark:border-slate-700"
+          >Lepaskan</span
+        >
       {/if}
     </div>
   {/if}
 {/if}
 
-<div class="min-h-screen flex flex-col bg-white text-slate-800 w-full overflow-x-hidden">
+<div
+  class="min-h-screen flex flex-col bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full overflow-x-hidden"
+>
   {#if $authStore.loading}
     <!-- Loading Screen while verifying session -->
-    <main class="flex-1 flex flex-col items-center justify-center p-4 bg-slate-50 min-h-screen">
+    <main
+      class="flex-1 flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-800 min-h-screen"
+    >
       <div class="flex flex-col items-center space-y-3">
-        <div class="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
-        <p class="text-xs font-semibold text-slate-400">Memuat Sesi...</p>
+        <div
+          class="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"
+        ></div>
+        <p class="text-xs font-semibold text-slate-400 dark:text-slate-500">
+          Memuat Sesi...
+        </p>
       </div>
     </main>
   {:else if isAuthPage}
     <!-- Full-screen layout for Auth page without standard navigation bars -->
-    <main class="flex-1 flex items-center justify-center p-4 bg-slate-50">
+    <main
+      class="flex-1 flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-800"
+    >
       {#key currentPath}
-        <div in:fly={{ y: 20, duration: 400, delay: 200 }} out:fade={{ duration: 150 }} class="w-full max-w-md">
+        <div
+          in:fly={{ y: 20, duration: 400, delay: 200 }}
+          out:fade={{ duration: 150 }}
+          class="w-full max-w-md"
+        >
           <slot />
         </div>
       {/key}
@@ -1743,142 +2281,226 @@
     <!-- Full-screen layout without standard navigation bars -->
     <main class="w-full min-h-screen p-0 m-0 bg-[#060a12] overflow-x-hidden">
       {#key currentPath}
-        <div in:fly={{ y: 20, duration: 400, delay: 200 }} out:fade={{ duration: 150 }} class="w-full h-full">
+        <div
+          in:fly={{ y: 20, duration: 400, delay: 200 }}
+          out:fade={{ duration: 150 }}
+          class="w-full h-full"
+        >
           <slot />
         </div>
       {/key}
     </main>
   {:else}
     <!-- App layout for general modules -->
-    
+
     <!-- Top Header for Branding & Mobile Settings (Static, non-floating) -->
-    <div class="relative w-full shrink-0 bg-white border-b border-slate-200/50">
-      <header class="w-full mx-auto flex items-center justify-between h-[68px] px-4 md:px-8">
-        <a href="/" class="flex items-center space-x-3 group" on:click={handleNavClick}>
-        <img referrerpolicy="no-referrer" 
-          src="/logo.png" 
-          alt="MAZEEDA Logo" 
-          class="h-9 w-9 object-cover rounded-xl shadow-soft-sm group-hover:scale-105 transition-transform" 
-          on:error={(e) => { e.currentTarget.style.display = 'none'; }} 
-        />
-        <span class="font-bold text-xl tracking-tight text-slate-800">MAZEEDA</span>
-      </a>
-      
-      <div class="flex items-center space-x-3">
-        {#if userRole === 'admin'}
-          <a 
-            href="/admin" 
-            class="hidden md:flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
-            on:click={handleNavClick}
+    <div
+      class="relative w-full shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700/50"
+    >
+      <header
+        class="w-full mx-auto flex items-center justify-between h-[68px] px-4 md:px-8"
+      >
+        <a
+          href="/"
+          class="flex items-center space-x-3 group"
+          on:click={handleNavClick}
+        >
+          <img
+            referrerpolicy="no-referrer"
+            src="/logo.png"
+            alt="MAZEEDA Logo"
+            class="h-9 w-9 object-cover rounded-xl shadow-soft-sm group-hover:scale-105 transition-transform"
+            on:error={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+          <span
+            class="font-bold text-xl tracking-tight text-slate-800 dark:text-slate-100"
+            >MAZEEDA</span
           >
-            <ShieldCheck class="h-4.5 w-4.5" />
-            <span>Admin Panel</span>
-          </a>
-        {/if}
-        
-        {#if $authStore.user}
-          <div class="flex items-center space-x-2">
-            <!-- 🔔 Notification Bell Button -->
-            <div class="relative">
-              <a
-                href="/notifikasi"
-                class="relative h-9 w-9 rounded-full flex items-center justify-center border transition-all duration-200 shadow-soft-sm hover:scale-105 {currentPath === '/notifikasi' ? 'bg-primary text-white border-primary' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-primary'}"
-                title="Pusat Notifikasi"
+        </a>
+
+        <div class="flex items-center space-x-3">
+          {#if userRole === "admin"}
+            <a
+              href="/admin"
+              class="hidden md:flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+              on:click={handleNavClick}
+            >
+              <ShieldCheck class="h-4.5 w-4.5" />
+              <span>Admin Panel</span>
+            </a>
+          {/if}
+
+          {#if $authStore.user}
+            <div class="flex items-center space-x-2">
+              <!-- Language Switcher Dropdown -->
+              <div class="relative">
+                <button
+                  on:click={() => showLangMenu = !showLangMenu}
+                  on:blur={() => setTimeout(() => showLangMenu = false, 200)}
+                  class="relative h-9 w-9 rounded-full flex items-center justify-center border transition-all duration-200 shadow-soft-sm hover:scale-105 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:bg-slate-800 hover:text-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-amber-400 font-black text-xs uppercase"
+                  title="Ganti Bahasa / Switch Language"
+                >
+                  {$locale === 'id' ? 'ID' : $locale === 'ar' ? 'AR' : $locale === 'ja' ? 'JA' : $locale === 'zh' ? 'ZH' : $locale === 'ko' ? 'KO' : 'EN'}
+                </button>
+                
+                {#if showLangMenu}
+                  <div class="absolute right-0 top-full mt-2 w-36 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-[9999] animate-in slide-in-from-top-2 duration-200">
+                    <div class="flex flex-col">
+                      <button on:click={() => { switchLanguage('id'); showLangMenu = false; }} class="px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {$locale === 'id' ? 'font-bold text-primary bg-primary/5 dark:bg-primary/10' : 'text-slate-600 dark:text-slate-300'}">Indonesian (ID)</button>
+                      <button on:click={() => { switchLanguage('en'); showLangMenu = false; }} class="px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {$locale === 'en' ? 'font-bold text-primary bg-primary/5 dark:bg-primary/10' : 'text-slate-600 dark:text-slate-300'}">English (EN)</button>
+                      <button on:click={() => { switchLanguage('ar'); showLangMenu = false; }} class="px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {$locale === 'ar' ? 'font-bold text-primary bg-primary/5 dark:bg-primary/10' : 'text-slate-600 dark:text-slate-300'}">Arabic (AR)</button>
+                      <button on:click={() => { switchLanguage('ja'); showLangMenu = false; }} class="px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {$locale === 'ja' ? 'font-bold text-primary bg-primary/5 dark:bg-primary/10' : 'text-slate-600 dark:text-slate-300'}">Japanese (JA)</button>
+                      <button on:click={() => { switchLanguage('zh'); showLangMenu = false; }} class="px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {$locale === 'zh' ? 'font-bold text-primary bg-primary/5 dark:bg-primary/10' : 'text-slate-600 dark:text-slate-300'}">Chinese (ZH)</button>
+                      <button on:click={() => { switchLanguage('ko'); showLangMenu = false; }} class="px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {$locale === 'ko' ? 'font-bold text-primary bg-primary/5 dark:bg-primary/10' : 'text-slate-600 dark:text-slate-300'}">Korean (KO)</button>
+                    </div>
+                  </div>
+                {/if}
+              </div>
+
+              <!-- Theme Toggle Button -->
+              <button
+                on:click={themeStore.toggle}
+                class="relative h-9 w-9 rounded-full flex items-center justify-center border transition-all duration-200 shadow-soft-sm hover:scale-105 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:bg-slate-800 hover:text-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-amber-400"
+                title="Toggle Dark Mode"
                 style="min-height: 36px; min-width: 36px;"
               >
-                <Bell class="h-4.5 w-4.5" />
-                {#if unreadCount > 0}
-                  <span class="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-sm">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                {/if}
-              </a>
-            </div>
-
-            <!-- Profile Avatar Button -->
-            <button 
-              on:click={openMyProfile}
-              class="h-9 w-9 rounded-full overflow-hidden bg-blue-50 border border-blue-100 flex items-center justify-center text-primary font-bold text-sm shrink-0 shadow-soft-sm hover:scale-105 hover:border-primary transition-all duration-200 cursor-pointer"
-              title="Lihat Profil Saya"
-              style="min-height: 36px; min-width: 36px;"
-            >
-              {#key $authStore.user.foto_url}
-                {#if $authStore.user.foto_url}
-                  <img referrerpolicy="no-referrer" 
-                    src={convertDriveUrl($authStore.user.foto_url)} 
-                    alt={$authStore.user.name} 
-                    class="h-full w-full object-cover" 
-                    on:error={(e) => { 
-                      e.currentTarget.style.display = 'none';
-                      authStore.update(s => s.user ? { ...s, user: { ...s.user, foto_url: '' } } : s);
-                    }} 
-                  />
+                {#if $themeStore === "dark"}
+                  <Sun class="h-4.5 w-4.5" />
                 {:else}
-                  {$authStore.user.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                  <Moon class="h-4.5 w-4.5" />
                 {/if}
-              {/key}
-            </button>
-          </div>
-        {:else}
-          <a 
-            href="/auth" 
-            class="flex items-center space-x-2 text-sm text-slate-500 hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-100"
-            title="Log In"
-            style="min-height: 48px;"
-          >
-            <LogIn class="h-5 w-5" />
-            <span class="hidden sm:inline text-xs font-medium">Log In</span>
-          </a>
-        {/if}
-      </div>
-    </header>
-  </div>
+              </button>
+
+              <!-- 🔔 Notification Bell Button -->
+              <div class="relative">
+                <a
+                  href="/notifikasi"
+                  class="relative h-9 w-9 rounded-full flex items-center justify-center border transition-all duration-200 shadow-soft-sm hover:scale-105 {currentPath ===
+                  '/notifikasi'
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:bg-slate-800 hover:text-primary'}"
+                  title="Pusat Notifikasi"
+                  style="min-height: 36px; min-width: 36px;"
+                >
+                  <Bell class="h-4.5 w-4.5" />
+                  {#if unreadCount > 0}
+                    <span
+                      class="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-sm dark:shadow-none"
+                    >
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  {/if}
+                </a>
+              </div>
+
+              <!-- Profile Avatar Button -->
+              <button
+                on:click={openMyProfile}
+                class="h-9 w-9 rounded-full overflow-hidden bg-blue-50 border border-blue-100 flex items-center justify-center text-primary font-bold text-sm shrink-0 shadow-soft-sm hover:scale-105 hover:border-primary transition-all duration-200 cursor-pointer"
+                title="Lihat Profil Saya"
+                style="min-height: 36px; min-width: 36px;"
+              >
+                {#key $authStore.user.foto_url}
+                  {#if $authStore.user.foto_url}
+                    <img
+                      referrerpolicy="no-referrer"
+                      src={convertDriveUrl($authStore.user.foto_url)}
+                      alt={$authStore.user.name}
+                      class="h-full w-full object-cover"
+                      on:error={(e) => {
+                        e.currentTarget.style.display = "none";
+                        authStore.update((s) =>
+                          s.user
+                            ? { ...s, user: { ...s.user, foto_url: "" } }
+                            : s,
+                        );
+                      }}
+                    />
+                  {:else}
+                    {$authStore.user.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()}
+                  {/if}
+                {/key}
+              </button>
+            </div>
+          {:else}
+            <a
+              href="/auth"
+              class="flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:bg-slate-800"
+              title="Log In"
+              style="min-height: 48px;"
+            >
+              <LogIn class="h-5 w-5" />
+              <span class="hidden sm:inline text-xs font-medium">Log In</span>
+            </a>
+          {/if}
+        </div>
+      </header>
+    </div>
 
     <div class="flex-1 flex">
       <!-- Desktop Sidebar Layout (Hidden on Mobile) -->
-      <aside class="hidden md:flex flex-col w-64 border-r border-border/50 bg-slate-50/50 p-4 shrink-0 min-h-[calc(100vh-4rem)]">
+      <aside
+        class="hidden md:flex flex-col w-64 border-r border-border/50 bg-slate-50 dark:bg-slate-800/50 p-4 shrink-0 min-h-[calc(100vh-4rem)]"
+      >
         <nav class="flex-1 space-y-1.5">
           {#each navItems as item}
             <a
               href={item.path}
               on:click={handleNavClick}
               class="flex items-center space-x-3.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200
-                {isActive(item.path) 
-                  ? 'bg-primary text-white shadow-soft-sm hover:bg-primary-hover' 
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-primary'}"
+                {isActive(item.path)
+                ? 'bg-primary text-white shadow-soft-sm hover:bg-primary-hover'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800 hover:text-primary'}"
             >
               <svelte:component this={item.icon} class="h-5 w-5" />
-              <span>{item.name}</span>
+              <span>{$t('nav.' + item.key) || item.name}</span>
             </a>
           {/each}
-          
-          {#if userRole === 'admin'}
+
+          {#if userRole === "admin"}
             <div class="pt-4 mt-4 border-t border-border/50">
-              <span class="px-4 text-[10px] font-bold tracking-wider text-slate-400 uppercase">Management</span>
+              <span
+                class="px-4 text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase"
+                >Management</span
+              >
               <button
-                on:click={() => isAdminMenuExpanded = !isAdminMenuExpanded}
+                on:click={() => (isAdminMenuExpanded = !isAdminMenuExpanded)}
                 class="w-full flex items-center justify-between px-4 py-3 mt-1.5 rounded-xl text-sm font-semibold transition-all duration-200
-                  {isAdminMenuExpanded 
-                    ? 'bg-primary text-white shadow-soft-sm' 
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-primary'}"
+                  {isAdminMenuExpanded
+                  ? 'bg-primary text-white shadow-soft-sm'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800 hover:text-primary'}"
               >
                 <div class="flex items-center space-x-3.5">
                   <ShieldCheck class="h-5 w-5" />
                   <span>Admin Panel</span>
                 </div>
-                <ChevronRight class="h-4 w-4 {isAdminMenuExpanded ? 'rotate-90 opacity-100' : 'opacity-60'} transition-transform duration-200" />
+                <ChevronRight
+                  class="h-4 w-4 {isAdminMenuExpanded
+                    ? 'rotate-90 opacity-100'
+                    : 'opacity-60'} transition-transform duration-200"
+                />
               </button>
 
               {#if isAdminMenuExpanded}
-                <div class="mt-2 space-y-1" transition:slide={{duration: 200}}>
+                <div
+                  class="mt-2 space-y-1"
+                  transition:slide={{ duration: 200 }}
+                >
                   {#each adminSubmenus as sub}
                     <a
                       href={sub.path}
                       on:click={handleNavClick}
                       class="flex items-center space-x-3.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200
                         {isActiveQuery(sub.path)
-                          ? 'bg-blue-50 text-blue-600 font-bold'
-                          : 'text-slate-500 hover:bg-slate-50 hover:text-primary'}"
+                        ? 'bg-blue-50 text-blue-600 font-bold'
+                        : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:bg-slate-800 hover:text-primary'}"
                     >
                       <svelte:component this={sub.icon} class="h-4 w-4" />
                       <span>{sub.name}</span>
@@ -1889,103 +2511,174 @@
             </div>
           {/if}
         </nav>
-        
+
         {#if $authStore.user}
-          <button 
+          <button
             on:click={openMyProfile}
-            class="pt-4 border-t border-border/50 flex items-center space-x-3 w-full text-left hover:bg-slate-100/50 p-2 rounded-xl transition-colors cursor-pointer"
+            class="pt-4 border-t border-border/50 flex items-center space-x-3 w-full text-left hover:bg-slate-100 dark:bg-slate-800/50 p-2 rounded-xl transition-colors cursor-pointer"
           >
-            <div class="h-10 w-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-primary font-bold shrink-0 overflow-hidden shadow-soft-sm">
+            <div
+              class="h-10 w-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-primary font-bold shrink-0 overflow-hidden shadow-soft-sm"
+            >
               {#key $authStore.user.foto_url}
                 {#if $authStore.user.foto_url}
-                  <img referrerpolicy="no-referrer" 
-                    src={convertDriveUrl($authStore.user.foto_url)} 
-                    alt={$authStore.user.name} 
-                    class="h-full w-full object-cover" 
-                    on:error={(e) => { 
-                      e.currentTarget.style.display = 'none';
-                      authStore.update(s => s.user ? { ...s, user: { ...s.user, foto_url: '' } } : s);
-                    }} 
+                  <img
+                    referrerpolicy="no-referrer"
+                    src={convertDriveUrl($authStore.user.foto_url)}
+                    alt={$authStore.user.name}
+                    class="h-full w-full object-cover"
+                    on:error={(e) => {
+                      e.currentTarget.style.display = "none";
+                      authStore.update((s) =>
+                        s.user
+                          ? { ...s, user: { ...s.user, foto_url: "" } }
+                          : s,
+                      );
+                    }}
                   />
                 {:else}
-                  {$authStore.user.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                  {$authStore.user.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase()}
                 {/if}
               {/key}
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-bold text-slate-700 truncate">{$authStore.user.name}</p>
-              <p class="text-xs text-slate-400 truncate">
-                {$authStore.user.role === 'admin' ? 'ADMIN MAZEEDA' : `NIS: ${$authStore.user.nis || '-'}`}
+              <p
+                class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate"
+              >
+                {$authStore.user.name}
+              </p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 truncate">
+                {$authStore.user.role === "admin"
+                  ? "ADMIN MAZEEDA"
+                  : `NIS: ${$authStore.user.nis || "-"}`}
               </p>
             </div>
           </button>
         {/if}
       </aside>
 
-      <main on:scroll={(e) => mainScrollY = e.currentTarget.scrollTop} class="flex-1 bg-white p-2 sm:p-4 md:p-8 {$page.url.searchParams.has('detail') ? 'pb-8' : 'pb-24'} md:pb-8 overflow-y-auto overflow-x-hidden relative" id="main-scroll-container">
+      <main
+        on:scroll={(e) => (mainScrollY = e.currentTarget.scrollTop)}
+        class="flex-1 bg-white dark:bg-slate-900 p-2 sm:p-4 md:p-8 {$page.url.searchParams.has(
+          'detail',
+        )
+          ? 'pb-8'
+          : 'pb-24'} md:pb-8 overflow-y-auto overflow-x-hidden relative"
+        id="main-scroll-container"
+      >
         {#if showMyProfile}
           {#if isLoadingProfile}
-          <div class="py-24 text-center space-y-4">
-              <div class="animate-spin h-8 w-8 border-3 border-primary border-t-transparent rounded-full mx-auto"></div>
-              <p class="text-xs font-semibold text-slate-500">Memuat profil pribadi Anda...</p>
+            <div class="py-24 text-center space-y-4">
+              <div
+                class="animate-spin h-8 w-8 border-3 border-primary border-t-transparent rounded-full mx-auto"
+              ></div>
+              <p
+                class="text-xs font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500"
+              >
+                Memuat profil pribadi Anda...
+              </p>
             </div>
           {:else if myProfileData}
             <!-- MY DETAILED PROFILE VIEW -->
             <div class="space-y-6" transition:fade={{ duration: 150 }}>
               <!-- Back Button Header -->
-              <div class="flex items-center justify-between pb-2 border-b border-slate-100 relative">
-                <button 
-                  on:click={() => { showMyProfile = false; isEditingAdminProfile = false; }}
-                  class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 hover:text-primary transition-colors -ml-2"
+              <div
+                class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 relative"
+              >
+                <button
+                  on:click={() => {
+                    showMyProfile = false;
+                    isEditingAdminProfile = false;
+                  }}
+                  class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors"
                 >
                   <ArrowLeft class="w-5 h-5" />
                 </button>
-                
-                <span class="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-400 font-bold uppercase tracking-wider block whitespace-nowrap">{isOwnProfile ? 'PROFIL SAYA' : 'PROFIL ANGGOTA'}</span>
-                
+
+                <span
+                  class="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block whitespace-nowrap"
+                  >{isOwnProfile ? "PROFIL SAYA" : "PROFIL ANGGOTA"}</span
+                >
+
                 <div class="relative">
-                  <button on:click={() => showLayoutMenu = !showLayoutMenu} class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100/50 text-slate-500 transition-colors">
+                  <button
+                    on:click={() => (showLayoutMenu = !showLayoutMenu)}
+                    class="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-500 dark:text-slate-400 transition-colors"
+                  >
                     <MoreVertical class="w-5 h-5" />
                   </button>
-                  
+
                   {#if showLayoutMenu}
-                    <div class="fixed inset-0 z-20" on:click={() => showLayoutMenu = false}></div>
-                    <div class="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden z-30 animate-in fade-in py-1">
-                      {#if userRole === 'admin' && isOwnProfile && !isEditingAdminProfile}
+                    <div
+                      class="fixed inset-0 z-20"
+                      on:click={() => (showLayoutMenu = false)}
+                    ></div>
+                    <div
+                      class="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-100 dark:border-slate-800 overflow-hidden z-30 animate-in fade-in py-1"
+                    >
+                      {#if userRole === "admin" && isOwnProfile && !isEditingAdminProfile}
                         <button
-                          on:click={() => { showLayoutMenu = false; startEditAdminProfile(); }}
+                          on:click={() => {
+                            showLayoutMenu = false;
+                            startEditAdminProfile();
+                          }}
                           class="w-full text-left px-4 py-2.5 text-sm font-bold text-indigo-600 hover:bg-indigo-50 flex items-center gap-2.5 transition-colors"
                         >
                           <Edit class="w-4 h-4" /> Edit Profil Admin
                         </button>
-                        <div class="h-px bg-slate-100 my-1"></div>
+                        <div
+                          class="h-px bg-slate-100 dark:bg-slate-800 my-1"
+                        ></div>
                       {/if}
                       {#if isOwnProfile}
                         <button
-                          on:click={() => { document.getElementById('custom-photo-upload')?.click(); showLayoutMenu = false; }}
-                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                          on:click={() => {
+                            document
+                              .getElementById("custom-photo-upload")
+                              ?.click();
+                            showLayoutMenu = false;
+                          }}
+                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:bg-slate-800 flex items-center gap-2.5 transition-colors"
                         >
                           <Camera class="w-4 h-4" /> Tambah Foto Profil
                         </button>
-                        <div class="h-px bg-slate-100 my-1"></div>
+                        <div
+                          class="h-px bg-slate-100 dark:bg-slate-800 my-1"
+                        ></div>
                         <button
-                          on:click={() => { showThemeModal = true; showLayoutMenu = false; }}
-                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                          on:click={() => {
+                            showThemeModal = true;
+                            showLayoutMenu = false;
+                          }}
+                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:bg-slate-800 flex items-center gap-2.5 transition-colors"
                         >
                           <Palette class="w-4 h-4" /> Pilih Tema Profil
                         </button>
-                        <div class="h-px bg-slate-100 my-1"></div>
+                        <div
+                          class="h-px bg-slate-100 dark:bg-slate-800 my-1"
+                        ></div>
                         <button
-                          on:click={() => { showLayoutMenu = false; showBlockedUsersModal = true; loadBlockedUsers(); }}
-                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                          on:click={() => {
+                            showLayoutMenu = false;
+                            showBlockedUsersModal = true;
+                            loadBlockedUsers();
+                          }}
+                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:bg-slate-800 flex items-center gap-2.5 transition-colors"
                         >
                           <ShieldBan class="w-4 h-4" /> Daftar Blokir
                         </button>
-                        <div class="h-px bg-slate-100 my-1"></div>
+                        <div
+                          class="h-px bg-slate-100 dark:bg-slate-800 my-1"
+                        ></div>
                         {#if myProfileData.nis}
                           <button
-                            on:click={() => { 
-                              showLayoutMenu = false; 
+                            on:click={() => {
+                              showLayoutMenu = false;
                               showMyProfile = false;
                               window.location.href = `/nilai?nis=${myProfileData.nis}`;
                             }}
@@ -1993,37 +2686,67 @@
                           >
                             <Award class="w-4 h-4" /> Rekam Akademik
                           </button>
-                          <div class="h-px bg-slate-100 my-1"></div>
+                          <div
+                            class="h-px bg-slate-100 dark:bg-slate-800 my-1"
+                          ></div>
                         {/if}
                         <button
-                          on:click={() => { showLayoutMenu = false; handleLogout(); }}
+                          on:click={() => {
+                            showLayoutMenu = false;
+                            showSavedMemories = true;
+                            loadSavedMemoriesProfile();
+                          }}
+                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-2.5 transition-colors"
+                        >
+                          <Bookmark class="w-4 h-4" /> Kenangan Tersimpan
+                        </button>
+                        <div class="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
+                        <button
+                          on:click={() => {
+                            showLayoutMenu = false;
+                            handleLogout();
+                          }}
                           class="w-full text-left px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
                         >
                           <LogOut class="w-4 h-4" /> Keluar
                         </button>
                       {:else}
                         <button
-                          on:click={() => { 
+                          on:click={() => {
                             showLayoutMenu = false;
                             const url = `${window.location.origin}/squad?id=${myProfileData.id}`;
-                            navigator.clipboard.writeText(url).then(() => showNotification('Tautan profil disalin!'));
+                            navigator.clipboard
+                              .writeText(url)
+                              .then(() =>
+                                showNotification("Tautan profil disalin!"),
+                              );
                           }}
-                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                          class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:bg-slate-800 flex items-center gap-2.5 transition-colors"
                         >
                           <Share2 class="w-4 h-4 text-indigo-500" /> Bagikan Profil
                         </button>
                       {/if}
                     </div>
                   {/if}
-                  <input type="file" id="custom-photo-upload" accept="image/*" class="hidden" on:change={handlePhotoUpload} />
+                  <input
+                    type="file"
+                    id="custom-photo-upload"
+                    accept="image/*"
+                    class="hidden"
+                    on:change={handlePhotoUpload}
+                  />
                 </div>
               </div>
 
               <!-- ADMIN EDIT FORM (shown when editing) -->
               {#if isEditingAdminProfile}
                 <div class="space-y-4 animate-in fade-in duration-200">
-                  <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
-                    <p class="text-xs font-black text-indigo-700 flex items-center gap-1.5">
+                  <div
+                    class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4"
+                  >
+                    <p
+                      class="text-xs font-black text-indigo-700 flex items-center gap-1.5"
+                    >
                       <Edit class="h-3.5 w-3.5" />
                       Mode Edit Profil Admin — Perubahan disimpan di perangkat ini
                     </p>
@@ -2031,52 +2754,107 @@
                   <Card noPadding class="p-4 sm:p-6 space-y-5">
                     <!-- Foto Profil -->
                     <div class="space-y-1.5">
-                      <label class="text-xs font-bold text-slate-500 block">Foto Profil (URL Link Gambar / Google Drive)</label>
+                      <label
+                        class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                        >Foto Profil (URL Link Gambar / Google Drive)</label
+                      >
                       <input
                         type="text"
                         placeholder="Paste link foto (Google Drive / URL langsung)"
-                        class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white"
+                        class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
                         bind:value={adminEditForm.foto_url}
                       />
                       {#if adminEditForm.foto_url}
-                        <div class="flex items-center gap-3 mt-2 p-2 bg-slate-50 rounded-xl border border-slate-100">
+                        <div
+                          class="flex items-center gap-3 mt-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800"
+                        >
                           <img
                             src={convertDriveUrl(adminEditForm.foto_url)}
                             alt="Preview foto"
-                            class="h-14 w-14 rounded-xl object-cover border border-slate-200"
-                            on:error={(e) => { e.currentTarget.style.opacity = '0.3'; }}
+                            class="h-14 w-14 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+                            on:error={(e) => {
+                              e.currentTarget.style.opacity = "0.3";
+                            }}
                           />
-                          <p class="text-xs text-slate-500 font-medium">Preview foto profil</p>
+                          <p
+                            class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium"
+                          >
+                            Preview foto profil
+                          </p>
                         </div>
                       {/if}
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div class="space-y-1">
-                        <label class="text-xs font-bold text-slate-500 block">Nama Lengkap</label>
-                        <input type="text" placeholder="Nama lengkap" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.nama_lengkap} />
+                        <label
+                          class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                          >Nama Lengkap</label
+                        >
+                        <input
+                          type="text"
+                          placeholder="Nama lengkap"
+                          class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                          bind:value={adminEditForm.nama_lengkap}
+                        />
                       </div>
                       <div class="space-y-1">
-                        <label class="text-xs font-bold text-slate-500 block">Nama Panggilan</label>
-                        <input type="text" placeholder="Nama panggilan" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.nama_panggilan} />
+                        <label
+                          class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                          >Nama Panggilan</label
+                        >
+                        <input
+                          type="text"
+                          placeholder="Nama panggilan"
+                          class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                          bind:value={adminEditForm.nama_panggilan}
+                        />
                       </div>
                     </div>
 
                     <!-- Section: Data Pribadi -->
-                    <div class="pt-2 border-t border-slate-100">
-                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">👤 Data Pribadi</p>
+                    <div
+                      class="pt-2 border-t border-slate-100 dark:border-slate-800"
+                    >
+                      <p
+                        class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3"
+                      >
+                        👤 Data Pribadi
+                      </p>
                       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Tempat Lahir</label>
-                          <input type="text" placeholder="Kota kelahiran" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.tempat_lahir} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Tempat Lahir</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="Kota kelahiran"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.tempat_lahir}
+                          />
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Tahun / Tanggal Lahir</label>
-                          <input type="text" placeholder="e.g. 22 September 2000" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.tahun_lahir} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Tahun / Tanggal Lahir</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="e.g. 22 September 2000"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.tahun_lahir}
+                          />
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Golongan Darah</label>
-                          <select class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.golongan_darah}>
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Golongan Darah</label
+                          >
+                          <select
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.golongan_darah}
+                          >
                             <option value="O">Golongan O</option>
                             <option value="A">Golongan A</option>
                             <option value="B">Golongan B</option>
@@ -2086,140 +2864,342 @@
                       </div>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Alamat Tempat Tinggal (KTP)</label>
-                          <input type="text" placeholder="Alamat sesuai KTP" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.alamat_ktp} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Alamat Tempat Tinggal (KTP)</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="Alamat sesuai KTP"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.alamat_ktp}
+                          />
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Rute Lengkap Pulang / Perjalanan</label>
-                          <input type="text" placeholder="e.g. Lembang - Subang - Sumedang" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.rute_lengkap} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Rute Lengkap Pulang / Perjalanan</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="e.g. Lembang - Subang - Sumedang"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.rute_lengkap}
+                          />
                         </div>
                       </div>
                     </div>
 
                     <!-- Section: Pondok & Kependidikan -->
-                    <div class="pt-2 border-t border-slate-100">
-                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">🏫 Pondok & Kependidikan</p>
+                    <div
+                      class="pt-2 border-t border-slate-100 dark:border-slate-800"
+                    >
+                      <p
+                        class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3"
+                      >
+                        🏫 Pondok & Kependidikan
+                      </p>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Alamat Domisili Sekarang</label>
-                          <input type="text" placeholder="Kota domisili saat ini" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.alamat_domisili} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Alamat Domisili Sekarang</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="Kota domisili saat ini"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.alamat_domisili}
+                          />
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Tahun Masuk Pondok</label>
-                          <input type="text" placeholder="e.g. 2016" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.tahun_masuk} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Tahun Masuk Pondok</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="e.g. 2016"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.tahun_masuk}
+                          />
                         </div>
                       </div>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Kamar Santri</label>
-                          <input type="text" placeholder="e.g. Aisyah 02" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.kamar_santri} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Kamar Santri</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="e.g. Aisyah 02"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.kamar_santri}
+                          />
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Status Tahfidz / Hafalan</label>
-                          <input type="text" placeholder="e.g. 5 Juz" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.tahfidz_santri} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Status Tahfidz / Hafalan</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="e.g. 5 Juz"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.tahfidz_santri}
+                          />
                         </div>
                       </div>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Riwayat Pendidikan Terakhir</label>
-                          <input type="text" placeholder="e.g. S1 Teknik Informatika" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.riwayat_pendidikan} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Riwayat Pendidikan Terakhir</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="e.g. S1 Teknik Informatika"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.riwayat_pendidikan}
+                          />
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Alamat Pendidikan</label>
-                          <input type="text" placeholder="Kota / kampus" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.alamat_riwayatpendidikan} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Alamat Pendidikan</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="Kota / kampus"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.alamat_riwayatpendidikan}
+                          />
                         </div>
                       </div>
                     </div>
 
                     <!-- Section: Kontak & Sosial Media -->
-                    <div class="pt-2 border-t border-slate-100">
-                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">🌐 Kontak & Sosial Media</p>
+                    <div
+                      class="pt-2 border-t border-slate-100 dark:border-slate-800"
+                    >
+                      <p
+                        class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3"
+                      >
+                        🌐 Kontak & Sosial Media
+                      </p>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">No. WhatsApp</label>
-                          <input type="text" placeholder="08xxx" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.no_whatsapp} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >No. WhatsApp</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="08xxx"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.no_whatsapp}
+                          />
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Email</label>
-                          <input type="email" placeholder="email@domain.com" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.email} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Email</label
+                          >
+                          <input
+                            type="email"
+                            placeholder="email@domain.com"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.email}
+                          />
                         </div>
                       </div>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Username Instagram</label>
-                          <input type="text" placeholder="@username" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.media_social} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Username Instagram</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="@username"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.media_social}
+                          />
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Akun TikTok</label>
-                          <input type="text" placeholder="@username_tiktok" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.tiktok_akun} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Akun TikTok</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="@username_tiktok"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.tiktok_akun}
+                          />
                         </div>
                       </div>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Akun X / Twitter</label>
-                          <input type="text" placeholder="@username_x" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.xtwitter_akun} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Akun X / Twitter</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="@username_x"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.xtwitter_akun}
+                          />
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Akun Facebook</label>
-                          <input type="text" placeholder="facebook.com/nama" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.facebook_akun} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Akun Facebook</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="facebook.com/nama"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.facebook_akun}
+                          />
                         </div>
                       </div>
                     </div>
 
                     <!-- Section: Minat & Keterampilan -->
-                    <div class="pt-2 border-t border-slate-100">
-                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">🎵 Minat & Keterampilan</p>
+                    <div
+                      class="pt-2 border-t border-slate-100 dark:border-slate-800"
+                    >
+                      <p
+                        class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3"
+                      >
+                        🎵 Minat & Keterampilan
+                      </p>
                       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Hobi</label>
-                          <input type="text" placeholder="Hobi" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.hobi} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Hobi</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="Hobi"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.hobi}
+                          />
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Keterampilan Khusus</label>
-                          <input type="text" placeholder="Keahlian / skill" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.keterampilan_khusus} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Keterampilan Khusus</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="Keahlian / skill"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.keterampilan_khusus}
+                          />
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Musik Kesukaan</label>
-                          <input type="text" placeholder="Musik favorit" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.music} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Musik Kesukaan</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="Musik favorit"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.music}
+                          />
                         </div>
                       </div>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Cita-cita</label>
-                          <input type="text" placeholder="Cita-cita" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.cita_cita} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Cita-cita</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="Cita-cita"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.cita_cita}
+                          />
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Makanan Kesukaan</label>
-                          <input type="text" placeholder="Makanan favorit" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.makanan_kesukaan} />
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Makanan Kesukaan</label
+                          >
+                          <input
+                            type="text"
+                            placeholder="Makanan favorit"
+                            class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.makanan_kesukaan}
+                          />
                         </div>
                       </div>
                     </div>
 
                     <!-- Section: Kesan, Pesan & Kutipan -->
-                    <div class="pt-2 border-t border-slate-100">
-                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">💬 Kesan, Pesan & Kutipan</p>
+                    <div
+                      class="pt-2 border-t border-slate-100 dark:border-slate-800"
+                    >
+                      <p
+                        class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3"
+                      >
+                        💬 Kesan, Pesan & Kutipan
+                      </p>
                       <div class="space-y-1 mb-4">
-                        <label class="text-xs font-bold text-slate-500 block">Kutipan / Quote Kenangan Favorit</label>
-                        <input type="text" placeholder="Kutipan memori / kata bijak" class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.kutipan_kenangan} />
+                        <label
+                          class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                          >Kutipan / Quote Kenangan Favorit</label
+                        >
+                        <input
+                          type="text"
+                          placeholder="Kutipan memori / kata bijak"
+                          class="flex h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                          bind:value={adminEditForm.kutipan_kenangan}
+                        />
                       </div>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Kesan</label>
-                          <textarea rows="3" placeholder="Kesan selama mengabdi..." class="flex w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.kesan}></textarea>
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Kesan</label
+                          >
+                          <textarea
+                            rows="3"
+                            placeholder="Kesan selama mengabdi..."
+                            class="flex w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.kesan}
+                          ></textarea>
                         </div>
                         <div class="space-y-1">
-                          <label class="text-xs font-bold text-slate-500 block">Pesan</label>
-                          <textarea rows="3" placeholder="Pesan untuk anggota..." class="flex w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white" bind:value={adminEditForm.pesan}></textarea>
+                          <label
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 block"
+                            >Pesan</label
+                          >
+                          <textarea
+                            rows="3"
+                            placeholder="Pesan untuk anggota..."
+                            class="flex w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white dark:bg-slate-900"
+                            bind:value={adminEditForm.pesan}
+                          ></textarea>
                         </div>
                       </div>
                     </div>
 
                     <!-- Save / Cancel Buttons -->
-                    <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-100">
+                    <div
+                      class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-100 dark:border-slate-800"
+                    >
                       <button
                         type="button"
-                        on:click={() => isEditingAdminProfile = false}
-                        class="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                        on:click={() => (isEditingAdminProfile = false)}
+                        class="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 transition-colors"
                       >
                         Batal
                       </button>
@@ -2237,47 +3217,86 @@
               {/if}
 
               <!-- Details Card Container -->
-              <Card noPadding class="overflow-hidden border-slate-200/80 shadow-soft-sm">
+              <Card
+                noPadding
+                class="overflow-hidden border-slate-200 dark:border-slate-700/80 shadow-soft-sm"
+              >
                 <!-- Profile Header Banner -->
-                <div class="h-32 sm:h-40 w-full relative overflow-hidden transition-all duration-500 {currentProfileTheme.class}" style={currentProfileTheme.style || ''}>
+                <div
+                  class="h-32 sm:h-40 w-full relative overflow-hidden transition-all duration-500 rounded-b-3xl shadow-sm {currentProfileTheme.class}"
+                  style={currentProfileTheme.style || ""}
+                >
                   <!-- Pattern overlay for default gradient themes to keep texture -->
                   {#if !currentProfileTheme.style}
-                    <div class="absolute inset-0 opacity-20 mix-blend-overlay" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+                    <div
+                      class="absolute inset-0 opacity-20 mix-blend-overlay"
+                      style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"
+                    ></div>
                   {/if}
-                  <!-- Smooth Curved Gradient Fade to White (bottom) -->
-                  <div class="absolute bottom-[-1px] left-0 right-0 h-24 sm:h-32 z-0 pointer-events-none" style="background: radial-gradient(ellipse 150% 100% at 50% 100%, white 0%, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.2) 60%, transparent 100%);"></div>
                 </div>
 
                 <!-- Content wrapper with negative margin to overlap avatar with banner -->
-                <div class="p-4 sm:p-6 md:p-8 space-y-8 -mt-16 sm:-mt-20 relative z-10">
-                  
+                <div
+                  class="p-4 sm:p-6 md:p-8 space-y-8 -mt-16 sm:-mt-20 relative z-10"
+                >
                   <!-- Top Section: Avatar & Primary Info -->
-                  <div class="flex flex-col sm:flex-row items-center sm:items-end gap-5 pb-6 border-b border-slate-100">
+                  <div
+                    class="flex flex-col sm:flex-row items-center sm:items-end gap-5 pb-6 border-b border-slate-100 dark:border-slate-800"
+                  >
                     <!-- svelte-ignore a11y-click-events-have-key-events -->
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div class="flex flex-col items-center gap-2">
-                      <div 
-                        class="relative group/avatar h-28 w-28 rounded-3xl bg-white p-0.5 border-2 border-white flex items-center justify-center text-primary font-bold text-3xl shrink-0 overflow-hidden shadow-md transition-all duration-300 {allProfilePhotos.length > 0 ? 'cursor-zoom-in hover:scale-105 hover:shadow-lg' : ''}"
-                        on:click={() => { if (allProfilePhotos.length > 0) openLightbox(convertDriveUrl(allProfilePhotos[currentPhotoIndex].url)) }}
+                      <div
+                        class="relative group/avatar h-28 w-28 rounded-[2rem] bg-white dark:bg-slate-800 p-1 flex items-center justify-center text-primary font-bold text-3xl shrink-0 transition-all duration-300 
+                          {myProfileData.nama_panggilan?.toUpperCase() === 'ADMIN' || (userRole === 'admin' && isOwnProfile) ? 'ring-4 ring-amber-400 dark:ring-amber-500 shadow-[0_0_20px_rgba(251,191,36,0.5)] animate-pulse-slow' : 'ring-4 ring-white dark:ring-slate-800 shadow-lg'}
+                          {allProfilePhotos.length > 0 ? 'cursor-zoom-in hover:scale-105' : ''}"
+                        on:click={() => {
+                          if (allProfilePhotos.length > 0)
+                            openLightbox(
+                              convertDriveUrl(
+                                allProfilePhotos[currentPhotoIndex].url,
+                              ),
+                            );
+                        }}
                       >
-                        <div class="w-full h-full rounded-2xl overflow-hidden bg-indigo-50/50 border border-indigo-100 flex items-center justify-center relative group/inner">
+                        <div
+                          class="w-full h-full rounded-[1.75rem] overflow-hidden bg-indigo-50/50 dark:bg-slate-800 flex items-center justify-center relative group/inner"
+                        >
                           {#if allProfilePhotos.length > 0}
-                            <img referrerpolicy="no-referrer" 
-                              src={convertDriveUrl(allProfilePhotos[currentPhotoIndex].url)} 
-                              alt={myProfileData.nama_lengkap} 
-                              class="h-full w-full object-cover transition-opacity duration-300 {allProfilePhotos[currentPhotoIndex].status === 'pending' ? 'opacity-70 blur-[1px]' : ''}" 
+                            <img
+                              referrerpolicy="no-referrer"
+                              src={convertDriveUrl(
+                                allProfilePhotos[currentPhotoIndex].url,
+                              )}
+                              alt={myProfileData.nama_lengkap}
+                              class="h-full w-full object-cover transition-opacity duration-300 {allProfilePhotos[
+                                currentPhotoIndex
+                              ].status === 'pending'
+                                ? 'opacity-70 blur-[1px]'
+                                : ''}"
                               on:error={(e) => {
                                 // Remove the failed photo from the array
-                                allProfilePhotos = allProfilePhotos.filter((_, i) => i !== currentPhotoIndex);
-                                if (currentPhotoIndex >= allProfilePhotos.length) {
-                                  currentPhotoIndex = Math.max(0, allProfilePhotos.length - 1);
+                                allProfilePhotos = allProfilePhotos.filter(
+                                  (_, i) => i !== currentPhotoIndex,
+                                );
+                                if (
+                                  currentPhotoIndex >= allProfilePhotos.length
+                                ) {
+                                  currentPhotoIndex = Math.max(
+                                    0,
+                                    allProfilePhotos.length - 1,
+                                  );
                                 }
-                              }} 
+                              }}
                             />
-                            
-                            {#if allProfilePhotos[currentPhotoIndex].status === 'pending'}
-                              <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex flex-col items-center justify-center pointer-events-none z-20">
-                                <div class="bg-amber-500/95 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5 border border-amber-400">
+
+                            {#if allProfilePhotos[currentPhotoIndex].status === "pending"}
+                              <div
+                                class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex flex-col items-center justify-center pointer-events-none z-20"
+                              >
+                                <div
+                                  class="bg-amber-500/95 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5 border border-amber-400"
+                                >
                                   <Clock class="h-3 w-3 animate-pulse" />
                                   <span>Verifikasi Admin</span>
                                 </div>
@@ -2285,184 +3304,435 @@
                             {/if}
 
                             {#if allProfilePhotos.length > 1}
-                              <button type="button" on:click={(e) => { e.stopPropagation(); prevPhoto(e); }} class="absolute left-1 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 opacity-100 transition-opacity z-[100] shadow-md">
+                              <button
+                                type="button"
+                                on:click={(e) => {
+                                  e.stopPropagation();
+                                  prevPhoto(e);
+                                }}
+                                class="absolute left-1 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 opacity-100 transition-opacity z-[100] shadow-md dark:shadow-none"
+                              >
                                 <ChevronLeft class="h-4 w-4" />
                               </button>
-                              <button type="button" on:click={(e) => { e.stopPropagation(); nextPhoto(e); }} class="absolute right-1 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 opacity-100 transition-opacity z-[100] shadow-md">
+                              <button
+                                type="button"
+                                on:click={(e) => {
+                                  e.stopPropagation();
+                                  nextPhoto(e);
+                                }}
+                                class="absolute right-1 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 opacity-100 transition-opacity z-[100] shadow-md dark:shadow-none"
+                              >
                                 <ChevronRight class="h-4 w-4" />
                               </button>
-                              <div class="absolute top-1 right-1 flex space-x-0.5 bg-black/20 rounded-full px-1 py-0.5 z-10">
+                              <div
+                                class="absolute top-1 right-1 flex space-x-0.5 bg-black/20 rounded-full px-1 py-0.5 z-10"
+                              >
                                 {#each allProfilePhotos as _, i}
-                                  <div class="h-1 w-1 rounded-full {i === currentPhotoIndex ? 'bg-white' : 'bg-white/40'}"></div>
+                                  <div
+                                    class="h-1 w-1 rounded-full {i ===
+                                    currentPhotoIndex
+                                      ? 'bg-white dark:bg-slate-900'
+                                      : 'bg-white dark:bg-slate-900/40'}"
+                                  ></div>
                                 {/each}
                               </div>
                             {/if}
 
-                            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity duration-300 pointer-events-none">
-                              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+                            <div
+                              class="absolute inset-0 bg-black/20 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity duration-300 pointer-events-none"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-6 w-6 text-white drop-shadow"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                                ><circle cx="11" cy="11" r="8" /><path
+                                  d="m21 21-4.35-4.35"
+                                /><path d="M11 8v6M8 11h6" /></svg
+                              >
                             </div>
                           {:else}
                             {getInitials(myProfileData.nama_lengkap)}
                           {/if}
                         </div>
                       </div>
-
-
                     </div>
-                    
-                    <div class="text-center sm:text-left space-y-2 min-w-0 flex-1 pb-1">
-                      <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-tight py-1 truncate relative inline-block max-w-full align-bottom">
-                        {myProfileData.nama_lengkap} 
-                        <span class="absolute top-1/2 -translate-y-1/2 -right-16 text-[8px] opacity-0 group-hover:opacity-10 pointer-events-none">[{allProfilePhotos?.length || 0}:{customPhotos?.length || 0}:{myProfileData.foto_url ? 1 : 0}:{rlsDebug}]</span>
+
+                    <div
+                      class="text-center sm:text-left space-y-2 min-w-0 flex-1 pb-1"
+                    >
+                      <h2
+                        class="text-2xl md:text-3xl font-black tracking-tight leading-tight py-1 truncate relative inline-block max-w-full align-bottom flex items-center gap-2
+                          {myProfileData.nama_panggilan?.toUpperCase() === 'ADMIN' || (userRole === 'admin' && isOwnProfile) ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 bg-clip-text text-transparent drop-shadow-sm' : 'text-slate-800 dark:text-slate-100'}"
+                      >
+                        {myProfileData.nama_lengkap}
+                        {#if myProfileData.nama_panggilan?.toUpperCase() === 'ADMIN' || (userRole === 'admin' && isOwnProfile)}
+                          <img src="/centangbiru.png" alt="Verified Admin" class="h-4 w-4 object-contain shrink-0 drop-shadow-sm" />
+                        {/if}
+                        <span
+                          class="absolute top-1/2 -translate-y-1/2 -right-16 text-[8px] opacity-0 group-hover:opacity-10 pointer-events-none"
+                          >[{allProfilePhotos?.length ||
+                            0}:{customPhotos?.length ||
+                            0}:{myProfileData.foto_url
+                            ? 1
+                            : 0}:{rlsDebug}]</span
+                        >
                       </h2>
                       {#if myProfileData.nama_panggilan}
-                        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs font-bold">
-                          <span class="px-2.5 py-1 bg-slate-100 rounded-full text-slate-600 border border-slate-200/50">{myProfileData.nama_panggilan}</span>
+                        <div
+                          class="flex flex-col sm:flex-row items-center sm:items-start gap-4"
+                        >
+                          <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs font-bold">
+                            <span
+                              class="px-3 py-1.5 {myProfileData.nama_panggilan?.toUpperCase() === 'ADMIN' || (userRole === 'admin' && isOwnProfile) ? 'bg-amber-100/50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-700/50 shadow-[0_0_10px_rgba(251,191,36,0.2)]' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700/50'} rounded-full border transition-all duration-300"
+                              >{myProfileData.nama_panggilan}</span
+                            >
+                          </div>
                         </div>
+                      {/if}
+                      
+                      <!-- Aesthetic Divider -->
+                      {#if myProfileData.nama_panggilan?.toUpperCase() === 'ADMIN' || (userRole === 'admin' && isOwnProfile)}
+                      <div class="flex items-center justify-center sm:justify-start gap-3 mt-4 opacity-70">
+                        <div class="h-px w-12 bg-gradient-to-r from-transparent to-amber-400"></div>
+                        <svg class="w-3 h-3 text-amber-500 fill-current" viewBox="0 0 24 24"><path d="M12 2L15 9h8l-6 5 2 8-7-5-7 5 2-8-6-5h8z"/></svg>
+                        <div class="h-px w-12 bg-gradient-to-l from-transparent to-amber-400"></div>
+                      </div>
                       {/if}
                     </div>
                   </div>
 
                   <!-- Details Segmented Grid -->
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
                     <!-- Section 1: Data Pribadi -->
                     <div class="space-y-4">
-                      <h4 class="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2.5">
-                        <div class="p-1.5 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
-                          <User class="h-4 w-4" />
-                        </div>
+                      <h4
+                        class="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2.5"
+                      >
+                        <img
+                          src="/database.png"
+                          alt="Data Pribadi Icon"
+                          class="h-5 w-5 object-contain drop-shadow-sm"
+                        />
                         <span>Data Pribadi</span>
                       </h4>
-                      
-                      <div class="bg-slate-50/50 rounded-2xl p-4 border border-slate-200/60 space-y-3 text-xs font-semibold text-slate-600">
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Tempat Lahir</span>
-                          <strong class="text-slate-800">{capitalizeEachWord(myProfileData.tempat_lahir)}</strong>
+
+                      <div
+                        class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700/60 space-y-3 text-xs font-semibold text-slate-600 dark:text-slate-300"
+                      >
+                        <div
+                          class="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Tempat Lahir</span
+                          >
+                          <strong class="text-slate-800 dark:text-slate-100"
+                            >{capitalizeEachWord(
+                              myProfileData.tempat_lahir,
+                            )}</strong
+                          >
                         </div>
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Tanggal Lahir</span>
-                          <strong class="text-slate-800">{myProfileData.tahun_lahir || '-'}</strong>
+                        <div
+                          class="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Tanggal Lahir</span
+                          >
+                          <strong class="text-slate-800 dark:text-slate-100"
+                            >{myProfileData.tahun_lahir || "-"}</strong
+                          >
                         </div>
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Golongan Darah</span>
-                          <strong class="text-slate-800">{myProfileData.golongan_darah || '-'}</strong>
+                        <div
+                          class="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Golongan Darah</span
+                          >
+                          <strong class="text-slate-800 dark:text-slate-100"
+                            >{myProfileData.golongan_darah || "-"}</strong
+                          >
                         </div>
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Daerah</span>
-                          <strong class="text-slate-800 font-bold">{capitalizeEachWord(myProfileData.daerah_santri) || '-'}</strong>
+                        <div
+                          class="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Daerah</span
+                          >
+                          <strong
+                            class="text-slate-800 dark:text-slate-100 font-bold"
+                            >{capitalizeEachWord(myProfileData.daerah_santri) ||
+                              "-"}</strong
+                          >
                         </div>
-                        <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Tempat Tinggal</span>
-                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{capitalizeEachWord(myProfileData.alamat_ktp)}</strong>
+                        <div
+                          class="flex flex-col gap-1 py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Tempat Tinggal</span
+                          >
+                          <strong
+                            class="text-slate-800 dark:text-slate-100 font-medium leading-relaxed text-justify"
+                            >{capitalizeEachWord(
+                              myProfileData.alamat_ktp,
+                            )}</strong
+                          >
                         </div>
                         <div class="flex flex-col gap-1 py-1.5">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Rute Lengkap Perjalanan</span>
-                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{myProfileData.rute_lengkap || '-'}</strong>
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Rute Lengkap Perjalanan</span
+                          >
+                          <strong
+                            class="text-slate-800 dark:text-slate-100 font-medium leading-relaxed text-justify"
+                            >{myProfileData.rute_lengkap || "-"}</strong
+                          >
                         </div>
                       </div>
                     </div>
 
                     <!-- Section 2: Pondok & Kependidikan -->
                     <div class="space-y-4">
-                      <h4 class="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2.5">
-                        <div class="p-1.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
-                          <Award class="h-4 w-4" />
-                        </div>
+                      <h4
+                        class="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2.5"
+                      >
+                        <img
+                          src="/education.png"
+                          alt="Pondok Pendidikan Icon"
+                          class="h-6 w-6 object-contain drop-shadow-sm"
+                        />
                         <span>Pondok & Kependidikan</span>
                       </h4>
-                      
-                      <div class="bg-slate-50/50 rounded-2xl p-4 border border-slate-200/60 space-y-3 text-xs font-semibold text-slate-600">
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Alamat Domisili</span>
-                          <strong class="text-slate-800">{myProfileData.alamat_domisili || '-'}</strong>
+
+                      <div
+                        class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700/60 space-y-3 text-xs font-semibold text-slate-600 dark:text-slate-300"
+                      >
+                        <div
+                          class="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Alamat Domisili</span
+                          >
+                          <strong class="text-slate-800 dark:text-slate-100"
+                            >{myProfileData.alamat_domisili || "-"}</strong
+                          >
                         </div>
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Tahun Masuk</span>
-                          <strong class="text-slate-800">{myProfileData.tahun_masuk || '-'}</strong>
+                        <div
+                          class="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Tahun Masuk</span
+                          >
+                          <strong class="text-slate-800 dark:text-slate-100"
+                            >{myProfileData.tahun_masuk || "-"}</strong
+                          >
                         </div>
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Kamar</span>
-                          <strong class="text-slate-800">{myProfileData.kamar_santri || '-'}</strong>
+                        <div
+                          class="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Kamar</span
+                          >
+                          <strong class="text-slate-800 dark:text-slate-100"
+                            >{myProfileData.kamar_santri || "-"}</strong
+                          >
                         </div>
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Status Tahfidz</span>
-                          <strong class="text-slate-800 font-bold">{capitalizeEachWord(myProfileData.tahfidz_santri) || '-'}</strong>
+                        <div
+                          class="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Status Tahfidz</span
+                          >
+                          <strong
+                            class="text-slate-800 dark:text-slate-100 font-bold"
+                            >{capitalizeEachWord(
+                              myProfileData.tahfidz_santri,
+                            ) || "-"}</strong
+                          >
                         </div>
-                        <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Riwayat Pendidikan</span>
-                          <strong class="text-slate-800 font-medium">{myProfileData.riwayat_pendidikan || '-'}</strong>
+                        <div
+                          class="flex flex-col gap-1 py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Riwayat Pendidikan</span
+                          >
+                          <strong
+                            class="text-slate-800 dark:text-slate-100 font-medium"
+                            >{myProfileData.riwayat_pendidikan || "-"}</strong
+                          >
                         </div>
                         <div class="flex flex-col gap-1 py-1.5">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Alamat Pendidikan</span>
-                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{capitalizeEachWord(myProfileData.alamat_riwayatpendidikan)}</strong>
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Alamat Pendidikan</span
+                          >
+                          <strong
+                            class="text-slate-800 dark:text-slate-100 font-medium leading-relaxed text-justify"
+                            >{capitalizeEachWord(
+                              myProfileData.alamat_riwayatpendidikan,
+                            )}</strong
+                          >
                         </div>
                       </div>
                     </div>
 
                     <!-- Section 3: Kontak & Media Sosial -->
                     <div class="space-y-4">
-                      <h4 class="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2.5">
-                        <div class="p-1.5 bg-sky-50 text-sky-600 rounded-xl border border-sky-100">
-                          <Globe class="h-4 w-4" />
-                        </div>
+                      <h4
+                        class="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2.5"
+                      >
+                        <img
+                          src="/online.png"
+                          alt="Kontak Sosial Media Icon"
+                          class="h-6 w-6 object-contain drop-shadow-sm"
+                        />
                         <span>Kontak & Sosial Media</span>
                       </h4>
-                      
-                      <div class="bg-slate-50/50 rounded-2xl p-4 border border-slate-200/60 space-y-3 text-xs font-semibold text-slate-600">
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">WhatsApp</span>
+
+                      <div
+                        class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700/60 space-y-3 text-xs font-semibold text-slate-600 dark:text-slate-300"
+                      >
+                        <div
+                          class="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >WhatsApp</span
+                          >
                           {#if myProfileData.no_whatsapp}
-                            <a href={getWhatsAppLink(myProfileData.no_whatsapp)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
-                              <span>{formatWhatsApp(myProfileData.no_whatsapp)}</span>
+                            <a
+                              href={getWhatsAppLink(myProfileData.no_whatsapp)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="text-primary hover:underline font-bold inline-flex items-center gap-1"
+                            >
+                              <span
+                                >{formatWhatsApp(
+                                  myProfileData.no_whatsapp,
+                                )}</span
+                              >
                               <ExternalLink class="h-3 w-3" />
                             </a>
                           {:else}
-                            <strong class="text-slate-400 font-bold">-</strong>
+                            <strong
+                              class="text-slate-400 dark:text-slate-500 font-bold"
+                              >-</strong
+                            >
                           {/if}
                         </div>
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Email</span>
+                        <div
+                          class="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Email</span
+                          >
                           {#if myProfileData.email}
-                            <a href="https://mail.google.com/mail/?view=cm&fs=1&to={myProfileData.email}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 text-right" style="max-width: 70%;" title={myProfileData.email}>
-                              <span class="break-all">{myProfileData.email}</span>
+                            <a
+                              href="https://mail.google.com/mail/?view=cm&fs=1&to={myProfileData.email}"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="text-primary hover:underline font-bold inline-flex items-center gap-1 text-right"
+                              style="max-width: 70%;"
+                              title={myProfileData.email}
+                            >
+                              <span class="break-all"
+                                >{myProfileData.email}</span
+                              >
                               <ExternalLink class="h-3 w-3 shrink-0" />
                             </a>
                           {:else}
-                            <strong class="text-slate-400 font-bold">-</strong>
+                            <strong
+                              class="text-slate-400 dark:text-slate-500 font-bold"
+                              >-</strong
+                            >
                           {/if}
                         </div>
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Instagram</span>
+                        <div
+                          class="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Instagram</span
+                          >
                           {#if myProfileData.media_social}
-                            <a href={getInstagramLink(myProfileData.media_social)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
-                              <span>{myProfileData.media_social.toLowerCase()}</span>
+                            <a
+                              href={getInstagramLink(
+                                myProfileData.media_social,
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="text-primary hover:underline font-bold inline-flex items-center gap-1"
+                            >
+                              <span
+                                >{myProfileData.media_social.toLowerCase()}</span
+                              >
                               <ExternalLink class="h-3 w-3" />
                             </a>
                           {:else}
-                            <strong class="text-slate-400 font-bold">-</strong>
+                            <strong
+                              class="text-slate-400 dark:text-slate-500 font-bold"
+                              >-</strong
+                            >
                           {/if}
                         </div>
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Tiktok</span>
+                        <div
+                          class="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Tiktok</span
+                          >
                           {#if myProfileData.tiktok_akun}
-                            <a href={getTiktokLink(myProfileData.tiktok_akun)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                            <a
+                              href={getTiktokLink(myProfileData.tiktok_akun)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="text-primary hover:underline font-bold inline-flex items-center gap-1"
+                            >
                               <span>{myProfileData.tiktok_akun}</span>
                               <ExternalLink class="h-3 w-3" />
                             </a>
                           {:else}
-                            <strong class="text-slate-400 font-bold">-</strong>
+                            <strong
+                              class="text-slate-400 dark:text-slate-500 font-bold"
+                              >-</strong
+                            >
                           {/if}
                         </div>
                         <div class="flex justify-between items-center py-1.5">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">X / Twitter</span>
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >X / Twitter</span
+                          >
                           {#if myProfileData.xtwitter_akun}
-                            <a href={getXTwitterLink(myProfileData.xtwitter_akun)} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1">
+                            <a
+                              href={getXTwitterLink(
+                                myProfileData.xtwitter_akun,
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="text-primary hover:underline font-bold inline-flex items-center gap-1"
+                            >
                               <span>{myProfileData.xtwitter_akun}</span>
                               <ExternalLink class="h-3 w-3" />
                             </a>
                           {:else}
-                            <strong class="text-slate-400 font-bold">-</strong>
+                            <strong
+                              class="text-slate-400 dark:text-slate-500 font-bold"
+                              >-</strong
+                            >
                           {/if}
                         </div>
                       </div>
@@ -2470,90 +3740,191 @@
 
                     <!-- Section 4: Minat & Keterampilan -->
                     <div class="space-y-4">
-                      <h4 class="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2.5">
-                        <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100">
-                          <Music class="h-4 w-4" />
-                        </div>
+                      <h4
+                        class="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2.5"
+                      >
+                        <img
+                          src="/music.png"
+                          alt="Minat Keterampilan Icon"
+                          class="h-7 w-7 object-contain drop-shadow-sm"
+                        />
                         <span>Minat & Keterampilan</span>
                       </h4>
-                      
-                      <div class="bg-slate-50/50 rounded-2xl p-4 border border-slate-200/60 space-y-3 text-xs font-semibold text-slate-600">
-                        <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Hobi</span>
-                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{myProfileData.hobi || '-'}</strong>
+
+                      <div
+                        class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700/60 space-y-3 text-xs font-semibold text-slate-600 dark:text-slate-300"
+                      >
+                        <div
+                          class="flex flex-col gap-1 py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Hobi</span
+                          >
+                          <strong
+                            class="text-slate-800 dark:text-slate-100 font-medium leading-relaxed text-justify"
+                            >{myProfileData.hobi || "-"}</strong
+                          >
                         </div>
-                        <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Keterampilan Khusus</span>
-                          <strong class="text-slate-800 font-medium leading-relaxed text-justify">{myProfileData.keterampilan_khusus || '-'}</strong>
+                        <div
+                          class="flex flex-col gap-1 py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Keterampilan Khusus</span
+                          >
+                          <strong
+                            class="text-slate-800 dark:text-slate-100 font-medium leading-relaxed text-justify"
+                            >{myProfileData.keterampilan_khusus || "-"}</strong
+                          >
                         </div>
-                        <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Cita-cita</span>
+                        <div
+                          class="flex flex-col gap-1 py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Cita-cita</span
+                          >
                           {#if myProfileData.cita_cita}
-                            <a href="https://www.google.com/search?q={encodeURIComponent(myProfileData.cita_cita)}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit" title="Cari di Google">
+                            <a
+                              href="https://www.google.com/search?q={encodeURIComponent(
+                                myProfileData.cita_cita,
+                              )}"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit"
+                              title="Cari di Google"
+                            >
                               <span>{myProfileData.cita_cita}</span>
                               <ExternalLink class="h-3 w-3 shrink-0" />
                             </a>
                           {:else}
-                            <strong class="text-slate-800 font-medium leading-relaxed text-justify">-</strong>
+                            <strong
+                              class="text-slate-800 dark:text-slate-100 font-medium leading-relaxed text-justify"
+                              >-</strong
+                            >
                           {/if}
                         </div>
-                        <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Makanan Kesukaan</span>
+                        <div
+                          class="flex flex-col gap-1 py-1.5 border-b border-slate-100 dark:border-slate-800"
+                        >
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Makanan Kesukaan</span
+                          >
                           {#if myProfileData.makanan_kesukaan}
-                            <a href="https://www.google.com/search?q={encodeURIComponent(myProfileData.makanan_kesukaan)}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit" title="Cari di Google">
+                            <a
+                              href="https://www.google.com/search?q={encodeURIComponent(
+                                myProfileData.makanan_kesukaan,
+                              )}"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit"
+                              title="Cari di Google"
+                            >
                               <span>{myProfileData.makanan_kesukaan}</span>
                               <ExternalLink class="h-3 w-3 shrink-0" />
                             </a>
                           {:else}
-                            <strong class="text-slate-800 font-medium leading-relaxed text-justify">-</strong>
+                            <strong
+                              class="text-slate-800 dark:text-slate-100 font-medium leading-relaxed text-justify"
+                              >-</strong
+                            >
                           {/if}
                         </div>
                         <div class="flex flex-col gap-1 py-1.5">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Musik Kesukaan</span>
-                          {#if myProfileData.music && myProfileData.music.startsWith('http')}
-                            <a href={myProfileData.music} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold break-all inline-flex items-center gap-1 mt-0.5 w-fit">
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Musik Kesukaan</span
+                          >
+                          {#if myProfileData.music && myProfileData.music.startsWith("http")}
+                            <a
+                              href={myProfileData.music}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="text-primary hover:underline font-bold break-all inline-flex items-center gap-1 mt-0.5 w-fit"
+                            >
                               <span>Klik Disini!</span>
                               <ExternalLink class="h-3 w-3 shrink-0" />
                             </a>
                           {:else if myProfileData.music}
-                            <a href="https://www.youtube.com/results?search_query={encodeURIComponent(myProfileData.music)}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit" title="Cari di YouTube">
+                            <a
+                              href="https://www.youtube.com/results?search_query={encodeURIComponent(
+                                myProfileData.music,
+                              )}"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit"
+                              title="Cari di YouTube"
+                            >
                               <span>{myProfileData.music}</span>
                               <ExternalLink class="h-3 w-3 shrink-0" />
                             </a>
                           {:else}
-                            <strong class="text-slate-800 font-medium leading-relaxed">-</strong>
+                            <strong
+                              class="text-slate-800 dark:text-slate-100 font-medium leading-relaxed"
+                              >-</strong
+                            >
                           {/if}
-                          
+
                           {#if getYouTubeId(myProfileData.music)}
                             <div class="mt-4 relative group">
                               <!-- Glowing Background -->
-                              <div class="absolute -inset-1.5 bg-gradient-to-r from-teal-400 via-blue-500 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-60 transition duration-500"></div>
-                              
-                              <div class="relative bg-slate-900 rounded-2xl p-1.5 shadow-xl ring-1 ring-white/10">
+                              <div
+                                class="absolute -inset-1.5 bg-gradient-to-r from-teal-400 via-blue-500 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-60 transition duration-500"
+                              ></div>
+
+                              <div
+                                class="relative bg-slate-900 rounded-2xl p-1.5 shadow-xl ring-1 ring-white/10"
+                              >
                                 <!-- macOS Style Top Bar -->
-                                <div class="flex items-center justify-between px-3 py-2 border-b border-white/10 mb-1.5">
+                                <div
+                                  class="flex items-center justify-between px-3 py-2 border-b border-white/10 mb-1.5"
+                                >
                                   <div class="flex gap-1.5">
-                                    <div class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm"></div>
-                                    <div class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm"></div>
-                                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></div>
+                                    <div
+                                      class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm dark:shadow-none"
+                                    ></div>
+                                    <div
+                                      class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm dark:shadow-none"
+                                    ></div>
+                                    <div
+                                      class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm dark:shadow-none"
+                                    ></div>
                                   </div>
-                                  <div class="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                                    <Music class="w-3 h-3 text-teal-400 animate-pulse" />
-                                    <p class="text-[9px] font-bold text-slate-300 tracking-widest uppercase">Now Playing</p>
+                                  <div
+                                    class="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <Music
+                                      class="w-3 h-3 text-teal-400 animate-pulse"
+                                    />
+                                    <p
+                                      class="text-[9px] font-bold text-slate-300 tracking-widest uppercase"
+                                    >
+                                      Now Playing
+                                    </p>
                                   </div>
                                 </div>
-                                
+
                                 <!-- Video Container -->
-                                <div class="rounded-xl overflow-hidden aspect-video bg-black relative">
-                                  <div class="absolute inset-0 bg-slate-800 animate-pulse flex items-center justify-center">
-                                     <Music class="w-8 h-8 text-slate-700" />
+                                <div
+                                  class="rounded-xl overflow-hidden aspect-video bg-black relative"
+                                >
+                                  <div
+                                    class="absolute inset-0 bg-slate-800 animate-pulse flex items-center justify-center"
+                                  >
+                                    <Music
+                                      class="w-8 h-8 text-slate-700 dark:text-slate-200"
+                                    />
                                   </div>
-                                  <iframe 
+                                  <iframe
                                     class="w-full h-full relative z-10"
-                                    src="https://www.youtube-nocookie.com/embed/{getYouTubeId(myProfileData.music)}" 
-                                    title="YouTube video player" 
-                                    frameborder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                    src="https://www.youtube-nocookie.com/embed/{getYouTubeId(
+                                      myProfileData.music,
+                                    )}"
+                                    title="YouTube video player"
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                     allowfullscreen
                                   ></iframe>
                                 </div>
@@ -2563,40 +3934,74 @@
                         </div>
                       </div>
                     </div>
-
                   </div>
 
                   <!-- Full width quotes and memories section -->
                   <div class="space-y-4 pt-2">
-                    <h4 class="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2.5">
-                      <div class="p-1.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-100">
-                        <Heart class="h-4 w-4" />
-                      </div>
+                    <h4
+                      class="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2.5"
+                    >
+                      <img
+                        src="/love.png"
+                        alt="Kesan Pesan Icon"
+                        class="h-7 w-7 object-contain drop-shadow-sm"
+                      />
                       <span>Kesan, Pesan & Kutipan Kenangan</span>
                     </h4>
-                    
-                    <div class="bg-blue-50/20 border border-blue-100/60 rounded-3xl p-4 sm:p-6 space-y-6 relative overflow-hidden">
-                      <div class="absolute -top-3 -left-1 text-[120px] font-serif font-black text-blue-500/10 select-none pointer-events-none leading-none">“</div>
-                      <div class="absolute -bottom-16 -right-1 text-[120px] font-serif font-black text-blue-500/10 select-none pointer-events-none leading-none">”</div>
+
+                    <div
+                      class="bg-blue-50/20 dark:bg-slate-800/40 border border-blue-100/60 dark:border-slate-700/50 rounded-3xl p-4 sm:p-6 space-y-6 relative overflow-hidden"
+                    >
+                      <div
+                        class="absolute -top-3 -left-1 text-[120px] font-serif font-black text-blue-500/10 select-none pointer-events-none leading-none"
+                      >
+                        “
+                      </div>
+                      <div
+                        class="absolute -bottom-16 -right-1 text-[120px] font-serif font-black text-blue-500/10 select-none pointer-events-none leading-none"
+                      >
+                        ”
+                      </div>
 
                       {#if myProfileData.kutipan_kenangan}
-                        <div class="text-center italic py-4 border-b border-slate-200/40 relative z-10">
-                          <p class="text-base sm:text-lg font-extrabold text-primary tracking-tight leading-relaxed">"{myProfileData.kutipan_kenangan}"</p>
-                          <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mt-2">— Kutipan Memori —</span>
+                        <div
+                          class="text-center italic py-4 border-b border-slate-200 dark:border-slate-700/40 relative z-10"
+                        >
+                          <p
+                            class="text-base sm:text-lg font-extrabold text-primary dark:text-blue-400 tracking-tight leading-relaxed"
+                          >
+                            "{myProfileData.kutipan_kenangan}"
+                          </p>
+                          <span
+                            class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mt-2"
+                            >— Kutipan Memori —</span
+                          >
                         </div>
                       {/if}
-                      
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold relative z-10">
+
+                      <div
+                        class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold relative z-10"
+                      >
                         <div class="space-y-2">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Kesan</span>
-                          <p class="text-slate-700 font-normal leading-relaxed text-justify bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
-                            {myProfileData.kesan || '-'}
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Kesan</span
+                          >
+                          <p
+                            class="text-slate-700 dark:text-slate-300 font-normal leading-relaxed text-justify bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 dark:hover:border-blue-500/30 transition-all duration-300"
+                          >
+                            {myProfileData.kesan || "-"}
                           </p>
                         </div>
                         <div class="space-y-2">
-                          <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Pesan</span>
-                          <p class="text-slate-700 font-normal leading-relaxed text-justify bg-white border border-slate-200/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 transition-all duration-300">
-                            {myProfileData.pesan || '-'}
+                          <span
+                            class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+                            >Pesan</span
+                          >
+                          <p
+                            class="text-slate-700 dark:text-slate-300 font-normal leading-relaxed text-justify bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 p-4 rounded-2xl min-h-[80px] shadow-soft-sm hover:border-blue-200/50 dark:hover:border-blue-500/30 transition-all duration-300"
+                          >
+                            {myProfileData.pesan || "-"}
                           </p>
                         </div>
                       </div>
@@ -2609,19 +4014,33 @@
                   <div class="px-4 sm:px-6 md:px-8 mt-2 pb-6">
                     <a
                       href="/nilai?nis={myProfileData.nis}"
-                      on:click={() => showMyProfile = false}
-                      class="group w-full flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:border-emerald-500/30 hover:shadow-md transition-all duration-300"
+                      on:click={() => (showMyProfile = false)}
+                      class="group w-full flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl hover:border-emerald-500/30 hover:shadow-md dark:shadow-none transition-all duration-300"
                     >
                       <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                          <img src="/exam_3403561.png" alt="Ikon Ujian" class="w-6 h-6 object-contain" />
+                        <div
+                          class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                        >
+                          <img
+                            src="/exam_3403561.png"
+                            alt="Ikon Ujian"
+                            class="w-6 h-6 object-contain"
+                          />
                         </div>
                         <div class="flex flex-col">
-                          <span class="text-sm font-bold text-slate-800">Rekam Jejak Nilai Akademik</span>
-                          <span class="text-[11px] font-medium text-slate-500">Tamrin, Muhafadzoh, Ujian</span>
+                          <span
+                            class="text-sm font-bold text-slate-800 dark:text-slate-100"
+                            >Rekam Jejak Nilai Akademik</span
+                          >
+                          <span
+                            class="text-[11px] font-medium text-slate-500 dark:text-slate-400 dark:text-slate-500"
+                            >Tamrin, Muhafadzoh, Ujian</span
+                          >
                         </div>
                       </div>
-                      <div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                      <div
+                        class="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors"
+                      >
                         <ChevronRight class="h-4 w-4" />
                       </div>
                     </a>
@@ -2630,8 +4049,10 @@
 
                 <!-- LOGOUT BUTTON AT THE VERY BOTTOM -->
                 {#if isOwnProfile}
-                  <div class="pt-6 border-t border-slate-100 flex justify-end">
-                    <button 
+                  <div
+                    class="pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end"
+                  >
+                    <button
                       on:click={handleLogout}
                       class="flex items-center justify-center space-x-2 text-sm text-white bg-rose-600 hover:bg-rose-700 transition-colors px-6 py-3 rounded-xl shadow-soft-sm font-bold w-full sm:w-auto cursor-pointer"
                       style="min-height: 48px;"
@@ -2644,36 +4065,53 @@
 
                 <!-- Logout Confirmation Modal -->
                 {#if showLogoutModal}
-                  <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4" transition:fade={{ duration: 150 }}>
+                  <div
+                    class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+                    transition:fade={{ duration: 150 }}
+                  >
                     <!-- Backdrop -->
                     <button
                       type="button"
                       class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm cursor-default"
-                      on:click={() => showLogoutModal = false}
+                      on:click={() => (showLogoutModal = false)}
                       aria-label="Tutup"
                     ></button>
 
                     <!-- Modal Card -->
-                    <div class="relative bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-sm p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+                    <div
+                      class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/80 w-full max-w-sm p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200"
+                    >
                       <!-- Icon -->
                       <div class="flex items-center justify-center">
-                        <div class="h-14 w-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center shadow-inner">
-                          <LogOut class="h-7 w-7 text-rose-500 animate-bounce-right" />
+                        <div
+                          class="h-14 w-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center shadow-inner"
+                        >
+                          <LogOut
+                            class="h-7 w-7 text-rose-500 animate-bounce-right"
+                          />
                         </div>
                       </div>
 
                       <!-- Text -->
                       <div class="text-center space-y-1.5">
-                        <h3 class="text-lg font-black text-slate-800">Logout?</h3>
-                        <p class="text-sm text-slate-500 leading-relaxed">Apakah Anda yakin ingin keluar dari sesi ini?</p>
+                        <h3
+                          class="text-lg font-black text-slate-800 dark:text-slate-100"
+                        >
+                          Logout?
+                        </h3>
+                        <p
+                          class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed"
+                        >
+                          Apakah Anda yakin ingin keluar dari sesi ini?
+                        </p>
                       </div>
 
                       <!-- Actions -->
                       <div class="flex flex-col sm:flex-row gap-2 pt-1">
                         <button
                           type="button"
-                          on:click={() => showLogoutModal = false}
-                          class="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                          on:click={() => (showLogoutModal = false)}
+                          class="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 transition-colors"
                         >
                           Batal
                         </button>
@@ -2689,13 +4127,16 @@
                     </div>
                   </div>
                 {/if}
-
               </Card>
             </div>
           {/if}
         {:else}
           {#key currentPath}
-            <div in:fly={{ y: 20, duration: 400, delay: 150 }} out:fade={{ duration: 150 }} class="mx-auto max-w-7xl xl:max-w-[1400px] w-full">
+            <div
+              in:fly={{ y: 20, duration: 400, delay: 150 }}
+              out:fade={{ duration: 150 }}
+              class="mx-auto max-w-7xl xl:max-w-[1400px] w-full"
+            >
               <slot />
             </div>
           {/key}
@@ -2703,48 +4144,173 @@
       </main>
     </div>
 
+    <!-- ===== KENANGAN TERSIMPAN MODAL ===== -->
+    {#if showSavedMemories}
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div
+        transition:fade={{ duration: 150 }}
+        class="fixed inset-0 z-[99990] bg-slate-900/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+        on:click={() => (showSavedMemories = false)}
+      >
+        <div
+          class="bg-white dark:bg-slate-900 w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl overflow-hidden shadow-2xl max-h-[85vh] flex flex-col"
+          on:click|stopPropagation
+        >
+          <!-- Header -->
+          <div class="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
+                <Bookmark class="w-4 h-4 text-amber-500 fill-current" />
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-slate-800 dark:text-slate-100">Kenangan Tersimpan</h3>
+                <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{savedMemoriesList.length} kenangan</p>
+              </div>
+            </div>
+            <button
+              on:click={() => (showSavedMemories = false)}
+              class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+
+          <!-- Content -->
+          <div class="overflow-y-auto flex-1 p-4">
+            {#if isLoadingSaved}
+              <div class="py-12 text-center space-y-3">
+                <div class="animate-spin h-8 w-8 border-2 border-amber-400 border-t-transparent rounded-full mx-auto"></div>
+                <p class="text-xs font-semibold text-slate-400 dark:text-slate-500">Memuat kenangan...</p>
+              </div>
+            {:else if savedMemoriesList.length === 0}
+              <div class="py-12 text-center space-y-3">
+                <div class="w-16 h-16 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto">
+                  <Bookmark class="w-7 h-7 text-amber-300" />
+                </div>
+                <p class="text-sm font-bold text-slate-500 dark:text-slate-400">Belum ada kenangan tersimpan</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500">Tekan ikon <span class="font-bold">🔖</span> di Timeline untuk menyimpan kenangan favoritmu!</p>
+              </div>
+            {:else}
+              <div class="grid grid-cols-2 gap-3">
+                {#each savedMemoriesList as memory}
+                  <a
+                    href="/timeline?memory={memory.id}"
+                    on:click={() => (showSavedMemories = false)}
+                    class="group relative rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 aspect-square block"
+                  >
+                    <img
+                      src={memory.image_url}
+                      alt={memory.title}
+                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      referrerpolicy="no-referrer"
+                    />
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
+                    <div class="absolute bottom-0 left-0 right-0 p-2.5">
+                      <p class="text-white text-[10px] font-black leading-tight line-clamp-2">{memory.title}</p>
+                      {#if memory.category}
+                        <span class="text-[9px] font-bold text-amber-300 uppercase tracking-wider">{memory.category}</span>
+                      {/if}
+                    </div>
+                  </a>
+                {/each}
+              </div>
+            {/if}
+          </div>
+
+          <!-- Footer -->
+          <div class="px-4 pb-5 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <a
+              href="/timeline"
+              on:click={() => (showSavedMemories = false)}
+              class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition-colors"
+            >
+              <Bookmark class="w-4 h-4" />
+              Buka Timeline
+            </a>
+          </div>
+        </div>
+      </div>
+    {/if}
+
     <!-- Mobile Bottom Navigation Bar (Hidden on Desktop) -->
     <!-- 48px touch target sizes are strictly maintained -->
-    {#if !$page.url.searchParams.has('detail') && !$isAudioPlayingGlobal}
-
+    {#if !$page.url.searchParams.has("detail") && !$isAudioPlayingGlobal}
       <!-- The actual bottom nav - muncul saat klik tombol Menu -->
       {#if showBottomNav}
         <nav
           id="mobile-bottom-nav"
-          class="md:hidden fixed bottom-4 left-4 right-4 z-50 bg-white/90 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.08)] px-2 flex justify-between items-center h-16 rounded-2xl"
+          class="md:hidden fixed bottom-4 left-4 right-4 z-50 bg-white dark:bg-slate-900/90 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.08)] px-2 flex justify-between items-center h-16 rounded-2xl"
           transition:slide={{ duration: 200 }}
         >
           {#each navItems as item}
             <a
               href={item.path}
               id="mobile-nav-{item.name.toLowerCase().replace(/[^a-z]/g, '')}"
-              on:click={() => { resetAutoHide(); handleNavClick(); triggerNavAnim(item.name); }}
+              on:click={() => {
+                resetAutoHide();
+                handleNavClick();
+                triggerNavAnim(item.name);
+              }}
               class="flex flex-col items-center justify-center flex-1 h-12 transition-all duration-300 relative
-                {isActive(item.path) ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
+                {isActive(item.path)
+                ? 'text-primary'
+                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300'}"
               style="min-width: 44px; min-height: 48px;"
             >
-              <div class="relative flex items-center justify-center {isActive(item.path) ? 'scale-110' : ''} transition-transform duration-300 {activeNavAnim === item.name ? 'animate-jump-spin text-primary drop-shadow-md' : ''}">
-                <svelte:component this={item.icon} class="h-6 w-6 relative z-10" />
+              <div
+                class="relative flex items-center justify-center {isActive(
+                  item.path,
+                )
+                  ? 'scale-110'
+                  : ''} transition-transform duration-300 {activeNavAnim ===
+                item.name
+                  ? 'animate-jump-spin text-primary drop-shadow-md dark:shadow-none'
+                  : ''}"
+              >
+                <svelte:component
+                  this={item.icon}
+                  class="h-6 w-6 relative z-10"
+                />
                 {#if isActive(item.path)}
-                  <div class="absolute inset-0 bg-primary/10 w-10 h-10 -left-2 -top-2 rounded-full blur-sm"></div>
+                  <div
+                    class="absolute inset-0 bg-primary/10 w-10 h-10 -left-2 -top-2 rounded-full blur-sm"
+                  ></div>
                 {/if}
               </div>
             </a>
           {/each}
-          
-          {#if userRole === 'admin'}
+
+          {#if userRole === "admin"}
             <a
               href="/admin"
               id="mobile-nav-admin"
-              on:click={() => { resetAutoHide(); handleNavClick(); triggerNavAnim('admin'); }}
+              on:click={() => {
+                resetAutoHide();
+                handleNavClick();
+                triggerNavAnim("admin");
+              }}
               class="flex flex-col items-center justify-center flex-1 h-12 transition-all duration-300 relative
-                {isActive('/admin') ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
+                {isActive('/admin')
+                ? 'text-primary'
+                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300'}"
               style="min-width: 44px; min-height: 48px;"
             >
-              <div class="relative flex items-center justify-center {isActive('/admin') ? 'scale-110' : ''} transition-transform duration-300 {activeNavAnim === 'admin' ? 'animate-jump-spin text-primary drop-shadow-md' : ''}">
+              <div
+                class="relative flex items-center justify-center {isActive(
+                  '/admin',
+                )
+                  ? 'scale-110'
+                  : ''} transition-transform duration-300 {activeNavAnim ===
+                'admin'
+                  ? 'animate-jump-spin text-primary drop-shadow-md dark:shadow-none'
+                  : ''}"
+              >
                 <ShieldCheck class="h-6 w-6 relative z-10" />
-                {#if isActive('/admin')}
-                  <div class="absolute inset-0 bg-primary/10 w-10 h-10 -left-2 -top-2 rounded-full blur-sm"></div>
+                {#if isActive("/admin")}
+                  <div
+                    class="absolute inset-0 bg-primary/10 w-10 h-10 -left-2 -top-2 rounded-full blur-sm"
+                  ></div>
                 {/if}
               </div>
             </a>
@@ -2758,40 +4324,70 @@
           id="mobile-menu-pill"
           on:click={showNavMenu}
           class="md:hidden fixed bottom-2 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-1.5 px-4 py-1.5 rounded-full
-                 bg-white/90 backdrop-blur-md border border-slate-200 shadow-lg
-                 text-[11px] font-bold text-slate-500 hover:text-primary hover:border-primary/40
+                 bg-white dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-lg
+                 text-[11px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-primary hover:border-primary/40
                  transition-all duration-200 active:scale-95 select-none"
           aria-label="Tampilkan navigasi"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-3.5 w-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16" /></svg
+          >
           Menu
         </button>
       {/if}
-
     {/if}
   {/if}
 
   <!-- DEACTIVATED ACCOUNT MODAL -->
   {#if $deactivatedAlertStore}
-    <div class="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div class="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full border border-slate-100 animate-in zoom-in-95 duration-300 relative">
+    <div
+      class="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+    >
+      <div
+        class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-300 relative"
+      >
         <!-- Decorative Top Border -->
         <div class="h-2 w-full bg-gradient-to-r from-rose-500 to-red-600"></div>
-        
-        <div class="p-6 sm:p-8 flex flex-col items-center text-center space-y-4">
+
+        <div
+          class="p-6 sm:p-8 flex flex-col items-center text-center space-y-4"
+        >
           <!-- Icon -->
-          <div class="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center shrink-0 mb-2 relative">
-            <div class="absolute inset-0 bg-rose-100/50 rounded-full animate-ping" style="animation-duration: 3s;"></div>
+          <div
+            class="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center shrink-0 mb-2 relative"
+          >
+            <div
+              class="absolute inset-0 bg-rose-100/50 rounded-full animate-ping"
+              style="animation-duration: 3s;"
+            ></div>
             <Ban class="w-10 h-10 text-rose-600 relative z-10" />
           </div>
 
           <!-- Content -->
           <div class="space-y-2">
-            <h2 class="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Akun Dinonaktifkan</h2>
-            <p class="text-sm font-medium text-slate-500 leading-relaxed">
-              Sesi Anda telah dihentikan karena akun Anda dinonaktifkan oleh <span class="font-bold text-slate-700">Admin MAZEEDA</span>.
+            <h2
+              class="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight"
+            >
+              Akun Dinonaktifkan
+            </h2>
+            <p
+              class="text-sm font-medium text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed"
+            >
+              Sesi Anda telah dihentikan karena akun Anda dinonaktifkan oleh <span
+                class="font-bold text-slate-700 dark:text-slate-200"
+                >Admin MAZEEDA</span
+              >.
             </p>
-            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider pt-2">Silakan hubungi pengurus jika ini adalah kesalahan.</p>
+            <p
+              class="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider pt-2"
+            >
+              Silakan hubungi pengurus jika ini adalah kesalahan.
+            </p>
           </div>
 
           <!-- Action -->
@@ -2802,7 +4398,7 @@
                 $deactivatedAlertStore = false;
                 logout();
               }}
-              class="w-full h-12 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 active:scale-95"
+              class="w-full h-12 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold rounded-xl shadow-md dark:shadow-none hover:shadow-lg transition-all duration-200 active:scale-95"
             >
               Mengerti & Keluar
             </button>
@@ -2811,37 +4407,67 @@
       </div>
     </div>
   {/if}
-
 </div>
 
 <!-- MODAL DAFTAR BLOKIR (Global) -->
 {#if showBlockedUsersModal}
-  <div class="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-        <h3 class="font-black text-slate-800 text-lg flex items-center gap-2">
+  <div
+    class="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+  >
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
+    >
+      <div
+        class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50"
+      >
+        <h3
+          class="font-black text-slate-800 dark:text-slate-100 text-lg flex items-center gap-2"
+        >
           <ShieldBan class="w-5 h-5 text-orange-500" /> Daftar Blokir
         </h3>
-        <button on:click={() => showBlockedUsersModal = false} class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+        <button
+          on:click={() => (showBlockedUsersModal = false)}
+          class="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800 rounded-full transition-colors"
+        >
           <X class="w-5 h-5" />
         </button>
       </div>
-      
+
       <div class="p-6 overflow-y-auto max-h-[60vh]">
         {#if blockedUsersList.length === 0}
-          <div class="text-center py-8 flex flex-col items-center justify-center">
-            <img src="/empty-content.svg" alt="Kosong" class="h-32 w-32 opacity-80 mb-2" />
-            <p class="text-slate-500 font-medium">Anda belum memblokir siapa pun.</p>
+          <div
+            class="text-center py-8 flex flex-col items-center justify-center"
+          >
+            <img
+              src="/search.svg"
+              alt="Kosong"
+              class="h-32 w-32 opacity-80 mb-2"
+            />
+            <p
+              class="text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium"
+            >
+              Anda belum memblokir siapa pun.
+            </p>
           </div>
         {:else}
-          <p class="text-sm text-slate-500 mb-4">Pengguna di bawah ini disembunyikan dari Squad dan komentar mereka tidak akan muncul di Timeline Anda.</p>
+          <p
+            class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mb-4"
+          >
+            Pengguna di bawah ini disembunyikan dari Squad dan komentar mereka
+            tidak akan muncul di Timeline Anda.
+          </p>
           <div class="space-y-3">
             {#each blockedUsersList as blockedName}
-              <div class="flex items-center justify-between p-3 border border-slate-100 rounded-xl bg-slate-50 hover:border-slate-200 transition-colors">
-                <span class="font-bold text-slate-700 text-sm">{blockedName}</span>
-                <button 
+              <div
+                class="flex items-center justify-between p-3 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 hover:border-slate-200 dark:border-slate-700 transition-colors"
+              >
+                <span
+                  class="font-bold text-slate-700 dark:text-slate-200 text-sm"
+                  >{blockedName}</span
+                >
+                <button
                   on:click={() => unblockUser(blockedName)}
-                  class="text-xs font-bold px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 rounded-lg transition-colors"
+                  class="text-xs font-bold px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 rounded-lg transition-colors"
                 >
                   Buka Blokir
                 </button>
@@ -2856,27 +4482,42 @@
 
 <!-- MODAL KONFIRMASI BUKA BLOKIR -->
 {#if userToUnblock}
-  <div class="fixed inset-0 z-[1000000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-    <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+  <div
+    class="fixed inset-0 z-[1000000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+  >
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
+    >
       <div class="p-6 text-center space-y-4">
-        <div class="w-16 h-16 rounded-full bg-slate-50 mx-auto flex items-center justify-center mb-2">
-          <ShieldBan class="w-8 h-8 text-slate-400" />
+        <div
+          class="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800 mx-auto flex items-center justify-center mb-2"
+        >
+          <ShieldBan class="w-8 h-8 text-slate-400 dark:text-slate-500" />
         </div>
-        <h3 class="font-black text-slate-800 text-xl">Buka Blokir?</h3>
-        <p class="text-slate-500 text-sm leading-relaxed">
-          Apakah Anda yakin ingin membuka blokir untuk <span class="font-bold text-slate-700">{userToUnblock}</span>?
+        <h3 class="font-black text-slate-800 dark:text-slate-100 text-xl">
+          Buka Blokir?
+        </h3>
+        <p
+          class="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-sm leading-relaxed"
+        >
+          Apakah Anda yakin ingin membuka blokir untuk <span
+            class="font-bold text-slate-700 dark:text-slate-200"
+            >{userToUnblock}</span
+          >?
         </p>
       </div>
-      <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex gap-3 justify-end">
-        <button 
-          on:click={() => userToUnblock = ''}
-          class="flex-1 py-2.5 text-slate-600 font-bold text-sm hover:bg-slate-200 bg-slate-100 rounded-xl transition-colors"
+      <div
+        class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex gap-3 justify-end"
+      >
+        <button
+          on:click={() => (userToUnblock = "")}
+          class="flex-1 py-2.5 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-200 dark:bg-slate-700 bg-slate-100 dark:bg-slate-800 rounded-xl transition-colors"
         >
           Batal
         </button>
-        <button 
+        <button
           on:click={confirmUnblockUser}
-          class="flex-1 py-2.5 bg-slate-800 text-white font-bold text-sm hover:bg-slate-900 rounded-xl transition-all shadow-md flex justify-center items-center gap-2"
+          class="flex-1 py-2.5 bg-slate-800 text-white font-bold text-sm hover:bg-slate-900 rounded-xl transition-all shadow-md dark:shadow-none flex justify-center items-center gap-2"
         >
           Buka Blokir
         </button>
@@ -2884,3 +4525,92 @@
     </div>
   </div>
 {/if}
+
+<style>
+  :global(.animate-jump-spin) {
+    animation: jump-spin 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes jump-spin {
+    0% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-45px) rotate(180deg) scale(1.3);
+    }
+    100% {
+      transform: translateY(0) rotate(360deg) scale(1);
+    }
+  }
+
+  @keyframes lightboxZoomIn {
+    from {
+      opacity: 0;
+      transform: scale(0.7);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Animasi Progress Bar Splash Screen */
+  @keyframes progress {
+    0% {
+      width: 0%;
+      opacity: 1;
+    }
+    50% {
+      width: 70%;
+      opacity: 1;
+    }
+    100% {
+      width: 100%;
+      opacity: 0;
+    }
+  }
+  .animate-progress {
+    animation: progress 3.8s ease-in-out 2s both;
+  }
+
+  /* Animasi Sayap Dadah Dadah */
+  @keyframes wave-left {
+    0%,
+    100% {
+      transform: rotate(20deg);
+    }
+    50% {
+      transform: rotate(70deg);
+    }
+  }
+  @keyframes wave-right {
+    0%,
+    100% {
+      transform: rotate(-20deg);
+    }
+    50% {
+      transform: rotate(-70deg);
+    }
+  }
+  .animate-wave-left {
+    animation: wave-left 0.8s ease-in-out infinite;
+    animation-delay: 1.6s;
+  }
+  .animate-wave-right {
+    animation: wave-right 0.8s ease-in-out infinite;
+    animation-delay: 1.6s;
+  }
+
+  /* Animasi Logout Bouncing Arrow */
+  @keyframes bounce-right {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(4px);
+    }
+  }
+  :global(.animate-bounce-right) {
+    animation: bounce-right 1.5s ease-in-out infinite;
+  }
+</style>

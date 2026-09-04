@@ -134,39 +134,39 @@
 
 
   <!-- Minimalist Search & Filter -->
-  <div class="flex items-center gap-3 bg-white border border-slate-200/80 rounded-2xl p-2 shadow-soft-sm focus-within:border-primary/50 transition-colors">
+  <div class="flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-2 shadow-soft-sm focus-within:border-primary/50 transition-colors">
     <div class="flex-1 flex items-center gap-2.5 px-3">
-      <Search class="h-4.5 w-4.5 text-slate-400 shrink-0" />
+      <Search class="h-4.5 w-4.5 text-slate-400 dark:text-slate-500 shrink-0" />
       <input 
         type="text" 
         bind:value={searchQuery}
         placeholder="Cari pesan..." 
-        class="w-full bg-transparent border-none outline-none text-sm font-semibold text-slate-700 placeholder:text-slate-400 py-1"
+        class="w-full bg-transparent border-none outline-none text-sm font-semibold text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:text-slate-500 py-1"
       />
     </div>
-    <div class="h-5 w-[1px] bg-slate-200 shrink-0"></div>
+    <div class="h-5 w-[1px] bg-slate-200 dark:bg-slate-700 shrink-0"></div>
     <div class="relative px-3 shrink-0 flex items-center justify-center cursor-pointer">
       <select bind:value={activeFilter} class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" title="Filter Notifikasi">
         {#each filters as filter}
           <option value={filter}>{filter}</option>
         {/each}
       </select>
-      <Filter class="h-4.5 w-4.5 {activeFilter !== 'Semua' ? 'text-primary' : 'text-slate-400'} transition-colors" />
+      <Filter class="h-4.5 w-4.5 {activeFilter !== 'Semua' ? 'text-primary' : 'text-slate-400 dark:text-slate-500'} transition-colors" />
     </div>
   </div>
 
   <!-- Notification List -->
-  <div class="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
+  <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm dark:shadow-none overflow-hidden">
     {#if loading}
       <div class="py-16 flex flex-col items-center justify-center space-y-3">
         <div class="h-8 w-8 border-3 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-        <p class="text-xs font-bold text-slate-400 animate-pulse">Memuat...</p>
+        <p class="text-xs font-bold text-slate-400 dark:text-slate-500 animate-pulse">Memuat...</p>
       </div>
     {:else if filteredNotifications.length === 0}
       <div class="py-16 flex flex-col items-center justify-center text-center">
         <Bell class="h-8 w-8 text-slate-200 mb-3" />
-        <h3 class="text-sm font-bold text-slate-700">Semua Terbaca</h3>
-        <p class="text-xs text-slate-500 font-medium mt-1">Tidak ada notifikasi untuk ditampilkan.</p>
+        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">Semua Terbaca</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium mt-1">Tidak ada notifikasi untuk ditampilkan.</p>
       </div>
     {:else}
       <div class="divide-y divide-slate-100/80">
@@ -180,20 +180,20 @@
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div 
             in:fly={{ y: 10, duration: 200, delay: i * 30 }} 
-            class="p-4 sm:p-5 flex gap-3.5 bg-white hover:bg-slate-50/50 transition-colors {linkUrl ? 'cursor-pointer' : ''}"
+            class="p-4 sm:p-5 flex gap-3.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800/50 transition-colors {linkUrl ? 'cursor-pointer' : ''}"
             on:click={() => { if (linkUrl) goto(linkUrl); }}
           >
             <!-- Content -->
             <div class="flex-1 min-w-0">
               <div class="flex justify-between items-start gap-2 mb-1">
-                <h3 class="text-sm font-bold {isRead ? 'text-slate-500' : 'text-slate-800'} leading-tight">{notif.title}</h3>
-                <span class="text-[10px] text-slate-400 font-semibold whitespace-nowrap shrink-0 pt-0.5">
+                <h3 class="text-sm font-bold {isRead ? 'text-slate-500 dark:text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'} leading-tight">{notif.title}</h3>
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold whitespace-nowrap shrink-0 pt-0.5">
                   {formatDate(notif.created_at)}
                 </span>
               </div>
               
               {#if notif.message}
-                <p class="text-[13px] {isRead ? 'text-slate-400 font-medium' : 'text-slate-600 font-semibold'} leading-relaxed text-justify mt-1">
+                <p class="text-[13px] {isRead ? 'text-slate-400 dark:text-slate-500 font-medium' : 'text-slate-600 dark:text-slate-300 font-semibold'} leading-relaxed text-justify mt-1">
                   {msgText}
                 </p>
               {/if}
@@ -217,7 +217,7 @@
                       Tandai dibaca
                     </button>
                   {:else}
-                    <span class="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                    <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1">
                       <CheckCircle2 class="h-3.5 w-3.5" /> Sudah dibaca
                     </span>
                   {/if}

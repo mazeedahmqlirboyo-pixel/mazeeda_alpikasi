@@ -1,0 +1,1 @@
+const fs = require('fs'); let css = fs.readFileSync('src/app.postcss', 'utf8'); css = css.replace(/html\\.font-amiri, html\\.font-amiri body, html\\.font-amiri \\* \\{\\s*font-family: 'Amiri', serif !important;\\s*\\}/, '.font-amiri {\\n  font-family: \\'Amiri\\', serif !important;\\n}'); fs.writeFileSync('src/app.postcss', css);
