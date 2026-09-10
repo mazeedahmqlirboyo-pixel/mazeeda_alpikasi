@@ -4,6 +4,7 @@
   import Card from "$lib/components/ui/card.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import BirthdayWidget from "$lib/components/BirthdayWidget.svelte";
+  import WeatherWidget from "$lib/components/ui/WeatherWidget.svelte";
   import CoverflowCarousel from "$lib/components/CoverflowCarousel.svelte";
   import LandscapeCarousel from "$lib/components/LandscapeCarousel.svelte";
   import AvatarMarquee from "$lib/components/AvatarMarquee.svelte";
@@ -1258,6 +1259,9 @@ ${tFunc('prayer_times.hour_short') || 'j'} `;
   {#if user && user.tanggal_lahir}
     <BirthdayWidget tanggalLahir={user.tanggal_lahir} userName={user.name} />
   {/if}
+
+  <!-- ==================== WEATHER WIDGET ==================== -->
+  <WeatherWidget />
 
   <!-- ==================== PWA INSTALL BAR ==================== -->
   {#if showPWAInstall}
