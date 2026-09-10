@@ -4986,7 +4986,8 @@
                   <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 w-12 text-center">
                     <input type="checkbox" on:change={toggleAllNilai} checked={nilaiData.length > 0 && nilaiSelectedRowIds.length === nilaiData.length} class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
                   </th>
-                  <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 text-center">Siswi</th>
+                  <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 w-24">NIS</th>
+                  <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700">Siswi</th>
                   <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 text-center">Periode & Tahun</th>
                   <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 text-center">Pelajaran</th>
                   <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 text-center">Perolehan / Bayan</th>
@@ -4995,20 +4996,22 @@
               </thead>
               <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                 {#if isFetchingNilai}
-                  <tr><td colspan="6" class="px-5 py-12 text-center text-slate-400 dark:text-slate-500 font-medium">Mencari data nilai...</td></tr>
+                  <tr><td colspan="7" class="px-5 py-12 text-center text-slate-400 dark:text-slate-500 font-medium">Mencari data nilai...</td></tr>
                 {:else if !nilaiSearch || nilaiSearch.length < 2}
-                  <tr><td colspan="6" class="px-5 py-12 text-center text-slate-400 dark:text-slate-500 font-medium bg-slate-50 dark:bg-slate-800/50">Ketikkan minimal 2 huruf/angka dari Nama atau NIS untuk mencari data nilai.</td></tr>
+                  <tr><td colspan="7" class="px-5 py-12 text-center text-slate-400 dark:text-slate-500 font-medium bg-slate-50 dark:bg-slate-800/50">Ketikkan minimal 2 huruf/angka dari Nama atau NIS untuk mencari data nilai.</td></tr>
                 {:else if nilaiData.length === 0}
-                  <tr><td colspan="6" class="px-5 py-12 text-center text-rose-400 font-medium bg-rose-50/50 border-y border-rose-100">Data nilai tidak ditemukan untuk pencarian "{nilaiSearch}".</td></tr>
+                  <tr><td colspan="7" class="px-5 py-12 text-center text-rose-400 font-medium bg-rose-50/50 border-y border-rose-100">Data nilai tidak ditemukan untuk pencarian "{nilaiSearch}".</td></tr>
                 {:else}
                   {#each nilaiData as item}
                     <tr class="hover:bg-slate-50 dark:bg-slate-800/80 transition-colors group {nilaiSelectedRowIds.includes(item.id) ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''}">
                       <td class="px-5 py-3 text-center border-r border-slate-200 dark:border-slate-700">
                         <input type="checkbox" bind:group={nilaiSelectedRowIds} value={item.id} class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
                       </td>
-                      <td class="px-5 py-3 border-r border-slate-200 dark:border-slate-700 text-center">
+                      <td class="px-5 py-3 border-r border-slate-200 dark:border-slate-700 font-mono text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        {item.nis}
+                      </td>
+                      <td class="px-5 py-3 border-r border-slate-200 dark:border-slate-700">
                         <div class="font-bold text-slate-800 dark:text-slate-100">{item.nama_siswi || '-'}</div>
-                        <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">NIS: {item.nis}</div>
                       </td>
                       <td class="px-5 py-3 text-center border-r border-slate-200 dark:border-slate-700">
                         <div class="inline-flex items-center justify-center gap-1.5 px-2 py-1 rounded-md bg-indigo-50 border border-indigo-100/50 text-indigo-700 text-xs font-bold">
