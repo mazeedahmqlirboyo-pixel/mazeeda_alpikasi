@@ -1,9 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { MapPin, Loader2, Cloud, Droplets, Wind } from 'lucide-svelte';
+  import { t, locale } from 'svelte-i18n';
+  import { 
+    MapPin, Loader2, Droplets, Wind, 
+    Cloud, Sun, Moon, CloudSun, CloudMoon, 
+    CloudRain, CloudLightning, CloudSnow, CloudFog 
+  } from 'lucide-svelte';
 
   let weatherData: any = null;
-  let locationName = '';
   let loading = true;
   let errorMsg = '';
   const API_KEY = 'ae49030676655c1a89fb3df116df25f8';
@@ -32,86 +36,113 @@
   async function fetchWeather(lat: number, lon: number) {
     try {
       loading = true;
-      // Ambil detail lokasi dari OpenStreetMap Nominatim
-      try {
-        const nomRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`);
-        if (nomRes.ok) {
-          const nomData = await nomRes.json();
-          if (nomData && nomData.address) {
-            const addr = nomData.address;
-            locationName = addr.village || addr.suburb || addr.city_district || addr.town || addr.city || addr.county || '';
-          }
-        }
-      } catch(e) {
-        console.warn('Gagal ambil detail lokasi', e);
-      }
+      
+      // Menggunakan bahasa sesuai dengan locale aktif ('id', 'en', 'ar', dll.) atau default ke 'id'
+      const langParam = $locale === 'ar' ? 'ar' : ($locale === 'en' ? 'en' : 'id');
 
-      const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=id`);
+      const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=${langParam}`);
       if (!res.ok) throw new Error('Gagal mengambil data cuaca');
       weatherData = await res.json();
       
-      if (!locationName) {
-        locationName = weatherData.name;
-      }
     } catch (err: any) {
       errorMsg = err.message || 'Terjadi kesalahan jaringan';
     } finally {
       loading = false;
     }
   }
+
+  // Helper untuk mendapatkan icon Lucide yang sesuai dengan kode OpenWeather
+  function getWeatherIcon(iconCode: string) {
+    switch(iconCode.substring(0, 2)) {
+      case '01': return iconCode.includes('d') ? Sun : Moon;
+      case '02': return iconCode.includes('d') ? CloudSun : CloudMoon;
+      case '03': 
+      case '04': return Cloud;
+      case '09':
+      case '10': return CloudRain;
+      case '11': return CloudLightning;
+      case '13': return CloudSnow;
+      case '50': return CloudFog;
+      default: return Cloud;
+    }
+  }
+
+  // Helper untuk warna icon
+  function getIconColorClass(iconCode: string) {
+    if (iconCode.includes('01') || iconCode.includes('02')) {
+      return iconCode.includes('d') ? 'text-amber-500' : 'text-indigo-400';
+    }
+    if (iconCode.includes('09') || iconCode.includes('10')) return 'text-blue-500';
+    if (iconCode.includes('11')) return 'text-purple-500';
+    if (iconCode.includes('13')) return 'text-sky-300';
+    return 'text-slate-400 dark:text-slate-300'; // Default awan abu-abu
+  }
 </script>
 
 {#if loading}
-  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-soft-sm flex items-center justify-center h-32 animate-pulse">
-    <Loader2 class="h-8 w-8 text-blue-500 animate-spin" />
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-sm flex items-center justify-center h-24 animate-pulse">
+    <Loader2 class="h-6 w-6 text-slate-400 animate-spin" />
   </div>
 {:else if weatherData}
-  <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-soft-sm overflow-hidden transition-all">
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-      <!-- Left: Location & Icon -->
-      <div class="flex flex-row items-center gap-4 sm:gap-6 w-full sm:w-auto">
-        <div class="bg-slate-800 rounded-2xl p-2 shrink-0 shadow-inner">
-          <img 
-            src={`https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@2x.png`} 
-            alt={weatherData.weather[0].description} 
-            class="w-16 h-16 object-contain"
-          />
-        </div>
-        <div class="space-y-1">
-          <div class="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400">
-            <MapPin class="w-3.5 h-3.5" />
-            <span class="text-xs font-bold uppercase tracking-wider">{locationName}</span>
-          </div>
-          <h3 class="text-3xl font-black leading-none text-slate-800 dark:text-white">{Math.round(weatherData.main.temp)}°C</h3>
-          <p class="text-sm font-semibold capitalize text-slate-600 dark:text-slate-300">
-            {weatherData.weather[0].description}
-          </p>
-        </div>
+  <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:px-6 shadow-sm overflow-hidden transition-all flex flex-col sm:flex-row items-center justify-between gap-4">
+    
+    <!-- Left: Icon & Temp -->
+    <div class="flex items-center gap-4 sm:gap-6 w-full sm:w-auto">
+      <div class="{getIconColorClass(weatherData.weather[0].icon)}">
+        <svelte:component this={getWeatherIcon(weatherData.weather[0].icon)} class="w-12 h-12 sm:w-14 sm:h-14 stroke-[1.5]" />
       </div>
-
-      <!-- Right: Extra Stats -->
-      <div class="flex flex-row gap-4 sm:gap-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3 sm:px-5 sm:py-3 w-full sm:w-auto justify-around sm:justify-end border border-slate-100 dark:border-slate-700">
-        <div class="flex flex-col items-center gap-1">
-          <Droplets class="w-4 h-4 text-blue-500" />
-          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{weatherData.main.humidity}%</span>
-          <span class="text-[9px] text-slate-400 uppercase tracking-widest">Lembab</span>
+      
+      <div class="flex flex-col">
+        <div class="flex items-center space-x-1 text-slate-500 dark:text-slate-400 mb-1">
+          <MapPin class="w-3.5 h-3.5" />
+          <span class="text-xs font-bold uppercase tracking-wider">{weatherData.name}</span>
         </div>
-        <div class="w-px bg-slate-200 dark:bg-slate-700"></div>
-        <div class="flex flex-col items-center gap-1">
-          <Wind class="w-4 h-4 text-cyan-500" />
-          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{Math.round(weatherData.wind.speed * 3.6)} km/h</span>
-          <span class="text-[9px] text-slate-400 uppercase tracking-widest">Angin</span>
-        </div>
-        <div class="w-px bg-slate-200 dark:bg-slate-700"></div>
-        <div class="flex flex-col items-center gap-1">
-          <Cloud class="w-4 h-4 text-slate-400" />
-          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{weatherData.clouds.all}%</span>
-          <span class="text-[9px] text-slate-400 uppercase tracking-widest">Awan</span>
+        <div class="flex items-baseline gap-2">
+          <h3 class="text-3xl sm:text-4xl font-black leading-none text-slate-800 dark:text-white tracking-tighter">
+            {Math.round(weatherData.main.temp)}°
+          </h3>
+          <span class="text-sm font-semibold capitalize text-slate-500 dark:text-slate-400">
+            {weatherData.weather[0].description}
+          </span>
         </div>
       </div>
     </div>
+
+    <!-- Right: Minimalist Stats -->
+    <div class="flex flex-row gap-6 sm:gap-8 w-full sm:w-auto justify-around sm:justify-end">
+      <div class="flex flex-col items-center gap-1.5">
+        <div class="flex items-center gap-1 text-blue-500">
+          <Droplets class="w-3.5 h-3.5" />
+          <span class="text-xs font-bold text-slate-700 dark:text-slate-200">{weatherData.main.humidity}%</span>
+        </div>
+        <span class="text-[9px] text-slate-400 uppercase tracking-widest">{$t('weather.humidity') || 'Lembab'}</span>
+      </div>
+      
+      <div class="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+      
+      <div class="flex flex-col items-center gap-1.5">
+        <div class="flex items-center gap-1 text-cyan-500">
+          <Wind class="w-3.5 h-3.5" />
+          <span class="text-xs font-bold text-slate-700 dark:text-slate-200">{Math.round(weatherData.wind.speed * 3.6)} km/h</span>
+        </div>
+        <span class="text-[9px] text-slate-400 uppercase tracking-widest">{$t('weather.wind') || 'Angin'}</span>
+      </div>
+      
+      <div class="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+      
+      <div class="flex flex-col items-center gap-1.5">
+        <div class="flex items-center gap-1 text-slate-400 dark:text-slate-300">
+          <Cloud class="w-3.5 h-3.5" />
+          <span class="text-xs font-bold text-slate-700 dark:text-slate-200">{weatherData.clouds.all}%</span>
+        </div>
+        <span class="text-[9px] text-slate-400 uppercase tracking-widest">{$t('weather.cloud') || 'Awan'}</span>
+      </div>
+    </div>
+
     {#if errorMsg}
-      <p class="mt-3 text-[10px] text-rose-500 font-medium text-center sm:text-left">{errorMsg}</p>
+      <div class="absolute bottom-1 right-2">
+        <p class="text-[9px] text-rose-500/70 font-medium">{errorMsg}</p>
+      </div>
     {/if}
   </section>
 {/if}
