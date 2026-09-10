@@ -111,58 +111,56 @@
     <Loader2 class="h-6 w-6 text-slate-400 animate-spin" />
   </div>
 {:else if weatherData}
-  <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:px-6 shadow-sm overflow-hidden transition-all flex flex-col sm:flex-row items-center justify-between gap-4">
+  <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm overflow-hidden transition-all flex flex-col sm:flex-row items-center justify-between gap-4">
     
     <!-- Left: Icon & Temp -->
-    <div class="flex items-center gap-4 sm:gap-6 w-full sm:w-auto">
-      <div class="{getIconColorClass(weatherData.weather[0].icon)}">
-        <svelte:component this={getWeatherIcon(weatherData.weather[0].icon)} class="w-12 h-12 sm:w-14 sm:h-14 stroke-[1.5]" />
+    <div class="flex items-center gap-4 sm:gap-5 w-full sm:w-auto">
+      <div class="flex items-center justify-center p-3 sm:p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl {getIconColorClass(weatherData.weather[0].icon)}">
+        <svelte:component this={getWeatherIcon(weatherData.weather[0].icon)} class="w-10 h-10 sm:w-12 sm:h-12 stroke-[1.5]" />
       </div>
       
-      <div class="flex flex-col">
-        <div class="flex items-center space-x-1 text-slate-500 dark:text-slate-400 mb-1">
-          <MapPin class="w-3.5 h-3.5" />
-          <span class="text-xs font-bold uppercase tracking-wider">{weatherData.name}</span>
+      <div class="flex flex-col justify-center">
+        <div class="flex items-center space-x-1 text-slate-400 dark:text-slate-500 mb-0.5">
+          <MapPin class="w-3 h-3" />
+          <span class="text-[10px] font-bold uppercase tracking-widest">{weatherData.name}</span>
         </div>
-        <div class="flex items-baseline gap-2">
-          <h3 class="text-3xl sm:text-4xl font-black leading-none text-slate-800 dark:text-white tracking-tighter">
-            {Math.round(weatherData.main.temp)}°
-          </h3>
-          <span class="text-sm font-semibold capitalize text-slate-500 dark:text-slate-400">
-            {weatherData.weather[0].description}
-          </span>
-        </div>
+        <h3 class="text-3xl sm:text-4xl font-black leading-none text-slate-800 dark:text-white tracking-tighter">
+          {Math.round(weatherData.main.temp)}°C
+        </h3>
+        <span class="text-xs font-semibold capitalize text-slate-500 dark:text-slate-400 mt-1">
+          {weatherData.weather[0].description}
+        </span>
       </div>
     </div>
 
     <!-- Right: Minimalist Stats -->
-    <div class="flex flex-row gap-6 sm:gap-8 w-full sm:w-auto justify-around sm:justify-end">
-      <div class="flex flex-col items-center gap-1.5">
+    <div class="flex flex-row items-center justify-around w-full sm:w-auto bg-slate-50 dark:bg-slate-800/40 rounded-xl py-3 px-4 gap-4 sm:gap-6 border border-slate-100 dark:border-slate-700/50">
+      <div class="flex flex-col items-center gap-1">
         <div class="flex items-center gap-1 text-blue-500">
           <Droplets class="w-3.5 h-3.5" />
           <span class="text-xs font-bold text-slate-700 dark:text-slate-200">{weatherData.main.humidity}%</span>
         </div>
-        <span class="text-[9px] text-slate-400 uppercase tracking-widest">{$t('weather.humidity') || 'Lembab'}</span>
+        <span class="text-[8px] text-slate-400 uppercase tracking-widest">{$t('weather.humidity') || 'Lembab'}</span>
       </div>
       
-      <div class="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+      <div class="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
       
-      <div class="flex flex-col items-center gap-1.5">
+      <div class="flex flex-col items-center gap-1">
         <div class="flex items-center gap-1 text-cyan-500">
           <Wind class="w-3.5 h-3.5" />
           <span class="text-xs font-bold text-slate-700 dark:text-slate-200">{Math.round(weatherData.wind.speed * 3.6)} km/h</span>
         </div>
-        <span class="text-[9px] text-slate-400 uppercase tracking-widest">{$t('weather.wind') || 'Angin'}</span>
+        <span class="text-[8px] text-slate-400 uppercase tracking-widest">{$t('weather.wind') || 'Angin'}</span>
       </div>
       
-      <div class="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+      <div class="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
       
-      <div class="flex flex-col items-center gap-1.5">
+      <div class="flex flex-col items-center gap-1">
         <div class="flex items-center gap-1 text-slate-400 dark:text-slate-300">
           <Cloud class="w-3.5 h-3.5" />
           <span class="text-xs font-bold text-slate-700 dark:text-slate-200">{weatherData.clouds.all}%</span>
         </div>
-        <span class="text-[9px] text-slate-400 uppercase tracking-widest">{$t('weather.cloud') || 'Awan'}</span>
+        <span class="text-[8px] text-slate-400 uppercase tracking-widest">{$t('weather.cloud') || 'Awan'}</span>
       </div>
     </div>
 
