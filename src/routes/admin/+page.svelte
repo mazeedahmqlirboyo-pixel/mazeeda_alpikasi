@@ -2426,6 +2426,7 @@
   };
 
   async function fetchNilaiManual() {
+    nilaiSelectedRowIds = [];
     if (nilaiSearch.trim().length < 2) {
       nilaiData = [];
       return;
@@ -2524,6 +2525,36 @@
           const { error } = await supabase.from(nilai_targetTable).delete().eq('id', id);
           if (error) throw error;
           triggerAlert('Data nilai berhasil dihapus.');
+          fetchNilaiManual();
+        } catch (err: any) {
+          alert('Gagal menghapus nilai: ' + err.message);
+        }
+      }
+    );
+  }
+
+  let nilaiSelectedRowIds: string[] = [];
+
+  function toggleAllNilai(e: Event) {
+    const checked = (e.target as HTMLInputElement).checked;
+    if (checked) {
+      nilaiSelectedRowIds = nilaiData.map(item => item.id);
+    } else {
+      nilaiSelectedRowIds = [];
+    }
+  }
+
+  function deleteSelectedNilai() {
+    if (nilaiSelectedRowIds.length === 0) return;
+    runWithConfirmation(
+      'Hapus Nilai Terpilih',
+      `Apakah Anda yakin ingin menghapus ${nilaiSelectedRowIds.length} data nilai? Tindakan ini tidak dapat dibatalkan.`,
+      async () => {
+        try {
+          const { error } = await supabase.from(nilai_targetTable).delete().in('id', nilaiSelectedRowIds);
+          if (error) throw error;
+          triggerAlert(`${nilaiSelectedRowIds.length} data nilai berhasil dihapus.`);
+          nilaiSelectedRowIds = [];
           fetchNilaiManual();
         } catch (err: any) {
           alert('Gagal menghapus nilai: ' + err.message);
@@ -4897,10 +4928,18 @@
                   class="w-full pl-10 pr-4 py-2.5 text-sm font-medium border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:bg-white dark:bg-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400 dark:text-slate-500"
                 />
               </div>
-              <Button on:click={openAddNilai} class="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md dark:shadow-none hover:shadow-lg transition-all rounded-xl py-2.5 px-5 shrink-0">
-                <Plus class="h-4.5 w-4.5" />
-                <span class="font-bold tracking-wide">Tambah Nilai</span>
-              </Button>
+              <div class="flex items-center gap-2 w-full sm:w-auto flex-col sm:flex-row">
+                {#if nilaiSelectedRowIds.length > 0}
+                  <Button on:click={deleteSelectedNilai} class="w-full sm:w-auto flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 text-white shadow-md hover:shadow-lg transition-all rounded-xl py-2.5 px-5 shrink-0">
+                    <Trash2 class="h-4.5 w-4.5" />
+                    <span class="font-bold tracking-wide">Hapus Terpilih ({nilaiSelectedRowIds.length})</span>
+                  </Button>
+                {/if}
+                <Button on:click={openAddNilai} class="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md dark:shadow-none hover:shadow-lg transition-all rounded-xl py-2.5 px-5 shrink-0">
+                  <Plus class="h-4.5 w-4.5" />
+                  <span class="font-bold tracking-wide">Tambah Nilai</span>
+                </Button>
+              </div>
             </div>
             
             <div class="flex flex-col sm:flex-row gap-4 w-full bg-slate-50 dark:bg-slate-800/80 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
@@ -4944,6 +4983,9 @@
             <table class="w-full text-left text-sm whitespace-nowrap">
               <thead class="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
+                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 w-12 text-center">
+                    <input type="checkbox" on:change={toggleAllNilai} checked={nilaiData.length > 0 && nilaiSelectedRowIds.length === nilaiData.length} class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                  </th>
                   <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">Siswi</th>
                   <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">Periode & Tahun</th>
                   <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">Pelajaran</th>
@@ -4953,14 +4995,17 @@
               </thead>
               <tbody class="divide-y divide-slate-50">
                 {#if isFetchingNilai}
-                  <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400 dark:text-slate-500 font-medium">Mencari data nilai...</td></tr>
+                  <tr><td colspan="6" class="px-5 py-12 text-center text-slate-400 dark:text-slate-500 font-medium">Mencari data nilai...</td></tr>
                 {:else if !nilaiSearch || nilaiSearch.length < 2}
-                  <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400 dark:text-slate-500 font-medium bg-slate-50 dark:bg-slate-800/50">Ketikkan minimal 2 huruf/angka dari Nama atau NIS untuk mencari data nilai.</td></tr>
+                  <tr><td colspan="6" class="px-5 py-12 text-center text-slate-400 dark:text-slate-500 font-medium bg-slate-50 dark:bg-slate-800/50">Ketikkan minimal 2 huruf/angka dari Nama atau NIS untuk mencari data nilai.</td></tr>
                 {:else if nilaiData.length === 0}
-                  <tr><td colspan="5" class="px-5 py-12 text-center text-rose-400 font-medium bg-rose-50/50 border-y border-rose-100">Data nilai tidak ditemukan untuk pencarian "{nilaiSearch}".</td></tr>
+                  <tr><td colspan="6" class="px-5 py-12 text-center text-rose-400 font-medium bg-rose-50/50 border-y border-rose-100">Data nilai tidak ditemukan untuk pencarian "{nilaiSearch}".</td></tr>
                 {:else}
                   {#each nilaiData as item}
-                    <tr class="hover:bg-slate-50 dark:bg-slate-800/80 transition-colors group">
+                    <tr class="hover:bg-slate-50 dark:bg-slate-800/80 transition-colors group {nilaiSelectedRowIds.includes(item.id) ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''}">
+                      <td class="px-5 py-3 text-center">
+                        <input type="checkbox" bind:group={nilaiSelectedRowIds} value={item.id} class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                      </td>
                       <td class="px-5 py-3">
                         <div class="font-bold text-slate-800 dark:text-slate-100">{item.nama_siswi || '-'}</div>
                         <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">NIS: {item.nis}</div>
