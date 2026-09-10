@@ -1437,9 +1437,6 @@ ${tFunc('prayer_times.hour_short') || 'j'} `;
     </div>
   </section>
 
-  <!-- ==================== WEATHER WIDGET ==================== -->
-  <WeatherWidget />
-
   <!-- ==================== INDONESIAN TIME & PRAYER WIDGET ==================== -->
   <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
     <!-- Timezone Clocks Card (8 columns) -->
@@ -1862,6 +1859,9 @@ ${tFunc('prayer_times.hour_short') || 'j'} `;
       </div>
     </Card>
   </section>
+
+  <!-- ==================== WEATHER WIDGET ==================== -->
+  <WeatherWidget />
 
   <!-- ==================== FITUR ISLAMI WIDGET ==================== -->
   <section class="space-y-4">
