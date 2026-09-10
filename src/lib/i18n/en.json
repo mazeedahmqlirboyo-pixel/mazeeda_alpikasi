@@ -22,6 +22,11 @@
     "night": "Night",
     "selisih": "Difference"
   },
+  "weather": {
+    "humidity": "Humidity",
+    "wind": "Wind",
+    "cloud": "Cloud"
+  },
   "common": {
     "loading": "Loading...",
     "search": "Search...",

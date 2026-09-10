@@ -22,6 +22,11 @@
     "night": "밤",
     "selisih": "차이"
   },
+  "weather": {
+    "humidity": "습도",
+    "wind": "바람",
+    "cloud": "구름"
+  },
   "common": {
     "loading": "로딩 중...",
     "search": "검색...",

@@ -22,6 +22,11 @@
     "night": "ليل",
     "selisih": "فرق"
   },
+  "weather": {
+    "humidity": "رطوبة",
+    "wind": "رياح",
+    "cloud": "سحاب"
+  },
   "common": {
     "loading": "جار التحميل...",
     "search": "بحث...",

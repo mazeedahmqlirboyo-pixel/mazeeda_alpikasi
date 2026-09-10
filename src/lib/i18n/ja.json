@@ -22,6 +22,11 @@
     "night": "夜",
     "selisih": "差"
   },
+  "weather": {
+    "humidity": "湿度",
+    "wind": "風",
+    "cloud": "雲"
+  },
   "common": {
     "loading": "読み込み中...",
     "search": "検索...",

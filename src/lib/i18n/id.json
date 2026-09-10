@@ -22,6 +22,11 @@
     "night": "Malam",
     "selisih": "Selisih"
   },
+  "weather": {
+    "humidity": "Lembab",
+    "wind": "Angin",
+    "cloud": "Awan"
+  },
   "common": {
     "loading": "Memuat...",
     "search": "Cari...",
