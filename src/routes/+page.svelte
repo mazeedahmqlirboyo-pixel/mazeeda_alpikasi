@@ -1633,7 +1633,7 @@ ${tFunc('prayer_times.hour_short') || 'j'} `;
       class="jadwal-sholat-widget lg:col-span-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-soft-sm flex flex-col justify-between"
     >
       <div
-        class="relative -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 rounded-t-2xl bg-gradient-to-r from-emerald-50 via-teal-50/50 to-cyan-50 dark:from-slate-800 dark:via-slate-800/80 dark:to-slate-900 p-4 sm:px-5 sm:py-4 flex items-center justify-start border-b border-emerald-100/60 dark:border-slate-800 shadow-inner mb-4"
+        class="relative -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 rounded-t-2xl {timePeriod.bgClass} transition-colors duration-1000 ease-in-out p-4 sm:px-5 sm:py-4 flex items-center justify-start border-b border-emerald-100/60 dark:border-slate-800 shadow-inner mb-4"
       >
         <!-- Dekorasi Background -->
         <div
