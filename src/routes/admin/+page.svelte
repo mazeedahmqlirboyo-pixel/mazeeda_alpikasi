@@ -4983,17 +4983,17 @@
             <table class="w-full text-left text-sm whitespace-nowrap">
               <thead class="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
-                  <th class="px-5 py-4 border-b border-r border-slate-100 dark:border-slate-800 w-12 text-center">
+                  <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 w-12 text-center">
                     <input type="checkbox" on:change={toggleAllNilai} checked={nilaiData.length > 0 && nilaiSelectedRowIds.length === nilaiData.length} class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
                   </th>
-                  <th class="px-5 py-4 border-b border-r border-slate-100 dark:border-slate-800">Siswi</th>
-                  <th class="px-5 py-4 border-b border-r border-slate-100 dark:border-slate-800 text-center">Periode & Tahun</th>
-                  <th class="px-5 py-4 border-b border-r border-slate-100 dark:border-slate-800 text-center">Pelajaran</th>
-                  <th class="px-5 py-4 border-b border-r border-slate-100 dark:border-slate-800 text-center">Perolehan / Bayan</th>
-                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 text-center">Aksi</th>
+                  <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 text-center">Siswi</th>
+                  <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 text-center">Periode & Tahun</th>
+                  <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 text-center">Pelajaran</th>
+                  <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 text-center">Perolehan / Bayan</th>
+                  <th class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-50">
+              <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                 {#if isFetchingNilai}
                   <tr><td colspan="6" class="px-5 py-12 text-center text-slate-400 dark:text-slate-500 font-medium">Mencari data nilai...</td></tr>
                 {:else if !nilaiSearch || nilaiSearch.length < 2}
@@ -5003,26 +5003,26 @@
                 {:else}
                   {#each nilaiData as item}
                     <tr class="hover:bg-slate-50 dark:bg-slate-800/80 transition-colors group {nilaiSelectedRowIds.includes(item.id) ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''}">
-                      <td class="px-5 py-3 text-center border-r border-slate-100 dark:border-slate-800">
+                      <td class="px-5 py-3 text-center border-r border-slate-200 dark:border-slate-700">
                         <input type="checkbox" bind:group={nilaiSelectedRowIds} value={item.id} class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
                       </td>
-                      <td class="px-5 py-3 border-r border-slate-100 dark:border-slate-800">
+                      <td class="px-5 py-3 border-r border-slate-200 dark:border-slate-700 text-center">
                         <div class="font-bold text-slate-800 dark:text-slate-100">{item.nama_siswi || '-'}</div>
                         <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">NIS: {item.nis}</div>
                       </td>
-                      <td class="px-5 py-3 text-center border-r border-slate-100 dark:border-slate-800">
+                      <td class="px-5 py-3 text-center border-r border-slate-200 dark:border-slate-700">
                         <div class="inline-flex items-center justify-center gap-1.5 px-2 py-1 rounded-md bg-indigo-50 border border-indigo-100/50 text-indigo-700 text-xs font-bold">
                           {item.periode || '-'}
                         </div>
                         <div class="text-[11px] text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium mt-1">{item.tahun_ajaran || '-'}</div>
                       </td>
-                      <td class="px-5 py-3 text-center border-r border-slate-100 dark:border-slate-800">
+                      <td class="px-5 py-3 text-center border-r border-slate-200 dark:border-slate-700">
                         <div class="font-bold text-slate-700 dark:text-slate-200">{item.mata_pelajaran || '-'}</div>
                         {#if item.kategori}
                           <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">{item.kategori}</div>
                         {/if}
                       </td>
-                      <td class="px-5 py-3 text-center border-r border-slate-100 dark:border-slate-800">
+                      <td class="px-5 py-3 text-center border-r border-slate-200 dark:border-slate-700">
                         {#if item.catatan && item.catatan.includes('|||')}
                           {@const parts = item.catatan.split('|||')}
                           {@const perolehan = (item.nilai !== null && item.nilai !== undefined && item.nilai !== -1) ? item.nilai : (parts[0].trim() || 'LULUS / KHATAM')}
