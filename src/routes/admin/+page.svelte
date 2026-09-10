@@ -4986,8 +4986,8 @@
                   <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 w-12 text-center">
                     <input type="checkbox" on:change={toggleAllNilai} checked={nilaiData.length > 0 && nilaiSelectedRowIds.length === nilaiData.length} class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
                   </th>
-                  <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 w-24">NIS</th>
-                  <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700">Siswi</th>
+                  <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 w-24 text-center">NIS</th>
+                  <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 text-center">Siswi</th>
                   <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 text-center">Periode & Tahun</th>
                   <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 text-center">Pelajaran</th>
                   <th class="px-5 py-4 border-b border-r border-slate-200 dark:border-slate-700 text-center">Perolehan / Bayan</th>
@@ -5007,7 +5007,7 @@
                       <td class="px-5 py-3 text-center border-r border-slate-200 dark:border-slate-700">
                         <input type="checkbox" bind:group={nilaiSelectedRowIds} value={item.id} class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
                       </td>
-                      <td class="px-5 py-3 border-r border-slate-200 dark:border-slate-700 font-mono text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      <td class="px-5 py-3 border-r border-slate-200 dark:border-slate-700 font-mono text-xs font-semibold text-slate-500 dark:text-slate-400 text-center">
                         {item.nis}
                       </td>
                       <td class="px-5 py-3 border-r border-slate-200 dark:border-slate-700">
