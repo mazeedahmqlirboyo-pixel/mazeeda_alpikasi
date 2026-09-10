@@ -104,6 +104,13 @@
     if (iconCode.includes('13')) return 'text-sky-300';
     return 'text-slate-400 dark:text-slate-300'; // Default awan abu-abu
   }
+
+  // Helper untuk animasi ringan pada icon
+  function getIconAnimationClass(iconCode: string) {
+    if (iconCode.includes('09') || iconCode.includes('10')) return 'animate-bounce'; // Hujan mantul sedikit
+    if (iconCode.includes('11')) return 'animate-pulse'; // Petir kedap-kedip
+    return '';
+  }
 </script>
 
 {#if loading}
@@ -116,7 +123,7 @@
     <!-- Left: Icon & Temp -->
     <div class="flex items-center gap-4 sm:gap-5 w-full sm:w-auto">
       <div class="flex items-center justify-center p-3 sm:p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl {getIconColorClass(weatherData.weather[0].icon)}">
-        <svelte:component this={getWeatherIcon(weatherData.weather[0].icon)} class="w-10 h-10 sm:w-12 sm:h-12 stroke-[1.5]" />
+        <svelte:component this={getWeatherIcon(weatherData.weather[0].icon)} class="w-10 h-10 sm:w-12 sm:h-12 stroke-[1.5] {getIconAnimationClass(weatherData.weather[0].icon)}" />
       </div>
       
       <div class="flex flex-col justify-center">
