@@ -4983,14 +4983,14 @@
             <table class="w-full text-left text-sm whitespace-nowrap">
               <thead class="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
-                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 w-12 text-center">
+                  <th class="px-5 py-4 border-b border-r border-slate-100 dark:border-slate-800 w-12 text-center">
                     <input type="checkbox" on:change={toggleAllNilai} checked={nilaiData.length > 0 && nilaiSelectedRowIds.length === nilaiData.length} class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
                   </th>
-                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">Siswi</th>
-                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">Periode & Tahun</th>
-                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">Pelajaran</th>
-                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800">Perolehan / Bayan</th>
-                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 text-right">Aksi</th>
+                  <th class="px-5 py-4 border-b border-r border-slate-100 dark:border-slate-800">Siswi</th>
+                  <th class="px-5 py-4 border-b border-r border-slate-100 dark:border-slate-800 text-center">Periode & Tahun</th>
+                  <th class="px-5 py-4 border-b border-r border-slate-100 dark:border-slate-800 text-center">Pelajaran</th>
+                  <th class="px-5 py-4 border-b border-r border-slate-100 dark:border-slate-800 text-center">Perolehan / Bayan</th>
+                  <th class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-50">
@@ -5003,32 +5003,32 @@
                 {:else}
                   {#each nilaiData as item}
                     <tr class="hover:bg-slate-50 dark:bg-slate-800/80 transition-colors group {nilaiSelectedRowIds.includes(item.id) ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''}">
-                      <td class="px-5 py-3 text-center">
+                      <td class="px-5 py-3 text-center border-r border-slate-100 dark:border-slate-800">
                         <input type="checkbox" bind:group={nilaiSelectedRowIds} value={item.id} class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
                       </td>
-                      <td class="px-5 py-3">
+                      <td class="px-5 py-3 border-r border-slate-100 dark:border-slate-800">
                         <div class="font-bold text-slate-800 dark:text-slate-100">{item.nama_siswi || '-'}</div>
                         <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">NIS: {item.nis}</div>
                       </td>
-                      <td class="px-5 py-3">
-                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-50 border border-indigo-100/50 text-indigo-700 text-xs font-bold">
+                      <td class="px-5 py-3 text-center border-r border-slate-100 dark:border-slate-800">
+                        <div class="inline-flex items-center justify-center gap-1.5 px-2 py-1 rounded-md bg-indigo-50 border border-indigo-100/50 text-indigo-700 text-xs font-bold">
                           {item.periode || '-'}
                         </div>
                         <div class="text-[11px] text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium mt-1">{item.tahun_ajaran || '-'}</div>
                       </td>
-                      <td class="px-5 py-3">
+                      <td class="px-5 py-3 text-center border-r border-slate-100 dark:border-slate-800">
                         <div class="font-bold text-slate-700 dark:text-slate-200">{item.mata_pelajaran || '-'}</div>
                         {#if item.kategori}
                           <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">{item.kategori}</div>
                         {/if}
                       </td>
-                      <td class="px-5 py-3">
+                      <td class="px-5 py-3 text-center border-r border-slate-100 dark:border-slate-800">
                         {#if item.catatan && item.catatan.includes('|||')}
                           {@const parts = item.catatan.split('|||')}
                           {@const perolehan = (item.nilai !== null && item.nilai !== undefined && item.nilai !== -1) ? item.nilai : (parts[0].trim() || 'LULUS / KHATAM')}
                           {@const bayan = parts[1] ? parts[1].trim() : '-'}
                           
-                          <div class="font-black text-sm text-emerald-700">
+                          <div class="font-black text-sm text-emerald-700 flex justify-center items-center">
                             {perolehan} <span class="text-slate-300 font-normal mx-1.5">|</span> <span class="text-slate-600 dark:text-slate-300">{bayan}</span>
                           </div>
                         {:else}
@@ -5036,7 +5036,7 @@
                           {@const perolehan = (item.nilai !== null && item.nilai !== undefined && item.nilai !== -1) ? item.nilai : 'LULUS / KHATAM'}
                           {@const bayan = item.catatan ? item.catatan.trim() : ''}
                           
-                          <div class="font-black text-sm text-emerald-700">
+                          <div class="font-black text-sm text-emerald-700 flex justify-center items-center">
                             {perolehan} 
                             {#if bayan}
                               <span class="text-slate-300 font-normal mx-1.5">|</span> <span class="text-slate-600 dark:text-slate-300">{bayan}</span>
@@ -5044,8 +5044,8 @@
                           </div>
                         {/if}
                       </td>
-                      <td class="px-5 py-3 text-right">
-                        <div class="flex items-center justify-end gap-2 sm:opacity-50 sm:group-hover:opacity-100 transition-opacity">
+                      <td class="px-5 py-3 text-center">
+                        <div class="flex items-center justify-center gap-2 sm:opacity-50 sm:group-hover:opacity-100 transition-opacity">
                           <button on:click={() => openEditNilai(item)} class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
                             <Edit class="h-4 w-4" />
                           </button>
