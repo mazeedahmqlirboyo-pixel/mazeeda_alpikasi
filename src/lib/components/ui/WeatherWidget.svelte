@@ -70,7 +70,7 @@
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
       <!-- Left: Location & Icon -->
       <div class="flex flex-row items-center gap-4 sm:gap-6 w-full sm:w-auto">
-        <div class="bg-blue-50 dark:bg-slate-800 rounded-2xl p-2 shrink-0">
+        <div class="bg-slate-800 rounded-2xl p-2 shrink-0 shadow-inner">
           <img 
             src={`https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@2x.png`} 
             alt={weatherData.weather[0].description} 

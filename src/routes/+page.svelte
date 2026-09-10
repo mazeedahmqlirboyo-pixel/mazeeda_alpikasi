@@ -1260,9 +1260,6 @@ ${tFunc('prayer_times.hour_short') || 'j'} `;
     <BirthdayWidget tanggalLahir={user.tanggal_lahir} userName={user.name} />
   {/if}
 
-  <!-- ==================== WEATHER WIDGET ==================== -->
-  <WeatherWidget />
-
   <!-- ==================== PWA INSTALL BAR ==================== -->
   {#if showPWAInstall}
     <section
@@ -1439,6 +1436,9 @@ ${tFunc('prayer_times.hour_short') || 'j'} `;
       {/each}
     </div>
   </section>
+
+  <!-- ==================== WEATHER WIDGET ==================== -->
+  <WeatherWidget />
 
   <!-- ==================== INDONESIAN TIME & PRAYER WIDGET ==================== -->
   <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
