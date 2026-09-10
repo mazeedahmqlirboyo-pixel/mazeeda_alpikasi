@@ -10,35 +10,62 @@
   let weatherData: any = null;
   let loading = true;
   let errorMsg = '';
+  let lastLat: number | null = null;
+  let lastLon: number | null = null;
   const API_KEY = 'ae49030676655c1a89fb3df116df25f8';
+
+  // Menyimpan referensi bahasa terakhir yang diambil untuk mencegah loop
+  let lastFetchedLang = '';
 
   onMount(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          fetchWeather(lat, lon);
+          lastLat = position.coords.latitude;
+          lastLon = position.coords.longitude;
+          fetchWeather(lastLat, lastLon);
         },
         (err) => {
           console.warn("Geolocation error:", err);
-          fetchWeather(-6.2088, 106.8456);
+          lastLat = -6.2088;
+          lastLon = 106.8456;
+          fetchWeather(lastLat, lastLon);
           errorMsg = 'GPS tidak diizinkan, menampilkan cuaca Jakarta.';
         },
         { timeout: 10000 }
       );
     } else {
-      fetchWeather(-6.2088, 106.8456);
+      lastLat = -6.2088;
+      lastLon = 106.8456;
+      fetchWeather(lastLat, lastLon);
       errorMsg = 'Browser tidak mendukung GPS.';
     }
   });
 
+  // Re-fetch saat bahasa berubah
+  $: if ($locale && lastLat !== null && lastLon !== null) {
+    const currentLang = getOwmLang($locale);
+    if (currentLang !== lastFetchedLang && !loading) {
+      fetchWeather(lastLat, lastLon);
+    }
+  }
+
+  function getOwmLang(loc: string | null | undefined) {
+    if (!loc) return 'id';
+    const l = loc.toLowerCase();
+    if (l.includes('ar')) return 'ar';
+    if (l.includes('en')) return 'en';
+    if (l.includes('ko')) return 'kr'; // OpenWeatherMap Korea = kr
+    if (l.includes('ja')) return 'ja';
+    if (l.includes('zh')) return 'zh_cn';
+    return 'id';
+  }
+
   async function fetchWeather(lat: number, lon: number) {
     try {
       loading = true;
-      
-      // Menggunakan bahasa sesuai dengan locale aktif ('id', 'en', 'ar', dll.) atau default ke 'id'
-      const langParam = $locale === 'ar' ? 'ar' : ($locale === 'en' ? 'en' : 'id');
+      const langParam = getOwmLang($locale);
+      lastFetchedLang = langParam;
 
       const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=${langParam}`);
       if (!res.ok) throw new Error('Gagal mengambil data cuaca');
