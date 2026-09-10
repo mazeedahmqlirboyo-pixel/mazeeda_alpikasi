@@ -5045,7 +5045,7 @@
                         {/if}
                       </td>
                       <td class="px-5 py-3 text-right">
-                        <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div class="flex items-center justify-end gap-2 sm:opacity-50 sm:group-hover:opacity-100 transition-opacity">
                           <button on:click={() => openEditNilai(item)} class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
                             <Edit class="h-4 w-4" />
                           </button>
