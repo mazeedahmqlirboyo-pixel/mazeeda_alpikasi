@@ -378,7 +378,7 @@
   function translatePrayerName(name: string, tFunc: any) {
     if (!name) return "";
     const isBesok = name.includes("(Besok)");
-    const baseName = name.replace(" (Besok)", "").toLowerCase();
+    const baseName = name.replace(" (Besok)", "").replace("'", "").toLowerCase();
     const translatedName = tFunc('prayer_times.' + baseName) || baseName;
     if (isBesok) {
       return `${translatedName} (${tFunc('prayer_times.tomorrow') || 'Besok'})`;
