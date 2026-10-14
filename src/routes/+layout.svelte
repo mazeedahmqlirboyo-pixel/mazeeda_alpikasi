@@ -3815,25 +3815,27 @@
                           >
                         </div>
                         <div
-                          class="flex flex-col gap-1 py-1.5 border-b border-slate-100 dark:border-slate-800"
+                          class="flex flex-col gap-1.5 py-1.5 border-b border-slate-100 dark:border-slate-800"
                         >
                           <span
                             class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]"
                             >Cita-cita</span
                           >
                           {#if myProfileData.cita_cita}
-                            <a
-                              href="https://www.google.com/search?q={encodeURIComponent(
-                                myProfileData.cita_cita,
-                              )}"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="text-primary hover:underline font-bold inline-flex items-center gap-1 mt-0.5 w-fit"
-                              title="Cari di Google"
-                            >
-                              <span>{myProfileData.cita_cita}</span>
-                              <ExternalLink class="h-3 w-3 shrink-0" />
-                            </a>
+                            <div class="flex flex-wrap gap-1.5 mt-0.5">
+                              {#each splitItems(myProfileData.cita_cita) as dream}
+                                <a
+                                  href="https://www.google.com/search?q={encodeURIComponent(dream)}"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50/70 hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-primary dark:text-blue-400 border border-blue-100/60 dark:border-slate-700 text-xs font-bold transition-colors group shadow-xs"
+                                  title="Cari '{dream}' di Google"
+                                >
+                                  <span>{dream}</span>
+                                  <ExternalLink class="h-2.5 w-2.5 opacity-60 group-hover:opacity-100 shrink-0" />
+                                </a>
+                              {/each}
+                            </div>
                           {:else}
                             <strong
                               class="text-slate-800 dark:text-slate-100 font-medium leading-relaxed text-justify"
