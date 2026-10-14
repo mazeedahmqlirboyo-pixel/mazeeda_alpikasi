@@ -753,7 +753,7 @@
                         href="https://www.google.com/search?q={encodeURIComponent(food)}" 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50/70 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-700 dark:text-indigo-300 text-xs font-bold transition-colors group shadow-xs" 
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50/70 hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-primary dark:text-blue-400 border border-blue-100/60 dark:border-slate-700 text-xs font-bold transition-colors group shadow-xs" 
                         title="Cari '{food}' di Google"
                       >
                         <span>{food}</span>
@@ -775,7 +775,7 @@
                         href="https://www.google.com/search?q={encodeURIComponent(drink)}" 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50/70 hover:bg-sky-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-sky-700 dark:text-sky-300 text-xs font-bold transition-colors group shadow-xs" 
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50/70 hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-primary dark:text-blue-400 border border-blue-100/60 dark:border-slate-700 text-xs font-bold transition-colors group shadow-xs" 
                         title="Cari '{drink}' di Google"
                       >
                         <span>{drink}</span>
@@ -788,7 +788,29 @@
                 {/if}
               </div>
 
-              <div class="flex flex-col gap-1 py-1.5 border-b border-slate-100 dark:border-slate-800">
+              <div class="flex flex-col gap-1.5 py-1.5 border-b border-slate-100 dark:border-slate-800">
+                <span class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]">Warna Kesukaan</span>
+                {#if selectedMember.warna_kesukaan}
+                  <div class="flex flex-wrap gap-1.5 mt-0.5">
+                    {#each splitItems(selectedMember.warna_kesukaan) as color}
+                      <a 
+                        href="https://www.google.com/search?q={encodeURIComponent('warna ' + color)}" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50/70 hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-primary dark:text-blue-400 border border-blue-100/60 dark:border-slate-700 text-xs font-bold transition-colors group shadow-xs" 
+                        title="Cari '{color}' di Google"
+                      >
+                        <span>{color}</span>
+                        <ExternalLink class="h-2.5 w-2.5 opacity-60 group-hover:opacity-100 shrink-0" />
+                      </a>
+                    {/each}
+                  </div>
+                {:else}
+                  <strong class="text-slate-800 dark:text-slate-100 font-medium leading-relaxed text-justify">-</strong>
+                {/if}
+              </div>
+
+              <div class="flex flex-col gap-1 py-1.5">
                 <span class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]">Musik Kesukaan</span>
                 {#if selectedMember.music && selectedMember.music.startsWith('http')}
                   <a href={selectedMember.music} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold break-all inline-flex items-center gap-1 mt-0.5 w-fit">
@@ -840,28 +862,6 @@
                       </div>
                     </div>
                   </div>
-                {/if}
-              </div>
-
-              <div class="flex flex-col gap-1.5 py-1.5">
-                <span class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]">Warna Kesukaan</span>
-                {#if selectedMember.warna_kesukaan}
-                  <div class="flex flex-wrap gap-1.5 mt-0.5">
-                    {#each splitItems(selectedMember.warna_kesukaan) as color}
-                      <a 
-                        href="https://www.google.com/search?q={encodeURIComponent('warna ' + color)}" 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50/70 hover:bg-emerald-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-colors group shadow-xs" 
-                        title="Cari '{color}' di Google"
-                      >
-                        <span>{color}</span>
-                        <ExternalLink class="h-2.5 w-2.5 opacity-60 group-hover:opacity-100 shrink-0" />
-                      </a>
-                    {/each}
-                  </div>
-                {:else}
-                  <strong class="text-slate-800 dark:text-slate-100 font-medium leading-relaxed text-justify">-</strong>
                 {/if}
               </div>
             </div>
