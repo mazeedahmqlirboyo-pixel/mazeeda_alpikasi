@@ -146,8 +146,10 @@
     keterampilan_khusus = item.keterampilan_khusus || '';
     cita_cita = item.cita_cita || '';
     makanan_kesukaan = item.makanan_kesukaan || '';
+    minuman_kesukaan = item.minuman_kesukaan || '';
     kutipan_kenangan = item.kutipan_kenangan || '';
     music = item.music || '';
+    warna_kesukaan = item.warna_kesukaan || '';
     hobi = item.hobi || '';
     kesan = item.kesan || '';
     pesan = item.pesan || '';
@@ -171,8 +173,8 @@
     tahun_lahir = ''; golongan_darah = 'O'; alamat_ktp = ''; alamat_domisili = '';
     no_whatsapp = ''; email = ''; media_social = ''; riwayat_pendidikan = '';
     alamat_riwayatpendidikan = ''; tahun_masuk = '2026'; keterampilan_khusus = '';
-    cita_cita = ''; makanan_kesukaan = '';
-    kutipan_kenangan = ''; music = ''; hobi = ''; kesan = ''; pesan = '';
+    cita_cita = ''; makanan_kesukaan = ''; minuman_kesukaan = '';
+    kutipan_kenangan = ''; music = ''; warna_kesukaan = ''; hobi = ''; kesan = ''; pesan = '';
     nis = ''; nama_ayah = ''; kategori_mazeeda = activeSection === 'asatidzah' ? 'pengajar' : 'alumni'; daerah_santri = '';
     tiktok_akun = ''; facebook_akun = ''; xtwitter_akun = ''; rute_lengkap = '';
     kamar_santri = ''; tahfidz_santri = '';
@@ -228,8 +230,10 @@
   let keterampilan_khusus = '';
   let cita_cita = '';
   let makanan_kesukaan = '';
+  let minuman_kesukaan = '';
   let kutipan_kenangan = '';
   let music = '';
+  let warna_kesukaan = '';
   let hobi = '';
   let kesan = '';
   let pesan = '';
@@ -819,8 +823,10 @@
       keterampilan_khusus,
       cita_cita,
       makanan_kesukaan,
+      minuman_kesukaan,
       kutipan_kenangan,
       music,
+      warna_kesukaan,
       hobi,
       kesan,
       pesan,
@@ -1075,8 +1081,10 @@
         keterampilan_khusus: findIndex(["keterampilan_khusus", "keterampilan", "keahlian", "skill", "keterampilan khusus"]),
         cita_cita: findIndex(["cita_cita", "cita-cita", "cita cita", "harapan", "impian"]),
         makanan_kesukaan: findIndex(["makanan_kesukaan", "makanan kesukaan", "makanan", "makanan favorit"]),
+        minuman_kesukaan: findIndex(["minuman_kesukaan", "minuman kesukaan", "minuman", "minuman favorit"]),
         kutipan_kenangan: findIndex(["kutipan_kenangan", "kutipan", "quote", "quotes", "kutipan kenangan"]),
         music: findIndex(["music", "musik", "lagu", "spotify", "lagu_kesukaan", "lagu kesukaan"]),
+        warna_kesukaan: findIndex(["warna_kesukaan", "warna kesukaan", "warna", "warna favorit"]),
         hobi: findIndex(["hobi", "hobby"]),
         kesan: findIndex(["kesan"]),
         pesan: findIndex(["pesan"]),
@@ -1155,8 +1163,10 @@
             keterampilan_khusus: getValue(columns, "keterampilan_khusus"),
             cita_cita: getValue(columns, "cita_cita"),
             makanan_kesukaan: getValue(columns, "makanan_kesukaan"),
+            minuman_kesukaan: getValue(columns, "minuman_kesukaan"),
             kutipan_kenangan: getValue(columns, "kutipan_kenangan"),
             music: getValue(columns, "music"),
+            warna_kesukaan: getValue(columns, "warna_kesukaan"),
             hobi: getValue(columns, "hobi"),
             kesan: getValue(columns, "kesan"),
             pesan: getValue(columns, "pesan"),
@@ -3197,16 +3207,24 @@
                     <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="music">Musik Favorit</label>
                     <Input id="music" placeholder="Musik kesukaan" bind:value={music} />
                   </div>
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="warna_kesukaan">Warna Kesukaan</label>
+                    <Input id="warna_kesukaan" placeholder="e.g. Sage Green, Hitam, Navy" bind:value={warna_kesukaan} />
+                  </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="cita_cita">Cita-Cita</label>
                     <Input id="cita_cita" placeholder="Cita-cita santri" bind:value={cita_cita} />
                   </div>
                   <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="makanan_kesukaan">Makanan Kesukaan</label>
-                    <Input id="makanan_kesukaan" placeholder="Makanan favorit" bind:value={makanan_kesukaan} />
+                    <Input id="makanan_kesukaan" placeholder="e.g. Ramen, Pempek, Kripik" bind:value={makanan_kesukaan} />
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500" for="minuman_kesukaan">Minuman Kesukaan</label>
+                    <Input id="minuman_kesukaan" placeholder="e.g. Es Teh, Matcha, Boba" bind:value={minuman_kesukaan} />
                   </div>
                 </div>
 
